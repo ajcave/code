@@ -1,0 +1,14 @@
+ctx : type.
+tp : ctx -> type.
+exp : {G:ctx} tp G -> type.
+
+nil : ctx.
+cons : {G:ctx} tp G -> ctx.
+
+nat : {G:ctx} tp G.
+vec : exp G (nat G) -> tp G.
+
+weaken_tp : {U:tp G} tp G -> tp (cons G U).
+weaken : exp G T -> exp (cons G U) (weaken_tp U T).
+
+var : exp (cons G U) U.
