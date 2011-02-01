@@ -11,4 +11,4 @@ vec : exp G (nat G) -> tp G.
 weaken_tp : {U:tp G} tp G -> tp (cons G U).
 weaken : exp G T -> exp (cons G U) (weaken_tp U T).
 
-var : exp (cons G U) U.
+var : exp (cons G U) (weaken_tp U U).
