@@ -90,10 +90,11 @@ Section foo.
  Inductive tp (D:world) :=
   | m_tp : mtype D -> tp D
   | arr : tp D -> tp D -> tp D
-  | prod : forall D2, mtype D -> wlink D D2 -> tp D2 -> tp D
+  | prod : forall D2, wlink D D2 -> mtype D -> tp D2 -> tp D
  .
  Implicit Arguments m_tp.
  Implicit Arguments arr.
+ Implicit Arguments prod.
 
  Inductive subst (D:world) := id_subst. (* TODO *)
  Inductive synth_exp (D G:world) : Set :=
@@ -137,6 +138,8 @@ Section foo.
                  -> var_assigned D G (v_cons A (y,U)) (import y x) T.
  Implicit Arguments var_assigned.
  
+ Axiom weaken_ctx : forall {D1 D2 G}, slink D1 D2 -> tp_assign D1 G -> tp_assign D2 G.
+ 
  Inductive s_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
                    : synth_exp D' G' -> tp D' -> Prop :=
   | var_s : forall x T, var_assigned G x T -> s_tp (var _ x) T
@@ -147,9 +150,12 @@ Section foo.
                    : checked_exp D' G' -> tp D' -> Prop :=
   | synth_c : forall I T, s_tp I T -> c_tp (synth I) T
   | meta_c : forall C U, m_oft D C U -> c_tp (meta G' C) (m_tp U)
-  | fn_c : forall G2 (y:slink G' G2) E T1 T2,
+  | fn_c : forall G2' (y:slink G' G2') E T1 T2,
              @c_tp _ _ D (v_cons G (y,T1)) E T2
           -> c_tp (fn (weaken1 y) E) (arr T1 T2)
+  | mlam_c : forall D2' (X:slink D' D2') E U T,
+             @c_tp _ _ (m_cons D (X,U)) (weaken_ctx X G) E T
+          -> c_tp (mlam (weaken1 X) E) (prod (weaken1 X) U T)
  . 
  
 End foo.
