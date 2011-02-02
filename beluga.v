@@ -9,6 +9,7 @@ Section foo.
  Parameter name : world -> Set.
  Parameter wlink : world -> world -> Set.
  Parameter slink : world -> world -> Set.
+ Parameter weaken1 : forall {a b}, slink a b -> wlink a b.
  Parameter weaken : forall {a b}, slink a b -> name b.
  Parameter import : forall {a b}, slink a b -> name a -> name b.
  
@@ -92,6 +93,8 @@ Section foo.
   | prod : forall D2, mtype D -> wlink D D2 -> tp D2 -> tp D
  .
  Implicit Arguments m_tp.
+ Implicit Arguments arr.
+
  Inductive subst (D:world) := id_subst. (* TODO *)
  Inductive synth_exp (D G:world) : Set :=
   | var : name G -> synth_exp D G
@@ -134,16 +137,19 @@ Section foo.
                  -> var_assigned D G (v_cons A (y,U)) (import y x) T.
  Implicit Arguments var_assigned.
  
- Inductive s_tp {D G:world} {A:mtype_assign D} {B:tp_assign D G}
-                   : synth_exp D G -> tp D -> Prop :=
-  | var_s : forall x T, var_assigned B x T -> s_tp (var _ x) T
-  | app_s : forall I T1 E T2, s_tp I (arr _ T1 T2) -> c_tp E T1 -> s_tp (app I E) T2
+ Inductive s_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
+                   : synth_exp D' G' -> tp D' -> Prop :=
+  | var_s : forall x T, var_assigned G x T -> s_tp (var _ x) T
+  | app_s : forall I T1 E T2, s_tp I (arr T1 T2) -> c_tp E T1 -> s_tp (app I E) T2
   (* | mapp : ... TODO *)
   | coerce_s : forall E T, c_tp E T -> s_tp (coercion E T) T
- with c_tp {D G:world} {A:mtype_assign D} {B:tp_assign D G}
-                   : checked_exp D G -> tp D -> Prop :=
+ with c_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
+                   : checked_exp D' G' -> tp D' -> Prop :=
   | synth_c : forall I T, s_tp I T -> c_tp (synth I) T
-  | meta_c : forall C U, m_oft A C U -> c_tp (meta G C) (m_tp U)
+  | meta_c : forall C U, m_oft D C U -> c_tp (meta G' C) (m_tp U)
+  | fn_c : forall G2 (y:slink G' G2) E T1 T2,
+             @c_tp _ _ D (v_cons G (y,T1)) E T2
+          -> c_tp (fn (weaken1 y) E) (arr T1 T2)
  . 
  
 End foo.
