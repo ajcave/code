@@ -96,6 +96,9 @@ Section foo.
  Implicit Arguments arr.
  Implicit Arguments prod.
 
+ (* TODO. Is this even possible? Should it produce a world D2 and link? *)
+ Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
+
  Inductive subst (D:world) := id_subst. (* TODO *)
  Inductive synth_exp (D G:world) : Set :=
   | var : name G -> synth_exp D G
@@ -138,7 +141,18 @@ Section foo.
                  -> var_assigned D G (v_cons A (y,U)) (import y x) T.
  Implicit Arguments var_assigned.
  
- Axiom weaken_ctx : forall {D1 D2 G}, slink D1 D2 -> tp_assign D1 G -> tp_assign D2 G.
+ Definition weaken_ctx : forall {D1 D2 G}, slink D1 D2 -> tp_assign D1 G -> tp_assign D2 G.
+ intros. induction H0.
+ constructor.
+ econstructor.
+ eexact IHstar.
+ destruct r.
+ constructor.
+ exact s.
+ eapply import_tp.
+ eexact H.
+ exact t.
+ Defined. 
  
  Inductive s_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
                    : synth_exp D' G' -> tp D' -> Prop :=
@@ -156,6 +170,10 @@ Section foo.
   | mlam_c : forall D2' (X:slink D' D2') E U T,
              @c_tp _ _ (m_cons D (X,U)) (weaken_ctx X G) E T
           -> c_tp (mlam (weaken1 X) E) (prod (weaken1 X) U T)
+  (* | case_i | case_c ... TODO *)
+  | rec_c : forall G2' (f:slink G' G2') E T,
+             @c_tp _ _ D (v_cons G (f,T)) E T
+          -> c_tp (rec (weaken1 f) E) T
  . 
  
 End foo.
