@@ -65,10 +65,10 @@ Section foo.
  Implicit Arguments m_asn_top.
  Implicit Arguments m_asn_else.
 
- Inductive m_oft {D:world} {A:mtype_assign D} : meta_term D -> mtype D -> Prop :=
+ Inductive m_oft {D':world} {D:mtype_assign D'} : meta_term D' -> mtype D' -> Prop :=
   | m_z_tp : m_oft m_z m_nat
   | m_succ_tp : forall n, m_oft n m_nat -> m_oft (m_succ n) m_nat
-  | m_var_tp : forall y T, m_assigned A y T -> m_oft (m_var y) T
+  | m_var_tp : forall y T, m_assigned D y T -> m_oft (m_var y) T
  .
  Implicit Arguments m_oft.
 
@@ -172,6 +172,8 @@ Section foo.
              @c_tp _ _ D (v_cons G (f,T)) E T
           -> c_tp (rec (weaken1 f) E) T
  .
- 
+  (* TODO: Compare our use of strong links and imports to the paper's example of
+     typing derivations. It's possible that they do contravariant stuff to avoid
+     the import *)
  
 End foo.
