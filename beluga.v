@@ -91,12 +91,13 @@ Section foo.
   | arr : tp D -> tp D -> tp D
   | prod : forall D2, mtype D -> wlink D D2 -> tp D2 -> tp D
  .
+ Implicit Arguments m_tp.
  Inductive subst (D:world) := id_subst. (* TODO *)
  Inductive synth_exp (D G:world) : Set :=
   | var : name G -> synth_exp D G
   | app :  synth_exp D G -> checked_exp D G -> synth_exp D G
   | mapp : synth_exp D G -> meta_term D -> synth_exp D G
-  | coercion : synth_exp D G -> tp D -> synth_exp D G
+  | coercion : checked_exp D G -> tp D -> synth_exp D G
  with checked_exp (D G:world) : Set := 
   | synth : synth_exp D G -> checked_exp D G
   | meta : meta_term D -> checked_exp D G
@@ -109,6 +110,14 @@ Section foo.
   | br : forall Di, meta_term Di -> subst Di -> checked_exp Di G -> branch D G.
  Implicit Arguments var.
  Implicit Arguments app.
+ Implicit Arguments coercion.
+ Implicit Arguments synth.
+ Implicit Arguments meta.
+ Implicit Arguments fn.
+ Implicit Arguments mlam.
+ Implicit Arguments case_i.
+ Implicit Arguments case_c.
+ Implicit Arguments rec.
 
  Definition var_tp D G1 G2 := (slink G1 G2)*(tp D).
  Definition tp_assign D := star (var_tp D) empty.
@@ -129,9 +138,12 @@ Section foo.
                    : synth_exp D G -> tp D -> Prop :=
   | var_s : forall x T, var_assigned B x T -> s_tp (var _ x) T
   | app_s : forall I T1 E T2, s_tp I (arr _ T1 T2) -> c_tp E T1 -> s_tp (app I E) T2
-  
+  (* | mapp : ... TODO *)
+  | coerce_s : forall E T, c_tp E T -> s_tp (coercion E T) T
  with c_tp {D G:world} {A:mtype_assign D} {B:tp_assign D G}
                    : checked_exp D G -> tp D -> Prop :=
+  | synth_c : forall I T, s_tp I T -> c_tp (synth I) T
+  | meta_c : forall C U, m_oft A C U -> c_tp (meta G C) (m_tp U)
  . 
  
 End foo.
