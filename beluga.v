@@ -1,7 +1,4 @@
 Require Import List.
-Inductive Fin : nat -> Set :=
- | f_z : forall n, Fin (S n)
- | f_succ : forall n, Fin n -> Fin (S n).
 
 Section foo.
  Parameter world : Set.
@@ -174,6 +171,7 @@ Section foo.
   | rec_c : forall G2' (f:slink G' G2') E T,
              @c_tp _ _ D (v_cons G (f,T)) E T
           -> c_tp (rec (weaken1 f) E) T
- . 
+ .
+ 
  
 End foo.
