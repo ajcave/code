@@ -202,5 +202,4 @@ Section foo.
   | m_subst_typ_cons : forall W' D' W'' (y:slink W' W'') U t T, msubst_typ W D W' D' T
         -> msubst_typ W D W'' (m_cons D' (y,U)) (msubst_cons T (y,t)).
  
- 
 End foo.
