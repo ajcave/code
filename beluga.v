@@ -208,6 +208,8 @@ Section foo.
         -> msubst_typ' W D W'' (m_cons D' (y,U)) (msubst_cons T (y,t)).
   Print msubst_typ'.
 
-  
+ Definition msubst_typ {W} D {W'} D' T := msubst_typ' W' D' W D T.
+ 
+ 
  
 End foo.
