@@ -181,7 +181,8 @@ Section foo.
   | mlam_is_val : forall D2 (X:slink D D2) E, is_val D G (mlam (weaken1 X) E)
   | rec_is_val : forall G2 (f:slink G G2) E, is_val D G (rec (weaken1 f) E).
 
- Axiom msubst : world -> Set. (* TODO *)
+ Definition mbind D1 D2 := (slink D1 D2)*(meta_term D1).
+ Definition msubst := star mbind empty.
 
  Inductive env : world -> Set :=
   | e_nil : forall G, env G
@@ -190,4 +191,9 @@ Section foo.
   | v_meta : meta_term empty -> val
   | v_val : forall D G E, is_val D G E -> msubst D -> env G -> val.
 
+ Inductive closure : Set :=
+  | meta_term_closure : meta_term empty -> closure
+  | comp_term_closure : forall D G, checked_exp D G -> msubst D -> env G -> closure.
+
+ 
 End foo.
