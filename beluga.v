@@ -197,9 +197,17 @@ Section foo.
   | meta_term_closure : meta_term empty -> closure
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
 
- Inductive msubst_typ W (D:mtype_assign W) : forall W' (D':mtype_assign W'), msubst W' W -> Prop :=
-  | m_subst_typ_nil : msubst_typ W D empty (s_nil _ _) (s_nil _ _)
-  | m_subst_typ_cons : forall W' D' W'' (y:slink W' W'') U t T, msubst_typ W D W' D' T
-        -> msubst_typ W D W'' (m_cons D' (y,U)) (msubst_cons T (y,t)).
+ Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
+ Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
+ Implicit Arguments app_msubst_t.
+
+ Inductive msubst_typ' W (D:mtype_assign W) : forall W' (D':mtype_assign W'), msubst W' W -> Prop :=
+  | m_subst_typ_nil : msubst_typ' W D empty (s_nil _ _) (s_nil _ _)
+  | m_subst_typ_cons : forall W' D' W'' (y:slink W' W'') U t T, msubst_typ' W D W' D' T
+        -> m_oft D t (app_msubst_t T U)
+        -> msubst_typ' W D W'' (m_cons D' (y,U)) (msubst_cons T (y,t)).
+  Print msubst_typ'.
+
+  
  
 End foo.
