@@ -181,19 +181,26 @@ Section foo.
   | mlam_is_val : forall D2 (X:slink D D2) E, is_val D G (mlam (weaken1 X) E)
   | rec_is_val : forall G2 (f:slink G G2) E, is_val D G (rec (weaken1 f) E).
 
- Definition mbind D1 D2 := (slink D1 D2)*(meta_term D1).
- Definition msubst := star mbind empty.
+ Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
+ Definition msubst D R := star (mbind R) empty D.
+ Definition msubst_cons D R := @s_cons _ (mbind R) empty D.
+ Implicit Arguments msubst_cons.
 
  Inductive env : world -> Set :=
   | e_nil : forall G, env G
   | e_cons : forall G1 G2 (y:slink G1 G2), env G1 -> val -> env G2
  with val : Set :=
   | v_meta : meta_term empty -> val
-  | v_val : forall D G E, is_val D G E -> msubst D -> env G -> val.
+  | v_val : forall D G E, is_val D G E -> msubst D empty -> env G -> val.
 
  Inductive closure : Set :=
   | meta_term_closure : meta_term empty -> closure
-  | comp_term_closure : forall D G, checked_exp D G -> msubst D -> env G -> closure.
+  | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
 
+ Inductive msubst_typ W (D:mtype_assign W) : forall W' (D':mtype_assign W'), msubst W' W -> Prop :=
+  | m_subst_typ_nil : msubst_typ W D empty (s_nil _ _) (s_nil _ _)
+  | m_subst_typ_cons : forall W' D' W'' (y:slink W' W'') U t T, msubst_typ W D W' D' T
+        -> msubst_typ W D W'' (m_cons D' (y,U)) (msubst_cons T (y,t)).
+ 
  
 End foo.
