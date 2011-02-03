@@ -172,6 +172,7 @@ Section foo.
              @c_tp _ _ D (v_cons G (f,T)) E T
           -> c_tp (rec (weaken1 f) E) T
  .
+ Implicit Arguments c_tp.
   (* TODO: Compare our use of strong links and imports to the paper's example of
      typing derivations. It's possible that they do contravariant stuff to avoid
      the import *)
@@ -187,29 +188,71 @@ Section foo.
  Implicit Arguments msubst_cons.
 
  Inductive env : world -> Set :=
-  | e_nil : forall G, env G
-  | e_cons : forall G1 G2 (y:slink G1 G2), env G1 -> val -> env G2
+  | e_nil : env empty
+  | e_cons : forall G1 G2, env G1 -> (slink G1 G2)*val -> env G2
  with val : Set :=
   | v_meta : meta_term empty -> val
   | v_val : forall D G E, is_val D G E -> msubst D empty -> env G -> val.
-
+ Implicit Arguments e_nil.
+ Implicit Arguments e_cons.
  Inductive closure : Set :=
   | meta_term_closure : meta_term empty -> closure
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
+ Implicit Arguments comp_term_closure.
+
+ Definition val_to_closure (v:val) : closure.
+ intro.
+ destruct v.
+ constructor 1. exact m.
+ destruct E; try (elimtype False; inversion i; fail);
+ econstructor 2.
+ eexact (fn w E). eexact m. exact e.
+ eexact (mlam w E). eexact m. exact e.
+ eexact (rec w E). eexact m. exact e.
+ Defined.
+ Print val_to_closure.
 
  Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
  Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
+ Axiom app_msubst_t2 : forall W W', msubst W W' -> tp W -> tp W'.
+ (* Termination of these is going to be tricky, since it depends on their typing, which
+    we define in terms of application. Maybe it's better to state it as a relation
+    and prove total separately
+  *)
+ Axiom app_msubst_tp_assign : forall W W' G, msubst W W' -> tp_assign W G -> tp_assign W' G.
  Implicit Arguments app_msubst_t.
-
+ Implicit Arguments app_msubst_t2.
+ Implicit Arguments app_msubst_tp_assign.
+ 
+ Implicit Arguments s_nil [A Rel a].
  Inductive msubst_typ' W (D:mtype_assign W) : forall W' (D':mtype_assign W'), msubst W' W -> Prop :=
-  | m_subst_typ_nil : msubst_typ' W D empty (s_nil _ _) (s_nil _ _)
-  | m_subst_typ_cons : forall W' D' W'' (y:slink W' W'') U t T, msubst_typ' W D W' D' T
+  | m_subst_typ_nil : msubst_typ' W D empty s_nil s_nil
+  | m_subst_typ_cons : forall W' D' W'' (y:slink W' W'') U t T,
+           msubst_typ' W D W' D' T
         -> m_oft D t (app_msubst_t T U)
         -> msubst_typ' W D W'' (m_cons D' (y,U)) (msubst_cons T (y,t)).
   Print msubst_typ'.
 
  Definition msubst_typ {W} D {W'} D' T := msubst_typ' W' D' W D T.
- 
- 
+ Print Implicit c_tp.
+
+ Inductive closure_typ : closure -> tp empty -> Prop :=
+  | meta_term_closure_typ : forall C U,
+              m_oft s_nil C U
+           -> closure_typ (meta_term_closure C) (m_tp U)
+  | comp_term_closure_typ : forall D' G' (D:mtype_assign D') (G:tp_assign D' G')
+              E T (theta:msubst D' empty) (rho:env G'),
+              msubst_typ D s_nil theta
+              -> env_tp _ rho (app_msubst_tp_assign theta G)
+              -> c_tp D G E T
+              -> closure_typ (comp_term_closure E theta rho) (app_msubst_t2 theta T)
+  with env_tp : forall {W}, env W -> tp_assign empty W -> Prop :=
+   | env_tp_nil : env_tp empty e_nil s_nil
+   | env_tp_cons : forall W rho G V T W' y,
+              env_tp W rho G
+              -> closure_typ (val_to_closure V) T
+              -> env_tp W' (e_cons rho (y,V)) (v_cons G (y,T))
+  .
+ Print closure_typ.
  
 End foo.
