@@ -177,7 +177,7 @@ Section foo.
      typing derivations. It's possible that they do contravariant stuff to avoid
      the import *)
 
-   Inductive is_val (D G:world) : checked_exp D G -> Prop :=
+ Inductive is_val (D G:world) : checked_exp D G -> Prop :=
   | fn_is_val : forall G2 (y:slink G G2) E, is_val D G (fn (weaken1 y) E)
   | mlam_is_val : forall D2 (X:slink D D2) E, is_val D G (mlam (weaken1 X) E).
 
@@ -208,13 +208,20 @@ Section foo.
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
  Implicit Arguments comp_term_closure.
 
- Definition val_to_closure (v:exval) : closure.
+ Definition val_to_closure (v:val) : closure.
  intro.
- destruct v; [destruct v; [constructor 1; exact m | idtac] | idtac];
- destruct E; try (elimtype False; inversion i; try inversion H; fail);
- econstructor 2.
+ destruct v. constructor 1. exact m.
+ destruct E; try (elimtype False; inversion i; try inversion H; fail); econstructor 2.
  eexact (fn w E). eexact m. exact e.
  eexact (mlam w E). eexact m. exact e.
+ Defined.
+
+ Definition exval_to_closure (v:exval) : closure.
+ intro.
+ destruct v.
+ apply val_to_closure. exact v.
+ destruct E; try (elimtype False; inversion i; try inversion H; fail);
+ econstructor 2.
  eexact (rec w E). eexact m. exact e.
  Defined.
  Print val_to_closure.
@@ -257,10 +264,12 @@ Section foo.
    | env_tp_nil : env_tp empty e_nil s_nil
    | env_tp_cons : forall W rho G V T W' y,
               env_tp W rho G
-              -> closure_typ (val_to_closure V) T
+              -> closure_typ (exval_to_closure V) T
               -> env_tp W' (e_cons rho (y,V)) (v_cons G (y,T))
   .
 
-   Inductive eval 
+   Inductive eval : closure -> val -> Prop :=
+    | ev_val : forall v, eval (val_to_closure v) v
+   .
  
 End foo.
