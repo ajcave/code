@@ -250,19 +250,13 @@ Section foo.
     and prove total separately
   *)
  
- Definition app_msubst_tp_assign' {W G'} (G:tp_assign W G') {W'} (theta:msubst W W')  : tp_assign W' G'.
- induction 1.
- constructor.
- econstructor.
- apply IHG. exact theta.
- unfold var_tp in *. destruct r.
- constructor. exact s.
- eapply app_msubst_t2.
- eexact theta.
- exact t.
- Defined.
+ Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign W G') : forall {W'} (theta:msubst W W'), tp_assign W' G' :=
+  match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
+   | s_nil => fun W' theta => s_nil (var_tp W') _
+   | s_cons _ _ a (b,c) => fun W' theta => s_cons _ (app_msubst_tp_assign' a _ theta) (b,app_msubst_t2 theta c)
+  end.
  
- Definition app_msubst_tp_assign {W W' G'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G theta.
+ Definition app_msubst_tp_assign {W W' G'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G _ theta.
  
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
