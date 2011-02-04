@@ -5,8 +5,8 @@ Section foo.
  Parameter empty : world.
  Parameter name : world -> Set.
  Parameter wlink : world -> world -> Set.
- Parameter slink : world -> world -> Set.
- Parameter weaken1 : forall {a b}, slink a b -> wlink a b.
+ Definition slink := wlink. (* ??? *)
+ Definition weaken1 {a b} (x:slink a b) : wlink a b := x.
  Axiom weaken1_inj : forall {W W'} {y y':slink W W'}, weaken1 y = weaken1 y' -> y = y'.
  Parameter weaken : forall {a b}, slink a b -> name b.
  Parameter import : forall {a b}, slink a b -> name a -> name b.
@@ -99,7 +99,6 @@ Section foo.
  (* TODO. Is this even possible? Should it produce a world D2 and link? *)
  Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
 
- Inductive subst (D:world) := id_subst. (* TODO *)
  Inductive synth_exp (D G:world) : Set :=
   | var : name G -> synth_exp D G
   | app :  synth_exp D G -> checked_exp D G -> synth_exp D G
@@ -114,7 +113,7 @@ Section foo.
   | case_c : meta_term D -> list (branch D G) -> checked_exp D G
   | rec : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
  with branch (D G:world) : Set :=
-  | br : forall Di, meta_term Di -> subst Di -> checked_exp Di G -> branch D G.
+  (* | br : forall Di, meta_term Di -> subst Di -> checked_exp Di G -> branch D G *).
  Implicit Arguments var.
  Implicit Arguments app.
  Implicit Arguments mapp.
@@ -154,13 +153,19 @@ Section foo.
  eapply import_tp.
  eexact H.
  exact t.
- Defined. 
+ Defined.
  
+ Axiom msubst_single_t : forall {D D'} (X:wlink D D'), meta_term D -> tp D' -> tp D.
+ (* Write this in terms of a simultaneous substitution: (id,C/X) ? *)
+
  Inductive s_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
                    : synth_exp D' G' -> tp D' -> Prop :=
   | var_s : forall x T, var_assigned G x T -> s_tp (var _ x) T
   | app_s : forall I T1 E T2, s_tp I (arr T1 T2) -> c_tp E T1 -> s_tp (app I E) T2
-  (* | mapp : ... TODO *)
+  | mapp_s : forall I D2' (X:wlink D' D2') U C T,
+              s_tp I (prod X U T)
+           -> m_oft D C U
+           -> s_tp (mapp I C) (msubst_single_t X C T)
   | coerce_s : forall E T, c_tp E T -> s_tp (coercion E T) T
  with c_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
                    : checked_exp D' G' -> tp D' -> Prop :=
@@ -178,6 +183,7 @@ Section foo.
           -> c_tp (rec (weaken1 f) E) T
  .
  Implicit Arguments c_tp.
+ Print s_tp.
   (* TODO: Compare our use of strong links and imports to the paper's example of
      typing derivations. It's possible that they do contravariant stuff to avoid
      the import *)
@@ -240,7 +246,7 @@ Section foo.
  Implicit Arguments app_msubst_t.
  Axiom false : forall (P:Set), P.
  Implicit Arguments false [P].
- (* Fixpoint app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' :=
+ (*Fixpoint app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' :=
   match T with
    | arr T1 T2 => arr (app_msubst_t2 theta T1) (app_msubst_t2 theta T2)
    | m_tp U => m_tp (app_msubst_t theta U)
@@ -250,18 +256,23 @@ Section foo.
     we define in terms of application. Maybe it's better to state it as a relation
     and prove total separately
   *)
- Definition app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W'.
- induction 2.
+
+ Axiom theta_weaken : forall {D R} (theta:msubst D R) {R'} (X:wlink R R'), msubst D R'.
+ Definition app_msubst_t2' {W} (T:tp W) {W'} (theta:msubst W W') : tp W'.
+ induction 1; intros.
  apply m_tp.
  eapply app_msubst_t. eexact theta. exact m.
  apply arr. apply IHT1. exact theta. apply IHT2. exact theta.
  Print Implicit prod.
  Print projT1.
- apply (prod (weaken1 (projT2 (next W')))).
- admit. admit.
- Defined. (* TODO: HMM, I did something wrong. Can see how it's supposed to go though *)
-
- 
+ apply (prod (projT2 (next W'))).
+ eapply app_msubst_t. eexact theta. eexact m.
+ apply IHT.
+ econstructor. eapply theta_weaken. eexact theta. apply weaken1.
+ eexact (projT2 (next W')).
+ split. eexact w. constructor 3. eapply (weaken (projT2 (next W'))).
+ Defined.
+ Definition app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' := app_msubst_t2' T theta.
  
  Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign W G') : forall {W'} (theta:msubst W W'), tp_assign W' G' :=
   match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
@@ -337,6 +348,7 @@ Section foo.
    eexact H8.
    eexact H5.
   
+   (* Case: app *)
    inversion H11; subst.
    inversion H4; subst.
    assert (closure_typ (val_to_closure V2) (app_msubst_t2 theta T1)).
@@ -370,6 +382,24 @@ Section foo.
    instantiate (1 := (v_cons G1 (y,T2))).
    eexact H7.
    exact H15.
+
+   (* Case: meta application *)
+   inversion H10. subst.
+   inversion H3. subst.
+   assert (closure_typ
+            (val_to_closure (v_val2 (mlam_is_val (weaken1 X) E) theta1 rho1))
+            (app_msubst_t2 theta (prod X0 U T))).
+   apply IHeval1.
+   econstructor.
+   eexact H8. eexact H9. constructor. eexact H5.
+   
+   inversion H2. subst. simpl_existTs. subst.
+   inversion H17. subst. simpl_existTs. subst.
+   pose proof (weaken1_inj H6). subst. clear H6.
+   inversion H15. simpl_existTs. unfold weaken1 in *.
+   remember (projT2 (next empty)) as X'.
+   
+   
    
    Qed.
 
