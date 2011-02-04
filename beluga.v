@@ -114,6 +114,7 @@ Section foo.
   | br : forall Di, meta_term Di -> subst Di -> checked_exp Di G -> branch D G.
  Implicit Arguments var.
  Implicit Arguments app.
+ Implicit Arguments mapp.
  Implicit Arguments coercion.
  Implicit Arguments synth.
  Implicit Arguments meta.
@@ -237,6 +238,7 @@ Section foo.
     and prove total separately
   *)
  Axiom app_msubst_tp_assign : forall W W' G, msubst W W' -> tp_assign W G -> tp_assign W' G.
+ Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
  Implicit Arguments app_msubst_t2.
  Implicit Arguments app_msubst_tp_assign.
@@ -281,6 +283,13 @@ Section foo.
                eval (comp_term_closure (synth I1) theta rho) (v_val2 (fn_is_val (weaken1 y) E) theta1 rho1)
             -> eval (comp_term_closure E2 theta rho) V2
             -> eval (comp_term_closure E theta1 (e_cons rho1 (y,v_val1 V2))) V
-   .
+            -> eval (comp_term_closure (synth (app I1 E2)) theta rho) V
+    | ev_mapp : forall D theta G rho (I:synth_exp D G) D' (X:slink D D')
+               (E:checked_exp D' G) theta1 rho1 C V,
+               eval (comp_term_closure (synth I) theta rho) (v_val2 (mlam_is_val (weaken1 X) E) theta1 rho1)
+            -> eval (comp_term_closure E (msubst_cons theta1 (X,(app_msubst theta C))) rho1) V
+            -> eval (comp_term_closure (synth (mapp I C)) theta rho) V
+    .
+   
  
 End foo.
