@@ -7,6 +7,7 @@ Section foo.
  Parameter wlink : world -> world -> Set.
  Parameter slink : world -> world -> Set.
  Parameter weaken1 : forall {a b}, slink a b -> wlink a b.
+ Axiom weaken1_inj : forall {W W'} {y y':slink W W'}, weaken1 y = weaken1 y' -> y = y'.
  Parameter weaken : forall {a b}, slink a b -> name b.
  Parameter import : forall {a b}, slink a b -> name a -> name b.
  
@@ -73,6 +74,7 @@ Section foo.
  Implicit Arguments m_oft.
 
  (* wf_mtype A T if T is a well-formed meta-type in the context A *)
+   
  Inductive wf_mtype {D:world} {A:mtype_assign D} : mtype D -> Prop :=
   | m_nat_tp : wf_mtype m_nat
   | m_vec_tp : forall t, m_oft A t m_nat -> wf_mtype (m_vec t).
@@ -232,7 +234,16 @@ Section foo.
 
  Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
  Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
- Axiom app_msubst_t2 : forall W W', msubst W W' -> tp W -> tp W'.
+ Implicit Arguments app_msubst.
+ Implicit Arguments app_msubst_t.
+ Axiom false : forall (P:Set), P.
+ Implicit Arguments false [P].
+ Fixpoint app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' :=
+  match T with
+   | arr T1 T2 => arr (app_msubst_t2 theta T1) (app_msubst_t2 theta T2)
+   | m_tp U => m_tp (app_msubst_t theta U)
+   | prod W'' X U T' => @prod W' W' false false false (* TODO *)
+  end.
  (* Termination of these is going to be tricky, since it depends on their typing, which
     we define in terms of application. Maybe it's better to state it as a relation
     and prove total separately
@@ -291,7 +302,7 @@ Section foo.
             -> eval (comp_term_closure (synth (mapp I C)) theta rho) V
     .
    Require Import Coq.Program.Equality.
-
+   Implicit Arguments env_tp_cons.
    Theorem subj_red L V : eval L V -> forall T, closure_typ L T -> closure_typ (val_to_closure V) T.
    Proof.
    induction 1; try (destruct V; auto; fail);
@@ -303,8 +314,38 @@ Section foo.
    eexact H7.
    eexact H8.
    eexact H5.
+  
+   inversion H11; subst.
+   inversion H4; subst.
+   assert (closure_typ (val_to_closure V2) (app_msubst_t2 theta T1)).
+   apply IHeval2.
+   econstructor.
+   eexact H9.
+   eexact H10.
+   eexact H8.
+   
+   assert (closure_typ
+            (val_to_closure (v_val2 (fn_is_val (weaken1 y) E) theta1 rho1))
+            (app_msubst_t2 theta (arr T1 T0))).
+   apply IHeval1.
+   econstructor.
+   eexact H9.
+   eexact H10.
+   constructor.
+   eexact H6.
+
+   inversion H5. subst. simpl_existTs. subst.
+   destruct T; try discriminate. inversion H17.
+   inversion H19. subst. simpl_existTs. subst.
+   pose proof (weaken1_inj H20). subst. clear H20.
+   rewrite <- H12 in H3.
+
+   Print Implicit env_tp_cons.
+   pose proof (env_tp_cons (v_val1 V2) y H18 H3).
    
    
+   
+
    
 
 End foo.
