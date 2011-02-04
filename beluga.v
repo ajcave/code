@@ -290,6 +290,21 @@ Section foo.
             -> eval (comp_term_closure E (msubst_cons theta1 (X,(app_msubst theta C))) rho1) V
             -> eval (comp_term_closure (synth (mapp I C)) theta rho) V
     .
+   Require Import Coq.Program.Equality.
+
+   Theorem subj_red L V : eval L V -> forall T, closure_typ L T -> closure_typ (val_to_closure V) T.
+   Proof.
+   induction 1; try (destruct V; auto; fail);
+   inversion 1; subst; simpl_existTs; subst.
+   inversion H9; subst.
+   inversion H2; subst.
+   apply IHeval.
+   econstructor.
+   eexact H7.
+   eexact H8.
+   eexact H5.
    
- 
+   
+   
+
 End foo.
