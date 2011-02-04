@@ -178,11 +178,13 @@ Section foo.
      the import *)
 
  Inductive is_val (D G:world) : checked_exp D G -> Prop :=
-  | fn_is_val : forall G2 (y:slink G G2) E, is_val D G (fn (weaken1 y) E)
-  | mlam_is_val : forall D2 (X:slink D D2) E, is_val D G (mlam (weaken1 X) E).
+  | fn_is_val : forall G2 (y:wlink G G2) E, is_val D G (fn y E)
+  | mlam_is_val : forall D2 (X:wlink D D2) E, is_val D G (mlam X E).
+ Implicit Arguments fn_is_val.
+ Implicit Arguments mlam_is_val.
 
  Inductive is_exval (D G:world) : checked_exp D G -> Prop :=
-  | rec_is_val : forall G2 (f:slink G G2) E, is_exval D G (rec (weaken1 f) E).
+  | rec_is_val : forall G2 (f:wlink G G2) E, is_exval D G (rec f E).
 
  Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
  Definition msubst D R := star (mbind R) empty D.
@@ -199,10 +201,10 @@ Section foo.
  with exval : Set :=
   | v_val1 : val -> exval
   | v_rec1 : forall D G E, is_exval D G E -> msubst D empty -> env G -> exval.
-  
-
+ Implicit Arguments v_val2.
  Implicit Arguments e_nil.
  Implicit Arguments e_cons.
+
  Inductive closure : Set :=
   | meta_term_closure : meta_term empty -> closure
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
@@ -211,9 +213,10 @@ Section foo.
  Definition val_to_closure (v:val) : closure.
  intro.
  destruct v. constructor 1. exact m.
+ set E.
  destruct E; try (elimtype False; inversion i; try inversion H; fail); econstructor 2.
- eexact (fn w E). eexact m. exact e.
- eexact (mlam w E). eexact m. exact e.
+ eexact c. eexact m. exact e.
+ eexact c. eexact m. exact e.
  Defined.
 
  Definition exval_to_closure (v:exval) : closure.
@@ -269,7 +272,15 @@ Section foo.
   .
 
    Inductive eval : closure -> val -> Prop :=
-    | ev_val : forall v, eval (val_to_closure v) v
+    | ev_val : forall V, eval (val_to_closure V) V
+    | ev_coerce : forall D theta G rho (E:checked_exp D G) T V,
+                  eval (comp_term_closure E theta rho) V
+                  -> eval (comp_term_closure (synth (coercion E T)) theta rho) V
+    | ev_app : forall D theta G rho (I1:synth_exp D G) G' (y:slink G G')
+               (E:checked_exp D G') theta1 rho1 (E2:checked_exp D G) V2 V,
+               eval (comp_term_closure (synth I1) theta rho) (v_val2 (fn_is_val (weaken1 y) E) theta1 rho1)
+            -> eval (comp_term_closure E2 theta rho) V2
+            -> eval (comp_term_closure E theta1 (e_cons rho1 (y,v_val1 V2))) V
    .
  
 End foo.
