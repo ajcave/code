@@ -244,14 +244,7 @@ Section foo.
  Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
- Axiom false : forall (P:Set), P.
- Implicit Arguments false [P].
- (*Fixpoint app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' :=
-  match T with
-   | arr T1 T2 => arr (app_msubst_t2 theta T1) (app_msubst_t2 theta T2)
-   | m_tp U => m_tp (app_msubst_t theta U)
-   | prod W'' X U T' => @prod W' W' false false false (* TODO *)
-  end. *)
+
  (* Termination of these is going to be tricky, since it depends on their typing, which
     we define in terms of application. Maybe it's better to state it as a relation
     and prove total separately
@@ -336,6 +329,10 @@ Section foo.
     .
    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
+   Axiom subst_combine : forall {R D D'} (theta:msubst D R) (X:slink D D') C T,
+      (app_msubst_t2 (msubst_cons theta (X,app_msubst theta C)) T)
+    = (app_msubst_t2 theta (msubst_single_t X C T)).
+
    Theorem subj_red L V : eval L V -> forall T, closure_typ L T -> closure_typ (val_to_closure V) T.
    Proof.
    induction 1; try (destruct V; auto; fail);
@@ -398,8 +395,12 @@ Section foo.
    pose proof (weaken1_inj H6). subst. clear H6.
    inversion H15. simpl_existTs. unfold weaken1 in *.
    remember (projT2 (next empty)) as X'.
-   
-   
+   (* Need to bring in the substitution lemma *)
+   apply IHeval2.
+   Print closure_typ.
+   rewrite <- subst_combine.
+   unfold msubst_cons.
+   econstructor.
    
    Qed.
 
