@@ -128,6 +128,7 @@ Section foo.
 
  Definition var_tp D G1 G2 := (slink G1 G2)*(tp D).
  Definition tp_assign D := star (var_tp D) empty.
+ Definition tp_assign_nil D := @s_nil _ (var_tp D).
  Definition v_cons D := @s_cons _ (var_tp D) empty.
  Implicit Arguments v_cons.
  Print Implicit v_cons.
@@ -248,7 +249,21 @@ Section foo.
     we define in terms of application. Maybe it's better to state it as a relation
     and prove total separately
   *)
- Axiom app_msubst_tp_assign : forall W W' G, msubst W W' -> tp_assign W G -> tp_assign W' G.
+ 
+ Definition app_msubst_tp_assign' {W G'} (G:tp_assign W G') {W'} (theta:msubst W W')  : tp_assign W' G'.
+ induction 1.
+ constructor.
+ econstructor.
+ apply IHG. exact theta.
+ unfold var_tp in *. destruct r.
+ constructor. exact s.
+ eapply app_msubst_t2.
+ eexact theta.
+ exact t.
+ Defined.
+ 
+ Definition app_msubst_tp_assign {W W' G'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G theta.
+ 
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
  Implicit Arguments app_msubst_t2.
@@ -343,9 +358,15 @@ Section foo.
    Print Implicit env_tp_cons.
    pose proof (env_tp_cons (v_val1 V2) y H18 H3).
    
-   
-   
+   apply IHeval3.
+   econstructor.
+   eexact H14.
+   assert (   (v_cons (app_msubst_tp_assign theta1 G1) (y, app_msubst_t2 theta1 T2))
+             = (app_msubst_tp_assign theta1 (v_cons G1 (y,T2)))).
+   reflexivity.
+   rewrite H16 in H7.
+   eexact H7.
+   exact H15.
 
-   
 
 End foo.
