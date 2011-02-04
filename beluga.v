@@ -176,23 +176,31 @@ Section foo.
   (* TODO: Compare our use of strong links and imports to the paper's example of
      typing derivations. It's possible that they do contravariant stuff to avoid
      the import *)
- 
- Inductive is_val (D G:world) : checked_exp D G -> Prop :=
+
+   Inductive is_val (D G:world) : checked_exp D G -> Prop :=
   | fn_is_val : forall G2 (y:slink G G2) E, is_val D G (fn (weaken1 y) E)
-  | mlam_is_val : forall D2 (X:slink D D2) E, is_val D G (mlam (weaken1 X) E)
-  | rec_is_val : forall G2 (f:slink G G2) E, is_val D G (rec (weaken1 f) E).
+  | mlam_is_val : forall D2 (X:slink D D2) E, is_val D G (mlam (weaken1 X) E).
+
+ Inductive is_exval (D G:world) : checked_exp D G -> Prop :=
+  | rec_is_val : forall G2 (f:slink G G2) E, is_exval D G (rec (weaken1 f) E).
 
  Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
  Definition msubst D R := star (mbind R) empty D.
  Definition msubst_cons D R := @s_cons _ (mbind R) empty D.
  Implicit Arguments msubst_cons.
 
+
  Inductive env : world -> Set :=
   | e_nil : env empty
-  | e_cons : forall G1 G2, env G1 -> (slink G1 G2)*val -> env G2
+  | e_cons : forall G1 G2, env G1 -> (slink G1 G2)*exval -> env G2
  with val : Set :=
-  | v_meta : meta_term empty -> val
-  | v_val : forall D G E, is_val D G E -> msubst D empty -> env G -> val.
+  | v_meta2 : meta_term empty -> val
+  | v_val2 : forall D G E, is_val D G E -> msubst D empty -> env G -> val
+ with exval : Set :=
+  | v_val1 : val -> exval
+  | v_rec1 : forall D G E, is_exval D G E -> msubst D empty -> env G -> exval.
+  
+
  Implicit Arguments e_nil.
  Implicit Arguments e_cons.
  Inductive closure : Set :=
@@ -200,11 +208,10 @@ Section foo.
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
  Implicit Arguments comp_term_closure.
 
- Definition val_to_closure (v:val) : closure.
+ Definition val_to_closure (v:exval) : closure.
  intro.
- destruct v.
- constructor 1. exact m.
- destruct E; try (elimtype False; inversion i; fail);
+ destruct v; [destruct v; [constructor 1; exact m | idtac] | idtac];
+ destruct E; try (elimtype False; inversion i; try inversion H; fail);
  econstructor 2.
  eexact (fn w E). eexact m. exact e.
  eexact (mlam w E). eexact m. exact e.
@@ -253,6 +260,7 @@ Section foo.
               -> closure_typ (val_to_closure V) T
               -> env_tp W' (e_cons rho (y,V)) (v_cons G (y,T))
   .
- Print closure_typ.
+
+   Inductive eval 
  
 End foo.
