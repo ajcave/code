@@ -349,18 +349,15 @@ Section foo.
    pose proof (weaken1_inj H20). subst. clear H20.
    rewrite <- H12 in H3.
 
-   Print Implicit env_tp_cons.
    pose proof (env_tp_cons (v_val1 V2) y H18 H3).
    
    apply IHeval3.
    econstructor.
    eexact H14.
-   assert (   (v_cons (app_msubst_tp_assign theta1 G1) (y, app_msubst_t2 theta1 T2))
-             = (app_msubst_tp_assign theta1 (v_cons G1 (y,T2)))).
-   reflexivity.
-   rewrite H16 in H7.
+   instantiate (1 := (v_cons G1 (y,T2))).
    eexact H7.
    exact H15.
-
+   
+   Qed.
 
 End foo.
