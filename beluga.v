@@ -10,6 +10,7 @@ Section foo.
  Axiom weaken1_inj : forall {W W'} {y y':slink W W'}, weaken1 y = weaken1 y' -> y = y'.
  Parameter weaken : forall {a b}, slink a b -> name b.
  Parameter import : forall {a b}, slink a b -> name a -> name b.
+ Parameter next : forall a, {b:world & slink a b}.
  
  Inductive meta_term (D:world) :=
   | m_z
@@ -239,16 +240,28 @@ Section foo.
  Implicit Arguments app_msubst_t.
  Axiom false : forall (P:Set), P.
  Implicit Arguments false [P].
- Fixpoint app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' :=
+ (* Fixpoint app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' :=
   match T with
    | arr T1 T2 => arr (app_msubst_t2 theta T1) (app_msubst_t2 theta T2)
    | m_tp U => m_tp (app_msubst_t theta U)
    | prod W'' X U T' => @prod W' W' false false false (* TODO *)
-  end.
+  end. *)
  (* Termination of these is going to be tricky, since it depends on their typing, which
     we define in terms of application. Maybe it's better to state it as a relation
     and prove total separately
   *)
+ Definition app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W'.
+ induction 2.
+ apply m_tp.
+ eapply app_msubst_t. eexact theta. exact m.
+ apply arr. apply IHT1. exact theta. apply IHT2. exact theta.
+ Print Implicit prod.
+ Print projT1.
+ apply (prod (weaken1 (projT2 (next W')))).
+ admit. admit.
+ Defined. (* TODO: HMM, I did something wrong. Can see how it's supposed to go though *)
+
+ 
  
  Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign W G') : forall {W'} (theta:msubst W W'), tp_assign W' G' :=
   match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
