@@ -279,31 +279,38 @@ Section foo.
  Implicit Arguments app_msubst_t2.
  Implicit Arguments app_msubst_tp_assign.
  Notation "⟦ θ ⟧" := (app_msubst_t θ). 
+ Notation "α ↪ β" := (slink α β) (at level 90).
 
  Implicit Arguments s_nil [A Rel a].
- Inductive msubst_typ' {α} (Γ:mtype_assign α) : forall {β} (Γ':mtype_assign β), msubst β α -> Prop :=
-  | m_subst_typ_nil : msubst_typ' Γ s_nil s_nil
-  | m_subst_typ_cons : forall β Γ' γ (y:slink β γ) U t θ,
-           msubst_typ' Γ Γ' θ 
-           -> m_oft Γ t (⟦θ⟧ U)
-        -> msubst_typ' Γ (m_cons Γ' (y,U)) (msubst_cons θ (y,t)).
-  Print msubst_typ'.
-
+ Reserved Notation "D ⊢ T ∷ D2" (at level 90).
+ Notation "D ⊨ t ∷ U" := (m_oft D t U) (at level 90).
+ Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).
+ Notation "D ; y ∷ U" := (m_cons D (y,U)) (at level 90).
+ Notation "·" := (s_nil).
+ Inductive msubst_typ' {α}(Δ:mtype_assign α) : forall {β}(Δ':mtype_assign β), msubst β α ->Prop :=
+  | m_subst_typ_nil :
+           Δ ⊢ · ∷ ·
+  | m_subst_typ_cons : forall β Δ' γ (y:β ↪ γ) U t θ,
+           Δ ⊢ θ ∷ Δ' 
+        -> Δ ⊨ t ∷ (⟦θ⟧ U)
+        -> Δ ⊢ (θ; t//y) ∷ (Δ'; y∷U)
+  where "D ⊢ T ∷ D2" := (@msubst_typ' _ D _ D2 T).
  Print msubst_typ'.
- Definition msubst_typ {W} D {W'} D' T := msubst_typ' W' D' W D T.
+ 
+Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
  Print Implicit c_tp.
 
  Inductive closure_typ : closure -> tp empty -> Prop :=
   | meta_term_closure_typ : forall C U,
-              m_oft s_nil C U
+              · ⊨ C ∷ U
            -> closure_typ (meta_term_closure C) (m_tp U)
-  | comp_term_closure_typ : forall D' G' (D:mtype_assign D') (G:tp_assign D' G')
-              E T (theta:msubst D' empty) (rho:env G'),
-              msubst_typ D s_nil theta
-              -> env_tp _ rho (app_msubst_tp_assign theta G)
-              -> c_tp D G E T
-              -> closure_typ (comp_term_closure E theta rho) (app_msubst_t2 theta T)
-  with env_tp : forall W, env W -> tp_assign empty W -> Prop :=
+  | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign δ γ)
+              E T (θ:msubst δ empty) (ρ:env γ),
+              · ⊢ θ ∷ Δ
+              -> env_tp _ ρ (app_msubst_tp_assign θ Γ)
+              -> c_tp Δ Γ E T
+              -> closure_typ (comp_term_closure E θ ρ) (app_msubst_t2 θ T)
+  with env_tp : forall γ, env γ -> tp_assign empty γ -> Prop :=
    | env_tp_nil : env_tp empty e_nil s_nil
    | env_tp_cons : forall W rho G V T W' y,
               env_tp W rho G
@@ -313,20 +320,20 @@ Section foo.
 
    Inductive eval : closure -> val -> Prop :=
     | ev_val : forall V, eval (val_to_closure V) V
-    | ev_coerce : forall D theta G rho (E:checked_exp D G) T V,
-                  eval (comp_term_closure E theta rho) V
-                  -> eval (comp_term_closure (synth (coercion E T)) theta rho) V
-    | ev_app : forall D theta G rho (I1:synth_exp D G) G' (y:slink G G')
-               (E:checked_exp D G') theta1 rho1 (E2:checked_exp D G) V2 V,
-               eval (comp_term_closure (synth I1) theta rho) (v_val2 (fn_is_val (weaken1 y) E) theta1 rho1)
-            -> eval (comp_term_closure E2 theta rho) V2
-            -> eval (comp_term_closure E theta1 (e_cons rho1 (y,v_val1 V2))) V
-            -> eval (comp_term_closure (synth (app I1 E2)) theta rho) V
-    | ev_mapp : forall D theta G rho (I:synth_exp D G) D' (X:slink D D')
-               (E:checked_exp D' G) theta1 rho1 C V,
-               eval (comp_term_closure (synth I) theta rho) (v_val2 (mlam_is_val (weaken1 X) E) theta1 rho1)
-            -> eval (comp_term_closure E (msubst_cons theta1 (X,(app_msubst theta C))) rho1) V
-            -> eval (comp_term_closure (synth (mapp I C)) theta rho) V
+    | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
+                  eval (comp_term_closure E θ ρ) V
+                  -> eval (comp_term_closure (synth (coercion E T)) θ ρ) V
+    | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' (y:γ ↪ γ')
+               (E:checked_exp γ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
+               eval (comp_term_closure (synth I1) θ ρ) (v_val2 (fn_is_val (weaken1 y) E) θ' ρ')
+            -> eval (comp_term_closure E2 θ ρ) V2
+            -> eval (comp_term_closure E θ' (e_cons ρ' (y,v_val1 V2))) V
+            -> eval (comp_term_closure (synth (app I1 E2)) θ ρ) V
+    | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
+               (E:checked_exp δ' γ) θ' ρ' C V,
+               eval (comp_term_closure (synth I) θ ρ) (v_val2 (mlam_is_val (weaken1 X) E) θ' ρ')
+            -> eval (comp_term_closure E (msubst_cons θ' (X,(app_msubst θ C))) ρ') V
+            -> eval (comp_term_closure (synth (mapp I C)) θ ρ) V
     .
    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
@@ -349,7 +356,7 @@ Section foo.
    (* Case: app *)
    inversion H11; subst.
    inversion H4; subst.
-   assert (closure_typ (val_to_closure V2) (app_msubst_t2 theta T1)).
+   assert (closure_typ (val_to_closure V2) (app_msubst_t2 θ T1)).
    apply IHeval2.
    econstructor.
    eexact H9.
@@ -357,8 +364,8 @@ Section foo.
    eexact H8.
    
    assert (closure_typ
-            (val_to_closure (v_val2 (fn_is_val (weaken1 y) E) theta1 rho1))
-            (app_msubst_t2 theta (arr T1 T0))).
+            (val_to_closure (v_val2 (fn_is_val (weaken1 y) E) θ' ρ'))
+            (app_msubst_t2 θ (arr T1 T0))).
    apply IHeval1.
    econstructor.
    eexact H9.
@@ -377,7 +384,7 @@ Section foo.
    apply IHeval3.
    econstructor.
    eexact H14.
-   instantiate (1 := (v_cons G1 (y,T2))).
+   instantiate (1 := (v_cons G0 (y,T2))).
    eexact H7.
    exact H15.
 
@@ -385,8 +392,8 @@ Section foo.
    inversion H10. subst.
    inversion H3. subst.
    assert (closure_typ
-            (val_to_closure (v_val2 (mlam_is_val (weaken1 X) E) theta1 rho1))
-            (app_msubst_t2 theta (prod X0 U T))).
+            (val_to_closure (v_val2 (mlam_is_val (weaken1 X) E) θ' ρ'))
+            (app_msubst_t2 θ (prod X0 U T))).
    apply IHeval1.
    econstructor.
    eexact H8. eexact H9. constructor. eexact H5.
@@ -400,9 +407,9 @@ Section foo.
    apply IHeval2.
    Print closure_typ.
    rewrite <- subst_combine.
-   unfold msubst_constructorcons.
-
- econstructor.
+   unfold msubst.
+   
+  econstructor.
    
    Qed.
 
