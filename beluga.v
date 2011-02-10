@@ -115,6 +115,7 @@ Section foo.
   | rec : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
  with branch (D G:world) : Set :=
   (* | br : forall Di, meta_term Di -> subst Di -> checked_exp Di G -> branch D G *).
+ Coercion synth : synth_exp >-> checked_exp.
  Implicit Arguments var.
  Implicit Arguments app.
  Implicit Arguments mapp.
@@ -170,7 +171,7 @@ Section foo.
   | coerce_s : forall E T, c_tp E T -> s_tp (coercion E T) T
  with c_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
                    : checked_exp D' G' -> tp D' -> Prop :=
-  | synth_c : forall I T, s_tp I T -> c_tp (synth I) T
+  | synth_c : forall I T, s_tp I T -> c_tp I T
   | meta_c : forall C U, m_oft D C U -> c_tp (meta G' C) (m_tp U)
   | fn_c : forall G2' (y:slink G' G2') E T1 T2,
              @c_tp _ _ D (v_cons G (y,T1)) E T2
@@ -229,6 +230,7 @@ Section foo.
  eexact c. eexact m. exact e.
  eexact c. eexact m. exact e.
  Defined.
+ Coercion val_to_closure : val >-> closure.
 
  Definition exval_to_closure (v:exval) : closure.
  destruct v.
@@ -237,6 +239,7 @@ Section foo.
  econstructor 2.
  eexact (rec w E). eexact m. exact e.
  Defined.
+ Coercion exval_to_closure : exval >-> closure.
  Print val_to_closure.
 
  Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
@@ -307,41 +310,44 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
   | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign δ γ)
               E T (θ:msubst δ empty) (ρ:env γ),
               · ⊢ θ ∷ Δ
-              -> env_tp _ ρ (app_msubst_tp_assign θ Γ)
+              -> env_tp ρ (app_msubst_tp_assign θ Γ)
               -> c_tp Δ Γ E T
               -> closure_typ (comp_term_closure E θ ρ) (app_msubst_t2 θ T)
-  with env_tp : forall γ, env γ -> tp_assign empty γ -> Prop :=
-   | env_tp_nil : env_tp empty e_nil s_nil
-   | env_tp_cons : forall W rho G V T W' y,
-              env_tp W rho G
-              -> closure_typ (exval_to_closure V) T
-              -> env_tp W' (e_cons rho (y,V)) (v_cons G (y,T))
+  with env_tp : forall {γ}, env γ -> tp_assign empty γ -> Prop :=
+   | env_tp_nil : env_tp e_nil ·
+   | env_tp_cons : forall γ (ρ:env γ) Γ (V:exval) T γ' (y:γ ↪ γ'),
+              env_tp ρ Γ
+              -> closure_typ V T
+              -> env_tp (e_cons ρ (y,V)) (v_cons Γ (y,T))
   .
+ Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
+ Notation "E ∷ T" := (closure_typ E T) (at level 90).
+ Reserved Notation "E ⇓ V" (at level 90).
 
    Inductive eval : closure -> val -> Prop :=
-    | ev_val : forall V, eval (val_to_closure V) V
+    | ev_val : forall (V:val), eval V V
     | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
-                  eval (comp_term_closure E θ ρ) V
-                  -> eval (comp_term_closure (synth (coercion E T)) θ ρ) V
+               E [θ ;; ρ] ⇓ V
+            -> (coercion E T) [θ ;; ρ] ⇓ V
     | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' (y:γ ↪ γ')
                (E:checked_exp γ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
-               eval (comp_term_closure (synth I1) θ ρ) (v_val2 (fn_is_val (weaken1 y) E) θ' ρ')
-            -> eval (comp_term_closure E2 θ ρ) V2
-            -> eval (comp_term_closure E θ' (e_cons ρ' (y,v_val1 V2))) V
-            -> eval (comp_term_closure (synth (app I1 E2)) θ ρ) V
+               I1 [θ ;; ρ] ⇓ (v_val2 (fn_is_val (weaken1 y) E) θ' ρ')
+            -> E2 [θ ;; ρ] ⇓ V2
+            -> E [θ' ;; (e_cons ρ' (y,v_val1 V2))] ⇓ V
+            -> (app I1 E2) [θ ;; ρ] ⇓ V
     | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
                (E:checked_exp δ' γ) θ' ρ' C V,
-               eval (comp_term_closure (synth I) θ ρ) (v_val2 (mlam_is_val (weaken1 X) E) θ' ρ')
-            -> eval (comp_term_closure E (msubst_cons θ' (X,(app_msubst θ C))) ρ') V
-            -> eval (comp_term_closure (synth (mapp I C)) θ ρ) V
-    .
+               I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val (weaken1 X) E) θ' ρ')
+            -> E [(θ' ; (app_msubst θ C) // X) ;; ρ'] ⇓ V
+            -> (mapp I C) [θ ;; ρ] ⇓ V
+    where "E1 ⇓ V1" := (eval E1 V1).
    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
    Axiom subst_combine : forall {R D D'} (theta:msubst D R) (X:slink D D') C T,
       (app_msubst_t2 (msubst_cons theta (X,app_msubst theta C)) T)
     = (app_msubst_t2 theta (msubst_single_t X C T)).
 
-   Theorem subj_red L V : eval L V -> forall T, closure_typ L T -> closure_typ (val_to_closure V) T.
+   Theorem subj_red L V : L ⇓ V -> forall T, L ∷ T -> V ∷ T.
    Proof.
    induction 1; try (destruct V; auto; fail);
    inversion 1; subst; simpl_existTs; subst.
@@ -356,15 +362,14 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    (* Case: app *)
    inversion H11; subst.
    inversion H4; subst.
-   assert (closure_typ (val_to_closure V2) (app_msubst_t2 θ T1)).
+   assert (V2 ∷ (app_msubst_t2 θ T1)).
    apply IHeval2.
    econstructor.
    eexact H9.
    eexact H10.
    eexact H8.
    
-   assert (closure_typ
-            (val_to_closure (v_val2 (fn_is_val (weaken1 y) E) θ' ρ'))
+   assert ((v_val2 (fn_is_val (weaken1 y) E) θ' ρ') ∷
             (app_msubst_t2 θ (arr T1 T0))).
    apply IHeval1.
    econstructor.
@@ -384,15 +389,14 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    apply IHeval3.
    econstructor.
    eexact H14.
-   instantiate (1 := (v_cons G0 (y,T2))).
+   instantiate (1 := (v_cons Γ0 (y,T2))).
    eexact H7.
    exact H15.
 
    (* Case: meta application *)
    inversion H10. subst.
    inversion H3. subst.
-   assert (closure_typ
-            (val_to_closure (v_val2 (mlam_is_val (weaken1 X) E) θ' ρ'))
+   assert ((v_val2 (mlam_is_val (weaken1 X) E) θ' ρ') ∷
             (app_msubst_t2 θ (prod X0 U T))).
    apply IHeval1.
    econstructor.
