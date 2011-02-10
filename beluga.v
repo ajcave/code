@@ -19,6 +19,7 @@ Section foo.
  Inductive mtype (D:world) :=
   | m_nat : mtype D
   | m_vec : meta_term D -> mtype D.
+ 	       	 
  Implicit Arguments m_nat [D].
  Implicit Arguments m_vec [D].
  Implicit Arguments m_z [D].
@@ -222,7 +223,6 @@ Section foo.
  Implicit Arguments comp_term_closure.
 
  Definition val_to_closure (v:val) : closure.
- intro.
  destruct v. constructor 1. exact m.
  set E.
  destruct E; try (elimtype False; inversion i; try inversion H; fail); econstructor 2.
@@ -231,7 +231,6 @@ Section foo.
  Defined.
 
  Definition exval_to_closure (v:exval) : closure.
- intro.
  destruct v.
  apply val_to_closure. exact v.
  destruct E; try (elimtype False; inversion i; try inversion H; fail);
@@ -251,7 +250,7 @@ Section foo.
   *)
 
  Axiom theta_weaken : forall {D R} (theta:msubst D R) {R'} (X:wlink R R'), msubst D R'.
- Definition app_msubst_t2' {W} (T:tp W) {W'} (theta:msubst W W') : tp W'.
+ Definition app_msubst_t2' : forall {W} (T:tp W) {W'} (theta:msubst W W'), tp W'.
  induction 1; intros.
  apply m_tp.
  eapply app_msubst_t. eexact theta. exact m.
@@ -279,16 +278,18 @@ Section foo.
  Implicit Arguments app_msubst_t.
  Implicit Arguments app_msubst_t2.
  Implicit Arguments app_msubst_tp_assign.
- 
+ Notation "⟦ θ ⟧" := (app_msubst_t θ). 
+
  Implicit Arguments s_nil [A Rel a].
- Inductive msubst_typ' W (D:mtype_assign W) : forall W' (D':mtype_assign W'), msubst W' W -> Prop :=
-  | m_subst_typ_nil : msubst_typ' W D empty s_nil s_nil
-  | m_subst_typ_cons : forall W' D' W'' (y:slink W' W'') U t T,
-           msubst_typ' W D W' D' T
-        -> m_oft D t (app_msubst_t T U)
-        -> msubst_typ' W D W'' (m_cons D' (y,U)) (msubst_cons T (y,t)).
+ Inductive msubst_typ' {α} (Γ:mtype_assign α) : forall {β} (Γ':mtype_assign β), msubst β α -> Prop :=
+  | m_subst_typ_nil : msubst_typ' Γ s_nil s_nil
+  | m_subst_typ_cons : forall β Γ' γ (y:slink β γ) U t θ,
+           msubst_typ' Γ Γ' θ 
+           -> m_oft Γ t (⟦θ⟧ U)
+        -> msubst_typ' Γ (m_cons Γ' (y,U)) (msubst_cons θ (y,t)).
   Print msubst_typ'.
 
+ Print msubst_typ'.
  Definition msubst_typ {W} D {W'} D' T := msubst_typ' W' D' W D T.
  Print Implicit c_tp.
 
@@ -302,7 +303,7 @@ Section foo.
               -> env_tp _ rho (app_msubst_tp_assign theta G)
               -> c_tp D G E T
               -> closure_typ (comp_term_closure E theta rho) (app_msubst_t2 theta T)
-  with env_tp : forall {W}, env W -> tp_assign empty W -> Prop :=
+  with env_tp : forall W, env W -> tp_assign empty W -> Prop :=
    | env_tp_nil : env_tp empty e_nil s_nil
    | env_tp_cons : forall W rho G V T W' y,
               env_tp W rho G
@@ -399,8 +400,9 @@ Section foo.
    apply IHeval2.
    Print closure_typ.
    rewrite <- subst_combine.
-   unfold msubst_cons.
-   econstructor.
+   unfold msubst_constructorcons.
+
+ econstructor.
    
    Qed.
 
