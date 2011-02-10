@@ -330,6 +330,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
 
  Reserved Notation "E ∷∷ T" (at level 90).
+ 
  Inductive closure_typ : closure -> tp empty -> Prop :=
   | meta_term_closure_typ : forall C U,
               (· ⊨ C ∷ U)
@@ -339,7 +340,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
               · ⊢ θ ∷ Δ
               -> env_tp ρ (⟦θ⟧ Γ)
               -> c_tp Δ Γ E T
-              -> (E [θ ;; ρ]) ∷∷(app_msubst_t2 θ T)
+              -> (E [θ ;; ρ]) ∷∷ (app_msubst_t2 θ T)
   with env_tp : forall {γ}, env γ -> tp_assign empty γ -> Prop :=
    | env_tp_nil : env_tp e_nil ·
    | env_tp_cons : forall γ (ρ:env γ) Γ (V:exval) T γ' (y:γ ↪ γ'),
@@ -363,7 +364,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
     | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
                (E:checked_exp δ' γ) θ' ρ' C V,
                I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val X E) θ' ρ')
-            -> E [(θ' ; (app_msubst θ C) // X) ;; ρ'] ⇓ V
+            -> E [(θ' ; (⟦θ⟧ C) // X) ;; ρ'] ⇓ V
             -> (mapp I C) [θ ;; ρ] ⇓ V
     where "E1 ⇓ V1" := (eval E1 V1).
    Require Import Coq.Program.Equality.
@@ -395,7 +396,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    eexact H8.
    
    assert ((v_val2 (fn_is_val y E) θ' ρ') ∷∷
-            (app_msubst_t2 θ (arr T1 T0))).
+            (⟦θ⟧ (arr T1 T0))).
    apply IHeval1.
    econstructor.
    eexact H9.
@@ -406,11 +407,14 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    inversion H5. subst. simpl_existTs. subst.
    destruct T; try discriminate. inversion H17.
    inversion H19. subst. simpl_existTs. subst.
+   unfold tp_substitutable in H12. 
    rewrite <- H12 in H3.
-
+   unfold tp_substitutable in H13.
+   rewrite <- H13.
    pose proof (env_tp_cons (v_val1 V2) y H18 H3).
    
    apply IHeval3.
+   Print closure_typ. 
    econstructor.
    eexact H14.
    instantiate (1 := (v_cons Γ0 (y,T2))).
@@ -421,7 +425,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    inversion H10. subst.
    inversion H3. subst.
    assert ((v_val2 (mlam_is_val X E) θ' ρ') ∷∷
-            (app_msubst_t2 θ (prod X0 U T))).
+            (⟦θ⟧ (prod X0 U T))).
    apply IHeval1.
    econstructor.
    eexact H8. eexact H9. constructor. eexact H5.
