@@ -190,14 +190,14 @@ Section foo.
            -> Δ;Γ ⊢ (meta γ C) ⇐ U
   | fn_c : forall γ' (y:slink γ γ') E T1 T2,
              Δ;(v_cons Γ (y,T1)) ⊢ E ⇐ T2
-          -> Δ;Γ ⊢ (fn (weaken1 y) E) ⇐ (arr T1 T2)
+          -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
   | mlam_c : forall δ' (X:slink δ δ') E U T,
              (m_cons Δ (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (mlam (weaken1 X) E) ⇐ (prod (weaken1 X) U T)
+          -> Δ;Γ ⊢ (mlam X E) ⇐ (prod X U T)
   (* | case_i | case_c ... TODO *)
   | rec_c : forall γ' (f:slink γ γ') E T,
              Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (rec (weaken1 f) E) ⇐ T
+          -> Δ;Γ ⊢ (rec f E) ⇐ T
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).
  
@@ -259,11 +259,15 @@ Section foo.
  Coercion exval_to_closure : exval >-> closure.
  Print val_to_closure.
 
+ Class substitutable (A:world -> Set) := 
+   app_subst : forall {α β}, msubst α β -> A α -> A β.
+ 
  Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
  Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
-
+ Instance meta_term_substitutable : substitutable meta_term := app_msubst.
+ Instance mtype_substitutable : substitutable mtype := app_msubst_t. 
  (* Termination of these is going to be tricky, since it depends on their typing, which
     we define in terms of application. Maybe it's better to state it as a relation
     and prove total separately
@@ -280,7 +284,7 @@ Section foo.
  apply (prod (projT2 (next W'))).
  eapply app_msubst_t. eexact theta. eexact m.
  apply IHT.
- econstructor. eapply theta_weaken. eexact theta. apply weaken1.
+ econstructor. eapply theta_weaken. eexact theta.
  eexact (projT2 (next W')).
  split. eexact w. constructor 3. eapply (weaken (projT2 (next W'))).
  Defined.
@@ -292,13 +296,17 @@ Section foo.
    | s_cons _ _ a (b,c) => fun W' theta => s_cons _ (app_msubst_tp_assign' a _ theta) (b,app_msubst_t2 theta c)
   end.
  
- Definition app_msubst_tp_assign {W W' G'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G _ theta.
+ Definition app_msubst_tp_assign {G' W W'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G _ theta.
+ Definition tp_assign' δ γ := tp_assign γ δ.
+ Instance tp_assign_substitutable γ : substitutable (tp_assign' γ) := (@app_msubst_tp_assign γ).
+
+ Instance tp_substitutable : substitutable tp := @app_msubst_t2.
  
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
  Implicit Arguments app_msubst_t2.
  Implicit Arguments app_msubst_tp_assign.
- Notation "⟦ θ ⟧" := (app_msubst_t θ). 
+ Notation "⟦ θ ⟧" := (app_subst θ). 
  Notation "α ↪ β" := (slink α β) (at level 90).
 
  Implicit Arguments s_nil [A Rel a].
@@ -319,25 +327,26 @@ Section foo.
 Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
  Print Implicit c_tp.
 
+ Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
+
+ Reserved Notation "E ∷∷ T" (at level 90).
  Inductive closure_typ : closure -> tp empty -> Prop :=
   | meta_term_closure_typ : forall C U,
-              · ⊨ C ∷ U
-           -> closure_typ (meta_term_closure C) (m_tp U)
-  | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign δ γ)
+              (· ⊨ C ∷ U)
+           -> (meta_term_closure C) ∷∷ U
+  | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign' γ δ)
               E T (θ:msubst δ empty) (ρ:env γ),
               · ⊢ θ ∷ Δ
-              -> env_tp ρ (app_msubst_tp_assign θ Γ)
+              -> env_tp ρ (⟦θ⟧ Γ)
               -> c_tp Δ Γ E T
-              -> closure_typ (comp_term_closure E θ ρ) (app_msubst_t2 θ T)
+              -> (E [θ ;; ρ]) ∷∷(app_msubst_t2 θ T)
   with env_tp : forall {γ}, env γ -> tp_assign empty γ -> Prop :=
    | env_tp_nil : env_tp e_nil ·
    | env_tp_cons : forall γ (ρ:env γ) Γ (V:exval) T γ' (y:γ ↪ γ'),
               env_tp ρ Γ
               -> closure_typ V T
               -> env_tp (e_cons ρ (y,V)) (v_cons Γ (y,T))
-  .
- Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
- Notation "E ∷ T" := (closure_typ E T) (at level 90).
+  where "E ∷∷ T" := (closure_typ E T).
  Reserved Notation "E ⇓ V" (at level 90).
 
    Inductive eval : closure -> val -> Prop :=
@@ -347,13 +356,13 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
             -> (coercion E T) [θ ;; ρ] ⇓ V
     | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' (y:γ ↪ γ')
                (E:checked_exp γ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
-               I1 [θ ;; ρ] ⇓ (v_val2 (fn_is_val (weaken1 y) E) θ' ρ')
+               I1 [θ ;; ρ] ⇓ (v_val2 (fn_is_val y E) θ' ρ')
             -> E2 [θ ;; ρ] ⇓ V2
             -> E [θ' ;; (e_cons ρ' (y,v_val1 V2))] ⇓ V
             -> (app I1 E2) [θ ;; ρ] ⇓ V
     | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
                (E:checked_exp δ' γ) θ' ρ' C V,
-               I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val (weaken1 X) E) θ' ρ')
+               I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val X E) θ' ρ')
             -> E [(θ' ; (app_msubst θ C) // X) ;; ρ'] ⇓ V
             -> (mapp I C) [θ ;; ρ] ⇓ V
     where "E1 ⇓ V1" := (eval E1 V1).
@@ -363,7 +372,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
       (app_msubst_t2 (msubst_cons theta (X,app_msubst theta C)) T)
     = (app_msubst_t2 theta (msubst_single_t X C T)).
 
-   Theorem subj_red L V : L ⇓ V -> forall T, L ∷ T -> V ∷ T.
+   Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
    induction 1; try (destruct V; auto; fail);
    inversion 1; subst; simpl_existTs; subst.
@@ -378,14 +387,14 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    (* Case: app *)
    inversion H11; subst.
    inversion H4; subst.
-   assert (V2 ∷ (app_msubst_t2 θ T1)).
+   assert (V2 ∷∷ (app_msubst_t2 θ T1)).
    apply IHeval2.
    econstructor.
    eexact H9.
    eexact H10.
    eexact H8.
    
-   assert ((v_val2 (fn_is_val (weaken1 y) E) θ' ρ') ∷
+   assert ((v_val2 (fn_is_val y E) θ' ρ') ∷∷
             (app_msubst_t2 θ (arr T1 T0))).
    apply IHeval1.
    econstructor.
@@ -397,7 +406,6 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    inversion H5. subst. simpl_existTs. subst.
    destruct T; try discriminate. inversion H17.
    inversion H19. subst. simpl_existTs. subst.
-   pose proof (weaken1_inj H20). subst. clear H20.
    rewrite <- H12 in H3.
 
    pose proof (env_tp_cons (v_val1 V2) y H18 H3).
@@ -412,7 +420,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    (* Case: meta application *)
    inversion H10. subst.
    inversion H3. subst.
-   assert ((v_val2 (mlam_is_val (weaken1 X) E) θ' ρ') ∷
+   assert ((v_val2 (mlam_is_val X E) θ' ρ') ∷∷
             (app_msubst_t2 θ (prod X0 U T))).
    apply IHeval1.
    econstructor.
@@ -420,7 +428,6 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    
    inversion H2. subst. simpl_existTs. subst.
    inversion H17. subst. simpl_existTs. subst.
-   pose proof (weaken1_inj H6). subst. clear H6.
    inversion H15. simpl_existTs. unfold weaken1 in *.
    remember (projT2 (next empty)) as X'.
    (* Need to bring in the substitution lemma *)
@@ -428,7 +435,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    Print closure_typ.
    rewrite <- subst_combine.
    unfold msubst.
-   
+  
   econstructor.
    
    Qed.
