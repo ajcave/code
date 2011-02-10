@@ -73,8 +73,10 @@ Section foo.
   | m_succ_tp : forall n, m_oft n m_nat -> m_oft (m_succ n) m_nat
   | m_var_tp : forall y T, m_assigned D y T -> m_oft (m_var y) T
  .
+
  Implicit Arguments m_oft.
 
+ Notation "D ⊨ t ∷ U" := (m_oft D t U) (at level 90).
  (* wf_mtype A T if T is a well-formed meta-type in the context A *)
    
  Inductive wf_mtype {D:world} {A:mtype_assign D} : mtype D -> Prop :=
@@ -93,6 +95,7 @@ Section foo.
   | arr : tp D -> tp D -> tp D
   | prod : forall D2, wlink D D2 -> mtype D -> tp D2 -> tp D
  .
+ Coercion m_tp : mtype >-> tp.
  Implicit Arguments m_tp.
  Implicit Arguments arr.
  Implicit Arguments prod.
@@ -159,31 +162,45 @@ Section foo.
  
  Axiom msubst_single_t : forall {D D'} (X:wlink D D'), meta_term D -> tp D' -> tp D.
  (* Write this in terms of a simultaneous substitution: (id,C/X) ? *)
-
- Inductive s_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
-                   : synth_exp D' G' -> tp D' -> Prop :=
-  | var_s : forall x T, var_assigned G x T -> s_tp (var _ x) T
-  | app_s : forall I T1 E T2, s_tp I (arr T1 T2) -> c_tp E T1 -> s_tp (app I E) T2
-  | mapp_s : forall I D2' (X:wlink D' D2') U C T,
-              s_tp I (prod X U T)
-           -> m_oft D C U
-           -> s_tp (mapp I C) (msubst_single_t X C T)
-  | coerce_s : forall E T, c_tp E T -> s_tp (coercion E T) T
- with c_tp {D' G':world} {D:mtype_assign D'} {G:tp_assign D' G'}
-                   : checked_exp D' G' -> tp D' -> Prop :=
-  | synth_c : forall I T, s_tp I T -> c_tp I T
-  | meta_c : forall C U, m_oft D C U -> c_tp (meta G' C) (m_tp U)
-  | fn_c : forall G2' (y:slink G' G2') E T1 T2,
-             @c_tp _ _ D (v_cons G (y,T1)) E T2
-          -> c_tp (fn (weaken1 y) E) (arr T1 T2)
-  | mlam_c : forall D2' (X:slink D' D2') E U T,
-             @c_tp _ _ (m_cons D (X,U)) (weaken_ctx X G) E T
-          -> c_tp (mlam (weaken1 X) E) (prod (weaken1 X) U T)
+ Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
+ Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
+ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+                   : synth_exp δ γ -> tp δ -> Prop :=
+  | var_s : forall x T,
+             var_assigned Γ x T
+           -> Δ;Γ  ⊢ (var _ x) ⇒ T
+  | app_s : forall I T1 E T2,
+              Δ;Γ ⊢ I ⇒ (arr T1 T2)
+           -> Δ;Γ ⊢ E ⇐ T1
+           -> Δ;Γ ⊢ (app I E) ⇒ T2
+  | mapp_s : forall I δ' (X:wlink δ δ') U C T,
+              Δ;Γ ⊢ I ⇒ (prod X U T)
+           -> Δ ⊨ C ∷ U
+           -> Δ;Γ ⊢ (mapp I C) ⇒ (msubst_single_t X C T)
+  | coerce_s : forall E T,
+              Δ;Γ ⊢ E ⇐ T
+           -> Δ;Γ ⊢ (coercion E T) ⇒ T
+ with c_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+                   : checked_exp δ γ -> tp δ -> Prop :=
+  | synth_c : forall I T,
+              Δ;Γ ⊢ I ⇒ T
+           -> Δ;Γ ⊢ I ⇐ T
+  | meta_c : forall C U,
+              Δ ⊨ C ∷ U 
+           -> Δ;Γ ⊢ (meta γ C) ⇐ U
+  | fn_c : forall γ' (y:slink γ γ') E T1 T2,
+             Δ;(v_cons Γ (y,T1)) ⊢ E ⇐ T2
+          -> Δ;Γ ⊢ (fn (weaken1 y) E) ⇐ (arr T1 T2)
+  | mlam_c : forall δ' (X:slink δ δ') E U T,
+             (m_cons Δ (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
+          -> Δ;Γ ⊢ (mlam (weaken1 X) E) ⇐ (prod (weaken1 X) U T)
   (* | case_i | case_c ... TODO *)
-  | rec_c : forall G2' (f:slink G' G2') E T,
-             @c_tp _ _ D (v_cons G (f,T)) E T
-          -> c_tp (rec (weaken1 f) E) T
- .
+  | rec_c : forall γ' (f:slink γ γ') E T,
+             Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
+          -> Δ;Γ ⊢ (rec (weaken1 f) E) ⇐ T
+  where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
+  and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).
+ 
  Implicit Arguments c_tp.
  Print s_tp.
   (* TODO: Compare our use of strong links and imports to the paper's example of
@@ -286,7 +303,6 @@ Section foo.
 
  Implicit Arguments s_nil [A Rel a].
  Reserved Notation "D ⊢ T ∷ D2" (at level 90).
- Notation "D ⊨ t ∷ U" := (m_oft D t U) (at level 90).
  Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).
  Notation "D ; y ∷ U" := (m_cons D (y,U)) (at level 90).
  Notation "·" := (s_nil).
