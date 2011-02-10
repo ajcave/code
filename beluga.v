@@ -463,7 +463,6 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    inversion H15. simpl_existTs. unfold weaken1 in *.
    clean_substs. Focus 2. reflexivity.
    destruct (next empty) as [α X']. simpl in *.
-   (* Need to bring in the substitution lemma *)
    apply IHeval2.
    rewrite <- subst_combine.
    unfold msubst.
