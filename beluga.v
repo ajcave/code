@@ -374,8 +374,8 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
    Axiom subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
-     (⟦ θ ; ⟦θ⟧ C // X ⟧ T)
-     = (⟦θ⟧ ([[ C // X ]] T)).
+     ⟦ θ ; ⟦θ⟧ C // X ⟧ T
+     = ⟦θ⟧ ([[ C // X ]] T).
 
     Ltac clean_substs :=
       unfold a in *;
@@ -389,7 +389,17 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
   -> Δ  ⊨ C ∷ U
   -> Δ' ⊨ ⟦θ⟧ C ∷ ⟦θ⟧ U.
 
-   Theorem cons_wkn_inv {δ δ' δ'' γ } (θ:msubst δ δ') (X:δ ↪ δ'') (Γ:tp_assign' γ δ) C : ⟦θ⟧Γ = ⟦θ; C // X⟧(weaken_ctx X Γ).
+   Theorem cons_wkn_inv {δ δ' δ'' γ } (θ:msubst δ δ') (X:δ ↪ δ'') (Γ:tp_assign' γ δ) C :
+     ⟦θ⟧Γ = ⟦θ; C // X⟧(weaken_ctx X Γ).
+   Admitted.
+
+  Theorem msubst_ext : forall {δ δ' δ'0 α β} (θ : msubst δ β) 
+                      (X : δ ↪ δ') (θ' : msubst δ β)
+                      m  
+                      (X0 : δ ↪ δ'0) (T:tp δ'0) (T1:tp δ')  (X' : β ↪ α),
+                    ⟦theta_weaken θ' X';  m_var X' // X ⟧ T1 =
+                    ⟦theta_weaken θ X';  m_var X' // X0 ⟧ T ->
+                    ⟦θ';  m // X ⟧ T1 = ⟦θ;  m // X0 ⟧ T.
    Admitted.
 
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
@@ -475,7 +485,9 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    Focus 2.
    eexact H14.
    rewrite <- (cons_wkn_inv θ' X Γ0 (⟦θ⟧ C)). 
-   exact H16.   
-   
+   exact H16.
+   eapply msubst_ext.
+   eauto.
    Qed.
+   
 End foo.
