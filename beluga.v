@@ -374,8 +374,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
    Axiom subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
-     ⟦ θ ; ⟦θ⟧ C // X ⟧ T
-     = ⟦θ⟧ ([[ C // X ]] T).
+     ⟦ θ ; ⟦θ⟧ C // X ⟧ T = ⟦θ⟧ ([[ C // X ]] T).
 
     Ltac clean_substs :=
       unfold a in *;
