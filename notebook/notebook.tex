@@ -1,0 +1,24 @@
+\documentclass{article}
+\begin{document}
+Pre Oct 8th, 2010
+\begin{itemize}
+\item Hom(FreeSet(X),L) =~= Hom(X,Forget(L)) where X in Setoid was extremely helpful. Get equality respecting for free, as well as homomorphism. Dan's DFA stuff (fUnion).
+\item Universals (Sys F) can encode inductive datatypes, existentials can encode coinductive. Definition of existential in terms of universal in Sys F is neat.
+\item "Physics, Logic, Topology and Computation: A Rosetta Stone" is cool. Nice intro to linear logic + category theory (symmetric complete monoidal categories)
+\end{itemize}
+Oct 8th, 2010
+\begin{itemize}
+\item Can we get away with just one binder instead of ``multibinder" that g:ctx is? i..e products on the left.
+\item Meeting: Have to keep $\psi : \omega$ in the same context $\delta$ as $u::P[\psi]$ because of dependencies. i.e. I think $\omega$ can depend on $u$?
+\item Colloqium: Iteratively solving linear systems (Tomograph) means only need small parts of matrix in memory at one time. Makes me think of lazy evaluation and linear types. Here, matrix is a "simple" function of geometry, which is what makes this work. How can different linear types affect peformance?
+\end{itemize}
+Oct 9th, 2010
+\begin{itemize}
+\item The HOAS to de Bruijn conversion looks very much like a primitive recursive fold pattern. What else fits this pattern and how can we represent it? (Asn 5)
+\item Termination checking in Beluga: The decreasing argument can be $\psi$!
+\item Need to try DSLs in Beluga
+\item Generics + levitation => encode the logic you want to work in, and lift the results to the metalanguage? Can we, e.g. add some kind of "lifting" axiom tha lets you prove metaresults (parametricity/theorems for free), and bring them into the metalanguage?
+\item Cryptography requires epistemic logic. "Adversary cannot compute any function of plaintexts" -- not true, he can compute the encryption function applied to plaintexts, but he doesn't know which function he is computing.
+
+\end{itemize}
+\end{document}
