@@ -233,7 +233,9 @@ Section foo.
         -> Δ ⊨ t ∷ (⟦θ⟧ U)
         -> Δ ⊩ (θ; t//y) ∷ (Δ'; y∷U)
   where "D ⊩ T ∷ D2" := (@msubst_typ' _ D _ D2 T).
-
+ 
+Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
+ Check @app_subst.
  Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
  Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
  Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
@@ -275,8 +277,9 @@ Section foo.
   | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
                   (E:checked_exp δi γ) (U T:mtype δ)
                   (Δi:mtype_assign δi),
-             Δi ⊨ C ∷ (app_msubst_t θi U)
-           
+             Δi ⊨ C ∷ (⟦θi⟧ U)
+          -> Δi ⊩ θi ∷ Δ
+          -> Δi;(app_msubst_tp_assign θi Γ) ⊢ E ⇐ (app_msubst_t θi T)
           -> br_tp (br C θi E) (arr U T)
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).
@@ -335,8 +338,7 @@ Section foo.
 
 
  Print msubst_typ'.
- 
-Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
+
  Print Implicit c_tp.
 
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
