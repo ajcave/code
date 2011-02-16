@@ -212,7 +212,11 @@ Section foo.
  Instance tp_assign_substitutable γ : substitutable (tp_assign' γ) := (@app_msubst_tp_assign γ).
 
  Instance tp_substitutable : substitutable tp := @app_msubst_t2.
- 
+
+ Axiom app_msubst_msubst : forall {δ δ' δ''} (θ':msubst δ' δ'') (θ':msubst δ δ'), msubst δ δ''.
+ Instance msubst_substitutable {δ} : substitutable (msubst δ)
+  := @app_msubst_msubst δ.
+
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
  Implicit Arguments app_msubst_t2.
@@ -357,7 +361,12 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
               -> env_tp (e_cons ρ (y,V)) (v_cons Γ (y,T))
   where "E ∷∷ T" := (closure_typ E T).
  Reserved Notation "E ⇓ V" (at level 90).
+ 
 
+ Definition unify {δ δ' δ''} (θ:msubst δ δ') (θk:msubst δ δ'')
+  (θ':msubst δ'' δ') := θ = ⟦θ'⟧ θk.
+
+ Definition unify2 {δ δ' δ''} (θ:msubst δ δ') 
    Inductive eval : closure -> val -> Prop :=
     | ev_val : forall (V:val), eval V V
     | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
@@ -374,8 +383,9 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
                I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val X E) θ' ρ')
             -> E [(θ' ; (⟦θ⟧ C) // X) ;; ρ'] ⇓ V
             -> (mapp I C) [θ ;; ρ] ⇓ V
+    | ev_
     where "E1 ⇓ V1" := (eval E1 V1).
-   Require Import Coq.Program.Equality.
+    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
    Axiom subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
