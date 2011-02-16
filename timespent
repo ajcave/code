@@ -42,4 +42,8 @@ Feb 14
             Trying a VM with Ubuntu. Watching HIMYM and House
 Feb 15
 10:00-3:30  Wake up, Install Agda in VM
-4:00-       VM for Coq
+4:00-8:30   VM for Coq (8.2+ssreflect+proofgeneral, 8.3+proofgeneral)
+            Beluga (minimal ubuntu)
+8:30-9:30   Setting up automation with sabnzbd
+10:00-11:00 Glee
+11:00-11:45 Setting up sickbeard 
