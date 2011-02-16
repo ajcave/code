@@ -277,7 +277,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
   | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
                   (E:checked_exp δi γ) (U T:mtype δ)
                   (Δi:mtype_assign δi),
-             Δi ⊨ C ∷ (⟦θi⟧ U)
+             Δi ⊨ C ∷ ⟦θi⟧ U
           -> Δi ⊩ θi ∷ Δ
           -> Δi;(app_msubst_tp_assign θi Γ) ⊢ E ⇐ (app_msubst_t θi T)
           -> br_tp (br C θi E) (arr U T)
@@ -334,17 +334,10 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
  eexact (rec w E). eexact m. exact e.
  Defined.
  Coercion exval_to_closure : exval >-> closure.
- Print val_to_closure.
-
-
- Print msubst_typ'.
-
- Print Implicit c_tp.
 
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
 
  Reserved Notation "E ∷∷ T" (at level 90).
- Print app_msubst_t2. 
  Definition a {δ δ'} (θ:msubst δ δ') (T1: tp δ) := ⟦ θ ⟧  T1.
 
  Inductive closure_typ : closure -> tp empty -> Prop :=
