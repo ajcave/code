@@ -105,6 +105,11 @@ Section foo.
  (* TODO. Is this even possible? Should it produce a world D2 and link? *)
  Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
 
+ Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
+ Definition msubst D R := star (mbind R) empty D.
+ Definition msubst_cons D R := @s_cons _ (mbind R) empty D.
+ Implicit Arguments msubst_cons.
+
  Inductive synth_exp (D G:world) : Set :=
   | var : name G -> synth_exp D G
   | app :  synth_exp D G -> checked_exp D G -> synth_exp D G
@@ -119,7 +124,7 @@ Section foo.
   | case_c : meta_term D -> list (branch D G) -> checked_exp D G
   | rec : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
  with branch (D G:world) : Set :=
-  (* | br : forall Di, meta_term Di -> subst Di -> checked_exp Di G -> branch D G *).
+  | br : forall Di, meta_term Di -> msubst D Di -> checked_exp Di G -> branch D G.
  Coercion synth : synth_exp >-> checked_exp.
  Implicit Arguments var.
  Implicit Arguments app.
@@ -132,6 +137,7 @@ Section foo.
  Implicit Arguments case_i.
  Implicit Arguments case_c.
  Implicit Arguments rec.
+ Implicit Arguments br.
 
  Definition var_tp D G1 G2 := (slink G1 G2)*(tp D).
  Definition tp_assign D := star (var_tp D) empty.
@@ -164,110 +170,13 @@ Section foo.
  
  Axiom msubst_single_t : forall {D D'} (X:wlink D D'), meta_term D -> tp D' -> tp D.
  (* Write this in terms of a simultaneous substitution: (id,C/X) ? *)
- Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
- Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
- Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
-                   : synth_exp δ γ -> tp δ -> Prop :=
-  | var_s : forall x T,
-             var_assigned Γ x T
-           -> Δ;Γ  ⊢ (var _ x) ⇒ T
-  | app_s : forall I T1 E T2,
-              Δ;Γ ⊢ I ⇒ (arr T1 T2)
-           -> Δ;Γ ⊢ E ⇐ T1
-           -> Δ;Γ ⊢ (app I E) ⇒ T2
-  | mapp_s : forall I δ' (X:wlink δ δ') U C T,
-              Δ;Γ ⊢ I ⇒ (prod X U T)
-           -> Δ ⊨ C ∷ U
-           -> Δ;Γ ⊢ (mapp I C) ⇒ (msubst_single_t X C T)
-  | coerce_s : forall E T,
-              Δ;Γ ⊢ E ⇐ T
-           -> Δ;Γ ⊢ (coercion E T) ⇒ T
- with c_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
-                   : checked_exp δ γ -> tp δ -> Prop :=
-  | synth_c : forall I T,
-              Δ;Γ ⊢ I ⇒ T
-           -> Δ;Γ ⊢ I ⇐ T
-  | meta_c : forall C U,
-              Δ ⊨ C ∷ U 
-           -> Δ;Γ ⊢ (meta γ C) ⇐ U
-  | fn_c : forall γ' (y:slink γ γ') E T1 T2,
-             Δ;(v_cons Γ (y,T1)) ⊢ E ⇐ T2
-          -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
-  | mlam_c : forall δ' (X:slink δ δ') E U T,
-             (m_cons Δ (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (mlam X E) ⇐ (prod X U T)
-  (* | case_i | case_c ... TODO *)
-  | rec_c : forall γ' (f:slink γ γ') E T,
-             Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (rec f E) ⇐ T
-  where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
-  and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).
- 
- Implicit Arguments c_tp.
- Print s_tp.
-  (* TODO: Compare our use of strong links and imports to the paper's example of
-     typing derivations. It's possible that they do contravariant stuff to avoid
-     the import *)
-
- Inductive is_val (D G:world) : checked_exp D G -> Prop :=
-  | fn_is_val : forall G2 (y:wlink G G2) E, is_val D G (fn y E)
-  | mlam_is_val : forall D2 (X:wlink D D2) E, is_val D G (mlam X E).
- Implicit Arguments fn_is_val.
- Implicit Arguments mlam_is_val.
-
- Inductive is_exval (D G:world) : checked_exp D G -> Prop :=
-  | rec_is_val : forall G2 (f:wlink G G2) E, is_exval D G (rec f E).
-
- Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
- Definition msubst D R := star (mbind R) empty D.
- Definition msubst_cons D R := @s_cons _ (mbind R) empty D.
- Implicit Arguments msubst_cons.
-
-
- Inductive env : world -> Set :=
-  | e_nil : env empty
-  | e_cons : forall G1 G2, env G1 -> (slink G1 G2)*exval -> env G2
- with val : Set :=
-  | v_meta2 : meta_term empty -> val
-  | v_val2 : forall D G E, is_val D G E -> msubst D empty -> env G -> val
- with exval : Set :=
-  | v_val1 : val -> exval
-  | v_rec1 : forall D G E, is_exval D G E -> msubst D empty -> env G -> exval.
- Implicit Arguments v_val2.
- Implicit Arguments e_nil.
- Implicit Arguments e_cons.
-
- Inductive closure : Set :=
-  | meta_term_closure : meta_term empty -> closure
-  | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
- Implicit Arguments comp_term_closure.
-
- Definition val_to_closure (v:val) : closure.
- destruct v. constructor 1. exact m.
- set E.
- destruct E; try (elimtype False; inversion i; try inversion H; fail); econstructor 2.
- eexact c. eexact m. exact e.
- eexact c. eexact m. exact e.
- Defined.
- Coercion val_to_closure : val >-> closure.
-
- Definition exval_to_closure (v:exval) : closure.
- destruct v.
- apply val_to_closure. exact v.
- destruct E; try (elimtype False; inversion i; try inversion H; fail);
- econstructor 2.
- eexact (rec w E). eexact m. exact e.
- Defined.
- Coercion exval_to_closure : exval >-> closure.
- Print val_to_closure.
-
- Class substitutable (A:world -> Set) := 
-   app_subst : forall {α β}, msubst α β -> A α -> A β.
- 
  Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
  Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
+ Class substitutable (A:world -> Set) := 
+   app_subst : forall {α β}, msubst α β -> A α -> A β.
+ 
  Instance meta_term_substitutable : substitutable meta_term := app_msubst.
  Instance mtype_substitutable : substitutable mtype := app_msubst_t. 
  (* Termination of these is going to be tricky, since it depends on their typing, which
@@ -312,18 +221,119 @@ Section foo.
  Notation "α ↪ β" := (slink α β) (at level 90).
 
  Implicit Arguments s_nil [A Rel a].
- Reserved Notation "D ⊢ T ∷ D2" (at level 90).
+ Reserved Notation "D ⊩ T ∷ D2" (at level 90).
  Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).
  Notation "D ; y ∷ U" := (m_cons D (y,U)) (at level 90).
  Notation "·" := (s_nil).
  Inductive msubst_typ' {α}(Δ:mtype_assign α) : forall {β}(Δ':mtype_assign β), msubst β α ->Prop :=
   | m_subst_typ_nil :
-           Δ ⊢ · ∷ ·
+           Δ ⊩ · ∷ ·
   | m_subst_typ_cons : forall β Δ' γ (y:β ↪ γ) U t θ,
-           Δ ⊢ θ ∷ Δ' 
+           Δ ⊩ θ ∷ Δ' 
         -> Δ ⊨ t ∷ (⟦θ⟧ U)
-        -> Δ ⊢ (θ; t//y) ∷ (Δ'; y∷U)
-  where "D ⊢ T ∷ D2" := (@msubst_typ' _ D _ D2 T).
+        -> Δ ⊩ (θ; t//y) ∷ (Δ'; y∷U)
+  where "D ⊩ T ∷ D2" := (@msubst_typ' _ D _ D2 T).
+
+ Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
+ Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
+ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+                   : synth_exp δ γ -> tp δ -> Prop :=
+  | var_s : forall x T,
+             var_assigned Γ x T
+           -> Δ;Γ  ⊢ (var _ x) ⇒ T
+  | app_s : forall I T1 E T2,
+              Δ;Γ ⊢ I ⇒ (arr T1 T2)
+           -> Δ;Γ ⊢ E ⇐ T1
+           -> Δ;Γ ⊢ (app I E) ⇒ T2
+  | mapp_s : forall I δ' (X:wlink δ δ') U C T,
+              Δ;Γ ⊢ I ⇒ (prod X U T)
+           -> Δ ⊨ C ∷ U
+           -> Δ;Γ ⊢ (mapp I C) ⇒ (msubst_single_t X C T)
+  | coerce_s : forall E T,
+              Δ;Γ ⊢ E ⇐ T
+           -> Δ;Γ ⊢ (coercion E T) ⇒ T
+ with c_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+                   : checked_exp δ γ -> tp δ -> Prop :=
+  | synth_c : forall I T,
+              Δ;Γ ⊢ I ⇒ T
+           -> Δ;Γ ⊢ I ⇐ T
+  | meta_c : forall C U,
+              Δ ⊨ C ∷ U 
+           -> Δ;Γ ⊢ (meta γ C) ⇐ U
+  | fn_c : forall γ' (y:slink γ γ') E T1 T2,
+             Δ;(v_cons Γ (y,T1)) ⊢ E ⇐ T2
+          -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
+  | mlam_c : forall δ' (X:slink δ δ') E U T,
+             (m_cons Δ (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
+          -> Δ;Γ ⊢ (mlam X E) ⇐ (prod X U T)
+  (* | case_i | case_c ... TODO *)
+  | rec_c : forall γ' (f:slink γ γ') E T,
+             Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
+          -> Δ;Γ ⊢ (rec f E) ⇐ T
+ with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+                     : branch δ γ -> tp δ -> Prop :=
+  | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
+                  (E:checked_exp δi γ) (U T:mtype δ)
+                  (Δi:mtype_assign δi),
+             Δi ⊨ C ∷ (app_msubst_t θi U)
+           
+          -> br_tp (br C θi E) (arr U T)
+  where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
+  and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).
+ 
+ Implicit Arguments c_tp.
+ Print s_tp.
+  (* TODO: Compare our use of strong links and imports to the paper's example of
+     typing derivations. It's possible that they do contravariant stuff to avoid
+     the import *)
+
+ Inductive is_val (D G:world) : checked_exp D G -> Prop :=
+  | fn_is_val : forall G2 (y:wlink G G2) E, is_val D G (fn y E)
+  | mlam_is_val : forall D2 (X:wlink D D2) E, is_val D G (mlam X E).
+ Implicit Arguments fn_is_val.
+ Implicit Arguments mlam_is_val.
+
+ Inductive is_exval (D G:world) : checked_exp D G -> Prop :=
+  | rec_is_val : forall G2 (f:wlink G G2) E, is_exval D G (rec f E).
+ 
+ Inductive env : world -> Set :=
+  | e_nil : env empty
+  | e_cons : forall G1 G2, env G1 -> (slink G1 G2)*exval -> env G2
+ with val : Set :=
+  | v_meta2 : meta_term empty -> val
+  | v_val2 : forall D G E, is_val D G E -> msubst D empty -> env G -> val
+ with exval : Set :=
+  | v_val1 : val -> exval
+  | v_rec1 : forall D G E, is_exval D G E -> msubst D empty -> env G -> exval.
+ Implicit Arguments v_val2.
+ Implicit Arguments e_nil.
+ Implicit Arguments e_cons.
+
+ Inductive closure : Set :=
+  | meta_term_closure : meta_term empty -> closure
+  | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
+ Implicit Arguments comp_term_closure.
+
+ Definition val_to_closure (v:val) : closure.
+ destruct v. constructor 1. exact m.
+ set E.
+ destruct E; try (elimtype False; inversion i; try inversion H; fail); econstructor 2.
+ eexact c. eexact m. exact e.
+ eexact c. eexact m. exact e.
+ Defined.
+ Coercion val_to_closure : val >-> closure.
+
+ Definition exval_to_closure (v:exval) : closure.
+ destruct v.
+ apply val_to_closure. exact v.
+ destruct E; try (elimtype False; inversion i; try inversion H; fail);
+ econstructor 2.
+ eexact (rec w E). eexact m. exact e.
+ Defined.
+ Coercion exval_to_closure : exval >-> closure.
+ Print val_to_closure.
+
+
  Print msubst_typ'.
  
 Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
@@ -340,7 +350,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
               (· ⊨ C ∷ U)
            -> (meta_term_closure C) ∷∷ U
   | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign' γ δ) E (T:tp δ) (θ:msubst δ empty) (ρ:env γ),
-                 · ⊢ θ ∷ Δ
+                 · ⊩ θ ∷ Δ
               -> env_tp ρ (⟦θ⟧ Γ)
               -> c_tp Δ Γ E T
               -> (E [θ ;; ρ]) ∷∷ (a θ T)
@@ -384,7 +394,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
      end).
 
    Axiom subst_lemma : forall {δ δ':world} C U θ (Δ:mtype_assign δ) (Δ':mtype_assign δ'),
-     Δ' ⊢ θ ∷ Δ
+     Δ' ⊩ θ ∷ Δ
   -> Δ  ⊨ C ∷ U
   -> Δ' ⊨ ⟦θ⟧ C ∷ ⟦θ⟧ U.
 
