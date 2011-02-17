@@ -272,7 +272,10 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
   | mlam_c : forall δ' (X:slink δ δ') E U T,
              (m_cons Δ (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (mlam X E) ⇐ (prod X U T)
-  (* | case_i | case_c ... TODO *)
+  | case_i_c : forall I U Bs T,
+             Δ;Γ ⊢ I ⇒ U
+          -> (forall B, In B Bs -> br_tp B (arr U T))
+          -> Δ;Γ ⊢ (case_i I Bs) ⇐ T
   | rec_c : forall γ' (f:slink γ γ') E T,
              Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (rec f E) ⇐ T
@@ -406,8 +409,8 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
             (θk:msubst δ δi) θ' θ'' Bs C Ek V Ck,
             (θ ≐ θk // θ')
          -> I [θ ;; ρ] ⇓ (v_meta2 C)
-         -> (C ≑ app_msubst θ' Ck // θ'')
-         -> Ek [ (app_msubst_msubst θ'' θ') ;; ρ ] ⇓ V
+         -> (C ≑ ⟦θ'⟧ Ck // θ'')
+         -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V 
     where "E1 ⇓ V1" := (eval E1 V1).
    Require Import Coq.Program.Equality.
@@ -526,6 +529,33 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    exact H16.
    eapply msubst_ext.
    eauto.
+  
+   (* case statement 1 *)
+   eapply IHeval.
+   econstructor.
+   eexact H8.
+   eexact H9.
+   inversion H10. subst.
+   econstructor.
+   eexact H4.      
+   intros.
+   apply H6.
+   constructor 2.
+   auto.
+
+   (* case statement 2 *)
+   eapply IHeval2.
+   econstructor.
+   eexact H10.
+   eexact H11.
+   inversion H12. subst.
+   econstructor.   
+   eexact H6.
+   intros. apply H8.
+   constructor 2. auto.
+
+   (* case statement 3 *)
+   
    Qed.
    
 End foo.
