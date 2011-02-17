@@ -363,29 +363,54 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
  Reserved Notation "E ⇓ V" (at level 90).
  
 
- Definition unify {δ δ' δ''} (θ:msubst δ δ') (θk:msubst δ δ'')
-  (θ':msubst δ'' δ') := θ = ⟦θ'⟧ θk.
-
- Definition unify2 {δ δ' δ''} (θ:msubst δ δ') 
-   Inductive eval : closure -> val -> Prop :=
-    | ev_val : forall (V:val), eval V V
-    | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
-               E [θ ;; ρ] ⇓ V
-            -> (coercion E T) [θ ;; ρ] ⇓ V
-    | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' (y:γ ↪ γ')
-               (E:checked_exp γ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
-               I1 [θ ;; ρ] ⇓ (v_val2 (fn_is_val y E) θ' ρ')
-            -> E2 [θ ;; ρ] ⇓ V2
-            -> E [θ' ;; (e_cons ρ' (y,v_val1 V2))] ⇓ V
-            -> (app I1 E2) [θ ;; ρ] ⇓ V
-    | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
-               (E:checked_exp δ' γ) θ' ρ' C V,
-               I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val X E) θ' ρ')
-            -> E [(θ' ; (⟦θ⟧ C) // X) ;; ρ'] ⇓ V
-            -> (mapp I C) [θ ;; ρ] ⇓ V
-    | ev_
+ Axiom unify : forall {δ δ' δ''} (θ:msubst δ δ') (θk:msubst δ δ'')
+  (θ':msubst δ'' δ'), Prop. (* θ = θ'(θk) *)
+ Axiom unify2 : forall {δ δ'} (C:meta_term δ) (D:meta_term δ')
+  (θ:msubst δ' δ), Prop. (* C = θ(D) *) 
+ Print branch.
+ Print fn_is_val.
+ Print v_val2.
+ Notation "θ /≐ θ'" :=(forall θ'', ~unify θ θ' θ'') (at level 90).
+ Notation "θ ≐ θk // θ'" := (unify θ θk θ') (at level 90). 
+ Notation "C /≑ D" :=(forall θ, ~unify2 C D θ) (at level 90).
+ Notation "C ≑ D // θ" := (unify2 C D θ) (at level 90).
+ Inductive eval : closure -> val -> Prop :=
+  | ev_val : forall (V:val), eval V V 
+  | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
+             E [θ ;; ρ] ⇓ V
+          -> (coercion E T) [θ ;; ρ] ⇓ V
+  | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' (y:γ ↪ γ')
+             (E:checked_exp γ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
+             I1 [θ ;; ρ] ⇓ (v_val2 (fn_is_val y E) θ' ρ')
+          -> E2 [θ ;; ρ] ⇓ V2
+          -> E [θ' ;; (e_cons ρ' (y,v_val1 V2))] ⇓ V
+          -> (app I1 E2) [θ ;; ρ] ⇓ V
+  | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
+            (E:checked_exp δ' γ) θ' ρ' C V,
+             I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val X E) θ' ρ')
+          -> E [(θ' ; (⟦θ⟧ C) // X) ;; ρ'] ⇓ V
+          -> (mapp I C) [θ ;; ρ] ⇓ V
+  | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
+            (θk:msubst δ δi) Bs Ck Ek V,
+            (θ /≐ θk)
+         -> case_i I Bs [θ ;; ρ] ⇓ V
+         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
+  | ev_case2 : forall δ θ γ ρ (I:synth_exp δ γ) δi
+            (θk:msubst δ δi) θ' Bs C Ek V Ck,
+            (θ ≐ θk // θ')
+         -> I [θ ;; ρ] ⇓ (v_meta2 C)
+         -> (C /≑ ⟦θ'⟧ Ck)
+         -> case_i I Bs [θ ;; ρ] ⇓ V
+         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
+  | ev_case3 : forall δ θ γ ρ (I:synth_exp δ γ) δi
+            (θk:msubst δ δi) θ' θ'' Bs C Ek V Ck,
+            (θ ≐ θk // θ')
+         -> I [θ ;; ρ] ⇓ (v_meta2 C)
+         -> (C ≑ app_msubst θ' Ck // θ'')
+         -> Ek [ (app_msubst_msubst θ'' θ') ;; ρ ] ⇓ V
+         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V 
     where "E1 ⇓ V1" := (eval E1 V1).
-    Require Import Coq.Program.Equality.
+   Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
    Axiom subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
