@@ -1,18 +1,21 @@
 Require Import List.
-
+Require Import Eqdep.
 Section foo.
  Parameter world : Set.
  Parameter empty : world.
  Parameter name : world -> Set.
  Parameter wlink : world -> world -> Set.
  Definition slink := wlink. (* ??? *)
+
+ Notation "α ↪ β" := (slink α β) (at level 90).
  Definition weaken1 {a b} (x:slink a b) : wlink a b := x.
  Axiom weaken1_inj : forall {W W'} {y y':slink W W'}, weaken1 y = weaken1 y' -> y = y'.
  Parameter weaken : forall {a b}, slink a b -> name b.
  Coercion weaken : slink >-> name.
  Parameter import : forall {a b}, slink a b -> name a -> name b.
  Parameter next : forall a, {b:world & slink a b}.
- 
+ Axiom import_inj : forall {α β} {y:α↪β} {x x0}, import y x = import y x0 -> x = x0. 
+ Axiom import_img : forall {α β} (y:α↪β) x, import y x <> y.
  Inductive meta_term (D:world) :=
   | m_z
   | m_succ : meta_term D -> meta_term D
@@ -222,7 +225,6 @@ Section foo.
  Implicit Arguments app_msubst_t2.
  Implicit Arguments app_msubst_tp_assign.
  Notation "⟦ θ ⟧" := (app_subst θ). 
- Notation "α ↪ β" := (slink α β) (at level 90).
 
  Implicit Arguments s_nil [A Rel a].
  Reserved Notation "D ⊩ T ∷ D2" (at level 90).
@@ -319,6 +321,14 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
  Implicit Arguments e_nil.
  Implicit Arguments e_cons.
  Coercion v_meta2 : closed_mterm >-> val.
+
+ Inductive env_assigned : forall {γ}, env γ -> name γ -> exval -> Prop :=
+  | env_assigned_here   : forall γ γ' (ρ:env γ') (y:γ'↪γ) V,
+                        env_assigned (e_cons ρ (y,V)) y V
+  | env_assigned_before : forall γ γ' (ρ:env γ') (y:γ'↪γ) V x U,
+                        env_assigned ρ x U
+                     -> env_assigned (e_cons ρ (y,V)) (import y x) U.
+ 
  Inductive closure : Set :=
   | meta_term_closure : meta_term empty -> closure
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
@@ -412,6 +422,10 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
          -> (C ≑ ⟦θ'⟧ Ck // θ'')
          -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V 
+  | ev_var : forall δ (θ:msubst δ empty) γ ρ (y:name γ) V1 V,
+            env_assigned ρ y V1
+         -> V1 ⇓ V
+         -> (var _ y) [θ ;; ρ] ⇓ V
     where "E1 ⇓ V1" := (eval E1 V1).
    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
@@ -493,6 +507,39 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    Admitted.
    Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
    Admitted.
+ Lemma env_tp1 : forall γ ρ y V1 T0 (Γ : tp_assign' γ empty),
+                    env_assigned ρ y V1 ->
+                    env_tp ρ Γ -> var_assigned Γ y T0 -> V1 ∷∷ T0.
+ intros. dependent induction H0.
+ inversion H1.   
+ inversion H1; subst; simpl_existTs; subst.
+ inversion H; subst; simpl_existTs; subst.  
+ auto.
+ contradict H3.
+ apply import_img.
+ inversion H; subst; simpl_existTs; subst.
+ symmetry in H3.
+ contradict H3.
+ apply import_img.
+ eapply IHenv_tp.
+ eauto.
+ pose proof (import_inj H3).
+ subst.
+ auto.
+ Qed.
+
+ Lemma env_tp2 : forall δ γ (Γ : tp_assign' γ δ) δ' (θ:msubst δ δ') y T0,
+                    var_assigned Γ y T0
+                 -> var_assigned (⟦θ⟧ Γ) y (app_msubst_t2 θ T0).
+ induction Γ; intros. 
+ inversion H. 
+ inversion H; subst; simpl_existTs; subst.
+ econstructor. 
+ econstructor.
+ apply IHΓ.
+ auto.
+ Qed.
+
 
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
@@ -643,6 +690,12 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    rewrite H15 in H11.
    eexact H11.
    auto.
-   Qed.
-   
+
+   (* var *)
+   inversion H10. subst. inversion H3. subst.
+   apply IHeval. 
+   eapply env_tp1; eauto.
+   apply env_tp2. auto. 
+  Qed.
+  Print Assumptions subj_red.
 End foo.
