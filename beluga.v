@@ -307,6 +307,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
 
  Inductive is_exval (D G:world) : checked_exp D G -> Prop :=
   | rec_is_val : forall G2 (f:wlink G G2) E, is_exval D G (rec f E).
+ Implicit Arguments rec_is_val.
  Definition closed_mterm := meta_term empty.
  Inductive env : world -> Set :=
   | e_nil : env empty
@@ -318,6 +319,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
   | v_val1 : val -> exval
   | v_rec1 : forall D G E, is_exval D G E -> msubst D empty -> env G -> exval.
  Implicit Arguments v_val2.
+ Implicit Arguments v_rec1.
  Implicit Arguments e_nil.
  Implicit Arguments e_cons.
  Coercion v_meta2 : closed_mterm >-> val.
@@ -393,7 +395,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
              E [θ ;; ρ] ⇓ V
           -> (coercion E T) [θ ;; ρ] ⇓ V
   | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' (y:γ ↪ γ')
-             (E:checked_exp γ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
+             (E:checked_exp δ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
              I1 [θ ;; ρ] ⇓ (v_val2 (fn_is_val y E) θ' ρ')
           -> E2 [θ ;; ρ] ⇓ V2
           -> E [θ' ;; (e_cons ρ' (y,v_val1 V2))] ⇓ V
@@ -426,6 +428,9 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
             env_assigned ρ y V1
          -> V1 ⇓ V
          -> (var _ y) [θ ;; ρ] ⇓ V
+  | ev_rec : forall δ θ γ ρ γ' (f:γ↪γ') (E:checked_exp δ γ') V,
+       E [ θ ;; e_cons ρ (f, v_rec1 (rec_is_val f E) θ ρ) ] ⇓ V
+    -> rec f E [θ ;; ρ] ⇓ V
     where "E1 ⇓ V1" := (eval E1 V1).
    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
@@ -696,6 +701,15 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    apply IHeval. 
    eapply env_tp1; eauto.
    apply env_tp2. auto. 
+
+   inversion H9. subst. simpl_existTs. subst.
+   eapply IHeval.
+   econstructor.
+   eauto.
+   Focus 2. eexact H5.
+   unfold app_subst. unfold tp_assign_substitutable.
+   simpl.
+   econstructor; eauto.
   Qed.
   Print Assumptions subj_red.
 End foo.
