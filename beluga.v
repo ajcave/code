@@ -105,6 +105,11 @@ Section foo.
  (* TODO. Is this even possible? Should it produce a world D2 and link? *)
  Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
 
+ Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
+ Definition msubst D R := star (mbind R) empty D.
+ Definition msubst_cons D R := @s_cons _ (mbind R) empty D.
+ Implicit Arguments msubst_cons.
+
  Inductive synth_exp (D G:world) : Set :=
   | var : name G -> synth_exp D G
   | app :  synth_exp D G -> checked_exp D G -> synth_exp D G
@@ -119,7 +124,7 @@ Section foo.
   | case_c : meta_term D -> list (branch D G) -> checked_exp D G
   | rec : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
  with branch (D G:world) : Set :=
-  (* | br : forall Di, meta_term Di -> subst Di -> checked_exp Di G -> branch D G *).
+  | br : forall Di, meta_term Di -> msubst D Di -> checked_exp Di G -> branch D G.
  Coercion synth : synth_exp >-> checked_exp.
  Implicit Arguments var.
  Implicit Arguments app.
@@ -132,6 +137,7 @@ Section foo.
  Implicit Arguments case_i.
  Implicit Arguments case_c.
  Implicit Arguments rec.
+ Implicit Arguments br.
 
  Definition var_tp D G1 G2 := (slink G1 G2)*(tp D).
  Definition tp_assign D := star (var_tp D) empty.
@@ -164,6 +170,76 @@ Section foo.
  
  Axiom msubst_single_t : forall {D D'} (X:wlink D D'), meta_term D -> tp D' -> tp D.
  (* Write this in terms of a simultaneous substitution: (id,C/X) ? *)
+ Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
+ Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
+ Implicit Arguments app_msubst.
+ Implicit Arguments app_msubst_t.
+ Class substitutable (A:world -> Set) := 
+   app_subst : forall {α β}, msubst α β -> A α -> A β.
+ 
+ Instance meta_term_substitutable : substitutable meta_term := app_msubst.
+ Instance mtype_substitutable : substitutable mtype := app_msubst_t. 
+ (* Termination of these is going to be tricky, since it depends on their typing, which
+    we define in terms of application. Maybe it's better to state it as a relation
+    and prove total separately
+  *)
+
+ Axiom theta_weaken : forall {D R} (theta:msubst D R) {R'} (X:wlink R R'), msubst D R'.
+ Definition app_msubst_t2' : forall {W} (T:tp W) {W'} (theta:msubst W W'), tp W'.
+ induction 1; intros.
+ apply m_tp.
+ eapply app_msubst_t. eexact theta. exact m.
+ apply arr. apply IHT1. exact theta. apply IHT2. exact theta.
+ Print Implicit prod.
+ Print projT1.
+ apply (prod (projT2 (next W'))).
+ eapply app_msubst_t. eexact theta. eexact m.
+ apply IHT.
+ econstructor. eapply theta_weaken. eexact theta.
+ eexact (projT2 (next W')).
+ split. eexact w. constructor 3. eapply (weaken (projT2 (next W'))).
+ Defined.
+ Definition app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' := app_msubst_t2' T theta.
+ 
+ Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign W G') : forall {W'} (theta:msubst W W'), tp_assign W' G' :=
+  match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
+   | s_nil => fun W' theta => s_nil (var_tp W') _
+   | s_cons _ _ a (b,c) => fun W' theta => s_cons _ (app_msubst_tp_assign' a _ theta) (b,app_msubst_t2 theta c)
+  end.
+ 
+ Definition app_msubst_tp_assign {G' W W'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G _ theta.
+ Definition tp_assign' δ γ := tp_assign γ δ.
+ Instance tp_assign_substitutable γ : substitutable (tp_assign' γ) := (@app_msubst_tp_assign γ).
+
+ Instance tp_substitutable : substitutable tp := @app_msubst_t2.
+
+ Axiom app_msubst_msubst : forall {δ δ' δ''} (θ':msubst δ' δ'') (θ':msubst δ δ'), msubst δ δ''.
+ Instance msubst_substitutable {δ} : substitutable (msubst δ)
+  := @app_msubst_msubst δ.
+
+ Implicit Arguments app_msubst.
+ Implicit Arguments app_msubst_t.
+ Implicit Arguments app_msubst_t2.
+ Implicit Arguments app_msubst_tp_assign.
+ Notation "⟦ θ ⟧" := (app_subst θ). 
+ Notation "α ↪ β" := (slink α β) (at level 90).
+
+ Implicit Arguments s_nil [A Rel a].
+ Reserved Notation "D ⊩ T ∷ D2" (at level 90).
+ Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).
+ Notation "D ; y ∷ U" := (m_cons D (y,U)) (at level 90).
+ Notation "·" := (s_nil).
+ Inductive msubst_typ' {α}(Δ:mtype_assign α) : forall {β}(Δ':mtype_assign β), msubst β α ->Prop :=
+  | m_subst_typ_nil :
+           Δ ⊩ · ∷ ·
+  | m_subst_typ_cons : forall β Δ' γ (y:β ↪ γ) U t θ,
+           Δ ⊩ θ ∷ Δ' 
+        -> Δ ⊨ t ∷ (⟦θ⟧ U)
+        -> Δ ⊩ (θ; t//y) ∷ (Δ'; y∷U)
+  where "D ⊩ T ∷ D2" := (@msubst_typ' _ D _ D2 T).
+ 
+Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
+ Check @app_subst.
  Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
  Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
  Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
@@ -200,6 +276,15 @@ Section foo.
   | rec_c : forall γ' (f:slink γ γ') E T,
              Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (rec f E) ⇐ T
+ with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+                     : branch δ γ -> tp δ -> Prop :=
+  | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
+                  (E:checked_exp δi γ) (U T:mtype δ)
+                  (Δi:mtype_assign δi),
+             Δi ⊨ C ∷ ⟦θi⟧ U
+          -> Δi ⊩ θi ∷ Δ
+          -> Δi;(app_msubst_tp_assign θi Γ) ⊢ E ⇐ (app_msubst_t θi T)
+          -> br_tp (br C θi E) (arr U T)
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).
  
@@ -217,13 +302,7 @@ Section foo.
 
  Inductive is_exval (D G:world) : checked_exp D G -> Prop :=
   | rec_is_val : forall G2 (f:wlink G G2) E, is_exval D G (rec f E).
-
- Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
- Definition msubst D R := star (mbind R) empty D.
- Definition msubst_cons D R := @s_cons _ (mbind R) empty D.
- Implicit Arguments msubst_cons.
-
-
+ 
  Inductive env : world -> Set :=
   | e_nil : env empty
   | e_cons : forall G1 G2, env G1 -> (slink G1 G2)*exval -> env G2
@@ -259,80 +338,10 @@ Section foo.
  eexact (rec w E). eexact m. exact e.
  Defined.
  Coercion exval_to_closure : exval >-> closure.
- Print val_to_closure.
-
- Class substitutable (A:world -> Set) := 
-   app_subst : forall {α β}, msubst α β -> A α -> A β.
- 
- Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
- Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
- Implicit Arguments app_msubst.
- Implicit Arguments app_msubst_t.
- Instance meta_term_substitutable : substitutable meta_term := app_msubst.
- Instance mtype_substitutable : substitutable mtype := app_msubst_t. 
- (* Termination of these is going to be tricky, since it depends on their typing, which
-    we define in terms of application. Maybe it's better to state it as a relation
-    and prove total separately
-  *)
-
- Axiom theta_weaken : forall {D R} (theta:msubst D R) {R'} (X:wlink R R'), msubst D R'.
- Definition app_msubst_t2' : forall {W} (T:tp W) {W'} (theta:msubst W W'), tp W'.
- induction 1; intros.
- apply m_tp.
- eapply app_msubst_t. eexact theta. exact m.
- apply arr. apply IHT1. exact theta. apply IHT2. exact theta.
- Print Implicit prod.
- Print projT1.
- apply (prod (projT2 (next W'))).
- eapply app_msubst_t. eexact theta. eexact m.
- apply IHT.
- econstructor. eapply theta_weaken. eexact theta.
- eexact (projT2 (next W')).
- split. eexact w. constructor 3. eapply (weaken (projT2 (next W'))).
- Defined.
- Definition app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' := app_msubst_t2' T theta.
- 
- Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign W G') : forall {W'} (theta:msubst W W'), tp_assign W' G' :=
-  match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
-   | s_nil => fun W' theta => s_nil (var_tp W') _
-   | s_cons _ _ a (b,c) => fun W' theta => s_cons _ (app_msubst_tp_assign' a _ theta) (b,app_msubst_t2 theta c)
-  end.
- 
- Definition app_msubst_tp_assign {G' W W'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G _ theta.
- Definition tp_assign' δ γ := tp_assign γ δ.
- Instance tp_assign_substitutable γ : substitutable (tp_assign' γ) := (@app_msubst_tp_assign γ).
-
- Instance tp_substitutable : substitutable tp := @app_msubst_t2.
- 
- Implicit Arguments app_msubst.
- Implicit Arguments app_msubst_t.
- Implicit Arguments app_msubst_t2.
- Implicit Arguments app_msubst_tp_assign.
- Notation "⟦ θ ⟧" := (app_subst θ). 
- Notation "α ↪ β" := (slink α β) (at level 90).
-
- Implicit Arguments s_nil [A Rel a].
- Reserved Notation "D ⊢ T ∷ D2" (at level 90).
- Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).
- Notation "D ; y ∷ U" := (m_cons D (y,U)) (at level 90).
- Notation "·" := (s_nil).
- Inductive msubst_typ' {α}(Δ:mtype_assign α) : forall {β}(Δ':mtype_assign β), msubst β α ->Prop :=
-  | m_subst_typ_nil :
-           Δ ⊢ · ∷ ·
-  | m_subst_typ_cons : forall β Δ' γ (y:β ↪ γ) U t θ,
-           Δ ⊢ θ ∷ Δ' 
-        -> Δ ⊨ t ∷ (⟦θ⟧ U)
-        -> Δ ⊢ (θ; t//y) ∷ (Δ'; y∷U)
-  where "D ⊢ T ∷ D2" := (@msubst_typ' _ D _ D2 T).
- Print msubst_typ'.
- 
-Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
- Print Implicit c_tp.
 
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
 
  Reserved Notation "E ∷∷ T" (at level 90).
- Print app_msubst_t2. 
  Definition a {δ δ'} (θ:msubst δ δ') (T1: tp δ) := ⟦ θ ⟧  T1.
 
  Inductive closure_typ : closure -> tp empty -> Prop :=
@@ -340,7 +349,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
               (· ⊨ C ∷ U)
            -> (meta_term_closure C) ∷∷ U
   | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign' γ δ) E (T:tp δ) (θ:msubst δ empty) (ρ:env γ),
-                 · ⊢ θ ∷ Δ
+                 · ⊩ θ ∷ Δ
               -> env_tp ρ (⟦θ⟧ Γ)
               -> c_tp Δ Γ E T
               -> (E [θ ;; ρ]) ∷∷ (a θ T)
@@ -352,7 +361,12 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
               -> env_tp (e_cons ρ (y,V)) (v_cons Γ (y,T))
   where "E ∷∷ T" := (closure_typ E T).
  Reserved Notation "E ⇓ V" (at level 90).
+ 
 
+ Definition unify {δ δ' δ''} (θ:msubst δ δ') (θk:msubst δ δ'')
+  (θ':msubst δ'' δ') := θ = ⟦θ'⟧ θk.
+
+ Definition unify2 {δ δ' δ''} (θ:msubst δ δ') 
    Inductive eval : closure -> val -> Prop :=
     | ev_val : forall (V:val), eval V V
     | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
@@ -369,8 +383,9 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
                I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val X E) θ' ρ')
             -> E [(θ' ; (⟦θ⟧ C) // X) ;; ρ'] ⇓ V
             -> (mapp I C) [θ ;; ρ] ⇓ V
+    | ev_
     where "E1 ⇓ V1" := (eval E1 V1).
-   Require Import Coq.Program.Equality.
+    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
    Axiom subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
@@ -384,7 +399,7 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
      end).
 
    Axiom subst_lemma : forall {δ δ':world} C U θ (Δ:mtype_assign δ) (Δ':mtype_assign δ'),
-     Δ' ⊢ θ ∷ Δ
+     Δ' ⊩ θ ∷ Δ
   -> Δ  ⊨ C ∷ U
   -> Δ' ⊨ ⟦θ⟧ C ∷ ⟦θ⟧ U.
 
