@@ -179,7 +179,9 @@ Section foo.
  Implicit Arguments app_msubst_t.
  Class substitutable (A:world -> Set) := 
    app_subst : forall {α β}, msubst α β -> A α -> A β.
- 
+ Hint Transparent app_subst.
+ Typeclasses Transparent substitutable.
+ Typeclasses Transparent app_subst.
  Instance meta_term_substitutable : substitutable meta_term := app_msubst.
  Instance mtype_substitutable : substitutable mtype := app_msubst_t. 
  (* Termination of these is going to be tricky, since it depends on their typing, which
@@ -216,9 +218,6 @@ Section foo.
 
  Instance tp_substitutable : substitutable tp := @app_msubst_t2.
 
- Axiom app_msubst_msubst : forall {δ δ' δ''} (θ':msubst δ' δ'') (θ':msubst δ δ'), msubst δ δ''.
- Instance msubst_substitutable {δ} : substitutable (msubst δ)
-  := @app_msubst_msubst δ.
 
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
@@ -226,6 +225,17 @@ Section foo.
  Implicit Arguments app_msubst_tp_assign.
  Notation "⟦ θ ⟧" := (app_subst θ). 
 
+ 
+ Fixpoint app6 {δ δ'} (θ':msubst δ δ') : forall {δ''}, msubst δ' δ'' -> msubst δ δ'' := 
+ match θ' in star _ _ δ return forall {δ''}, msubst δ' δ'' -> msubst δ δ'' with
+  | s_nil => fun δ'' θ => s_nil _ _
+  | s_cons _ _ θ0 (y,w) => fun δ'' θ =>
+      s_cons _ (app6 θ0 _ θ) (y,⟦ θ ⟧ w)
+ end.
+ 
+ Instance msubst_substitutable {δ} : substitutable (msubst δ)
+  := fun _ _ θ θ' => app6 θ' _ θ.
+ 
  Implicit Arguments s_nil [A Rel a].
  Reserved Notation "D ⊩ T ∷ D2" (at level 90).
  Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).
@@ -500,8 +510,23 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
     -> C = ⟦θ⟧ D.
    Admitted.
   End hop2.
-
+   Hint Unfold app_subst meta_term_substitutable
+     msubst_substitutable mtype_substitutable : subst.
+   Lemma subst_id1 : forall (C:meta_term empty), ⟦·⟧ C = C.
+   Admitted.
+   Lemma subst_id2 : forall (U:mtype empty),  ⟦·⟧ U = U.
+   Admitted.
+   Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
+   induction θ.
+   reflexivity.  destruct r.
+   autounfold with subst in *. simpl.
+   rewrite IHθ. rewrite (subst_id1 m). reflexivity.
+   Qed.
    Lemma subst_assoc {δ δ' δ''} (T:mtype δ)
+    (θ:msubst δ δ') (θ':msubst δ' δ'') :
+    ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
+   Admitted.
+   Lemma subst_assoc3 {δ δ' δ''} (T:tp δ)
     (θ:msubst δ δ') (θ':msubst δ' δ'') :
     ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
    Admitted.
@@ -509,9 +534,17 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
     (θ:msubst δ δ') (θ':msubst δ' δ'') :
     app_msubst_tp_assign (⟦θ'⟧θ) Γ =
      app_msubst_tp_assign θ' (app_msubst_tp_assign θ Γ).
+   generalize dependent δ'.
+   generalize dependent δ''.
+   induction Γ; intros.
+   reflexivity. destruct r.
+   simpl.
+   f_equal.
+   apply IHΓ.
+   f_equal.
+   apply subst_assoc3.
    Admitted.
-   Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
-   Admitted.
+
  Lemma env_tp1 : forall γ ρ y V1 T0 (Γ : tp_assign' γ empty),
                     env_assigned ρ y V1 ->
                     env_tp ρ Γ -> var_assigned Γ y T0 -> V1 ∷∷ T0.
@@ -701,7 +734,8 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    apply IHeval. 
    eapply env_tp1; eauto.
    apply env_tp2. auto. 
-
+   
+   (* rec *)
    inversion H9. subst. simpl_existTs. subst.
    eapply IHeval.
    econstructor.
