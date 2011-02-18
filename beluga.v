@@ -216,9 +216,15 @@ Section foo.
 
  Instance tp_substitutable : substitutable tp := @app_msubst_t2.
 
- Axiom app_msubst_msubst : forall {δ δ' δ''} (θ':msubst δ' δ'') (θ':msubst δ δ'), msubst δ δ''.
+ Fixpoint app6 {δ δ'} (θ':msubst δ δ') : forall {δ''}, msubst δ' δ'' -> msubst δ δ'' := 
+ match θ' in star _ _ δ return forall {δ''}, msubst δ' δ'' -> msubst δ δ'' with
+  | s_nil => fun δ'' θ => s_nil _ _
+  | s_cons _ _ θ0 (y,w) => fun δ'' θ =>
+      s_cons _ (app6 θ0 _ θ) (y,app_msubst θ w)
+ end.
+ 
  Instance msubst_substitutable {δ} : substitutable (msubst δ)
-  := @app_msubst_msubst δ.
+  := fun _ _ θ θ' => app6 θ' _ θ.
 
  Implicit Arguments app_msubst.
  Implicit Arguments app_msubst_t.
@@ -701,7 +707,8 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    apply IHeval. 
    eapply env_tp1; eauto.
    apply env_tp2. auto. 
-
+   
+   (* rec *)
    inversion H9. subst. simpl_existTs. subst.
    eapply IHeval.
    econstructor.
