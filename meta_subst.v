@@ -11,3 +11,8 @@ Class substitutable (A:world -> Set) :=
 Notation "⟦ θ ⟧" := (app_subst θ). 
 Typeclasses Transparent substitutable.
 Typeclasses Transparent app_subst.
+
+Hint Transparent app_subst.
+
+(* Uh oh, termination of substitution depends on types.
+    It's actually not possible (rather, ugly) to implement as-is. *)

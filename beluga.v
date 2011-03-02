@@ -4,13 +4,14 @@ Require Import util.
 Require Import worlds.
 Require Import meta_term.
 Require Import meta_subst.
+Require Import meta_subst_meta_term.
 Require Import meta_subst_meta_type.
 Require Import meta_subst_typing.
 Require Import meta_subst_type.
 Require Import type_assign.
 Require Import comp_expr.
 Require Import meta_subst_type_assign.
-
+Require Import meta_subst_meta_subst.
 
  (* TODO. Is this even possible? Should it produce a world D2 and link? *)
  Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
@@ -29,39 +30,6 @@ Require Import meta_subst_type_assign.
  exact t.
  Defined.
  
- Axiom msubst_single_t : forall {D D'} (X:wlink D D'), meta_term D -> tp D' -> tp D.
- (* Write this in terms of a simultaneous substitution: (id,C/X) ? *)
- Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
-
- Implicit Arguments app_msubst.
-
- Hint Transparent app_subst.
- Instance meta_term_substitutable : substitutable meta_term := app_msubst.
-
- (* Termination of these is going to be tricky, since it depends on their typing, which
-    we define in terms of application. Maybe it's better to state it as a relation
-    and prove total separately
-  *)
-
-
-
- Implicit Arguments app_msubst.
- Implicit Arguments app_msubst_t.
- Implicit Arguments app_msubst_t2.
- Implicit Arguments app_msubst_tp_assign.
-
- 
- Fixpoint app6 {δ δ'} (θ':msubst δ δ') : forall {δ''}, msubst δ' δ'' -> msubst δ δ'' := 
- match θ' in star _ _ δ return forall {δ''}, msubst δ' δ'' -> msubst δ δ'' with
-  | s_nil => fun δ'' θ => s_nil
-  | s_cons _ _ θ0 (y,w) => fun δ'' θ =>
-      s_cons _ (app6 θ0 _ θ) (y,⟦ θ ⟧ w)
- end.
- 
- Instance msubst_substitutable {δ} : substitutable (msubst δ)
-  := fun _ _ θ θ' => app6 θ' _ θ.
- 
-
  Check @app_subst.
  Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
  Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
@@ -69,7 +37,7 @@ Require Import meta_subst_type_assign.
                    : synth_exp δ γ -> tp δ -> Prop :=
   | var_s : forall x T,
              var_assigned Γ x T
-           -> Δ;Γ  ⊢ (var _ x) ⇒ T
+           -> Δ;Γ ⊢ (var _ x) ⇒ T
   | app_s : forall I T1 E T2,
               Δ;Γ ⊢ I ⇒ (arr T1 T2)
            -> Δ;Γ ⊢ E ⇐ T1
