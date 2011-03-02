@@ -6,30 +6,15 @@ Require Import meta_term.
 Require Import meta_subst.
 Require Import meta_subst_meta_type.
 Require Import meta_subst_typing.
+Require Import meta_subst_type.
+Require Import type_assign.
 Require Import comp_expr.
+Require Import meta_subst_type_assign.
 
 
  (* TODO. Is this even possible? Should it produce a world D2 and link? *)
  Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
 
-
-
-
- Definition var_tp D G1 G2 := (slink G1 G2)*(tp D).
- Definition tp_assign D := star (var_tp D) empty.
- Definition tp_assign_nil D := @s_nil _ (var_tp D).
- Definition v_cons D := @s_cons _ (var_tp D) empty.
- Implicit Arguments v_cons.
- Print Implicit v_cons.
-
- (* TODO: We could eliminate the duplication between this and the other one *)
- Inductive var_assigned D G : tp_assign D G -> name G -> tp D -> Prop :=
-  | v_asn_top : forall G' (A:tp_assign D G') T x,
-                    var_assigned D G (v_cons A (x,T)) x T
-  | v_asn_else : forall G' T A x (y:slink G' G) U,
-                 var_assigned D G' A x T
-                 -> var_assigned D G (v_cons A (y,U)) (import y x) T.
- Implicit Arguments var_assigned.
  
  Definition weaken_ctx : forall {D1 D2 G}, slink D1 D2 -> tp_assign D1 G -> tp_assign D2 G.
  intros. induction H0.
@@ -58,34 +43,6 @@ Require Import comp_expr.
     and prove total separately
   *)
 
- Axiom theta_weaken : forall {D R} (theta:msubst D R) {R'} (X:wlink R R'), msubst D R'.
- Definition app_msubst_t2' : forall {W} (T:tp W) {W'} (theta:msubst W W'), tp W'.
- induction 1; intros.
- apply m_tp.
- eapply app_msubst_t. eexact theta. exact m.
- apply arr. apply IHT1. exact theta. apply IHT2. exact theta.
- Print Implicit prod.
- Print projT1.
- apply (prod (projT2 (next W'))).
- eapply app_msubst_t. eexact theta. eexact m.
- apply IHT.
- econstructor. eapply theta_weaken. eexact theta.
- eexact (projT2 (next W')).
- split. eexact w. constructor 3. eapply (weaken (projT2 (next W'))).
- Defined.
- Definition app_msubst_t2 {W W'} (theta:msubst W W') (T:tp W) : tp W' := app_msubst_t2' T theta.
- 
- Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign W G') : forall {W'} (theta:msubst W W'), tp_assign W' G' :=
-  match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
-   | s_nil => fun W' theta => s_nil
-   | s_cons _ _ a (b,c) => fun W' theta => s_cons _ (app_msubst_tp_assign' a _ theta) (b,app_msubst_t2 theta c)
-  end.
- 
- Definition app_msubst_tp_assign {G' W W'} (theta:msubst W W') (G:tp_assign W G') : tp_assign W' G' := app_msubst_tp_assign' G _ theta.
- Definition tp_assign' δ γ := tp_assign γ δ.
- Instance tp_assign_substitutable γ : substitutable (tp_assign' γ) := (@app_msubst_tp_assign γ).
-
- Instance tp_substitutable : substitutable tp := @app_msubst_t2.
 
 
  Implicit Arguments app_msubst.
