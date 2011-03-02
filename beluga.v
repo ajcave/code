@@ -1,146 +1,19 @@
 Require Import List.
 Require Import Eqdep.
-Section foo.
- Parameter world : Set.
- Parameter empty : world.
- Parameter name : world -> Set.
- Parameter wlink : world -> world -> Set.
- Definition slink := wlink. (* ??? *)
+Require Import util.
+Require Import worlds.
+Require Import meta_level.
+Require Import meta_subst.
+Require Import meta_subst_meta_type.
+Require Import meta_subst_typing.
+Require Import comp_expr.
 
- Notation "α ↪ β" := (slink α β) (at level 90).
- Definition weaken1 {a b} (x:slink a b) : wlink a b := x.
- Axiom weaken1_inj : forall {W W'} {y y':slink W W'}, weaken1 y = weaken1 y' -> y = y'.
- Parameter weaken : forall {a b}, slink a b -> name b.
- Coercion weaken : slink >-> name.
- Parameter import : forall {a b}, slink a b -> name a -> name b.
- Parameter next : forall a, {b:world & slink a b}.
- Axiom import_inj : forall {α β} {y:α↪β} {x x0}, import y x = import y x0 -> x = x0. 
- Axiom import_img : forall {α β} (y:α↪β) x, import y x <> y.
- Inductive meta_term (D:world) :=
-  | m_z
-  | m_succ : meta_term D -> meta_term D
-  | m_var : name D -> meta_term D.
- Inductive mtype (D:world) :=
-  | m_nat : mtype D
-  | m_vec : meta_term D -> mtype D.
- Coercion m_var : name >-> meta_term.
- 	       	 
- Implicit Arguments m_nat [D].
- Implicit Arguments m_vec [D].
- Implicit Arguments m_z [D].
- Implicit Arguments m_succ [D].
- Implicit Arguments m_var [D].
-
- Fixpoint import_meta_term {D1 D2:world} (y:slink D1 D2) (t:meta_term D1) := 
- match t with
-  | m_z => m_z
-  | m_succ t => m_succ (import_meta_term y t)
-  | m_var x => m_var (import y x)
- end.
-
- Fixpoint import_mtype {D1 D2:world} (y:slink D1 D2) (T:mtype D1) :=
- match T with
-  | m_nat => m_nat
-  | m_vec t => m_vec (import_meta_term y t)
- end.
-
- Section star.
- Hypotheses (A:Set) (Rel:A -> A -> Set).
- Inductive star (a:A) : A -> Set :=
-  | s_nil : star a a
-  | s_cons : forall b c, star a b -> Rel b c -> star a c.
- End star.
- Implicit Arguments star.
- Implicit Arguments s_nil.
- Implicit Arguments s_cons.
- Print Implicit s_cons.
-
- Open Scope type_scope.
- Definition var_mtp D1 D2 := (slink D1 D2)*(mtype D1).
- Definition mtype_assign := star var_mtp empty.
- Definition m_cons := @s_cons _ var_mtp empty.
- Implicit Arguments m_cons.
- Print Implicit m_cons.
- 
- (* This is basically the "In" predicate, except that we import things to the end *)
- Inductive m_assigned D : mtype_assign D -> name D -> mtype D -> Prop :=
-  | m_asn_top : forall D' (A:mtype_assign D') T x,
-                    m_assigned D (m_cons A (x,T)) x (import_mtype x T)
-  | m_asn_else : forall D' T A x (y:slink D' D) U,
-                 m_assigned D' A x T
-                 -> m_assigned D (m_cons A (y,U)) (import y x) (import_mtype y T). 
- Implicit Arguments m_assigned.
- Implicit Arguments m_asn_top.
- Implicit Arguments m_asn_else.
-
- Inductive m_oft {D':world} {D:mtype_assign D'} : meta_term D' -> mtype D' -> Prop :=
-  | m_z_tp : m_oft m_z m_nat
-  | m_succ_tp : forall n, m_oft n m_nat -> m_oft (m_succ n) m_nat
-  | m_var_tp : forall y T, m_assigned D y T -> m_oft y T
- .
-
- Implicit Arguments m_oft.
-
- Notation "D ⊨ t ∷ U" := (m_oft D t U) (at level 90).
- (* wf_mtype A T if T is a well-formed meta-type in the context A *)
-   
- Inductive wf_mtype {D:world} {A:mtype_assign D} : mtype D -> Prop :=
-  | m_nat_tp : wf_mtype m_nat
-  | m_vec_tp : forall t, m_oft A t m_nat -> wf_mtype (m_vec t).
- Implicit Arguments wf_mtype.
-
- (* Well formed meta-contexts *)
- (* Inductive wf_mctx {D:world} : mtype_assign D -> Prop := . *)
- (* TODO: Do we need to make wf_mtype depend on wf_mctx?
-    Can we to inforce this invariant? Should we just quantify all our theorems
-    with the assumptions that wf_mctx and wf_mtype, etc...? *)
-
- Inductive tp (D:world) :=
-  | m_tp : mtype D -> tp D
-  | arr : tp D -> tp D -> tp D
-  | prod : forall D2, wlink D D2 -> mtype D -> tp D2 -> tp D
- .
- Coercion m_tp : mtype >-> tp.
- Implicit Arguments m_tp.
- Implicit Arguments arr.
- Implicit Arguments prod.
 
  (* TODO. Is this even possible? Should it produce a world D2 and link? *)
  Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
 
- Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
- Definition msubst D R := star (mbind R) empty D.
- Definition msubst_cons D R := @s_cons _ (mbind R) empty D.
- Implicit Arguments msubst_cons.
 
- Inductive synth_exp (D G:world) : Set :=
-  | var : name G -> synth_exp D G
-  | app :  synth_exp D G -> checked_exp D G -> synth_exp D G
-  | mapp : synth_exp D G -> meta_term D -> synth_exp D G
-  | coercion : checked_exp D G -> tp D -> synth_exp D G
- with checked_exp (D G:world) : Set := 
-  | synth : synth_exp D G -> checked_exp D G
-  | meta : meta_term D -> checked_exp D G
-  | fn : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
-  | mlam : forall D2, wlink D D2 -> checked_exp D2 G -> checked_exp D G
-  | case_i :  synth_exp D G -> list (branch D G) -> checked_exp D G
-  | case_c : meta_term D -> list (branch D G) -> checked_exp D G
-  | rec : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
- with branch (D G:world) : Set :=
-  | br : forall Di, meta_term Di -> msubst D Di -> checked_exp Di G -> branch D G.
- Coercion synth : synth_exp >-> checked_exp.
- Implicit Arguments var.
- Implicit Arguments app.
- Implicit Arguments mapp.
- Implicit Arguments coercion.
- Implicit Arguments synth.
- Implicit Arguments meta.
- Implicit Arguments fn.
- Implicit Arguments mlam.
- Implicit Arguments case_i.
- Implicit Arguments case_c.
- Implicit Arguments rec.
- Implicit Arguments br.
+
 
  Definition var_tp D G1 G2 := (slink G1 G2)*(tp D).
  Definition tp_assign D := star (var_tp D) empty.
@@ -174,16 +47,12 @@ Section foo.
  Axiom msubst_single_t : forall {D D'} (X:wlink D D'), meta_term D -> tp D' -> tp D.
  (* Write this in terms of a simultaneous substitution: (id,C/X) ? *)
  Axiom app_msubst : forall W W', msubst W W' -> meta_term W -> meta_term W'.
- Axiom app_msubst_t : forall W W', msubst W W' -> mtype W -> mtype W'.
+
  Implicit Arguments app_msubst.
- Implicit Arguments app_msubst_t.
- Class substitutable (A:world -> Set) := 
-   app_subst : forall {α β}, msubst α β -> A α -> A β.
+
  Hint Transparent app_subst.
- Typeclasses Transparent substitutable.
- Typeclasses Transparent app_subst.
  Instance meta_term_substitutable : substitutable meta_term := app_msubst.
- Instance mtype_substitutable : substitutable mtype := app_msubst_t. 
+
  (* Termination of these is going to be tricky, since it depends on their typing, which
     we define in terms of application. Maybe it's better to state it as a relation
     and prove total separately
@@ -208,7 +77,7 @@ Section foo.
  
  Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign W G') : forall {W'} (theta:msubst W W'), tp_assign W' G' :=
   match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
-   | s_nil => fun W' theta => s_nil (var_tp W') _
+   | s_nil => fun W' theta => s_nil
    | s_cons _ _ a (b,c) => fun W' theta => s_cons _ (app_msubst_tp_assign' a _ theta) (b,app_msubst_t2 theta c)
   end.
  
@@ -223,12 +92,11 @@ Section foo.
  Implicit Arguments app_msubst_t.
  Implicit Arguments app_msubst_t2.
  Implicit Arguments app_msubst_tp_assign.
- Notation "⟦ θ ⟧" := (app_subst θ). 
 
  
  Fixpoint app6 {δ δ'} (θ':msubst δ δ') : forall {δ''}, msubst δ' δ'' -> msubst δ δ'' := 
  match θ' in star _ _ δ return forall {δ''}, msubst δ' δ'' -> msubst δ δ'' with
-  | s_nil => fun δ'' θ => s_nil _ _
+  | s_nil => fun δ'' θ => s_nil
   | s_cons _ _ θ0 (y,w) => fun δ'' θ =>
       s_cons _ (app6 θ0 _ θ) (y,⟦ θ ⟧ w)
  end.
@@ -236,21 +104,7 @@ Section foo.
  Instance msubst_substitutable {δ} : substitutable (msubst δ)
   := fun _ _ θ θ' => app6 θ' _ θ.
  
- Implicit Arguments s_nil [A Rel a].
- Reserved Notation "D ⊩ T ∷ D2" (at level 90).
- Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).
- Notation "D ; y ∷ U" := (m_cons D (y,U)) (at level 90).
- Notation "·" := (s_nil).
- Inductive msubst_typ' {α}(Δ:mtype_assign α) : forall {β}(Δ':mtype_assign β), msubst β α ->Prop :=
-  | m_subst_typ_nil :
-           Δ ⊩ · ∷ ·
-  | m_subst_typ_cons : forall β Δ' γ (y:β ↪ γ) U t θ,
-           Δ ⊩ θ ∷ Δ' 
-        -> Δ ⊨ t ∷ (⟦θ⟧ U)
-        -> Δ ⊩ (θ; t//y) ∷ (Δ'; y∷U)
-  where "D ⊩ T ∷ D2" := (@msubst_typ' _ D _ D2 T).
- 
-Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := msubst_typ' Δ' Δ θ.
+
  Check @app_subst.
  Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
  Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
@@ -746,4 +600,3 @@ Definition msubst_typ {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ :=
    econstructor; eauto.
   Qed.
   Print Assumptions subj_red.
-End foo.
