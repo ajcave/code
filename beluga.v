@@ -20,7 +20,8 @@ Require Import comp_expr_typing.
   (* TODO: Compare our use of strong links and imports to the paper's example of
      typing derivations. It's possible that they do contravariant stuff to avoid
      the import *)
-
+(* TODO: Consider just having eval relate closures, and
+   proving after the fact that the rhs is always a value *)
  Inductive is_val (D G:world) : checked_exp D G -> Prop :=
   | fn_is_val : forall G2 (y:wlink G G2) E, is_val D G (fn y E)
   | mlam_is_val : forall D2 (X:wlink D D2) E, is_val D G (mlam X E).
