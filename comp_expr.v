@@ -1,5 +1,5 @@
 Require Import worlds.
-Require Import meta_level.
+Require Import meta_term.
 Require Import meta_subst.
  
  Inductive tp (D:world) :=

@@ -1,7 +1,7 @@
 Require Import util.
 Require Import worlds.
 Require Import meta_subst.
-Require Import meta_level.
+Require Import meta_term.
 Require Import meta_subst_meta_type.
  Reserved Notation "D ⊩ T ∷ D2" (at level 90).
  Notation "T ;  t // y " := (msubst_cons T (y,t)) (at level 90).

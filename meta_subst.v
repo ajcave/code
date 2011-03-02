@@ -1,6 +1,6 @@
 Require Import util.
 Require Import worlds. 
-Require Import meta_level.
+Require Import meta_term.
 
 Definition mbind D D1 D2 := (slink D1 D2)*(meta_term D).
 Definition msubst D R := star (mbind R) empty D.
