@@ -257,9 +257,9 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  auto.
  Qed.
 
- Lemma env_tp2 : forall δ γ (Γ : tp_assign γ δ) δ' (θ:msubst δ δ') y T0,
+ Lemma env_tp2 : forall δ γ (Γ:tp_assign γ δ) δ' (θ:msubst δ δ') y T0,
                     var_assigned Γ y T0
-                 -> var_assigned (⟦θ⟧ Γ) y (app_msubst_t2 θ T0).
+                 -> var_assigned (⟦θ⟧ Γ) y (⟦θ⟧ T0).
  induction Γ; intros. 
  inversion H. 
  inversion H; subst; simpl_existTs; subst.
@@ -270,15 +270,17 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  Qed.
 
 
-   Hint Constructors closure_typ c_tp s_tp br_tp msubst_typ'.
+   Hint Constructors closure_typ c_tp s_tp br_tp msubst_typ' env_tp.
    Hint Resolve env_tp1 env_tp2.
-   Ltac nice_inversion H := inversion H; subst; simpl_existTs; subst; repeat clean_substs.
+   Ltac clean_inversion := subst; simpl_existTs; subst; repeat clean_substs.
+   Tactic Notation "nice_inversion" integer(H) := inversion H; clean_inversion.
+   Tactic Notation "nice_inversion" hyp(H) := inversion H; clean_inversion.
    Ltac simpl_subst := unfold app_subst; simpl;repeat clean_substs.
- 
+   Tactic Notation "constructors" tactic(t) := repeat (econstructor; simpl_subst; eauto); t; repeat clean_substs.
+
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
-   induction 1; try (destruct V; auto; fail);
-   inversion 1; subst; simpl_existTs; subst.
+   induction 1; auto; nice_inversion 1.
 
    (* Case: coercion *)
    nice_inversion H9.
@@ -291,14 +293,11 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    assert ((fn y E)[θ';;ρ'] ∷∷ (⟦θ⟧ (arr T1 T0))); eauto.
    
    nice_inversion H5.
-   destruct T; try discriminate. nice_inversion H17.
    nice_inversion H19.
+   nice_inversion H17.
    rewrite <- H13.
    apply IHeval3.
-   econstructor; eauto.
-   simpl_subst.
-   econstructor; eauto.
-   congruence.
+   constructors congruence.
 
    (* Case: meta application *)
    nice_inversion H10.
@@ -322,14 +321,12 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    (* case expression 1 *)
    nice_inversion H10.
    eapply IHeval.
-   econstructor; eauto.
-   econstructor; eauto; firstorder.
+   constructors firstorder.
 
    (* case expression 2 *)
    nice_inversion H12.
    eapply IHeval2.
-   econstructor; eauto.
-   econstructor; eauto; firstorder.
+   constructors firstorder.
 
    (* case expression 3 *)
    nice_inversion H12.
@@ -361,9 +358,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    (* rec *)
    nice_inversion H9.
    eapply IHeval; eauto.
-   econstructor; eauto.
-   simpl_subst.
-   econstructor; eauto.
+   constructors idtac.
   Qed.
 
   Print Assumptions subj_red.
