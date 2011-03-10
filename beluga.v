@@ -14,28 +14,18 @@ Require Import meta_subst_type_assign.
 Require Import meta_subst_meta_subst.
 Require Import comp_expr_typing.
  
- Check @app_subst.
-
- Print s_tp.
   (* TODO: Compare our use of strong links and imports to the paper's example of
      typing derivations. It's possible that they do contravariant stuff to avoid
      the import *)
 (* TODO: Consider just having eval relate closures, and
    proving after the fact that the rhs is always a value *)
- Inductive is_val (D G:world) : checked_exp D G -> Prop :=
-  | fn_is_val : forall G2 (y:wlink G G2) E, is_val D G (fn y E)
-  | mlam_is_val : forall D2 (X:wlink D D2) E, is_val D G (mlam X E).
- Implicit Arguments fn_is_val.
- Implicit Arguments mlam_is_val.
-
- 
  
  Inductive closure : Set :=
   | meta_term_closure : meta_term empty -> closure
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure
  with env : world -> Set :=
   | e_nil : env empty
-  | e_cons : forall Γ Γ', env Γ -> (Γ↪Γ')*closure -> env Γ'.
+  | e_cons : forall γ γ', env γ -> (γ↪γ')*closure -> env γ'.
  Implicit Arguments comp_term_closure.
  Implicit Arguments e_nil.
  Implicit Arguments e_cons.
@@ -59,7 +49,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
   | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign' γ δ) E (T:tp δ) (θ:msubst δ empty) (ρ:env γ),
                  · ⊩ θ ∷ Δ
               -> env_tp ρ (⟦θ⟧ Γ)
-              -> c_tp Δ Γ E T
+              -> Δ;Γ ⊢ E ⇐ T
               -> (E [θ ;; ρ]) ∷∷ (a θ T)
   with env_tp : forall {γ}, env γ -> tp_assign empty γ -> Prop :=
    | env_tp_nil : env_tp e_nil ·
@@ -81,7 +71,17 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  Notation "C /≑ D" :=(forall θ, ~unify2 C D θ) (at level 90).
  Notation "C ≑ D // θ" := (unify2 C D θ) (at level 90).
 
- Parameter val : closure -> Prop.
+ Inductive val : closure -> Prop :=
+  | fn_val : forall γ δ δ' (θ:msubst γ empty) (y:δ↪δ') E ρ,
+       env_val ρ -> val ((fn y E)[θ;;ρ])
+  | mlam_val : forall γ γ' δ θ (X:γ↪γ') E (ρ:env δ),
+       env_val ρ -> val ((mlam X E)[θ;;ρ])
+  | meta_term_val : forall C, val (meta_term_closure C)
+ with env_val : forall {δ}, env δ -> Prop :=
+  | env_val_nil : env_val e_nil
+  | env_val_cons : forall γ (ρ:env γ) γ' (y:γ↪γ') V,
+       val V -> env_val (e_cons ρ (y,V))
+ .
 
  Inductive eval : closure -> closure -> Prop :=
   | ev_val : forall V, val V -> eval V V 
