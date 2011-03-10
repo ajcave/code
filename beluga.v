@@ -337,20 +337,15 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    nice_inversion H4.
    
    assert (@br_tp _ _ Δ Γ (br Ck θk Ek) (arr U T0)).
-   eapply H8. firstorder.
+   firstorder.
    
    nice_inversion H5.
    pose proof (hop1a H10 H20 H).
    assert (· ⊩ θ'' ∷ ·).
-   eapply hop2a.
-   Focus 3. eexact H1.
-   eexact H9.
-   eapply subst_lemma.   
-   eexact H13.
-   eexact H16.
+   eapply hop2a; [idtac | idtac | eexact H1]; eauto.
+   eapply subst_lemma; eauto.
 
-   pose proof (hop1b H10 H20 H). 
-   subst.
+   rewrite (hop1b H10 H20 H) in *. 
    nice_inversion H14.
    eapply IHeval2.
    rewrite subst_assoc3.
