@@ -269,40 +269,26 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  Qed.
 
 
+   Hint Constructors closure_typ c_tp s_tp.
+   Hint Constructors c_tp s_tp.
+   Ltac nice_inversion H := inversion H; subst; simpl_existTs; subst; repeat clean_substs.
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
    induction 1; try (destruct V; auto; fail);
    inversion 1; subst; simpl_existTs; subst.
-   inversion H9; subst.
-   inversion H2; subst.
-   apply IHeval.
-   econstructor.
-   eexact H7.
-   eexact H8.
-   eexact H5.
+   nice_inversion H9.
+   nice_inversion H2; eauto.
   
    (* Case: app *)
-   inversion H11; subst.
-   inversion H4; subst.
-   assert (V2 ∷∷ (⟦θ⟧ T1)).
-   apply IHeval2.
-   econstructor.
-   eexact H9.
-   eexact H10.
-   eexact H8.
+   nice_inversion H11.
+   nice_inversion H4.
+   assert (V2 ∷∷ (⟦θ⟧ T1)); eauto.     
+   assert ((fn y E)[θ';;ρ'] ∷∷ (⟦θ⟧ (arr T1 T0))); eauto.
    
-   assert ((fn y E)[θ';;ρ'] ∷∷ (⟦θ⟧ (arr T1 T0))).
-   apply IHeval1.
-   econstructor.
-   eexact H9.
-   eexact H10.
-   constructor.
-   eexact H6.
-
-   inversion H5. subst. simpl_existTs. subst.
+   nice_inversion H5.
    destruct T; try discriminate. inversion H17.
-   inversion H19. subst. simpl_existTs. subst. repeat clean_substs.
-    rewrite <- H13.
+   nice_inversion H19.
+   rewrite <- H13.
    pose proof (env_tp_cons y H18 H3).
    
    apply IHeval3.
