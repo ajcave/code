@@ -28,54 +28,24 @@ Require Import comp_expr_typing.
  Implicit Arguments fn_is_val.
  Implicit Arguments mlam_is_val.
 
- Inductive is_exval (D G:world) : checked_exp D G -> Prop :=
-  | rec_is_val : forall G2 (f:wlink G G2) E, is_exval D G (rec f E).
- Implicit Arguments rec_is_val.
- Definition closed_mterm := meta_term empty.
- Inductive env : world -> Set :=
+ 
+ 
+ Inductive closure : Set :=
+  | meta_term_closure : meta_term empty -> closure
+  | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure
+ with env : world -> Set :=
   | e_nil : env empty
-  | e_cons : forall G1 G2, env G1 -> (slink G1 G2)*exval -> env G2
- with val : Set :=
-  | v_meta2 : closed_mterm -> val
-  | v_val2 : forall D G E, is_val D G E -> msubst D empty -> env G -> val
- with exval : Set :=
-  | v_val1 : val -> exval
-  | v_rec1 : forall D G E, is_exval D G E -> msubst D empty -> env G -> exval.
- Implicit Arguments v_val2.
- Implicit Arguments v_rec1.
+  | e_cons : forall Γ Γ', env Γ -> (Γ↪Γ')*closure -> env Γ'.
+ Implicit Arguments comp_term_closure.
  Implicit Arguments e_nil.
  Implicit Arguments e_cons.
- Coercion v_meta2 : closed_mterm >-> val.
 
- Inductive env_assigned : forall {γ}, env γ -> name γ -> exval -> Prop :=
+Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
   | env_assigned_here   : forall γ γ' (ρ:env γ') (y:γ'↪γ) V,
                         env_assigned (e_cons ρ (y,V)) y V
   | env_assigned_before : forall γ γ' (ρ:env γ') (y:γ'↪γ) V x U,
                         env_assigned ρ x U
                      -> env_assigned (e_cons ρ (y,V)) (import y x) U.
- 
- Inductive closure : Set :=
-  | meta_term_closure : meta_term empty -> closure
-  | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure.
- Implicit Arguments comp_term_closure.
-
- Definition val_to_closure (v:val) : closure.
- destruct v. constructor 1. auto.
- set E.
- destruct E; try (elimtype False; inversion i; try inversion H; fail); econstructor 2.
- eexact c. eexact m. exact e.
- eexact c. eexact m. exact e.
- Defined.
- Coercion val_to_closure : val >-> closure.
-
- Definition exval_to_closure (v:exval) : closure.
- destruct v.
- apply val_to_closure. exact v.
- destruct E; try (elimtype False; inversion i; try inversion H; fail);
- econstructor 2.
- eexact (rec w E). eexact m. exact e.
- Defined.
- Coercion exval_to_closure : exval >-> closure.
 
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
 
@@ -93,7 +63,7 @@ Require Import comp_expr_typing.
               -> (E [θ ;; ρ]) ∷∷ (a θ T)
   with env_tp : forall {γ}, env γ -> tp_assign empty γ -> Prop :=
    | env_tp_nil : env_tp e_nil ·
-   | env_tp_cons : forall γ (ρ:env γ) Γ (V:exval) T γ' (y:γ ↪ γ'),
+   | env_tp_cons : forall γ (ρ:env γ) Γ V T γ' (y:γ ↪ γ'),
               env_tp ρ Γ
               -> V ∷∷ T
               -> env_tp (e_cons ρ (y,V)) (v_cons Γ (y,T))
@@ -106,26 +76,27 @@ Require Import comp_expr_typing.
  Axiom unify2 : forall {δ δ'} (C:meta_term δ) (D:meta_term δ')
   (θ:msubst δ' δ), Prop. (* C = θ(D) *) 
  Print branch.
- Print fn_is_val.
- Print v_val2.
  Notation "θ /≐ θ'" :=(forall θ'', ~unify θ θ' θ'') (at level 90).
  Notation "θ ≐ θk // θ'" := (unify θ θk θ') (at level 90). 
  Notation "C /≑ D" :=(forall θ, ~unify2 C D θ) (at level 90).
  Notation "C ≑ D // θ" := (unify2 C D θ) (at level 90).
- Inductive eval : closure -> val -> Prop :=
-  | ev_val : forall (V:val), eval V V 
+
+ Parameter val : closure -> Prop.
+
+ Inductive eval : closure -> closure -> Prop :=
+  | ev_val : forall V, val V -> eval V V 
   | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
              E [θ ;; ρ] ⇓ V
           -> (coercion E T) [θ ;; ρ] ⇓ V
   | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' (y:γ ↪ γ')
              (E:checked_exp δ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
-             I1 [θ ;; ρ] ⇓ (v_val2 (fn_is_val y E) θ' ρ')
+             I1 [θ ;; ρ] ⇓ (fn y E) [θ' ;; ρ']
           -> E2 [θ ;; ρ] ⇓ V2
-          -> E [θ' ;; (e_cons ρ' (y,v_val1 V2))] ⇓ V
+          -> E [θ' ;; (e_cons ρ' (y,V2))] ⇓ V
           -> (app I1 E2) [θ ;; ρ] ⇓ V
   | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
             (E:checked_exp δ' γ) θ' ρ' C V,
-             I [θ ;; ρ] ⇓ (v_val2 (mlam_is_val X E) θ' ρ')
+             I [θ ;; ρ] ⇓ (mlam X E) [θ';; ρ']
           -> E [(θ' ; (⟦θ⟧ C) // X) ;; ρ'] ⇓ V
           -> (mapp I C) [θ ;; ρ] ⇓ V
   | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
@@ -134,16 +105,16 @@ Require Import comp_expr_typing.
          -> case_i I Bs [θ ;; ρ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
   | ev_case2 : forall δ θ γ ρ (I:synth_exp δ γ) δi
-            (θk:msubst δ δi) θ' Bs (C:closed_mterm) Ek V Ck,
+            (θk:msubst δ δi) θ' Bs (C:meta_term empty) Ek V Ck,
             (θ ≐ θk // θ')
-         -> I [θ ;; ρ] ⇓ C
+         -> I [θ ;; ρ] ⇓ meta_term_closure C
          -> (C /≑ ⟦θ'⟧ Ck)
          -> case_i I Bs [θ ;; ρ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
   | ev_case3 : forall δ θ γ ρ (I:synth_exp δ γ) δi
-            (θk:msubst δ δi) θ' θ'' Bs (C:closed_mterm) Ek V Ck,
+            (θk:msubst δ δi) θ' θ'' Bs (C:meta_term empty) Ek V Ck,
             (θ ≐ θk // θ')
-         -> I [θ ;; ρ] ⇓ C
+         -> I [θ ;; ρ] ⇓ meta_term_closure C
          -> (C ≑ ⟦θ'⟧ Ck // θ'')
          -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V 
@@ -152,7 +123,7 @@ Require Import comp_expr_typing.
          -> V1 ⇓ V
          -> (var _ y) [θ ;; ρ] ⇓ V
   | ev_rec : forall δ θ γ ρ γ' (f:γ↪γ') (E:checked_exp δ γ') V,
-       E [ θ ;; e_cons ρ (f, v_rec1 (rec_is_val f E) θ ρ) ] ⇓ V
+       E [ θ ;; e_cons ρ (f, (rec f E)[θ;;ρ]) ] ⇓ V
     -> rec f E [θ ;; ρ] ⇓ V
     where "E1 ⇓ V1" := (eval E1 V1).
    Require Import Coq.Program.Equality.
@@ -314,7 +285,7 @@ Require Import comp_expr_typing.
    eexact H10.
    eexact H8.
    
-   assert ((v_val2 (fn_is_val y E) θ' ρ') ∷∷ (⟦θ⟧ (arr T1 T0))).
+   assert ((fn y E)[θ';;ρ'] ∷∷ (⟦θ⟧ (arr T1 T0))).
    apply IHeval1.
    econstructor.
    eexact H9.
@@ -327,7 +298,7 @@ Require Import comp_expr_typing.
    inversion H19. subst. simpl_existTs. subst.
    clean_substs. clean_substs.
     rewrite <- H13.
-   pose proof (env_tp_cons (v_val1 V2) y H18 H3).
+   pose proof (env_tp_cons y H18 H3).
    
    apply IHeval3.
    Print closure_typ. 
@@ -343,7 +314,7 @@ Require Import comp_expr_typing.
    (* Case: meta application *)
    unfold a in *. inversion H10. subst.
    inversion H3. simpl_existTs. subst.
-   assert ((v_val2 (mlam_is_val X E) θ' ρ') ∷∷ (⟦θ⟧ (prod X0 U T))).
+   assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (prod X0 U T))).
    apply IHeval1.
    econstructor.
    eexact H8. eexact H9. constructor. eexact H5.
@@ -404,7 +375,7 @@ Require Import comp_expr_typing.
 
    (* case statement 3 *)
    inversion H12. subst.
-   assert (C ∷∷ a θ U).
+   assert ((meta_term_closure C) ∷∷ a θ U).
    eapply IHeval1.
    econstructor.
    eexact H10.
