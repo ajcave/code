@@ -319,13 +319,13 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    erewrite <- cons_wkn_inv; eauto.
   
    (* case expression 1 *)
-   nice_inversion H10.
    eapply IHeval.
+   nice_inversion H10.
    constructors firstorder.
 
    (* case expression 2 *)
-   nice_inversion H12.
    eapply IHeval2.
+   nice_inversion H12.
    constructors firstorder.
 
    (* case expression 3 *)
