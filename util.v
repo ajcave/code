@@ -9,3 +9,4 @@ Section star.
  Implicit Arguments s_cons.
  Print Implicit s_cons.
  Implicit Arguments s_nil [A Rel a].
+ Notation "A ,, B" := (s_cons _ A B) (at level 90).

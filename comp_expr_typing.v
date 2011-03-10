@@ -1,4 +1,5 @@
 Require Import List.
+Require Import util.
 Require Import worlds.
 Require Import meta_term.
 Require Import meta_subst.
@@ -53,17 +54,17 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
               Δ ⊨ C ∷ U 
            -> Δ;Γ ⊢ (meta γ C) ⇐ U
   | fn_c : forall γ' (y:slink γ γ') E T1 T2,
-             Δ;(v_cons Γ (y,T1)) ⊢ E ⇐ T2
+             Δ;(Γ,, (y,T1)) ⊢ E ⇐ T2
           -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
   | mlam_c : forall δ' (X:slink δ δ') E U T,
-             (m_cons Δ (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
+             (Δ,, (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (mlam X E) ⇐ (prod X U T)
   | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U
           -> (forall B, In B Bs -> br_tp B (arr U T))
           -> Δ;Γ ⊢ (case_i I Bs) ⇐ T
   | rec_c : forall γ' (f:slink γ γ') E T,
-             Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
+             Δ;(Γ,, (f,T)) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (rec f E) ⇐ T
  with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                      : branch δ γ -> tp δ -> Prop :=

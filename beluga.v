@@ -19,23 +19,20 @@ Require Import comp_expr_typing.
      the import *)
 (* TODO: Consider just having eval relate closures, and
    proving after the fact that the rhs is always a value *)
- 
+ Print star.
+ Print tp_assign.
  Inductive closure : Set :=
   | meta_term_closure : meta_term empty -> closure
-  | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> env G -> closure
- with env : world -> Set :=
-  | e_nil : env empty
-  | e_cons : forall γ γ', env γ -> (γ↪γ')*closure -> env γ'.
+  | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> star (fun γ γ' => (γ↪γ')*closure) empty G -> closure.
+ Definition env := star (fun γ γ' => (γ↪γ')*closure) empty.
  Implicit Arguments comp_term_closure.
- Implicit Arguments e_nil.
- Implicit Arguments e_cons.
 
 Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
   | env_assigned_here   : forall γ γ' (ρ:env γ') (y:γ'↪γ) V,
-                      env_assigned (e_cons ρ (y,V)) y V
+                      env_assigned (ρ,, (y,V)) y V
   | env_assigned_before : forall γ γ' (ρ:env γ') (y:γ'↪γ) V x U,
                       env_assigned ρ x U
-                   -> env_assigned (e_cons ρ (y,V)) (import y x) U.
+                   -> env_assigned (ρ,, (y,V)) (import y x) U.
 
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
 
@@ -52,11 +49,11 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
               -> Δ;Γ ⊢ E ⇐ T
               -> (E [θ ;; ρ]) ∷∷ (⟦θ⟧  T)
   with env_tp : forall {γ}, env γ -> tp_assign γ empty -> Prop :=
-   | env_tp_nil : env_tp e_nil ·
+   | env_tp_nil : env_tp s_nil ·
    | env_tp_cons : forall γ (ρ:env γ) Γ V T γ' (y:γ ↪ γ'),
               env_tp ρ Γ
               -> V ∷∷ T
-              -> env_tp (e_cons ρ (y,V)) (v_cons Γ (y,T))
+              -> env_tp (ρ,,(y,V)) (Γ,,(y,T))
   where "E ∷∷ T" := (closure_typ E T).
  Reserved Notation "E ⇓ V" (at level 90).
  
@@ -78,9 +75,9 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
        env_val ρ -> val ((mlam X E)[θ;;ρ])
   | meta_term_val : forall C, val (meta_term_closure C)
  with env_val : forall {δ}, env δ -> Prop :=
-  | env_val_nil : env_val e_nil
+  | env_val_nil : env_val s_nil
   | env_val_cons : forall γ (ρ:env γ) γ' (y:γ↪γ') V,
-       val V -> env_val (e_cons ρ (y,V))
+       val V -> env_val (s_cons _ ρ (y,V))
  .
 
  Inductive eval : closure -> closure -> Prop :=
@@ -92,7 +89,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
              (E:checked_exp δ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
              I1 [θ ;; ρ] ⇓ (fn y E) [θ' ;; ρ']
           -> E2 [θ ;; ρ] ⇓ V2
-          -> E [θ' ;; (e_cons ρ' (y,V2))] ⇓ V
+          -> E [θ' ;; (ρ' ,, (y,V2))] ⇓ V
           -> (app I1 E2) [θ ;; ρ] ⇓ V
   | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' (X:δ ↪ δ')
             (E:checked_exp δ' γ) θ' ρ' C V,
@@ -123,7 +120,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
          -> V1 ⇓ V
          -> (var _ y) [θ ;; ρ] ⇓ V
   | ev_rec : forall δ θ γ ρ γ' (f:γ↪γ') (E:checked_exp δ γ') V,
-       E [ θ ;; e_cons ρ (f, (rec f E)[θ;;ρ]) ] ⇓ V
+       E [ θ ;; ρ ,, (f, (rec f E)[θ;;ρ]) ] ⇓ V
     -> rec f E [θ ;; ρ] ⇓ V
     where "E1 ⇓ V1" := (eval E1 V1).
 
@@ -277,7 +274,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    Hint Resolve env_tp1 env_tp2.
    Ltac nice_inversion H := inversion H; subst; simpl_existTs; subst; repeat clean_substs.
    Ltac simpl_subst := unfold app_subst; simpl;repeat clean_substs.
-   Notation "A ,, B" := (v_cons A B) (at level 90).
+ 
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
    induction 1; try (destruct V; auto; fail);
