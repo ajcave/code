@@ -33,17 +33,15 @@ Require Import util.
  Open Scope type_scope.
  Definition var_mtp D1 D2 := (slink D1 D2)*(mtype D1).
  Definition mtype_assign := star var_mtp empty.
- Definition m_cons := @s_cons _ var_mtp empty.
- Implicit Arguments m_cons.
- Print Implicit m_cons.
+
  
  (* This is basically the "In" predicate, except that we import things to the end *)
  Inductive m_assigned D : mtype_assign D -> name D -> mtype D -> Prop :=
   | m_asn_top : forall D' (A:mtype_assign D') T x,
-                    m_assigned D (m_cons A (x,T)) x (import_mtype x T)
+                    m_assigned D (A,,(x,T)) x (import_mtype x T)
   | m_asn_else : forall D' T A x (y:slink D' D) U,
                  m_assigned D' A x T
-                 -> m_assigned D (m_cons A (y,U)) (import y x) (import_mtype y T). 
+                 -> m_assigned D (A,,(y,U)) (import y x) (import_mtype y T). 
  Implicit Arguments m_assigned.
  Implicit Arguments m_asn_top.
  Implicit Arguments m_asn_else.

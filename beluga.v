@@ -77,7 +77,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  with env_val : forall {δ}, env δ -> Prop :=
   | env_val_nil : env_val s_nil
   | env_val_cons : forall γ (ρ:env γ) γ' (y:γ↪γ') V,
-       val V -> env_val (s_cons _ ρ (y,V))
+       val V -> env_val (ρ,,(y,V))
  .
 
  Inductive eval : closure -> closure -> Prop :=
