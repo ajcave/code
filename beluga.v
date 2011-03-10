@@ -143,6 +143,10 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
           replace (tp_substitutable w1 w2 s1 t1) with (⟦ s1 ⟧ t1) in H; try reflexivity 
         | [ H : context f [app_msubst_t ?t ?w] |- ?g ] =>
           replace (app_msubst_t t w) with (⟦ t ⟧ w) in H; try reflexivity
+        | [ H : _ |- context f [tp_assign_substitutable ?w1 ?w2 ?w3 ?s1 ?t1] ] =>
+          replace (tp_assign_substitutable w1 w2 w3 s1 t1) with  (⟦ s1 ⟧ t1); try reflexivity 
+        | [ H : _ |- context f [app_msubst_t2 ?t ?w] ] =>
+          replace (app_msubst_t2 t w) with (⟦ t ⟧ w); try reflexivity
         | _ => fail
      end).
 
@@ -269,12 +273,17 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  Qed.
 
 
-   Hint Constructors closure_typ c_tp s_tp msubst_typ'.
+   Hint Constructors closure_typ c_tp s_tp br_tp msubst_typ'.
+   Hint Resolve env_tp1 env_tp2.
    Ltac nice_inversion H := inversion H; subst; simpl_existTs; subst; repeat clean_substs.
+   Ltac simpl_subst := unfold app_subst; simpl;repeat clean_substs.
+   Notation "A ,, B" := (v_cons A B) (at level 90).
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
    induction 1; try (destruct V; auto; fail);
    inversion 1; subst; simpl_existTs; subst.
+
+   (* Case: coercion *)
    nice_inversion H9.
    nice_inversion H2; eauto.
   
@@ -285,14 +294,14 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    assert ((fn y E)[θ';;ρ'] ∷∷ (⟦θ⟧ (arr T1 T0))); eauto.
    
    nice_inversion H5.
-   destruct T; try discriminate. inversion H17.
+   destruct T; try discriminate. nice_inversion H17.
    nice_inversion H19.
    rewrite <- H13.
-   pose proof (env_tp_cons y H18 H3).
-   
-   rewrite <- H12 in H7.
    apply IHeval3.
-   econstructor; eauto; eauto.
+   econstructor; eauto.
+   simpl_subst.
+   econstructor; eauto.
+   congruence.
 
    (* Case: meta application *)
    nice_inversion H10.
@@ -311,47 +320,29 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    econstructor; eauto.
    erewrite H6.
    eapply subst_lemma; eauto. 
-   rewrite <- (cons_wkn_inv θ' X Γ0 (⟦θ⟧ C)); eauto. 
+   erewrite <- cons_wkn_inv; eauto.
   
    (* case expression 1 *)
+   nice_inversion H10.
    eapply IHeval.
-   econstructor.
-   eexact H8.
-   eexact H9.
-   inversion H10. subst.
-   econstructor.
-   eexact H4.      
-   intros.
-   apply H6.
-   constructor 2.
-   auto.
+   econstructor; eauto.
+   econstructor; eauto; firstorder.
 
    (* case expression 2 *)
+   nice_inversion H12.
    eapply IHeval2.
-   econstructor.
-   eexact H10.
-   eexact H11.
-   inversion H12. subst.
-   econstructor.   
-   eexact H6.
-   intros. apply H8.
-   constructor 2. auto.
+   econstructor; eauto.
+   econstructor; eauto; firstorder.
 
    (* case expression 3 *)
-   inversion H12. subst.
-   assert ((meta_term_closure C) ∷∷  ⟦θ⟧ U).
-   eapply IHeval1.
-   econstructor.
-   eexact H10.
-   eexact H11.
-   constructor. auto.
-   inversion H4. subst.
+   nice_inversion H12.
+   assert ((meta_term_closure C) ∷∷  ⟦θ⟧ U); eauto.
+   nice_inversion H4.
    
    assert (@br_tp _ _ Δ Γ (br Ck θk Ek) (arr U T0)).
-   eapply H8.
-   constructor.
-   reflexivity.
-   inversion H5. subst. simpl_existTs. subst.
+   eapply H8. firstorder.
+   
+   nice_inversion H5.
    pose proof (hop1a H10 H20 H).
    assert (· ⊩ θ'' ∷ ·).
    eapply hop2a.
@@ -360,32 +351,27 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    eapply subst_lemma.   
    eexact H13.
    eexact H16.
+
    pose proof (hop1b H10 H20 H). 
    subst.
-   inversion H14. simpl_existTs. subst.
+   nice_inversion H14.
    eapply IHeval2.
    rewrite subst_assoc3.
    rewrite subst_id.
-   econstructor.
-   eexact H13.   
-   pose proof (subst_assoc2 Γ θk θ').
-   rewrite H15 in H11.
-   eexact H11.
-   auto.
+   econstructor; eauto.
+   erewrite subst_assoc2 in H11; eauto.
 
    (* var *)
-   inversion H10. subst. inversion H3. subst.
-   apply IHeval. 
-   eapply env_tp1; eauto.
-   apply env_tp2. auto. 
+   nice_inversion H10.
+   nice_inversion H3.
+   eauto.
    
    (* rec *)
-   inversion H9. subst. simpl_existTs. subst.
-   eapply IHeval.
-   econstructor.
-   eauto.
-   Focus 2. eexact H5.
-   unfold app_subst. simpl. econstructor; eauto.
+   nice_inversion H9.
+   eapply IHeval; eauto.
+   econstructor; eauto.
+   simpl_subst.
+   econstructor; eauto.
   Qed.
 
   Print Assumptions subj_red.
