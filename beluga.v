@@ -126,6 +126,11 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
        E [ θ ;; e_cons ρ (f, (rec f E)[θ;;ρ]) ] ⇓ V
     -> rec f E [θ ;; ρ] ⇓ V
     where "E1 ⇓ V1" := (eval E1 V1).
+
+  Theorem eval_val L V : L ⇓ V -> val V.
+  induction 1; assumption.
+  Qed.
+
    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
@@ -349,7 +354,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    eapply msubst_ext.
    eauto.
   
-   (* case statement 1 *)
+   (* case expression 1 *)
    eapply IHeval.
    econstructor.
    eexact H8.
@@ -362,7 +367,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    constructor 2.
    auto.
 
-   (* case statement 2 *)
+   (* case expression 2 *)
    eapply IHeval2.
    econstructor.
    eexact H10.
@@ -373,7 +378,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    intros. apply H8.
    constructor 2. auto.
 
-   (* case statement 3 *)
+   (* case expression 3 *)
    inversion H12. subst.
    assert ((meta_term_closure C) ∷∷ a θ U).
    eapply IHeval1.
@@ -429,4 +434,5 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    simpl.
    econstructor; eauto.
   Qed.
+
   Print Assumptions subj_red.
