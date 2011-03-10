@@ -32,10 +32,10 @@ Require Import comp_expr_typing.
 
 Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
   | env_assigned_here   : forall γ γ' (ρ:env γ') (y:γ'↪γ) V,
-                        env_assigned (e_cons ρ (y,V)) y V
+                      env_assigned (e_cons ρ (y,V)) y V
   | env_assigned_before : forall γ γ' (ρ:env γ') (y:γ'↪γ) V x U,
-                        env_assigned ρ x U
-                     -> env_assigned (e_cons ρ (y,V)) (import y x) U.
+                      env_assigned ρ x U
+                   -> env_assigned (e_cons ρ (y,V)) (import y x) U.
 
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
 
@@ -50,7 +50,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
                  · ⊩ θ ∷ Δ
               -> env_tp ρ (⟦θ⟧ Γ)
               -> Δ;Γ ⊢ E ⇐ T
-              -> (E [θ ;; ρ]) ∷∷ (a θ T)
+              -> (E [θ ;; ρ]) ∷∷ (⟦θ⟧  T)
   with env_tp : forall {γ}, env γ -> tp_assign empty γ -> Prop :=
    | env_tp_nil : env_tp e_nil ·
    | env_tp_cons : forall γ (ρ:env γ) Γ V T γ' (y:γ ↪ γ'),
@@ -310,11 +310,13 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    econstructor.
    eexact H14.
    instantiate (1 := (v_cons Γ0 (y,T2))).
+   clean_substs. clean_substs.
    rewrite <- H12 in H7.
-   eexact H7.
-   exact H15.
+   eexact H7. clean_substs. reflexivity.
    reflexivity.
-   reflexivity.   
+   reflexivity. assumption.
+   reflexivity.
+   reflexivity.
 
    (* Case: meta application *)
    unfold a in *. inversion H10. subst.
@@ -406,9 +408,8 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    inversion H14. simpl_existTs. subst. (* We diverge here *)
    eapply IHeval2.
    simpl.
-   rewrite subst_assoc.
+   rewrite subst_assoc3.
    rewrite subst_id.
-   change (Ek [θ';; ρ] ∷∷ a θ' (app_msubst_t θk T)).
    econstructor.
    eexact H13.   
    pose proof (subst_assoc2 Γ θk θ').
