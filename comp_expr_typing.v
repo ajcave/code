@@ -12,7 +12,7 @@ Require Import meta_subst_meta_type.
 (* TODO. Is this even possible? Should it produce a world D2 and link? *)
  Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
 
- Definition weaken_ctx : forall {D1 D2 G}, slink D1 D2 -> tp_assign D1 G -> tp_assign D2 G.
+ Definition weaken_ctx : forall {D1 D2 G}, slink D1 D2 -> tp_assign G D1 -> tp_assign G D2.
  intros. induction H0.
  constructor.
  econstructor.
@@ -28,7 +28,7 @@ Require Import meta_subst_meta_type.
 Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
 Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
 
-Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : synth_exp δ γ -> tp δ -> Prop :=
   | var_s : forall x T,
              var_assigned Γ x T
@@ -44,7 +44,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
   | coerce_s : forall E T,
               Δ;Γ ⊢ E ⇐ T
            -> Δ;Γ ⊢ (coercion E T) ⇒ T
- with c_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+ with c_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : checked_exp δ γ -> tp δ -> Prop :=
   | synth_c : forall I T,
               Δ;Γ ⊢ I ⇒ T
@@ -65,7 +65,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
   | rec_c : forall γ' (f:slink γ γ') E T,
              Δ;(v_cons Γ (f,T)) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (rec f E) ⇐ T
- with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign δ γ}
+ with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                      : branch δ γ -> tp δ -> Prop :=
   | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
                   (E:checked_exp δi γ) (U T:mtype δ)

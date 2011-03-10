@@ -40,18 +40,18 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
 
  Reserved Notation "E ∷∷ T" (at level 90).
- Definition a {δ δ'} (θ:msubst δ δ') (T1: tp δ) := ⟦ θ ⟧  T1.
+(* Definition a {δ δ'} (θ:msubst δ δ') (T1: tp δ) := ⟦ θ ⟧  T1. *)
 
  Inductive closure_typ : closure -> tp empty -> Prop :=
   | meta_term_closure_typ : forall C U,
               (· ⊨ C ∷ U)
            -> (meta_term_closure C) ∷∷ U
-  | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign' γ δ) E (T:tp δ) (θ:msubst δ empty) (ρ:env γ),
+  | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign γ δ) E (T:tp δ) (θ:msubst δ empty) (ρ:env γ),
                  · ⊩ θ ∷ Δ
               -> env_tp ρ (⟦θ⟧ Γ)
               -> Δ;Γ ⊢ E ⇐ T
               -> (E [θ ;; ρ]) ∷∷ (⟦θ⟧  T)
-  with env_tp : forall {γ}, env γ -> tp_assign empty γ -> Prop :=
+  with env_tp : forall {γ}, env γ -> tp_assign γ empty -> Prop :=
    | env_tp_nil : env_tp e_nil ·
    | env_tp_cons : forall γ (ρ:env γ) Γ V T γ' (y:γ ↪ γ'),
               env_tp ρ Γ
@@ -138,10 +138,12 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
      ⟦ θ ; ⟦θ⟧ C // X ⟧ T = ⟦θ⟧ ([[ C // X ]] T).
 
     Ltac clean_substs :=
-      unfold a in *;
       (match goal with
         | [ H : context f [tp_substitutable ?w1 ?w2 ?s1 ?t1] |- ?g ] =>
-        replace (tp_substitutable w1 w2 s1 t1) with (⟦ s1 ⟧ t1) in H 
+          replace (tp_substitutable w1 w2 s1 t1) with (⟦ s1 ⟧ t1) in H; try reflexivity 
+        | [ H : context f [app_msubst_t ?t ?w] |- ?g ] =>
+          replace (app_msubst_t t w) with (⟦ t ⟧ w) in H; try reflexivity
+        | _ => fail
      end).
 
    Axiom subst_lemma : forall {δ δ':world} C U θ (Δ:mtype_assign δ) (Δ':mtype_assign δ'),
@@ -149,7 +151,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
   -> Δ  ⊨ C ∷ U
   -> Δ' ⊨ ⟦θ⟧ C ∷ ⟦θ⟧ U.
 
-   Theorem cons_wkn_inv {δ δ' δ'' γ } (θ:msubst δ δ') (X:δ ↪ δ'') (Γ:tp_assign' γ δ) C :
+   Theorem cons_wkn_inv {δ δ' δ'' γ } (θ:msubst δ δ') (X:δ ↪ δ'') (Γ:tp_assign γ δ) C :
      ⟦θ⟧Γ = ⟦θ; C // X⟧(weaken_ctx X Γ).
    Admitted.
 
@@ -219,22 +221,21 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
     (θ:msubst δ δ') (θ':msubst δ' δ'') :
     ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
    Admitted.
-   Lemma subst_assoc2 {δ δ' δ'' γ} (Γ:tp_assign δ γ)
+   Lemma subst_assoc2 {δ δ' δ'' γ} (Γ:tp_assign γ δ)
     (θ:msubst δ δ') (θ':msubst δ' δ'') :
-    app_msubst_tp_assign (⟦θ'⟧θ) Γ =
-     app_msubst_tp_assign θ' (app_msubst_tp_assign θ Γ).
+    ⟦⟦θ'⟧θ⟧ Γ = ⟦θ'⟧(⟦θ⟧ Γ).
    generalize dependent δ'.
    generalize dependent δ''.
    induction Γ; intros.
    reflexivity. destruct r.
-   simpl.
+   unfold app_subst. unfold tp_assign_substitutable. simpl.
    f_equal.
    apply IHΓ.
    f_equal.
    apply subst_assoc3.
    Admitted.
 
- Lemma env_tp1 : forall γ ρ y V1 T0 (Γ : tp_assign' γ empty),
+ Lemma env_tp1 : forall γ ρ y V1 T0 (Γ : tp_assign γ empty),
                     env_assigned ρ y V1 ->
                     env_tp ρ Γ -> var_assigned Γ y T0 -> V1 ∷∷ T0.
  intros. dependent induction H0.
@@ -255,7 +256,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  auto.
  Qed.
 
- Lemma env_tp2 : forall δ γ (Γ : tp_assign' γ δ) δ' (θ:msubst δ δ') y T0,
+ Lemma env_tp2 : forall δ γ (Γ : tp_assign γ δ) δ' (θ:msubst δ δ') y T0,
                     var_assigned Γ y T0
                  -> var_assigned (⟦θ⟧ Γ) y (app_msubst_t2 θ T0).
  induction Γ; intros. 
@@ -300,8 +301,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
 
    inversion H5. subst. simpl_existTs. subst.
    destruct T; try discriminate. inversion H17.
-   inversion H19. subst. simpl_existTs. subst.
-   clean_substs. clean_substs.
+   inversion H19. subst. simpl_existTs. subst. repeat clean_substs.
     rewrite <- H13.
    pose proof (env_tp_cons y H18 H3).
    
@@ -310,16 +310,11 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    econstructor.
    eexact H14.
    instantiate (1 := (v_cons Γ0 (y,T2))).
-   clean_substs. clean_substs.
    rewrite <- H12 in H7.
-   eexact H7. clean_substs. reflexivity.
-   reflexivity.
-   reflexivity. assumption.
-   reflexivity.
-   reflexivity.
+   eexact H7. assumption.
 
    (* Case: meta application *)
-   unfold a in *. inversion H10. subst.
+   inversion H10. subst.
    inversion H3. simpl_existTs. subst.
    assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (prod X0 U T))).
    apply IHeval1.
@@ -329,18 +324,14 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    inversion H2. subst. simpl_existTs. subst.
    inversion H17. subst. simpl_existTs. subst.
    inversion H15. simpl_existTs. unfold weaken1 in *.
-   clean_substs. Focus 2. reflexivity.
+   repeat clean_substs.
    destruct (next empty) as [α X']. simpl in *.
    apply IHeval2.
    rewrite <- subst_combine.
    unfold msubst.
-   change (s_cons δ' (theta_weaken θ' X') (X, m_var X'))
-     with  ((theta_weaken θ' X') ; (m_var X') // X) in H4.
-   change (s_cons δ'0 (theta_weaken θ X') (X0, m_var X'))
-     with  ((theta_weaken θ X') ; (m_var X') // X0) in H4.
-   change (app_msubst_t θ' U0) with (⟦θ'⟧ U0) in H6. 
-   change (app_msubst_t θ U) with (⟦θ⟧ U) in H6.
-   replace (⟦θ ; ⟦θ⟧ C // X0⟧ T) with (⟦θ'; ⟦θ⟧ C // X⟧ T1).
+   
+   erewrite <- msubst_ext.
+   Focus 2. eexact H4.
    econstructor.
    econstructor.
    eexact H12.
@@ -353,8 +344,6 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    eexact H14.
    rewrite <- (cons_wkn_inv θ' X Γ0 (⟦θ⟧ C)). 
    exact H16.
-   eapply msubst_ext.
-   eauto.
   
    (* case expression 1 *)
    eapply IHeval.
@@ -382,7 +371,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
 
    (* case expression 3 *)
    inversion H12. subst.
-   assert ((meta_term_closure C) ∷∷ a θ U).
+   assert ((meta_term_closure C) ∷∷  ⟦θ⟧ U).
    eapply IHeval1.
    econstructor.
    eexact H10.
@@ -405,16 +394,13 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    eexact H16.
    pose proof (hop1b H10 H20 H). 
    subst.
-   inversion H14. simpl_existTs. subst. (* We diverge here *)
+   inversion H14. simpl_existTs. subst.
    eapply IHeval2.
-   simpl.
    rewrite subst_assoc3.
    rewrite subst_id.
    econstructor.
    eexact H13.   
    pose proof (subst_assoc2 Γ θk θ').
-   unfold app_subst in H11 at 1.
-   unfold tp_assign_substitutable in H11.
    rewrite H15 in H11.
    eexact H11.
    auto.
@@ -431,9 +417,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    econstructor.
    eauto.
    Focus 2. eexact H5.
-   unfold app_subst. unfold tp_assign_substitutable.
-   simpl.
-   econstructor; eauto.
+   unfold app_subst. simpl. econstructor; eauto.
   Qed.
 
   Print Assumptions subj_red.
