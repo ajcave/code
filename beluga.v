@@ -269,8 +269,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
  Qed.
 
 
-   Hint Constructors closure_typ c_tp s_tp.
-   Hint Constructors c_tp s_tp.
+   Hint Constructors closure_typ c_tp s_tp msubst_typ'.
    Ltac nice_inversion H := inversion H; subst; simpl_existTs; subst; repeat clean_substs.
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
@@ -291,45 +290,28 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    rewrite <- H13.
    pose proof (env_tp_cons y H18 H3).
    
-   apply IHeval3.
-   Print closure_typ. 
-   econstructor.
-   eexact H14.
-   instantiate (1 := (v_cons Γ0 (y,T2))).
    rewrite <- H12 in H7.
-   eexact H7. assumption.
+   apply IHeval3.
+   econstructor; eauto; eauto.
 
    (* Case: meta application *)
-   inversion H10. subst.
-   inversion H3. simpl_existTs. subst.
-   assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (prod X0 U T))).
-   apply IHeval1.
-   econstructor.
-   eexact H8. eexact H9. constructor. eexact H5.
+   nice_inversion H10.
+   nice_inversion H3.
+   assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (prod X0 U T))); eauto.
    
-   inversion H2. subst. simpl_existTs. subst.
-   inversion H17. subst. simpl_existTs. subst.
-   inversion H15. simpl_existTs. unfold weaken1 in *.
-   repeat clean_substs.
+   nice_inversion H2.
+   nice_inversion H17.
+   nice_inversion H15.
    destruct (next empty) as [α X']. simpl in *.
    apply IHeval2.
    rewrite <- subst_combine.
-   unfold msubst.
    
-   erewrite <- msubst_ext.
-   Focus 2. eexact H4.
-   econstructor.
-   econstructor.
-   eexact H12.
-   instantiate (1:= U0).
+   erewrite <- msubst_ext; eauto.
+   econstructor; eauto.
+   econstructor; eauto.
    erewrite H6.
-   eapply subst_lemma.   
-   eauto.
-   eauto.
-   Focus 2.
-   eexact H14.
-   rewrite <- (cons_wkn_inv θ' X Γ0 (⟦θ⟧ C)). 
-   exact H16.
+   eapply subst_lemma; eauto. 
+   rewrite <- (cons_wkn_inv θ' X Γ0 (⟦θ⟧ C)); eauto. 
   
    (* case expression 1 *)
    eapply IHeval.
