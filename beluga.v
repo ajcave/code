@@ -333,8 +333,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    assert ((meta_term_closure C) ∷∷  ⟦θ⟧ U); eauto.
    nice_inversion H4.
    
-   assert (@br_tp _ _ Δ Γ (br Ck θk Ek) (arr U T0)).
-   firstorder.
+   assert (@br_tp _ _ Δ Γ (br Ck θk Ek) (arr U T0)); firstorder.
    
    nice_inversion H5.
    pose proof (hop1a H10 H20 H).
