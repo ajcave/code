@@ -1,0 +1,126 @@
+10
+
+dir
+0
+svn+ssh://acave1@svn.cs.mcgill.ca/xtra/complogic/projects/fphoas/papers/recursive-types/mechanization
+svn+ssh://acave1@svn.cs.mcgill.ca/xtra/complogic/projects
+add
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+43d24729-2434-0410-925c-bf0b6e80c5b3
+
+meta_subst_type_assign.v
+file
+
+
+
+add
+
+comp_expr.v
+file
+
+
+
+add
+
+meta_subst_meta_subst.v
+file
+
+
+
+add
+
+meta_subst_meta_type.v
+file
+
+
+
+add
+
+meta_term.v
+file
+
+
+
+add
+
+util.v
+file
+
+
+
+add
+
+beluga.v
+file
+
+
+
+add
+
+meta_subst_typing.v
+file
+
+
+
+add
+
+meta_subst_meta_term.v
+file
+
+
+
+add
+
+type_assign.v
+file
+
+
+
+add
+
+comp_expr_typing.v
+file
+
+
+
+add
+
+meta_subst.v
+file
+
+
+
+add
+
+meta_subst_type.v
+file
+
+
+
+add
+
+worlds.v
+file
+
+
+
+add
+
