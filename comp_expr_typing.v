@@ -39,7 +39,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
            -> Δ;Γ ⊢ E ⇐ T1
            -> Δ;Γ ⊢ (app I E) ⇒ T2
   | mapp_s : forall I δ' (X:wlink δ δ') U C T,
-              Δ;Γ ⊢ I ⇒ (prod X U T)
+              Δ;Γ ⊢ I ⇒ (pi X U T)
            -> Δ ⊨ C ∷ U
            -> Δ;Γ ⊢ (mapp I C) ⇒ (msubst_single_t X C T)
   | coerce_s : forall E T,
@@ -58,7 +58,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
           -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
   | mlam_c : forall δ' (X:slink δ δ') E U T,
              (Δ,, (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (mlam X E) ⇐ (prod X U T)
+          -> Δ;Γ ⊢ (mlam X E) ⇐ (pi X U T)
   | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U
           -> (forall B, In B Bs -> br_tp B (arr U T))
@@ -74,7 +74,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
              Δi ⊨ C ∷ ⟦θi⟧ U
           -> Δi ⊩ θi ∷ Δ
           -> Δi;(app_msubst_tp_assign θi Γ) ⊢ E ⇐ (app_msubst_t θi T)
-          -> br_tp (br C θi E) (arr U T)
+          -> br_tp (br C θi E) (arr (m_tp' U) (m_tp' T))
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).
  

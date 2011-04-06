@@ -142,8 +142,10 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
           replace (app_msubst_t t w) with (⟦ t ⟧ w) in H; try reflexivity
         | [ H : _ |- context f [tp_assign_substitutable ?w1 ?w2 ?w3 ?s1 ?t1] ] =>
           replace (tp_assign_substitutable w1 w2 w3 s1 t1) with  (⟦ s1 ⟧ t1); try reflexivity 
-        | [ H : _ |- context f [app_msubst_t2 ?t ?w] ] =>
-          replace (app_msubst_t2 t w) with (⟦ t ⟧ w); try reflexivity
+        | [ H : _ |- context f [app_msubst_t2 ?t ?T] ] =>
+          replace (app_msubst_t2 t T) with (⟦ t ⟧ T); try reflexivity
+        | [ H : context f [app_msubst_t2 ?t ?T] |- _ ] =>
+          replace (app_msubst_t2 t T) with (⟦ t ⟧ T) in H; try reflexivity
         | _ => fail
      end).
 
@@ -295,6 +297,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    nice_inversion H5.
    nice_inversion H19.
    nice_inversion H17.
+   unfold app_subst in *. 
    rewrite <- H13.
    apply IHeval3.
    constructors congruence.
@@ -302,7 +305,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    (* Case: meta application *)
    nice_inversion H10.
    nice_inversion H3.
-   assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (prod X0 U T))); eauto.
+   assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (pi X0 U T))); eauto.
    
    nice_inversion H2.
    nice_inversion H17.

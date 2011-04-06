@@ -14,6 +14,6 @@ Require Import meta_subst_type.
  Definition tp_assign' δ γ := tp_assign γ δ.
  Instance tp_assign_substitutable γ : substitutable (tp_assign γ) := (@app_msubst_tp_assign γ).
 
- Instance tp_substitutable : substitutable tp := @app_msubst_t2.
+ Instance tp_substitutable : substitutable tp := (@app_msubst_t2 empty).
 
  Implicit Arguments app_msubst_tp_assign.

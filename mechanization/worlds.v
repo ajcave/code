@@ -9,6 +9,7 @@ Parameter world : Set.
  Parameter weaken : forall {a b}, slink a b -> name b.
  Coercion weaken : slink >-> name.
  Parameter import : forall {a b}, slink a b -> name a -> name b.
- Parameter next : forall a, {b:world & slink a b}.
+ Parameter next' : forall a, {b:world & a↪b}.
+ Definition next a : {b:world & a↪b} := existT _ (projT1 (next' a)) (projT2 (next' a)).
  Axiom import_inj : forall {α β} {y:α↪β} {x x0}, import y x = import y x0 -> x = x0. 
  Axiom import_img : forall {α β} (y:α↪β) x, import y x <> y.
