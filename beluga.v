@@ -13,14 +13,7 @@ Require Import comp_expr.
 Require Import meta_subst_type_assign.
 Require Import meta_subst_meta_subst.
 Require Import comp_expr_typing.
- 
-  (* TODO: Compare our use of strong links and imports to the paper's example of
-     typing derivations. It's possible that they do contravariant stuff to avoid
-     the import *)
-(* TODO: Consider just having eval relate closures, and
-   proving after the fact that the rhs is always a value *)
- Print star.
- Print tp_assign.
+
  Inductive closure : Set :=
   | meta_term_closure : meta_term empty -> closure
   | comp_term_closure : forall D G, checked_exp D G -> msubst D empty -> star (fun γ γ' => (γ↪γ')*closure) empty G -> closure.
@@ -146,6 +139,8 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
           replace (app_msubst_t2 t T) with (⟦ t ⟧ T); try reflexivity
         | [ H : context f [app_msubst_t2 ?t ?T] |- _ ] =>
           replace (app_msubst_t2 t T) with (⟦ t ⟧ T) in H; try reflexivity
+        | [ H : _ |- context f [msubst_substitutable ?w1 ?w2 ?t1 ?t2] ] =>
+          replace (msubst_substitutable w1 w2 t1 t2) with (⟦ t1 ⟧ t2); try reflexivity 
         | _ => fail
      end).
 
@@ -162,8 +157,8 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
                       (X : δ ↪ δ') (θ' : msubst δ β)
                       m  
                       (X0 : δ ↪ δ'0) (T:tp δ'0) (T1:tp δ')  (X' : β ↪ α),
-                    ⟦theta_weaken θ' X';  m_var X' // X ⟧ T1 =
-                    ⟦theta_weaken θ X';  m_var X' // X0 ⟧ T ->
+                    ⟦import_msubst X' θ';  m_var  X' // X ⟧ T1 =
+                    ⟦import_msubst X' θ;  m_var X' // X0 ⟧ T ->
                     ⟦θ';  m // X ⟧ T1 = ⟦θ;  m // X0 ⟧ T.
    Admitted.
   Set Implicit Arguments.
@@ -219,11 +214,45 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    Lemma subst_assoc {δ δ' δ''} (T:mtype δ)
     (θ:msubst δ δ') (θ':msubst δ' δ'') :
     ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
-   Admitted.
-   Lemma subst_assoc3 {δ δ' δ''} (T:tp δ)
-    (θ:msubst δ δ') (θ':msubst δ' δ'') :
+   Admitted. (* TODO: This should be part of the typeclass *)
+   Axiom subst_assoc4 : forall {δ δ' δ''} (C:meta_term δ)
+    (θ:msubst δ δ') (θ':msubst δ' δ''),
+     ⟦⟦θ'⟧θ⟧ C = ⟦θ'⟧(⟦θ⟧C).
+   Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
+    (θ:msubst δ δ') (θ':msubst δ' δ''),
     ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
+   induction T; intros;
+   unfold app_subst at 1 3 4;
+   unfold tp_substitutable in *;
+   simpl; repeat clean_substs;
+   try (rewrite subst_assoc);
+   try (f_equal);
+   try (eapply IHT1);
+   try (eapply IHT2);
+   try (eapply IHT);
+   try (eapply subst_assoc4).
+   unfold app_subst in *.
+   unfold tp_substitutable in *.
+   erewrite <- IHT.
+   repeat clean_substs.
+   remember ((next' δ'')) as X.
+   remember (next' δ'0) as X'.
+   destruct X.
+   destruct X'. simpl.
+   f_equal.
+   repeat (match goal with | [ H : _ |- _] => clear H end).
+   generalize dependent δ''.
+   generalize δ' s x x0 s1.
+   clear δ' s x x0 s1.
+   induction θ; intros.
+   unfold app_subst.
+   simpl.
    Admitted.
+   
+  (* TODO: Remove extraneous definitions! 
+     Define substitution directly where we declare it an
+     instance of the typeclass! Then less unfolding *)
+   
    Lemma subst_assoc2 {δ δ' δ'' γ} (Γ:tp_assign γ δ)
     (θ:msubst δ δ') (θ':msubst δ' δ'') :
     ⟦⟦θ'⟧θ⟧ Γ = ⟦θ'⟧(⟦θ⟧ Γ).
@@ -236,7 +265,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    apply IHΓ.
    f_equal.
    apply subst_assoc3.
-   Admitted.
+   Qed.
 
  Lemma env_tp1 : forall γ ρ y V1 T0 (Γ : tp_assign γ empty),
                     env_assigned ρ y V1 ->

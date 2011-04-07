@@ -6,12 +6,17 @@ Require Import meta_subst_meta_type.
 Require Import meta_subst_meta_term.
 Require Import meta_subst_typing.
 Require Import meta_term.
-Axiom theta_weaken : forall {D R} (theta:msubst D R) {R'} (X:wlink R R'), msubst D R'.
 
+ 
+Fixpoint import_msubst {δ δ' δ''} (X:δ'↪δ'')  (θ:msubst δ δ')  : msubst δ δ'' :=
+match θ in star _ _ δ return star (mbind δ'') empty δ with
+ | · => ·
+ | (θ',, (Y,t)) => import_msubst X θ',, (Y, import_meta_term X t)
+end.
 
 Section app_msubst_t2_sect.
 
-Notation "θ ;; X' // X" := ((theta_weaken θ X') ; (m_var X') // X) (at level 90).
+Notation "θ ;; X' // X" := ((import_msubst X' θ) ; (m_var X') // X) (at level 90).
 Reserved Notation "[ θ ] T" (at level 90).
 
 Fixpoint app_msubst_t2 {ψ} {δ δ'} (θ:msubst δ δ') (T:tp' ψ δ) : tp' ψ δ' :=
