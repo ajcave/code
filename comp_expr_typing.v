@@ -10,21 +10,11 @@ Require Import meta_subst_type.
 Require Import meta_subst_type_assign.
 Require Import meta_subst_meta_type.
 
-(* TODO. Is this even possible? Should it produce a world D2 and link? *)
- Axiom import_tp : forall {D1 D2:world} (y:slink D1 D2) (T:tp D1), tp D2.
+ 
+ Definition import_tp : forall {δ δ'} (y:δ↪δ') (T:tp δ), tp δ'.
+ Admitted. (* TODO: Easy with generic traversal *)
 
- Definition weaken_ctx : forall {D1 D2 G}, slink D1 D2 -> tp_assign G D1 -> tp_assign G D2.
- intros. induction H0.
- constructor.
- econstructor.
- eexact IHstar.
- destruct r.
- constructor.
- exact s.
- eapply import_tp.
- eexact H.
- exact t.
- Defined.
+ Definition import_tp_assign {δ δ' γ} (X:δ↪δ') (Γ:tp_assign γ δ) : tp_assign γ δ' := (import_tp X) ○ Γ.
 
 Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
 Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
@@ -32,7 +22,7 @@ Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
 Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : synth_exp δ γ -> tp δ -> Prop :=
   | var_s : forall x T,
-             var_assigned Γ x T
+             Γ x = T
            -> Δ;Γ ⊢ (var _ x) ⇒ T
   | app_s : forall I T1 E T2,
               Δ;Γ ⊢ I ⇒ (arr T1 T2)
@@ -57,7 +47,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
              Δ;(Γ,, (y,T1)) ⊢ E ⇐ T2
           -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
   | mlam_c : forall δ' (X:slink δ δ') E U T,
-             (Δ,, (X,U));(weaken_ctx X Γ) ⊢ E ⇐ T
+             (import_mtype X ○ (Δ,, (X,U)));(import_tp_assign X Γ) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (mlam X E) ⇐ (pi X U T)
   | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U

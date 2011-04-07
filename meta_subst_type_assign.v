@@ -4,16 +4,12 @@ Require Import type_assign.
 Require Import meta_subst.
 Require Import comp_expr.
 Require Import meta_subst_type.
- Fixpoint app_msubst_tp_assign' {W G'} (G:tp_assign G' W) : forall {W'} (theta:msubst W W'), tp_assign G' W' :=
-  match G in star _ _ G' return forall {W'} (theta:msubst W W'), star (var_tp W') empty G' with
-   | s_nil => fun W' theta => s_nil
-   | s_cons _ _ a (b,c) => fun W' theta => s_cons _ (app_msubst_tp_assign' a _ theta) (b,app_msubst_t2 theta c)
-  end.
  
- Definition app_msubst_tp_assign {G' W W'} (theta:msubst W W') (G:tp_assign G' W) : tp_assign G' W' := app_msubst_tp_assign' G _ theta.
- Definition tp_assign' δ γ := tp_assign γ δ.
- Instance tp_assign_substitutable γ : substitutable (tp_assign γ) := (@app_msubst_tp_assign γ).
+ (* TODO: Remove *)
+ Definition app_msubst_tp_assign {γ δ δ'} (θ:msubst δ δ') (Γ:tp_assign γ δ)  : tp_assign γ δ' := ⟦θ⟧ ○ Γ.
+ 
+ Instance tp_assign_substitutable γ : substitutable (tp_assign γ) := (fun {δ δ'} (θ:msubst δ δ') (Γ:tp_assign γ δ)  =>
+  ⟦θ⟧ ○ Γ : tp_assign γ δ').
 
- Instance tp_substitutable : substitutable tp := (@app_msubst_t2 empty).
 
  Implicit Arguments app_msubst_tp_assign.
