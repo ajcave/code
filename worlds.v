@@ -1,6 +1,7 @@
 Parameter world : Set.
  Parameter empty : world.
  Parameter name : world -> Set.
+ Axiom empty_is_empty : name empty -> False.
  Parameter wlink : world -> world -> Set.
  Definition slink := wlink. (* ??? *)
  Notation "α ↪ β" := (slink α β) (at level 90).
@@ -13,3 +14,5 @@ Parameter world : Set.
  Definition next a : {b:world & a↪b} := existT _ (projT1 (next' a)) (projT2 (next' a)).
  Axiom import_inj : forall {α β} {y:α↪β} {x x0}, import y x = import y x0 -> x = x0. 
  Axiom import_img : forall {α β} (y:α↪β) x, import y x <> y.
+ Parameter export : forall {α β} (y:α↪β) (n:name β), name α + {n = y}.
+ Axiom export_exclusive : forall {α β} {y:α↪β} {n:name α}, inleft _ n = export y y -> False.

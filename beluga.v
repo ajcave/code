@@ -144,10 +144,11 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
         | _ => fail
      end).
 
-   Axiom subst_lemma : forall {δ δ':world} C U θ (Δ:mtype_assign δ) (Δ':mtype_assign δ'),
+   Theorem subst_lemma : forall {δ δ':world} C U θ (Δ:mtype_assign δ) (Δ':mtype_assign δ'),
      Δ' ⊩ θ ∷ Δ
   -> Δ  ⊨ C ∷ U
   -> Δ' ⊨ ⟦θ⟧ C ∷ ⟦θ⟧ U.
+   Admitted.
 
    Theorem cons_wkn_inv {δ δ' δ'' γ } (θ:msubst δ δ') (X:δ ↪ δ'') (Γ:tp_assign γ δ) C :
      ⟦θ⟧Γ = ⟦θ; C // X⟧(weaken_ctx X Γ).
@@ -218,6 +219,7 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    Axiom subst_assoc4 : forall {δ δ' δ''} (C:meta_term δ)
     (θ:msubst δ δ') (θ':msubst δ' δ''),
      ⟦⟦θ'⟧θ⟧ C = ⟦θ'⟧(⟦θ⟧C).
+ 
    Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
     (θ:msubst δ δ') (θ':msubst δ' δ''),
     ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
@@ -245,8 +247,38 @@ Inductive env_assigned : forall {γ}, env γ -> name γ -> closure -> Prop :=
    generalize δ' s x x0 s1.
    clear δ' s x x0 s1.
    induction θ; intros.
+   simpl.
    unfold app_subst.
    simpl.
+   rewrite app_msubst_mvar_result.
+   simpl.
+   remember (export s1 s1).   
+   destruct s2.
+   destruct (export_exclusive Heqs2). 
+   reflexivity.
+   destruct r.
+   simpl.
+   unfold app_subst in *.   
+   unfold msubst_substitutable in *.
+   unfold meta_term_substitutable in *.
+   simpl.
+   unfold app_subst in *.
+   unfold meta_term_substitutable in *.
+   specialize (IHθ c s2 x x0 s1 δ'' θ' s0).
+   simpl in IHθ.
+   erewrite app_msubst_mvar_result in IHθ.
+   simpl in IHθ.
+   remember (export s1 s1).
+   destruct s3.
+   destruct (export_exclusive Heqs3).
+   inversion IHθ; simpl_existTs.
+   rewrite H1.
+   erewrite app_msubst_mvar_result.
+   simpl.
+   remember (export s1 s1).
+   destruct s3.   
+   destruct (export_exclusive Heqs0).
+   
    Admitted.
    
   (* TODO: Remove extraneous definitions! 
