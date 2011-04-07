@@ -129,10 +129,10 @@ Require Import Coq.Logic.FunctionalExtensionality.
           replace (app_msubst_t t w) with (⟦ t ⟧ w) in H; try reflexivity
         | [ H : _ |- context f [tp_assign_substitutable ?w1 ?w2 ?w3 ?s1 ?t1] ] =>
           replace (tp_assign_substitutable w1 w2 w3 s1 t1) with  (⟦ s1 ⟧ t1); try reflexivity 
-        | [ H : _ |- context f [app_msubst_t2 ?t ?T] ] =>
-          replace (app_msubst_t2 t T) with (⟦ t ⟧ T); try reflexivity
-        | [ H : context f [app_msubst_t2 ?t ?T] |- _ ] =>
-          replace (app_msubst_t2 t T) with (⟦ t ⟧ T) in H; try reflexivity
+        | [ H : _ |- context f [app_msubst_tp ?t ?T] ] =>
+          replace (app_msubst_tp t T) with (⟦ t ⟧ T); try reflexivity
+        | [ H : context f [app_msubst_tp ?t ?T] |- _ ] =>
+          replace (app_msubst_tp t T) with (⟦ t ⟧ T) in H; try reflexivity
         | [ H : _ |- context f [msubst_substitutable ?w1 ?w2 ?t1 ?t2] ] =>
           replace (msubst_substitutable w1 w2 t1 t2) with (⟦ t1 ⟧ t2); try reflexivity 
         | _ => fail
@@ -328,7 +328,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
    rewrite subst_id.
    econstructor; eauto.
    erewrite subst_assoc2 in H11; eauto; fail.
-   destruct (empty_fst y).   
+   destruct (empty_fst y); fail.  
 
    (* var *)
    nice_inversion H10.

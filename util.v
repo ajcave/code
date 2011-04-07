@@ -29,14 +29,12 @@ Definition compose
  Notation "Γ ,, ( y , t )" := ((maybe Γ t) ○ (export y)) (at level 90).
 
 Lemma compose_assoc {A B C D:Set} (f:A -> B) (g:B -> C) (h:C -> D) : (h ○ g) ○ f = h ○ (g ○ f).
-eapply functional_extensionality. 
-intro. unfold compose.
-reflexivity.
+extensionality x. unfold compose. reflexivity.
 Qed.
 
 Lemma f_maybe {A B C:Set} (f:B -> C) (Γ:A -> B) (t:B) :
  f ○ (maybe Γ t) = maybe (f ○ Γ) (f t).  
-eapply functional_extensionality; intro. unfold compose.
+extensionality x. unfold compose.
 destruct x; simpl; reflexivity.
 Qed.
 

@@ -15,5 +15,12 @@ Parameter world : Set.
  Axiom import_inj : forall {α β} {y:α↪β} {x x0}, import y x = import y x0 -> x = x0. 
  Axiom import_img : forall {α β} (y:α↪β) x, import y x <> y.
  Parameter export : forall {α β} (y:α↪β) (n:name β), name α + unit.
- Axiom export_exclusive : forall {α β} {y:α↪β} {n:name α}, inl _ n = export y y -> False.
+ Axiom export_self : forall {α β} (y:α↪β), export y y = inr _ tt.
+ Lemma export_exclusive : forall {α β} {y:α↪β} {n:name α}, inl _ n = export y y -> False.
+ intros.
+ erewrite export_self in H.
+ discriminate.
+ Qed.
  Axiom empty_fst : forall {α}, α↪empty -> False.
+ Axiom export_import_inv : forall {α β} (y:α↪β) (n:name α), export y (import y n) = inl _ n.
+ 
