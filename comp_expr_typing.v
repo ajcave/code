@@ -63,7 +63,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                   (Δi:mtype_assign δi),
              Δi ⊨ C ∷ ⟦θi⟧ U
           -> Δi ⊩ θi ∷ Δ
-          -> Δi;(app_msubst_tp_assign θi Γ) ⊢ E ⇐ (app_msubst_t θi T)
+          -> Δi;(⟦θi⟧ Γ) ⊢ E ⇐ ⟦θi⟧T
           -> br_tp (br C θi E) (arr (m_tp' U) (m_tp' T))
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@s_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@c_tp _ _ D1 G1 t1 T1).

@@ -125,8 +125,8 @@ Require Import Coq.Logic.FunctionalExtensionality.
       (match goal with
         | [ H : context f [tp_substitutable ?w1 ?w2 ?s1 ?t1] |- ?g ] =>
           replace (tp_substitutable w1 w2 s1 t1) with (⟦ s1 ⟧ t1) in H; try reflexivity 
-        | [ H : context f [app_msubst_t ?t ?w] |- ?g ] =>
-          replace (app_msubst_t t w) with (⟦ t ⟧ w) in H; try reflexivity
+        | [ H : context f [app_msubst_mtype ?t ?w] |- ?g ] =>
+          replace (app_msubst_mtype t w) with (⟦ t ⟧ w) in H; try reflexivity
         | [ H : _ |- context f [tp_assign_substitutable ?w1 ?w2 ?w3 ?s1 ?t1] ] =>
           replace (tp_assign_substitutable w1 w2 w3 s1 t1) with  (⟦ s1 ⟧ t1); try reflexivity 
         | [ H : _ |- context f [app_msubst_tp ?t ?T] ] =>
@@ -288,7 +288,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
    nice_inversion H17.
    nice_inversion H15.
    destruct (next empty) as [α X']. simpl in *.
-   apply IHeval2.
+   apply IHeval2. repeat clean_substs.
    rewrite <- subst_combine.
    
    erewrite <- msubst_ext; eauto.
