@@ -128,3 +128,6 @@ Instance tp_substitutable : substitutable tp := tp_substitutable'.
 
 Definition msubst_single_t {δ δ'} (X:δ↪δ') (t:meta_term δ) : tp δ' -> tp δ :=
  ⟦ (maybe (@m_var _ ) t) ○ (export X) ⟧.
+
+
+Definition import_tp {δ δ'} (y:δ↪δ') : tp δ -> tp δ' :=  ⟦import y⟧.

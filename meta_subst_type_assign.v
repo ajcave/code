@@ -15,3 +15,8 @@ extensionality x.
 unfold compose at 1 2 3.
 erewrite assoc. reflexivity.
 Defined.
+
+
+Definition import_tp_assign {δ δ' γ} (X:δ↪δ') : tp_assign γ δ -> tp_assign γ δ' := ⟦import X⟧.
+ (* TODO: This is becoming a pattern.
+    Define for the whole typeclass? *)
