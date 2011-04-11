@@ -1,6 +1,6 @@
 Parameter world : Set.
-Parameter empty' : world.
-Notation "∅" := empty'.
+Parameter empty : world.
+Notation "∅" := empty.
 Parameter name : world -> Set.
 Axiom empty_is_empty : name ∅ -> False.
 Parameter slink : world -> world -> Set.
@@ -21,6 +21,5 @@ erewrite export_self in H.
 discriminate.
 Qed.
 
-Axiom empty_fst : forall {α}, α↪∅ -> False.
 Axiom export_import_inv : forall {α β} (y:α↪β) (n:name α), export y (import y n) = inl _ n.
  

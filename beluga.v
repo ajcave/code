@@ -56,8 +56,7 @@ assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (pi X0 U T))); eauto.
 nice_inversion H2.
 nice_inversion H17.
 nice_inversion H15.
-destruct (next ∅) as [α X']. simpl in *.
-apply IHeval2. repeat clean_substs.
+apply IHeval2.
 rewrite <- subst_combine.
    
 erewrite <- msubst_ext; eauto.
@@ -97,7 +96,7 @@ rewrite subst_assoc3.
 rewrite subst_id.
 econstructor; eauto.
 erewrite assoc. eauto; fail.
-destruct (empty_fst y); fail.  
+destruct (empty_is_empty y); fail.  
 
 (* var *)
 nice_inversion H10.
