@@ -14,52 +14,11 @@ Require Import meta_subst_type_assign.
 Require Import meta_subst_meta_subst.
 Require Import comp_expr_typing.
 Require Import Coq.Logic.FunctionalExtensionality.
+Require Import unification.
+Require Import closures.
 
- Inductive closure : Set :=
-  | meta_term_closure : meta_term empty -> closure
-  | comp_term_closure : forall δ γ, checked_exp δ γ -> msubst δ empty -> (name γ -> closure) -> closure.
- Definition env γ := name γ -> closure.
- Implicit Arguments comp_term_closure.
-
- Notation "E [ θ ;; ρ ]" := (comp_term_closure E θ ρ) (at level 80).
-
- Reserved Notation "E ∷∷ T" (at level 90).
-(* Definition a {δ δ'} (θ:msubst δ δ') (T1: tp δ) := ⟦ θ ⟧  T1. *)
-
-Definition env_tp {γ} (ρ:env γ) (Γ:tp_assign γ empty)
-  (oft:closure -> tp empty -> Prop) :=
-  forall y, oft (ρ y) (Γ y).
-Lemma env_tp_cons {γ} (ρ:env γ) (Γ:tp_assign γ empty)
- oft V T γ' (x:γ↪γ'):
-     env_tp ρ Γ oft
-  -> oft V T
-  -> env_tp (ρ,,(x,V)) (Γ,,(x,T)) oft.
-unfold env_tp. intros. unfold compose.
-destruct (export x y); firstorder.
-Qed.
-
- Inductive closure_typ : closure -> tp empty -> Prop :=
-  | meta_term_closure_typ : forall C U,
-              (· ⊨ C ∷ U)
-           -> (meta_term_closure C) ∷∷ U
-  | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign γ δ) E (T:tp δ) (θ:msubst δ empty) (ρ:env γ),
-                 · ⊩ θ ∷ Δ
-              -> env_tp ρ (⟦θ⟧Γ) closure_typ
-              -> Δ;Γ ⊢ E ⇐ T
-              -> (E [θ ;; ρ]) ∷∷ (⟦θ⟧  T)
-  where "E ∷∷ T" := (closure_typ E T).
  Reserved Notation "E ⇓ V" (at level 90).
  
-
- Axiom unify : forall {δ δ' δ''} (θ:msubst δ δ') (θk:msubst δ δ'')
-  (θ':msubst δ'' δ'), Prop. (* θ = θ'(θk) *)
- Axiom unify2 : forall {δ δ'} (C:meta_term δ) (D:meta_term δ')
-  (θ:msubst δ' δ), Prop. (* C = θ(D) *) 
- Print branch.
- Notation "θ /≐ θ'" :=(forall θ'', ~unify θ θ' θ'') (at level 90).
- Notation "θ ≐ θk // θ'" := (unify θ θk θ') (at level 90). 
- Notation "C /≑ D" :=(forall θ, ~unify2 C D θ) (at level 90).
- Notation "C ≑ D // θ" := (unify2 C D θ) (at level 90).
 
  Inductive val : closure -> Prop :=
   | fn_val : forall γ δ δ' (θ:msubst γ empty) (y:δ↪δ') E ρ,
@@ -175,46 +134,6 @@ Print import_tp_assign.
     ⟦import_msubst X' θ ,, (X0, m_var X') ⟧ T ->
     ⟦θ' ,, (X,m) ⟧ T1 = ⟦θ ,, (X0,m)  ⟧ T.
    Admitted.
-  Set Implicit Arguments.
-  Section hop1.
-   Variables (δ δ' δ'':world)
-   (θ:msubst δ δ') (θ':msubst δ δ'') (θ'':msubst δ'' δ')
-   (Δ:mtype_assign δ) (Δ':mtype_assign δ') (Δ'':mtype_assign δ'').
-   Theorem hop1a :
-       Δ' ⊩ θ ∷ Δ
-    -> Δ'' ⊩ θ' ∷ Δ
-    -> θ ≐ θ' // θ''
-    -> Δ' ⊩ θ'' ∷ Δ''.
-   Admitted.
-   Theorem hop1b :
-       Δ' ⊩ θ ∷ Δ
-    -> Δ'' ⊩ θ' ∷ Δ
-    -> θ ≐ θ' // θ''
-    -> θ = ⟦θ''⟧ θ'.
-   Admitted.
-  End hop1.
- 
-  Section hop2.
-   Variables (δ δ':world)
-   (θ:msubst δ δ')
-   (Δ:mtype_assign δ) (Δ':mtype_assign δ')
-   (T:mtype δ') (C:meta_term δ')
-   (U:mtype δ)  (D:meta_term δ).
-   Theorem hop2a :
-       Δ' ⊨ C ∷ T
-    -> Δ  ⊨ D ∷ U
-    -> C ≑ D // θ
-    -> Δ' ⊩ θ ∷ Δ.
-   Admitted.
-   Theorem hop2b :
-       Δ' ⊨ C ∷ T
-    -> Δ  ⊨ D ∷ U
-    -> C ≑ D // θ
-    -> C = ⟦θ⟧ D.
-   Admitted.
-  End hop2.
-   Hint Unfold app_subst meta_term_substitutable
-     msubst_substitutable mtype_substitutable : subst.
 
 Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
 unfold app_subst.
