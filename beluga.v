@@ -26,21 +26,27 @@ Require Import Coq.Logic.FunctionalExtensionality.
  Reserved Notation "E ∷∷ T" (at level 90).
 (* Definition a {δ δ'} (θ:msubst δ δ') (T1: tp δ) := ⟦ θ ⟧  T1. *)
 
+Definition env_tp {γ} (ρ:env γ) (Γ:tp_assign γ empty)
+  (oft:closure -> tp empty -> Prop) :=
+  forall y, oft (ρ y) (Γ y).
+Lemma env_tp_cons {γ} (ρ:env γ) (Γ:tp_assign γ empty)
+ oft V T γ' (x:γ↪γ'):
+     env_tp ρ Γ oft
+  -> oft V T
+  -> env_tp (ρ,,(x,V)) (Γ,,(x,T)) oft.
+unfold env_tp. intros. unfold compose.
+destruct (export x y); firstorder.
+Qed.
+
  Inductive closure_typ : closure -> tp empty -> Prop :=
   | meta_term_closure_typ : forall C U,
               (· ⊨ C ∷ U)
            -> (meta_term_closure C) ∷∷ U
   | comp_term_closure_typ : forall δ γ (Δ:mtype_assign δ) (Γ:tp_assign γ δ) E (T:tp δ) (θ:msubst δ empty) (ρ:env γ),
                  · ⊩ θ ∷ Δ
-              -> env_tp ρ (⟦θ⟧ Γ)
+              -> env_tp ρ (⟦θ⟧Γ) closure_typ
               -> Δ;Γ ⊢ E ⇐ T
               -> (E [θ ;; ρ]) ∷∷ (⟦θ⟧  T)
-  with env_tp : forall {γ}, env γ -> tp_assign γ empty -> Prop :=
-   | env_tp_nil : env_tp · ·
-   | env_tp_cons : forall γ (ρ:env γ) Γ V T γ' (y:γ ↪ γ'),
-              env_tp ρ Γ
-              -> V ∷∷ T
-              -> env_tp (ρ,,(y,V)) (Γ,,(y,T))
   where "E ∷∷ T" := (closure_typ E T).
  Reserved Notation "E ⇓ V" (at level 90).
  
@@ -116,7 +122,6 @@ Require Import Coq.Logic.FunctionalExtensionality.
   Qed.
 
    Require Import Coq.Program.Equality.
-   Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
    Lemma subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
      ⟦ θ ,, (X, ⟦θ⟧ C) ⟧ T = ⟦θ⟧ ([[ C // X ]] T).
@@ -226,41 +231,13 @@ Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
 intros. erewrite assoc. reflexivity.
 Qed.
 
- Lemma env_tp1 : forall γ ρ y V1 T0 (Γ : tp_assign γ empty),
-                    ρ y = V1 ->
-                    env_tp ρ Γ -> Γ y = T0 -> V1 ∷∷ T0.
- intros.
- generalize y V1 T0 H H1.
- clear y V1 T0 H H1.
- induction H0; intros.
- destruct (empty_is_empty y).
- unfold compose in *.
- destruct (export y y0); simpl in *.
- eapply (IHenv_tp n); auto.
- subst.
- exact H.
- Qed.
-
- Lemma env_tp2 : forall δ γ (Γ:tp_assign γ δ) δ'
- (θ:msubst δ δ') y T0,
-                    Γ y = T0
-                -> (⟦θ⟧ Γ) y = (⟦θ⟧ T0).
- intros.
- unfold app_subst at 1.
- unfold tp_assign_substitutable.
- unfold compose.
- rewrite H.
- reflexivity.
- Qed.
-
-
-   Hint Constructors closure_typ c_tp s_tp br_tp msubst_typ' env_tp.
-   Hint Resolve env_tp1 env_tp2.
+   Hint Constructors closure_typ c_tp s_tp br_tp msubst_typ'.
+   Hint Resolve @env_tp_cons.
    Ltac clean_inversion := subst; simpl_existTs; subst; repeat clean_substs.
    Tactic Notation "nice_inversion" integer(H) := inversion H; clean_inversion.
    Tactic Notation "nice_inversion" hyp(H) := inversion H; clean_inversion.
    Ltac simpl_subst := unfold app_subst; simpl;repeat clean_substs.
-   Tactic Notation "constructors" tactic(t) := repeat (econstructor; simpl_subst; eauto); t; repeat clean_substs.
+   Tactic Notation "constructors" tactic(t) := repeat (econstructor; eauto); t; repeat clean_substs.
 
    Theorem subj_red L V : L ⇓ V -> forall T, L ∷∷ T -> V ∷∷ T.
    Proof.
@@ -282,9 +259,9 @@ Qed.
    rewrite <- H13.
    apply IHeval3.
    econstructor; eauto.
-   unfold app_subst; unfold tp_assign_substitutable; erewrite compose_comma.
-   econstructor; eauto.
-   rewrite H12. auto; fail.
+   unfold app_subst in H18 |- *; unfold tp_assign_substitutable in *; erewrite compose_comma.
+   eapply env_tp_cons; eauto.
+   erewrite H12. assumption.
 
    (* Case: meta application *)
    nice_inversion H10.
@@ -340,14 +317,16 @@ Qed.
    (* var *)
    nice_inversion H10.
    nice_inversion H2.
-   eauto.
+   unfold env_tp in H9.
+   eapply IHeval.
+   eapply H9.
    
    (* rec *)
    nice_inversion H9.
    eapply IHeval; eauto.
    econstructor; eauto.
    unfold app_subst; unfold tp_assign_substitutable; erewrite compose_comma.
-   econstructor; eauto. 
+   eauto; fail.
   Qed.
 
   Print Assumptions subj_red.
