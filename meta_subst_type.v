@@ -42,6 +42,10 @@ match T  with
    tapp ([θ] T0) (⟦θ⟧ C)
  | eq_constraint C1 C2 T0 =>
    eq_constraint (⟦θ⟧ C1) (⟦θ⟧ C2) ([θ] T0)
+ | mu _ Z T0 => mu Z ([θ] T0)
+ | mlamt _ X U T0 =>
+   let (_,X') := next δ' in
+   mlamt X' (⟦θ⟧ U) ([ θ × (X' // X )] T0)
 end
 where "[ θ ] T" := (app_msubst_tp θ T).
 
@@ -91,8 +95,8 @@ erewrite export_self.
 reflexivity.
 Qed.
 
-Instance tp_substitutable' : substitutable tp := {
-  app_subst := @app_msubst_tp ∅
+Instance tp_substitutable' {ψ} : substitutable (tp' ψ) := {
+  app_subst := @app_msubst_tp ψ
 }.
 pose proof (@assoc _ mtype_substitutable).
 pose proof (@assoc _ meta_term_substitutable).
@@ -108,23 +112,26 @@ destruct s.
 destruct s0.
 simpl.
 
-erewrite IHT. f_equal.
-pose proof compose_product_hom.
-unfold app_subst in H1.
-unfold msubst_substitutable in H1.
-eapply H1.
+Ltac abstraction_case IHT H1 :=
+ erewrite IHT; f_equal;
+ pose proof compose_product_hom as H1;
+ unfold app_subst in H1;
+ unfold msubst_substitutable in H1;
+ eapply H1.
 
-erewrite IHT. f_equal.
-pose proof compose_product_hom.
-unfold app_subst in H1.
-unfold msubst_substitutable in H1.
-eapply H1.
+abstraction_case IHT H1.
+abstraction_case IHT H1.
+abstraction_case IHT H1.
 Defined.
 
 End app_msubst_tp_sect.
 Implicit Arguments app_msubst_tp.
 
-Instance tp_substitutable : substitutable tp := tp_substitutable'.
+Instance tp_substitutable : substitutable tp :=
+{
+  app_subst := @app_subst _ (@tp_substitutable' ∅);
+  assoc := @assoc _ (@tp_substitutable' ∅)
+}.
 
 Definition msubst_single_t {δ δ'} (X:δ↪δ') (t:meta_term δ) : tp δ' -> tp δ :=
  ⟦ (maybe (@m_var _ ) t) ○ (export X) ⟧.
