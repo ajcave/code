@@ -37,17 +37,17 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
   | meta_c : forall C U,
               Δ ⊨ C ∷ U 
            -> Δ;Γ ⊢ (meta γ C) ⇐ U
-  | fn_c : forall γ' (y:slink γ γ') E T1 T2,
+  | fn_c : forall γ' (y:γ↪γ') E T1 T2,
              Δ;(Γ,, (y,T1)) ⊢ E ⇐ T2
           -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
-  | mlam_c : forall δ' (X:slink δ δ') E U T,
+  | mlam_c : forall δ' (X:δ↪δ') E U T,
              (import_mtype X ○ (Δ,, (X,U)));(import_tp_assign X Γ) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (mlam X E) ⇐ (pi X U T)
   | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U
           -> (forall B, In B Bs -> br_tp B (arr U T))
           -> Δ;Γ ⊢ (case_i I Bs) ⇐ T
-  | rec_c : forall γ' (f:slink γ γ') E T,
+  | rec_c : forall γ' (f:γ↪γ') E T,
              Δ;(Γ,, (f,T)) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (rec f E) ⇐ T
  with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}

@@ -3,10 +3,10 @@ Parameter empty : world.
 Notation "∅" := empty.
 Parameter name : world -> Set.
 Axiom empty_is_empty : name ∅ -> False.
-Parameter slink : world -> world -> Set.
-Notation "α ↪ β" := (slink α β) (at level 90).
+Parameter link : world -> world -> Set.
+Notation "α ↪ β" := (link α β) (at level 90).
 Parameter weaken : forall {α β}, α↪β -> name β.
-Coercion weaken : slink >-> name.
+Coercion weaken : link >-> name.
 Parameter import : forall {α β}, α↪β -> name α -> name β.
 Parameter next' : forall a, {b:world & a↪b}.
 Definition next a : {b:world & a↪b} := existT _ (projT1 (next' a)) (projT2 (next' a)).

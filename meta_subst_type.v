@@ -104,8 +104,8 @@ simpl;
 f_equal; firstorder.
 remember (next' γ).
 remember (next' β).
+destruct s.
 destruct s0.
-destruct s1.
 simpl.
 
 erewrite IHT. f_equal.
