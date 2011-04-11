@@ -17,7 +17,8 @@ Require Import util.
 Definition msubst δ δ' := name δ -> meta_term δ'.
 
 Axiom app_msubst : forall {δ δ'}, (msubst δ δ') -> meta_term δ -> meta_term δ'.
-
+Axiom app_msubst_id : forall {δ} (θ:msubst δ empty),
+ (app_msubst ·) = id.
 Axiom app_msubst_assoc : forall {δ} (t:meta_term δ)
  {δ'} (θ:msubst δ δ') {δ''} (θ':msubst δ' δ''),
  app_msubst θ' (app_msubst θ t) =

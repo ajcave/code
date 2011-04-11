@@ -118,8 +118,9 @@ Require Import Coq.Logic.FunctionalExtensionality.
    Require Import Coq.Program.Equality.
    Implicit Arguments env_tp_cons.
    Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
-   Axiom subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
+   Lemma subst_combine : forall {γ δ δ'} (θ:msubst δ γ) (X:δ ↪ δ') C T,
      ⟦ θ ,, (X, ⟦θ⟧ C) ⟧ T = ⟦θ⟧ ([[ C // X ]] T).
+   Admitted.
 
     Ltac clean_substs :=
       (match goal with
@@ -144,9 +145,22 @@ Require Import Coq.Logic.FunctionalExtensionality.
   -> Δ' ⊨ ⟦θ⟧ C ∷ ⟦θ⟧ U.
    Admitted.
 
-   Theorem cons_wkn_inv {δ δ' δ'' γ } (θ:msubst δ δ') (X:δ ↪ δ'') (Γ:tp_assign γ δ) C :
-     ⟦θ⟧Γ = ⟦θ ,, (X,C)⟧(import_tp_assign X Γ).
-   Admitted.
+Theorem cons_wkn_inv {δ δ' δ'' γ } (θ:msubst δ δ') (X:δ ↪ δ'') (Γ:tp_assign γ δ) C :
+ ⟦θ⟧Γ = ⟦θ ,, (X,C)⟧(import_tp_assign X Γ).
+unfold import_tp_assign.
+erewrite assoc.
+(* TODO: I think there's a nice lemma here... *)
+f_equal.
+unfold compose.
+extensionality y.
+erewrite app_msubst_mvar_result.
+erewrite export_import_inv.
+simpl.
+reflexivity.
+Qed.
+Print import_tp_assign.
+(* Theorem cons_wkn_inv' {δ δ' δ''} (θ:msubst δ δ') (X:δ ↪ δ'') C :  ⟦θ⟧ = ⟦θ ,, (X,C)⟧ ○ ⟦import X⟧.
+*)
 
   Theorem msubst_ext : forall {δ δ' δ'0 α β} (θ : msubst δ β)
    (X : δ ↪ δ') (θ' : msubst δ β)
@@ -196,28 +210,21 @@ Require Import Coq.Logic.FunctionalExtensionality.
   End hop2.
    Hint Unfold app_subst meta_term_substitutable
      msubst_substitutable mtype_substitutable : subst.
-   Lemma subst_id1 : forall (C:meta_term empty), ⟦·⟧ C = C.
-   Admitted.
-   Lemma subst_id2 : forall (U:mtype empty),  ⟦·⟧ U = U.
-   Admitted.
-   Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
-   Admitted. (* Requires map id = id assumption for meta_term *)
-   Lemma subst_assoc {δ δ' δ''} (T:mtype δ)
-    (θ:msubst δ δ') (θ':msubst δ' δ'') :
-    ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
-   Admitted. (* TODO: This should be part of the typeclass *)
-   Lemma subst_assoc4 : forall {δ δ' δ''} (C:meta_term δ)
-    (θ:msubst δ δ') (θ':msubst δ' δ''),
-     ⟦⟦θ'⟧θ⟧ C = ⟦θ'⟧(⟦θ⟧C).
-   Admitted. 
-   Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
-    (θ:msubst δ δ') (θ':msubst δ' δ''),
-    ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
-   Admitted.
-   Lemma subst_assoc2 {δ δ' δ'' γ} (Γ:tp_assign γ δ)
-    (θ:msubst δ δ') (θ':msubst δ' δ'') :
-    ⟦⟦θ'⟧θ⟧ Γ = ⟦θ'⟧(⟦θ⟧ Γ).
-   Admitted.
+
+Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
+unfold app_subst.
+unfold msubst_substitutable.
+unfold app_subst.
+unfold meta_term_substitutable.
+erewrite app_msubst_id.
+erewrite compose_id_left. reflexivity.
+eexact θ.
+Qed.
+Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
+ (θ:msubst δ δ') (θ':msubst δ' δ''),
+ ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
+intros. erewrite assoc. reflexivity.
+Qed.
 
  Lemma env_tp1 : forall γ ρ y V1 T0 (Γ : tp_assign γ empty),
                     ρ y = V1 ->
@@ -327,7 +334,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
    rewrite subst_assoc3.
    rewrite subst_id.
    econstructor; eauto.
-   erewrite subst_assoc2 in H11; eauto; fail.
+   erewrite assoc. eauto; fail.
    destruct (empty_fst y); fail.  
 
    (* var *)

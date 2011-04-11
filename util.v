@@ -44,3 +44,12 @@ Lemma compose_comma {α β} {x:α↪β} {B C:Set} (f:B -> C)
 erewrite <- compose_assoc.
 erewrite f_maybe. reflexivity.
 Qed.
+Definition id {A:Set} := fun x:A => x.
+Lemma compose_id_left {A B:Set} (f:A -> B) : id ○ f = f.
+extensionality x. unfold compose. unfold id.
+reflexivity.
+Qed.
+Lemma compose_id_right {A B:Set} (f:A -> B) : f ○ id = f.
+extensionality x. unfold compose. unfold id.
+reflexivity.
+Qed.

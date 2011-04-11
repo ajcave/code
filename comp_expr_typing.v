@@ -11,10 +11,11 @@ Require Import meta_subst_type_assign.
 Require Import meta_subst_meta_type.
 
  
- Definition import_tp : forall {δ δ'} (y:δ↪δ') (T:tp δ), tp δ'.
- Admitted. (* TODO: Easy with generic traversal *)
+ Definition import_tp {δ δ'} (y:δ↪δ') : tp δ -> tp δ' :=  ⟦import y⟧.
 
- Definition import_tp_assign {δ δ' γ} (X:δ↪δ') (Γ:tp_assign γ δ) : tp_assign γ δ' := (import_tp X) ○ Γ.
+ Definition import_tp_assign {δ δ' γ} (X:δ↪δ') : tp_assign γ δ -> tp_assign γ δ' := ⟦import X⟧.
+ (* TODO: This is becoming a pattern.
+    Define for the whole typeclass? *)
 
 Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
 Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).

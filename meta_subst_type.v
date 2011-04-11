@@ -45,6 +45,52 @@ match T  with
 end
 where "[ θ ] T" := (app_msubst_tp θ T).
 
+(* TODO: Clean up these next two proofs *)
+(* This lemma can be stated more generally as
+   (θ × g) ○ (θ' × h) = (θ ○ θ') × (g ○ h)
+   Generalize "name α" to "name α β" - slice of
+   names between α and β. Then they compose. *)
+Lemma compose_product_hom :
+  forall δ δ' β γ x x0
+  (s : δ ↪ δ')
+  (θ : msubst δ β) (θ' : msubst β γ) 
+  (s0 : γ ↪ x) (s1 : β ↪ x0),
+  (⟦θ' ×  (s0 // s1)⟧ (θ ×  (s1 // s))) =
+   (⟦θ'⟧ θ) ×  (s0 // s).
+intros.
+extensionality n.
+unfold app_subst at 1.
+unfold msubst_substitutable.
+unfold compose at 1.
+unfold context_mult at 2 3.
+unfold compose.
+remember (export s n) as mn.
+destruct mn.
+unfold maybe.
+unfold import_msubst.
+unfold import_meta_term.
+(* TODO: There's some nice property here we should prove *)
+unfold compose.
+unfold app_subst at 4.
+erewrite assoc.
+erewrite assoc.
+f_equal.
+extensionality n'.
+unfold compose.
+erewrite app_msubst_mvar_result.
+unfold context_mult.
+unfold compose.
+erewrite export_import_inv.
+reflexivity.
+
+simpl.
+erewrite app_msubst_mvar_result.
+unfold context_mult.
+unfold compose.
+erewrite export_self.
+reflexivity.
+Qed.
+
 Instance tp_substitutable' : substitutable tp := {
   app_subst := @app_msubst_tp empty
 }.
@@ -61,48 +107,20 @@ remember (next' β).
 destruct s0.
 destruct s1.
 simpl.
-erewrite IHT.
-f_equal.
-eapply functional_extensionality_dep.
-intro. unfold compose at 1.
-unfold context_mult at 2.
-unfold compose at 1.
 
-unfold context_mult at 2.
-unfold compose at 1.
+erewrite IHT. f_equal.
+pose proof compose_product_hom.
+unfold app_subst in H1.
+unfold msubst_substitutable in H1.
+eapply H1.
 
-remember (export s x1).
-destruct s2; simpl in *.
-unfold import_msubst.
-unfold import_meta_term.
-unfold app_subst.
-unfold meta_term_substitutable.
-unfold compose at 1.
-erewrite H0.
-unfold compose at 1.
-assert ((fun a => app_msubst (θ' ×  (s0 // s1)) (m_var (import s1 a))) = import_msubst s0 θ').
-eapply functional_extensionality_dep.
-intro.  erewrite app_msubst_mvar_result.
-unfold context_mult.
-unfold compose.
-erewrite export_import_inv.
-simpl.
-reflexivity.
-rewrite H1.
-unfold compose.
-erewrite H0.
-unfold import_msubst.
-unfold import_meta_term.
-unfold app_subst.
-unfold meta_term_substitutable.
-reflexivity.
-
-unfold context_mult.
-unfold compose.
-erewrite app_msubst_mvar_result.
-erewrite export_self. reflexivity.
-admit. (* TODO: Extract lemma. (It's the same proof) *)
+erewrite IHT. f_equal.
+pose proof compose_product_hom.
+unfold app_subst in H1.
+unfold msubst_substitutable in H1.
+eapply H1.
 Defined.
+
 End app_msubst_tp_sect.
 Implicit Arguments app_msubst_tp.
 
