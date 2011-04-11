@@ -37,14 +37,13 @@ reflexivity.
 Qed.
 
 
-  Theorem msubst_ext : forall {δ δ' δ'0 α β} (θ : msubst δ β)
-   (X : δ ↪ δ') (θ' : msubst δ β)
-    m  
-   (X0 : δ ↪ δ'0) (T:tp δ'0) (T1:tp δ')  (X' : β ↪ α),
+Theorem msubst_ext : forall {δ δ' δ'0 α β}
+ (θ:msubst δ β) (X : δ ↪ δ') (θ' : msubst δ β)
+ m (X0 : δ ↪ δ'0) (T:tp δ'0) (T1:tp δ')  (X' : β ↪ α),
     ⟦import_msubst X' θ' ,, (X,m_var  X') ⟧ T1 =
     ⟦import_msubst X' θ ,, (X0, m_var X') ⟧ T ->
     ⟦θ' ,, (X,m) ⟧ T1 = ⟦θ ,, (X0,m)  ⟧ T.
-   Admitted.
+Admitted.
 
 Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
 unfold app_subst.
@@ -55,6 +54,7 @@ erewrite app_msubst_id.
 erewrite compose_id_left. reflexivity.
 eexact θ.
 Qed.
+
 Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
  (θ:msubst δ δ') (θ':msubst δ' δ''),
  ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
