@@ -1,26 +1,26 @@
 Parameter world : Set.
- Parameter empty : world.
- Parameter name : world -> Set.
- Axiom empty_is_empty : name empty -> False.
- Parameter wlink : world -> world -> Set.
- Definition slink := wlink. (* ??? *)
- Notation "α ↪ β" := (slink α β) (at level 90).
- Definition weaken1 {a b} (x:slink a b) : wlink a b := x.
- Axiom weaken1_inj : forall {W W'} {y y':slink W W'}, weaken1 y = weaken1 y' -> y = y'.
- Parameter weaken : forall {a b}, slink a b -> name b.
- Coercion weaken : slink >-> name.
- Parameter import : forall {a b}, slink a b -> name a -> name b.
- Parameter next' : forall a, {b:world & a↪b}.
- Definition next a : {b:world & a↪b} := existT _ (projT1 (next' a)) (projT2 (next' a)).
- Axiom import_inj : forall {α β} {y:α↪β} {x x0}, import y x = import y x0 -> x = x0. 
- Axiom import_img : forall {α β} (y:α↪β) x, import y x <> y.
- Parameter export : forall {α β} (y:α↪β) (n:name β), name α + unit.
- Axiom export_self : forall {α β} (y:α↪β), export y y = inr _ tt.
- Lemma export_exclusive : forall {α β} {y:α↪β} {n:name α}, inl _ n = export y y -> False.
- intros.
- erewrite export_self in H.
- discriminate.
- Qed.
- Axiom empty_fst : forall {α}, α↪empty -> False.
- Axiom export_import_inv : forall {α β} (y:α↪β) (n:name α), export y (import y n) = inl _ n.
+Parameter empty' : world.
+Notation "∅" := empty'.
+Parameter name : world -> Set.
+Axiom empty_is_empty : name ∅ -> False.
+Parameter slink : world -> world -> Set.
+Notation "α ↪ β" := (slink α β) (at level 90).
+Parameter weaken : forall {α β}, α↪β -> name β.
+Coercion weaken : slink >-> name.
+Parameter import : forall {α β}, α↪β -> name α -> name β.
+Parameter next' : forall a, {b:world & a↪b}.
+Definition next a : {b:world & a↪b} := existT _ (projT1 (next' a)) (projT2 (next' a)).
+
+Parameter export : forall {α β} (y:α↪β) (n:name β), name α + unit.
+
+Axiom export_self : forall {α β} (y:α↪β), export y y = inr _ tt.
+
+Lemma export_exclusive : forall {α β} {y:α↪β} {n:name α}, inl _ n = export y y -> False.
+intros.
+erewrite export_self in H.
+discriminate.
+Qed.
+
+Axiom empty_fst : forall {α}, α↪∅ -> False.
+Axiom export_import_inv : forall {α β} (y:α↪β) (n:name α), export y (import y n) = inl _ n.
  

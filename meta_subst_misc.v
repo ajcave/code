@@ -45,7 +45,7 @@ Theorem msubst_ext : forall {δ δ' δ'0 α β}
     ⟦θ' ,, (X,m) ⟧ T1 = ⟦θ ,, (X0,m)  ⟧ T.
 Admitted.
 
-Lemma subst_id {δ} (θ:msubst δ empty) : ⟦·⟧ θ = θ.
+Lemma subst_id {δ} (θ:msubst δ ∅) : ⟦·⟧ θ = θ.
 unfold app_subst.
 unfold msubst_substitutable.
 unfold app_subst.

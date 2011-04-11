@@ -21,33 +21,34 @@ Require Import meta_subst.
   | eq_constraint : meta_term δ -> meta_term δ -> tp' ψ δ -> tp' ψ δ
  .
 
- Definition tp δ := tp' empty δ.
+ Definition tp δ := tp' ∅ δ.
  Unset Implicit Arguments.
- Definition m_tp' {δ} := @m_tp empty δ : mtype δ -> tp δ.
+ Definition m_tp' {δ} := @m_tp ∅ δ : mtype δ -> tp δ.
  Coercion m_tp' : mtype >-> tp.
 
- Inductive synth_exp (D G:world) : Set :=
-  | var : name G -> synth_exp D G
-  | app :  synth_exp D G -> checked_exp D G -> synth_exp D G
-  | mapp : synth_exp D G -> meta_term D -> synth_exp D G
-  | coercion : checked_exp D G -> tp D -> synth_exp D G
-  | unfold : synth_exp D G -> synth_exp D G
- with checked_exp (D G:world) : Set := 
-  | synth : synth_exp D G -> checked_exp D G
-  | meta : meta_term D -> checked_exp D G
-  | fn : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
-  | mlam : forall D2, wlink D D2 -> checked_exp D2 G -> checked_exp D G
-  | case_i :  synth_exp D G -> list (branch D G) -> checked_exp D G
-  | case_c : meta_term D -> list (branch D G) -> checked_exp D G
-  | rec : forall G2, wlink G G2 -> checked_exp D G2 -> checked_exp D G
-  | fold : checked_exp D G -> checked_exp D G
-  | inl : checked_exp D G -> checked_exp D G
-  | inr : checked_exp D G -> checked_exp D G
-  | pack : meta_term D -> checked_exp D G -> checked_exp D G
-  | pair : checked_exp D G -> checked_exp D G -> checked_exp D G
-  | tt : checked_exp D G
- with branch (D G:world) : Set :=
-  | br : forall Di, meta_term Di -> msubst D Di -> checked_exp Di G -> branch D G.
+
+ Inductive synth_exp (δ γ:world) : Set :=
+  | var : name γ -> synth_exp δ γ
+  | app :  synth_exp δ γ -> checked_exp δ γ -> synth_exp δ γ
+  | mapp : synth_exp δ γ -> meta_term δ -> synth_exp δ γ
+  | coercion : checked_exp δ γ -> tp δ -> synth_exp δ γ
+  | unfold : synth_exp δ γ -> synth_exp δ γ
+ with checked_exp (δ γ:world) : Set := 
+  | synth : synth_exp δ γ -> checked_exp δ γ
+  | meta : meta_term δ -> checked_exp δ γ
+  | fn : forall γ', γ↪γ' -> checked_exp δ γ' -> checked_exp δ γ
+  | mlam : forall δ', δ↪δ' -> checked_exp δ' γ -> checked_exp δ γ
+  | case_i :  synth_exp δ γ -> list (branch δ γ) -> checked_exp δ γ
+  | case_c : meta_term δ -> list (branch δ γ) -> checked_exp δ γ
+  | rec : forall γ', γ↪γ' -> checked_exp δ γ' -> checked_exp δ γ
+  | fold : checked_exp δ γ -> checked_exp δ γ
+  | inl : checked_exp δ γ -> checked_exp δ γ
+  | inr : checked_exp δ γ -> checked_exp δ γ
+  | pack : meta_term δ -> checked_exp δ γ -> checked_exp δ γ
+  | pair : checked_exp δ γ -> checked_exp δ γ -> checked_exp δ γ
+  | tt : checked_exp δ γ
+ with branch (δ γ:world) : Set :=
+  | br : forall δi, meta_term δi -> msubst δ δi -> checked_exp δi γ -> branch δ γ.
  Coercion synth : synth_exp >-> checked_exp.
  Implicit Arguments var.
  Implicit Arguments app.

@@ -11,7 +11,7 @@ End star.
  Implicit Arguments s_nil [A Rel a]. *)
  Require Import worlds.
  Require Import Coq.Logic.FunctionalExtensionality.
- Definition cdot {A} : name empty -> A := fun n => match (empty_is_empty n) with end.
+ Definition cdot {A} : name ∅ -> A := fun n => match (empty_is_empty n) with end.
  Notation "·" := cdot.
 
  Definition maybe {A C} (f:A -> C) (c:C) (x:A + unit) : C := match x with | inl a => f a | inr _ => c end.  

@@ -22,7 +22,7 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
               Δ;Γ ⊢ I ⇒ (arr T1 T2)
            -> Δ;Γ ⊢ E ⇐ T1
            -> Δ;Γ ⊢ (app I E) ⇒ T2
-  | mapp_s : forall I δ' (X:wlink δ δ') U C T,
+  | mapp_s : forall I δ' (X:δ↪δ') U C T,
               Δ;Γ ⊢ I ⇒ (pi X U T)
            -> Δ ⊨ C ∷ U
            -> Δ;Γ ⊢ (mapp I C) ⇒ (msubst_single_t X C T)

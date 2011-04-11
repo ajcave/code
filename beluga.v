@@ -56,7 +56,7 @@ assert ((mlam X E)[θ';;ρ'] ∷∷ (⟦θ⟧ (pi X0 U T))); eauto.
 nice_inversion H2.
 nice_inversion H17.
 nice_inversion H15.
-destruct (next empty) as [α X']. simpl in *.
+destruct (next ∅) as [α X']. simpl in *.
 apply IHeval2. repeat clean_substs.
 rewrite <- subst_combine.
    

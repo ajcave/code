@@ -92,7 +92,7 @@ reflexivity.
 Qed.
 
 Instance tp_substitutable' : substitutable tp := {
-  app_subst := @app_msubst_tp empty
+  app_subst := @app_msubst_tp ∅
 }.
 pose proof (@assoc _ mtype_substitutable).
 pose proof (@assoc _ meta_term_substitutable).

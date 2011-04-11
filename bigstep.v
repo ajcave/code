@@ -9,7 +9,7 @@ Require Import unification.
 Reserved Notation "E ⇓ V" (at level 90).
 
 Inductive val : closure -> Prop :=
- | fn_val : forall γ δ δ' (θ:msubst γ empty) (y:δ↪δ') E ρ,
+ | fn_val : forall γ δ δ' (θ:msubst γ ∅) (y:δ↪δ') E ρ,
       env_val ρ -> val ((fn y E)[θ;;ρ])
  | mlam_val : forall γ γ' δ θ (X:γ↪γ') E (ρ:env δ),
       env_val ρ -> val ((mlam X E)[θ;;ρ])
@@ -43,20 +43,20 @@ Inductive eval : closure -> closure -> Prop :=
          -> case_i I Bs [θ ;; ρ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
  | ev_case2 : forall δ θ γ ρ (I:synth_exp δ γ) δi
-  (θk:msubst δ δi) θ' Bs (C:meta_term empty) Ek V Ck,
+  (θk:msubst δ δi) θ' Bs (C:meta_term ∅) Ek V Ck,
             (θ ≐ θk // θ')
          -> I [θ ;; ρ] ⇓ meta_term_closure C
          -> (C /≑ ⟦θ'⟧ Ck)
          -> case_i I Bs [θ ;; ρ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
  | ev_case3 : forall δ θ γ ρ (I:synth_exp δ γ) δi
- (θk:msubst δ δi) θ' θ'' Bs (C:meta_term empty) Ek V Ck,
+ (θk:msubst δ δi) θ' θ'' Bs (C:meta_term ∅) Ek V Ck,
             (θ ≐ θk // θ')
          -> I [θ ;; ρ] ⇓ meta_term_closure C
          -> (C ≑ ⟦θ'⟧ Ck // θ'')
          -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V 
- | ev_var : forall δ (θ:msubst δ empty) γ ρ (y:name γ) V1 V,
+ | ev_var : forall δ (θ:msubst δ ∅) γ ρ (y:name γ) V1 V,
             ρ y = V1
          -> V1 ⇓ V
          -> (var _ y) [θ ;; ρ] ⇓ V
