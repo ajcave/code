@@ -42,10 +42,6 @@ match T  with
    tapp ([θ] T0) (⟦θ⟧ C)
  | eq_constraint C1 C2 T0 =>
    eq_constraint (⟦θ⟧ C1) (⟦θ⟧ C2) ([θ] T0)
- | mu _ Z T0 => mu Z ([θ] T0)
- | mlamt _ X U T0 =>
-   let (_,X') := next δ' in
-   mlamt X' (⟦θ⟧ U) ([ θ × (X' // X )] T0)
 end
 where "[ θ ] T" := (app_msubst_tp θ T).
 
@@ -119,7 +115,6 @@ Ltac abstraction_case IHT H1 :=
  unfold msubst_substitutable in H1;
  eapply H1.
 
-abstraction_case IHT H1.
 abstraction_case IHT H1.
 abstraction_case IHT H1.
 Defined.

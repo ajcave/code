@@ -1,14 +1,3 @@
-(*Section star.
- Hypotheses (A:Set) (Rel:A -> A -> Set).
- Inductive star (a:A) : A -> Set :=
-  | s_nil : star a a
-  | s_cons : forall b c, star a b -> Rel b c -> star a c.
-End star.
- Implicit Arguments star.
- Implicit Arguments s_nil.
- Implicit Arguments s_cons.
- Print Implicit s_cons.
- Implicit Arguments s_nil [A Rel a]. *)
  Require Import worlds.
  Require Import Coq.Logic.FunctionalExtensionality.
  Definition cdot {A} : name ∅ -> A := fun n => match (empty_is_empty n) with end.
@@ -53,3 +42,17 @@ Lemma compose_id_right {A B:Set} (f:A -> B) : f ○ id = f.
 extensionality x. unfold compose. unfold id.
 reflexivity.
 Qed.
+
+Section star.
+ Hypotheses (A:Set) (Rel:A -> A -> Set).
+ Inductive star (a:A) : A -> Set :=
+  | s_nil : star a a
+  | s_cons : forall b c, star a b -> Rel b c -> star a c.
+End star.
+Implicit Arguments star.
+Implicit Arguments s_cons.
+Implicit Arguments s_nil [A Rel a].
+Open Scope type_scope.
+Definition linkassign (A:Set) := 
+ star (fun α β => (α↪β)*A).
+Notation "α ↝ β 〈 A 〉" := (linkassign A α β) (at level 90).
