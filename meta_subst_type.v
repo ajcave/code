@@ -183,29 +183,26 @@ match T  with
  | m_tp U     =>
    m_tp _ U
  | arr T1 T2  =>
-   arr (app_tp_subst θ T1) (app_tp_subst θ T2)
+   arr ([θ] T1) ([θ] T2)
  | pi _ X U T0 =>
-   pi X U (app_tp_subst (⟦import X⟧ θ) T0)
+   pi X U ([app_msubst_tp (import X) ○ θ] T0)
  | sigma _ X U T0 =>
-   sigma X U (app_tp_subst (⟦import X⟧ θ) T0)
+   sigma X U ([app_msubst_tp (import X) ○ θ] T0)
  | unit =>
    unit _ _
  | prod T1 T2 =>
-   prod (app_tp_subst θ T1) (app_tp_subst θ T2)
+   prod ([θ] T1) ([θ] T2)
  | sum T1 T2 =>
-   sum (app_tp_subst θ T1) (app_tp_subst θ T2)
+   sum ([θ] T1) ([θ] T2)
  | tvar n => θ n
  | tapp T0 C =>
-   tapp (app_tp_subst θ T0) C
+   tapp ([θ] T0) C
  | eq_constraint C1 C2 T0 =>
-   eq_constraint C1 C2 (app_tp_subst θ T0)
+   eq_constraint C1 C2 ([θ] T0)
  | mu ψ'' ε Z X U T0 =>
    let (ψ''',Z') := next ψ' in
-   mu Z' X U (app_tp_subst
-    ((wkn Z') ○ (⟦import X⟧ θ) ,, (Z,tvar _ Z'))
-    T0)
-end.
-(*
+   mu Z' X U ([(wkn Z') ○ (app_msubst_tp (import X) ○ θ) ,, (Z,tvar _ Z')] T0)
+end
 where "[ θ ] T" := (app_tp_subst θ T).
-*)
+
 End app_tp_subst_sec.
