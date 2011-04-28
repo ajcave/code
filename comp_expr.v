@@ -12,11 +12,12 @@ Inductive tp' ψ (δ:world):=
   | unit : tp' ψ δ
   | prod : tp' ψ δ -> tp' ψ δ -> tp' ψ δ
   | sum : tp' ψ δ -> tp' ψ δ -> tp' ψ δ
-  | tvar : name ψ -> tp' ψ δ
-  | tapp : tp' ψ δ -> meta_term δ -> tp' ψ δ
+  | tapp : neutral_tp ψ δ -> meta_term δ -> tp' ψ δ
   | eq_constraint : meta_term δ -> meta_term δ -> tp' ψ δ -> tp' ψ δ
+with neutral_tp ψ (δ:world) :=
+  | tvar : name ψ -> neutral_tp ψ δ
   | mu : forall ψ' δ', ψ↪ψ' -> δ↪δ' ->
-       mtype δ -> tp' ψ' δ' -> tp' ψ δ 
+       mtype δ -> tp' ψ' δ' -> neutral_tp ψ δ
 .
 
 Definition tp δ := tp' ∅ δ.

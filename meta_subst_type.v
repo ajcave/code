@@ -80,15 +80,18 @@ match T  with
    prod ([θ] T1) ([θ] T2)
  | sum T1 T2 =>
    sum ([θ] T1) ([θ] T2)
- | tvar n =>
-   tvar _ n
- | tapp T0 C =>
-   tapp ([θ] T0) (⟦θ⟧ C)
+ | tapp N C =>
+   tapp (app_msubst_neutral_tp θ N) (⟦θ⟧ C)
  | eq_constraint C1 C2 T0 =>
    eq_constraint (⟦θ⟧ C1) (⟦θ⟧ C2) ([θ] T0)
+ 
+end
+with app_msubst_neutral_tp {ψ} {δ δ'} (θ:msubst δ δ') (N:neutral_tp ψ δ) : neutral_tp ψ δ' :=
+match N with
+ | tvar n => tvar _ n
  | mu ψ' ε Z X U T0 =>
-   let (δ'',X') := next δ' in
-   mu Z X' (⟦θ⟧ U) ([ θ × (X' // X)] T0)
+    let (δ'',X') := next δ' in
+    mu Z X' (⟦θ⟧ U) ([ θ × (X' // X)] T0)
 end
 where "[ θ ] T" := (app_msubst_tp θ T).
 
@@ -132,7 +135,10 @@ Ltac abstraction_case IHT H1 :=
 
 abstraction_case IHT H1.
 abstraction_case IHT H1.
-abstraction_case IHT H1.
+destruct n. reflexivity.
+f_equal.
+eauto.
+admit. (* TODO *)
 Defined.
 
 End app_msubst_tp_sect.
@@ -168,40 +174,47 @@ match T  with
    prod (rename θ T1) (rename θ T2)
  | sum T1 T2 =>
    sum (rename θ T1) (rename θ T2)
- | tvar n => tvar _ (θ n)
- | tapp T0 C =>
-   tapp (rename θ T0) C
+ | tapp N C =>
+   tapp (rename_neutral θ N) C
  | eq_constraint C1 C2 T0 =>
    eq_constraint C1 C2 (rename θ T0)
+end
+with rename_neutral {ψ ψ'} {δ} (θ:name ψ -> name ψ') (N:neutral_tp ψ δ) : neutral_tp ψ' δ :=
+match N with
+ | tvar n => tvar _ (θ n)
  | mu ψ'' ε Z X U T0 =>
-   let (ψ''',Z') := next ψ' in
-   mu Z' X U (rename (import Z' ○ θ,,(Z,Z')) T0)
+    let (ψ''',Z') := next ψ' in
+     mu Z' X U (rename (import Z' ○ θ,,(Z,Z')) T0)
 end.
-Definition wkn {ψ ψ'} {δ} (Z:ψ↪ψ') : tp' ψ δ -> tp' ψ' δ := rename (import Z).
-Fixpoint app_tp_subst {ψ ψ'} {δ} (θ:name ψ -> tp' ψ' δ) (T:tp' ψ δ) : tp' ψ' δ :=
+
+Fixpoint app_tp_subst {ψ ψ'} {δ} (θ:name ψ -> neutral_tp ψ' δ) (T:tp' ψ δ) : tp' ψ' δ :=
 match T  with
  | m_tp U     =>
    m_tp _ U
  | arr T1 T2  =>
    arr ([θ] T1) ([θ] T2)
  | pi _ X U T0 =>
-   pi X U ([app_msubst_tp (import X) ○ θ] T0)
+   pi X U ([app_msubst_neutral_tp (import X) ○ θ] T0)
  | sigma _ X U T0 =>
-   sigma X U ([app_msubst_tp (import X) ○ θ] T0)
+   sigma X U ([app_msubst_neutral_tp (import X) ○ θ] T0)
  | unit =>
    unit _ _
  | prod T1 T2 =>
    prod ([θ] T1) ([θ] T2)
  | sum T1 T2 =>
    sum ([θ] T1) ([θ] T2)
- | tvar n => θ n
- | tapp T0 C =>
-   tapp ([θ] T0) C
+ | tapp N C =>
+   tapp (app_tp_subst_neutral θ N) C
  | eq_constraint C1 C2 T0 =>
    eq_constraint C1 C2 ([θ] T0)
+
+end
+with app_tp_subst_neutral {ψ ψ'} {δ} (θ:name ψ -> neutral_tp ψ' δ) (N:neutral_tp ψ δ) : neutral_tp ψ' δ :=
+match N with
+ | tvar n => θ n
  | mu ψ'' ε Z X U T0 =>
-   let (ψ''',Z') := next ψ' in
-   mu Z' X U ([(wkn Z') ○ (app_msubst_tp (import X) ○ θ) ,, (Z,tvar _ Z')] T0)
+    let (ψ''',Z') := next ψ' in
+    mu Z' X U ([(rename_neutral (import Z')) ○ (app_msubst_neutral_tp (import X) ○ θ) ,, (Z,tvar _ Z')] T0)
 end
 where "[ θ ] T" := (app_tp_subst θ T).
 
