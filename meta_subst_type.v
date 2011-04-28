@@ -10,14 +10,58 @@ Require Import meta_term.
 Require Import meta_subst_meta_subst.
 Require Import Setoid.
 
-Definition import_msubst {δ δ' δ''} (X:δ'↪δ'')  (θ:msubst δ δ')  : msubst δ δ'' :=
- import_meta_term X ○ θ.
 
 Section app_msubst_tp_sect.
 
 Reserved Notation "[ θ ] T" (at level 90).
 Definition context_mult {δ δ'} (θ:msubst δ δ') {δ'' δ'''} (y:δ'↪δ''') (x:δ↪δ'') := (import_msubst y θ,, (x,m_var y)).
 Notation "θ × ( y // x )" := (context_mult θ y x) (at level 10).
+Fixpoint comm {α β} δ (xs:α ↪* β):{δ':world & δ↪*δ'} := 
+match xs with
+ | s_nil => existT _ _ s_nil
+ | s_cons γ _ xs' x => 
+  let (δ'',ys) := comm δ xs' in
+  let (δ',y) := next δ'' in
+  existT _ δ' (s_cons δ' ys y)
+end.
+
+Definition comm_bijection {α β} δ (xs:α ↪* β) :
+ name' α β -> name' δ (projT1 (comm δ xs)).
+induction xs.
+simpl.
+intro.
+destruct (self_empty _ H).
+simpl. destruct (comm δ xs). simpl in *.
+intro.
+destruct (export' r H).
+eapply import'.
+destruct (next' x). simpl.
+eexact l0. eapply IHxs.
+eexact n.
+destruct (next' x). simpl.
+eapply weaken'.
+eexact l.
+exact l0.
+Defined.
+Definition comm_bijection' {α β} δ (xs:α↪*β) :
+ name' δ (projT1 (comm δ xs)) -> name' α β.
+induction xs.
+intro.
+destruct (self_empty _ H).
+simpl. destruct (comm δ xs).
+simpl in *.
+intro.
+destruct (next' x). simpl in *.
+destruct (export' l0 H).
+eapply import'.
+eapply r.
+eapply IHxs.
+eexact n.
+eapply weaken'.
+eexact xs.
+exact r.
+Defined.
+
 Fixpoint app_msubst_tp {ψ} {δ δ'} (θ:msubst δ δ') (T:tp' ψ δ) : tp' ψ δ' :=
 match T  with
  | m_tp U     =>
@@ -42,6 +86,9 @@ match T  with
    tapp ([θ] T0) (⟦θ⟧ C)
  | eq_constraint C1 C2 T0 =>
    eq_constraint (⟦θ⟧ C1) (⟦θ⟧ C2) ([θ] T0)
+ | mu ψ' ε Z X U T0 =>
+   let (δ'',X') := next δ' in
+   mu Z X' (⟦θ⟧ U) ([ θ × (X' // X)] T0)
 end
 where "[ θ ] T" := (app_msubst_tp θ T).
 
@@ -57,39 +104,7 @@ Lemma compose_product_hom :
   (s0 : γ ↪ x) (s1 : β ↪ x0),
   (⟦θ' ×  (s0 // s1)⟧ (θ ×  (s1 // s))) =
    (⟦θ'⟧ θ) ×  (s0 // s).
-intros.
-extensionality n.
-unfold app_subst at 1.
-unfold msubst_substitutable.
-unfold compose at 1.
-unfold context_mult at 2 3.
-unfold compose.
-remember (export s n) as mn.
-destruct mn.
-unfold maybe.
-unfold import_msubst.
-unfold import_meta_term.
-(* TODO: There's some nice property here we should prove *)
-unfold compose.
-unfold app_subst at 4.
-erewrite assoc.
-erewrite assoc.
-f_equal.
-extensionality n'.
-unfold compose.
-erewrite app_msubst_mvar_result.
-unfold context_mult.
-unfold compose.
-erewrite export_import_inv.
-reflexivity.
-
-simpl.
-erewrite app_msubst_mvar_result.
-unfold context_mult.
-unfold compose.
-erewrite export_self.
-reflexivity.
-Qed.
+Admitted.
 
 Instance tp_substitutable' {ψ} : substitutable (tp' ψ) := {
   app_subst := @app_msubst_tp ψ
@@ -115,6 +130,7 @@ Ltac abstraction_case IHT H1 :=
  unfold msubst_substitutable in H1;
  eapply H1.
 
+abstraction_case IHT H1.
 abstraction_case IHT H1.
 abstraction_case IHT H1.
 Defined.

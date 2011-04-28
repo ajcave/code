@@ -15,7 +15,8 @@ Inductive tp' ψ (δ:world):=
   | tvar : name ψ -> tp' ψ δ
   | tapp : tp' ψ δ -> meta_term δ -> tp' ψ δ
   | eq_constraint : meta_term δ -> meta_term δ -> tp' ψ δ -> tp' ψ δ
- (* | mu : forall ψ' δ', ψ↪ψ' -> δ↝δ'〈mtype δ〉 -> tp' ψ' δ' -> tp' ψ δ *)
+  | mu : forall ψ' δ', ψ↪ψ' -> δ↪δ' ->
+       mtype δ -> tp' ψ' δ' -> tp' ψ δ 
 .
 
 Definition tp δ := tp' ∅ δ.

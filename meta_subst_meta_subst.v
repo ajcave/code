@@ -18,3 +18,7 @@ unfold compose in *.
 erewrite H.
 reflexivity.
 Defined.
+
+Definition import_msubst {δ δ' δ''} (X:δ'↪δ'')
+  : msubst δ δ' -> msubst δ δ''
+ := ⟦import X⟧.
