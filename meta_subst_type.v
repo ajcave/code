@@ -149,3 +149,63 @@ Definition msubst_single_t {δ δ'} (X:δ↪δ') (t:meta_term δ) : tp δ' -> tp
 
 
 Definition import_tp {δ δ'} (y:δ↪δ') : tp δ -> tp δ' :=  ⟦import y⟧.
+
+Section app_tp_subst_sec.
+Reserved Notation "[ θ ] T" (at level 90).
+Fixpoint rename {ψ ψ'} {δ} (θ:name ψ -> name ψ') (T:tp' ψ δ) : tp' ψ' δ :=
+match T  with
+ | m_tp U     =>
+   m_tp _ U
+ | arr T1 T2  =>
+   arr (rename θ T1) (rename θ T2)
+ | pi δ' X U T0 =>
+   pi X U (rename θ T0)
+ | sigma _ X U T0 =>
+   sigma X U (rename θ T0)
+ | unit =>
+   unit _ _
+ | prod T1 T2 =>
+   prod (rename θ T1) (rename θ T2)
+ | sum T1 T2 =>
+   sum (rename θ T1) (rename θ T2)
+ | tvar n => tvar _ (θ n)
+ | tapp T0 C =>
+   tapp (rename θ T0) C
+ | eq_constraint C1 C2 T0 =>
+   eq_constraint C1 C2 (rename θ T0)
+ | mu ψ'' ε Z X U T0 =>
+   let (ψ''',Z') := next ψ' in
+   mu Z' X U (rename (import Z' ○ θ,,(Z,Z')) T0)
+end.
+Definition wkn {ψ ψ'} {δ} (Z:ψ↪ψ') : tp' ψ δ -> tp' ψ' δ := rename (import Z).
+Fixpoint app_tp_subst {ψ ψ'} {δ} (θ:name ψ -> tp' ψ' δ) (T:tp' ψ δ) : tp' ψ' δ :=
+match T  with
+ | m_tp U     =>
+   m_tp _ U
+ | arr T1 T2  =>
+   arr (app_tp_subst θ T1) (app_tp_subst θ T2)
+ | pi _ X U T0 =>
+   pi X U (app_tp_subst (⟦import X⟧ θ) T0)
+ | sigma _ X U T0 =>
+   sigma X U (app_tp_subst (⟦import X⟧ θ) T0)
+ | unit =>
+   unit _ _
+ | prod T1 T2 =>
+   prod (app_tp_subst θ T1) (app_tp_subst θ T2)
+ | sum T1 T2 =>
+   sum (app_tp_subst θ T1) (app_tp_subst θ T2)
+ | tvar n => θ n
+ | tapp T0 C =>
+   tapp (app_tp_subst θ T0) C
+ | eq_constraint C1 C2 T0 =>
+   eq_constraint C1 C2 (app_tp_subst θ T0)
+ | mu ψ'' ε Z X U T0 =>
+   let (ψ''',Z') := next ψ' in
+   mu Z' X U (app_tp_subst
+    ((wkn Z') ○ (⟦import X⟧ θ) ,, (Z,tvar _ Z'))
+    T0)
+end.
+(*
+where "[ θ ] T" := (app_tp_subst θ T).
+*)
+End app_tp_subst_sec.

@@ -50,6 +50,22 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
   | rec_c : forall γ' (f:γ↪γ') E T,
              Δ;(Γ,, (f,T)) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (rec f E) ⇐ T
+  | inl_c : forall E T S,
+             Δ;Γ ⊢ E ⇐ T
+          -> Δ;Γ ⊢ (inl E) ⇐ (sum T S)
+  | inr_c : forall E T S,
+             Δ;Γ ⊢ E ⇐ S
+          -> Δ;Γ ⊢ (inr E) ⇐ (sum T S)
+  | pair_c : forall E1 E2 T S,
+             Δ;Γ ⊢ E1 ⇐ T
+          -> Δ;Γ ⊢ E2 ⇐ S
+          -> Δ;Γ ⊢ (pair E1 E2) ⇐ (prod T S)
+  | pack_c : forall E δ' (X:δ↪δ') U C T,
+              Δ ⊨ C ∷ U
+           -> Δ;Γ ⊢ E ⇐ (msubst_single_t X C T) 
+           -> Δ;Γ ⊢ (pack C E) ⇐ (sigma X U T)
+  | fold_c : 
+              Δ;Γ ⊢ E ⇐ (msubst_single_t X C T)
  with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                      : branch δ γ -> tp δ -> Prop :=
   | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
