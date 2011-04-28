@@ -29,6 +29,11 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
   | coerce_s : forall E T,
               Δ;Γ ⊢ E ⇐ T
            -> Δ;Γ ⊢ (coercion E T) ⇒ T
+  | unfold_c : forall I δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
+              Δ;Γ ⊢ I ⇒ (tapp (mu Z X U T) C) 
+           -> Δ;Γ ⊢ unfold I ⇒ (app_tp_subst_single
+                          (mu Z X U T) 
+                          (msubst_single_t' X C T))
  with c_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : checked_exp δ γ -> tp δ -> Prop :=
   | synth_c : forall I T,
@@ -64,8 +69,12 @@ Inductive s_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
               Δ ⊨ C ∷ U
            -> Δ;Γ ⊢ E ⇐ (msubst_single_t X C T) 
            -> Δ;Γ ⊢ (pack C E) ⇐ (sigma X U T)
-  | fold_c : 
-              Δ;Γ ⊢ E ⇐ (msubst_single_t X C T)
+  | fold_c : forall E δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
+              Δ;Γ ⊢ E ⇐ (app_tp_subst_single
+                          (mu Z X U T) 
+                          (msubst_single_t' X C T))
+           -> Δ;Γ ⊢ fold E ⇐ (tapp (mu Z X U T) C)
+  | tt_c : Δ;Γ ⊢ tt ⇐ unit
  with br_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                      : branch δ γ -> tp δ -> Prop :=
   | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)

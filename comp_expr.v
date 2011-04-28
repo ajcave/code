@@ -16,10 +16,11 @@ Inductive tp' ψ (δ:world):=
   | eq_constraint : meta_term δ -> meta_term δ -> tp' ψ δ -> tp' ψ δ
 with neutral_tp ψ (δ:world) :=
   | tvar : name ψ -> neutral_tp ψ δ
-  | mu : forall ψ' δ', ψ↪ψ' -> δ↪δ' ->
+  | mu : forall ψ' δ', ∅↪ψ' -> δ↪δ' ->
        mtype δ -> tp' ψ' δ' -> neutral_tp ψ δ
 .
-
+Implicit Arguments mu [ψ δ ψ' δ'].
+Implicit Arguments unit [ψ δ].
 Definition tp δ := tp' ∅ δ.
 Definition m_tp' {δ} := @m_tp ∅ δ : mtype δ -> tp δ.
 Coercion m_tp' : mtype >-> tp.
@@ -46,5 +47,5 @@ Inductive synth_exp (δ γ:world) : Set :=
   | tt : checked_exp δ γ
  with branch (δ γ:world) : Set :=
   | br : forall δi, meta_term δi -> msubst δ δi -> checked_exp δi γ -> branch δ γ.
-
+Implicit Arguments tt [δ γ].
 Coercion synth : synth_exp >-> checked_exp.

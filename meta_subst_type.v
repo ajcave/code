@@ -16,51 +16,6 @@ Section app_msubst_tp_sect.
 Reserved Notation "[ θ ] T" (at level 90).
 Definition context_mult {δ δ'} (θ:msubst δ δ') {δ'' δ'''} (y:δ'↪δ''') (x:δ↪δ'') := (import_msubst y θ,, (x,m_var y)).
 Notation "θ × ( y // x )" := (context_mult θ y x) (at level 10).
-Fixpoint comm {α β} δ (xs:α ↪* β):{δ':world & δ↪*δ'} := 
-match xs with
- | s_nil => existT _ _ s_nil
- | s_cons γ _ xs' x => 
-  let (δ'',ys) := comm δ xs' in
-  let (δ',y) := next δ'' in
-  existT _ δ' (s_cons δ' ys y)
-end.
-
-Definition comm_bijection {α β} δ (xs:α ↪* β) :
- name' α β -> name' δ (projT1 (comm δ xs)).
-induction xs.
-simpl.
-intro.
-destruct (self_empty _ H).
-simpl. destruct (comm δ xs). simpl in *.
-intro.
-destruct (export' r H).
-eapply import'.
-destruct (next' x). simpl.
-eexact l0. eapply IHxs.
-eexact n.
-destruct (next' x). simpl.
-eapply weaken'.
-eexact l.
-exact l0.
-Defined.
-Definition comm_bijection' {α β} δ (xs:α↪*β) :
- name' δ (projT1 (comm δ xs)) -> name' α β.
-induction xs.
-intro.
-destruct (self_empty _ H).
-simpl. destruct (comm δ xs).
-simpl in *.
-intro.
-destruct (next' x). simpl in *.
-destruct (export' l0 H).
-eapply import'.
-eapply r.
-eapply IHxs.
-eexact n.
-eapply weaken'.
-eexact xs.
-exact r.
-Defined.
 
 Fixpoint app_msubst_tp {ψ} {δ δ'} (θ:msubst δ δ') (T:tp' ψ δ) : tp' ψ δ' :=
 match T  with
@@ -75,7 +30,7 @@ match T  with
    let (_,X') := next δ' in
    sigma X' (⟦θ⟧ U) ([ θ × (X' // X )] T0)
  | unit =>
-   unit _ _
+   unit
  | prod T1 T2 =>
    prod ([θ] T1) ([θ] T2)
  | sum T1 T2 =>
@@ -153,40 +108,20 @@ Instance tp_substitutable : substitutable tp :=
 Definition msubst_single_t {δ δ'} (X:δ↪δ') (t:meta_term δ) : tp δ' -> tp δ :=
  ⟦ (maybe (@m_var _ ) t) ○ (export X) ⟧.
 
+Definition msubst_single_t' {ψ δ δ'} (X:δ↪δ') (t:meta_term δ) : tp' ψ δ' -> tp' ψ δ :=
+ app_msubst_tp ((maybe (@m_var _ ) t) ○ (export X)).
 
 Definition import_tp {δ δ'} (y:δ↪δ') : tp δ -> tp δ' :=  ⟦import y⟧.
 
 Section app_tp_subst_sec.
 Reserved Notation "[ θ ] T" (at level 90).
-Fixpoint rename {ψ ψ'} {δ} (θ:name ψ -> name ψ') (T:tp' ψ δ) : tp' ψ' δ :=
-match T  with
- | m_tp U     =>
-   m_tp _ U
- | arr T1 T2  =>
-   arr (rename θ T1) (rename θ T2)
- | pi δ' X U T0 =>
-   pi X U (rename θ T0)
- | sigma _ X U T0 =>
-   sigma X U (rename θ T0)
- | unit =>
-   unit _ _
- | prod T1 T2 =>
-   prod (rename θ T1) (rename θ T2)
- | sum T1 T2 =>
-   sum (rename θ T1) (rename θ T2)
- | tapp N C =>
-   tapp (rename_neutral θ N) C
- | eq_constraint C1 C2 T0 =>
-   eq_constraint C1 C2 (rename θ T0)
-end
-with rename_neutral {ψ ψ'} {δ} (θ:name ψ -> name ψ') (N:neutral_tp ψ δ) : neutral_tp ψ' δ :=
-match N with
- | tvar n => tvar _ (θ n)
- | mu ψ'' ε Z X U T0 =>
-    let (ψ''',Z') := next ψ' in
-     mu Z' X U (rename (import Z' ○ θ,,(Z,Z')) T0)
-end.
 
+Definition app_tp_subst_neutral {ψ ψ'} {δ} (θ:name ψ -> neutral_tp ψ' δ) (N:neutral_tp ψ δ) : neutral_tp ψ' δ :=
+match N with
+ | tvar n => θ n
+ | mu ψ'' ε Z X U T0 =>
+   mu Z X U T0
+end.
 Fixpoint app_tp_subst {ψ ψ'} {δ} (θ:name ψ -> neutral_tp ψ' δ) (T:tp' ψ δ) : tp' ψ' δ :=
 match T  with
  | m_tp U     =>
@@ -198,7 +133,7 @@ match T  with
  | sigma _ X U T0 =>
    sigma X U ([app_msubst_neutral_tp (import X) ○ θ] T0)
  | unit =>
-   unit _ _
+   unit
  | prod T1 T2 =>
    prod ([θ] T1) ([θ] T2)
  | sum T1 T2 =>
@@ -207,15 +142,9 @@ match T  with
    tapp (app_tp_subst_neutral θ N) C
  | eq_constraint C1 C2 T0 =>
    eq_constraint C1 C2 ([θ] T0)
-
-end
-with app_tp_subst_neutral {ψ ψ'} {δ} (θ:name ψ -> neutral_tp ψ' δ) (N:neutral_tp ψ δ) : neutral_tp ψ' δ :=
-match N with
- | tvar n => θ n
- | mu ψ'' ε Z X U T0 =>
-    let (ψ''',Z') := next ψ' in
-    mu Z' X U ([(rename_neutral (import Z')) ○ (app_msubst_neutral_tp (import X) ○ θ) ,, (Z,tvar _ Z')] T0)
 end
 where "[ θ ] T" := (app_tp_subst θ T).
-
+Definition app_tp_subst_single {ψ δ}
+(N:neutral_tp ∅ δ) (T:tp' ψ δ) : tp' ∅ δ :=
+app_tp_subst (fun n => N) T.
 End app_tp_subst_sec.
