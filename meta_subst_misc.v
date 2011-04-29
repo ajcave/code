@@ -9,6 +9,7 @@ Require Import type_assign.
 Require Import meta_subst_type_assign.
 Require Import comp_expr.
 Require Import Coq.Logic.FunctionalExtensionality.
+Require Import Coq.Program.Equality.
 
 Notation "[[ C1 // X1 ]]" := (msubst_single_t X1 C1) (at level 90). 
 
@@ -60,3 +61,7 @@ Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
  ⟦⟦θ'⟧θ⟧ T = ⟦θ'⟧(⟦θ⟧T).
 intros. erewrite assoc. reflexivity.
 Qed.
+
+Lemma msubst_import_id {δ} (θ:msubst δ ∅)
+ (y:∅↪*δ) : ⟦θ⟧ ○  ⟦import_star y⟧ = id.
+Admitted.

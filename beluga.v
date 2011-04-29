@@ -111,6 +111,32 @@ eapply IHeval; eauto.
 econstructor; eauto.
 unfold app_subst; unfold tp_assign_substitutable; erewrite compose_comma.
 eauto; fail.
+
+(* inl *)
+nice_inversion H9.
+assert (V [θ';;ρ']  ∷∷  ⟦θ ⟧ T).
+eapply IHeval.
+econstructor.
+eexact H7.
+eexact H8.
+eexact H2.
+nice_inversion H1.
+simpl. fold (tp δ) in S.
+repeat clean_substs.
+erewrite <- H12.
+replace (⟦θ ⟧ S) with (id (⟦θ ⟧ S)); try reflexivity.
+erewrite <- (msubst_import_id θ' (empty_initial δ')).
+unfold compose.
+change (sum (⟦θ' ⟧ T0) (⟦θ' ⟧
+           (⟦import_star (empty_initial δ')⟧ (⟦θ ⟧ S)))) with (⟦θ' ⟧ (sum T0 (⟦import_star (empty_initial δ')⟧ (⟦θ ⟧ S)))).
+econstructor.
+eauto.
+eauto.
+econstructor.
+eauto.
+
+
+
 Qed.
 
 Print Assumptions subj_red.

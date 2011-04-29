@@ -64,6 +64,7 @@ Lemma compose_product_hom :
    (⟦θ'⟧ θ) ×  (s0 // s).
 Admitted.
 
+End app_msubst_tp_sect.
 Instance tp_substitutable' {ψ} : substitutable (tp' ψ) := {
   app_subst := @app_msubst_tp ψ
 }.
@@ -96,7 +97,6 @@ eauto.
 admit. (* TODO *)
 Defined.
 
-End app_msubst_tp_sect.
 Implicit Arguments app_msubst_tp.
 
 Instance tp_substitutable : substitutable tp :=

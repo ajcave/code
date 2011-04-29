@@ -49,4 +49,11 @@ discriminate.
 Qed.
 
 Axiom export_import_inv : forall {α β} (y:α↪β) (n:name α), export y (import y n) = inl _ n.
- 
+
+Axiom empty_initial : forall α, ∅↪*α.
+
+Fixpoint import_star {α β} (y:α↪*β) (n:name α) : name β :=
+match y in star _ _ β return name β with
+ | s_nil => n
+ | s_cons _ _ ys y => import y (import_star ys n)
+end.
