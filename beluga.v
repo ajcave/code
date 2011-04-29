@@ -121,6 +121,8 @@ eexact H7.
 eexact H8.
 eexact H2.
 nice_inversion H1.
+
+
 simpl. fold (tp δ) in S.
 repeat clean_substs.
 erewrite <- H12.
@@ -134,9 +136,6 @@ eauto.
 eauto.
 econstructor.
 eauto.
-
-
-
 Qed.
 
 Print Assumptions subj_red.

@@ -62,6 +62,14 @@ Lemma subst_assoc3 {δ} (T:tp δ) : forall {δ' δ''}
 intros. erewrite assoc. reflexivity.
 Qed.
 
+
+Lemma msubst_import_id' {δ} (θ:msubst δ ∅)
+ (y:∅↪*δ) T :  ⟦θ⟧ (⟦import_star y⟧ T) = T.
+Admitted.
+
 Lemma msubst_import_id {δ} (θ:msubst δ ∅)
  (y:∅↪*δ) : ⟦θ⟧ ○  ⟦import_star y⟧ = id.
-Admitted.
+eapply functional_extensionality.
+unfold compose. unfold id.
+eapply msubst_import_id'.
+Qed.
