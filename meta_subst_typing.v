@@ -4,7 +4,7 @@ Require Import meta_subst.
 Require Import meta_term.
 Require Import meta_subst_meta_type.
  Reserved Notation "D ⊩ T ∷ D2" (at level 90).
-
+(* TODO: Write this directly... forall x, Delta |- theta x :: Delta' x *) 
  Inductive msubst_typ' {α}(Δ:mtype_assign α) : forall {β}(Δ':mtype_assign β), msubst β α ->Prop :=
   | m_subst_typ_nil :
            Δ ⊩ · ∷ ·
