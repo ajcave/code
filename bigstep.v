@@ -94,6 +94,6 @@ Qed.
 Hint Resolve val_env_val.
 
 Theorem eval_val L V : L ⇓ V -> val V.
-induction 1; try assumption;
+induction 1; try assumption.
 econstructor; eauto.
 Qed.

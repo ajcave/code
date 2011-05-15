@@ -1,3 +1,5 @@
+Require Import Coq.Program.Equality.
+
 Parameter world : Set.
 Parameter empty : world.
 Notation "∅" := empty.
@@ -25,7 +27,7 @@ Notation "f ○ g" := (compose g f) (at level 10).
 Inductive tp :=
 | one : tp
 | arrow : tp -> tp -> tp
-| prod : tp -> tp -> tp.
+| sum : tp -> tp -> tp.
 
 Set Implicit Arguments.
 Inductive exp (α:world) : Set :=
@@ -33,9 +35,9 @@ Inductive exp (α:world) : Set :=
 | var : name α -> exp α
 | lam : forall β, α↪β -> tp -> exp β -> exp α
 | app : exp α -> exp α -> exp α
-| fst : exp α -> exp α
-| snd : exp α -> exp α
-| pair : exp α -> exp α -> exp α.
+| inl : tp -> exp α -> exp α
+| inr : tp -> exp α -> exp α
+| case : exp α -> exp α -> exp α -> exp α.
 Implicit Arguments tt [α].
 Coercion var : name >-> exp.
 
@@ -63,19 +65,20 @@ Inductive of {γ} (Γ:tp_ctx γ) : exp γ -> tp -> Prop :=
           Γ ⊢ N ⇐ T 
         (*===============================*) ->
           Γ ⊢ app M N ⇐ S
-| fst_of : forall T S M,
-          Γ ⊢ M ⇐ prod T S
+| inl_of : forall T S M,
+          Γ ⊢ M ⇐ T
         (*===============================*) ->
-          Γ ⊢ fst M ⇐ T
-| snd_of : forall T S M,
-          Γ ⊢ M ⇐ prod T S
+          Γ ⊢ inl S M ⇐ (sum T S)
+| inr_of : forall T S M,
+          Γ ⊢ M ⇐ S
         (*===============================*) ->
-          Γ ⊢ snd M ⇐ S
-| pair_of : forall T S M N,
-          Γ ⊢ M ⇐ T ->
-          Γ ⊢ N ⇐ S
+          Γ ⊢ inr T M ⇐ (sum T S)
+| case_of : forall T S U M N P,
+          Γ ⊢ M ⇐ (sum T S) ->
+          Γ ⊢ N ⇐ (arrow T U) ->
+          Γ ⊢ P ⇐ (arrow S U)
         (*===============================*) ->
-          Γ ⊢ pair M N ⇐ prod T S
+          Γ ⊢ case M N P ⇐ U
 where "Γ ⊢ E ⇐ T" := (@of _ Γ E T).
 
 Inductive closure : Set :=
@@ -92,14 +95,25 @@ Inductive closure_of : closure -> tp -> Prop :=
             M [ρ] ∷ T
 where "C ∷ T" := (closure_of C T).
 
+Lemma env_tp_cons {γ} (ρ:env γ) (Γ:tp_ctx γ) V T γ' (x:γ↪γ'):
+     (forall y, ρ y ∷ Γ y)
+  -> V ∷ T
+  -> (forall y, (ρ,,(x,V)) y ∷ (Γ,,(x,T)) y).
+intros. unfold compose.
+destruct (export x y); firstorder.
+Qed.
+
 Inductive val : closure -> Prop :=
  | fn_val : forall γ γ' (x:γ↪γ') M T ρ,
       env_val ρ -> val ((lam x T M)[ρ])
  | tt_val : forall γ (ρ:env γ),
       env_val ρ -> val (tt[ρ])
- | pair_val : forall γ (ρ:env γ) M N,
-      env_val ρ -> val (M[ρ]) -> val (N[ρ])
-   -> val ((pair M N)[ρ])
+ | inl_val : forall γ (ρ:env γ) M S,
+      env_val ρ -> val (M[ρ])
+   -> val ((inl S M)[ρ])
+ | inr_val : forall γ (ρ:env γ) M T,
+      env_val ρ -> val (M[ρ])
+   -> val ((inr T M)[ρ])
 with env_val : forall {γ}, env γ -> Prop :=
  | env_val_nil : env_val ·
  | env_val_cons : forall γ (ρ:env γ) γ' (x:γ↪γ') V,
@@ -113,32 +127,64 @@ Inductive eval : closure -> closure -> Prop :=
           val V
         (*======*) ->
           V ⇓ V 
-| var_eval : forall γ (ρ:env γ) x V,
-          ρ x = V
+| var_eval : forall γ (ρ:env γ) x V V1,
+          ρ x = V -> V ⇓ V1
         (*=========*) ->
-          x[ρ] ⇓ V
+          x[ρ] ⇓ V1
 | app_eval : forall γ γ' γ'' (ρ:env γ) ρ' (x:γ'↪γ'') T M N M' V1 V2,
           M[ρ] ⇓ (lam x T M')[ρ'] ->
           N[ρ] ⇓ V1 ->
           M'[ρ',,(x,V1)] ⇓ V2
         (*========================*) ->
           (app M N)[ρ] ⇓ V2  
-| fst_eval : forall γ γ' (ρ:env γ) (ρ':env γ') M U V,
-          M[ρ] ⇓ (pair U V)[ρ']
+| inl_eval : forall γ γ' (ρ:env γ) (ρ':env γ') M V S,
+          M[ρ] ⇓ V[ρ']
         (*========================*) ->
-          (fst M)[ρ] ⇓ U[ρ']
-| snd_eval : forall γ γ' (ρ:env γ) (ρ':env γ') M U V,
-          M[ρ] ⇓ (pair U V)[ρ']
+          (inl S M)[ρ] ⇓ (inl S V)[ρ']
+| inr_eval : forall γ γ' (ρ:env γ) (ρ':env γ') M V T,
+          M[ρ] ⇓ V[ρ']
         (*========================*) ->
-          (snd M)[ρ] ⇓ V[ρ']
-(* | pair_eval : forall γ γ' (ρ:env γ) (ρ':env γ') M N V1 V2,
-          M[ρ] ⇓ V1 ->
-          N[ρ] ⇓ V2 ->
-          (pair M N)[ρ] ⇓ (pair (import Y X) Y)[·,,(X,V1),,(Y,V2)]*)
+          (inr T M)[ρ] ⇓ (inr T V)[ρ']
 where "C ⇓ V" := (eval C V).
 
-Hint Constructors eval val.
-Lemma eval_val V : val V -> eval V V.
+Tactic Notation "nice_inversion" hyp(H) := inversion H; subst; simpl_existTs; subst.
+Tactic Notation "nice_inversion" integer(N) := inversion N; subst; simpl_existTs; subst.
+
+Hint Constructors eval val of closure_of.
+
+Lemma val_env_val γ (ρ:env γ) V
+ (H:val (V[ρ])) : env_val ρ.
+nice_inversion H; eauto.
+Qed.
+Hint Resolve val_env_val.
+
+Lemma eval_to_val C V : eval C V -> val V.
 induction 1; eauto.
 Qed.
 
+Theorem subject_reduction C V : C ⇓ V -> forall T, C ∷ T -> V ∷ T.
+induction 1; nice_inversion 1.
+assumption.
+nice_inversion H7.
+apply IHeval. auto.
+nice_inversion H8.
+assert (M [ρ] ∷ (arrow T1 T0)).
+eauto.
+apply IHeval1 in H3.
+nice_inversion H3.
+apply IHeval3.
+nice_inversion H13.
+econstructor; eauto.
+intros.
+eapply env_tp_cons; eauto.
+nice_inversion H6.
+assert (V [ρ'] ∷ T0).
+eauto.
+nice_inversion H1.
+eauto.
+nice_inversion H6.
+assert (V [ρ'] ∷ S).
+eauto.
+nice_inversion H1.
+eauto.
+Qed.
