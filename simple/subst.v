@@ -115,7 +115,7 @@ Inductive eval : exp ∅ -> exp ∅ -> Prop :=
 where "M ⇓ V" := (eval M V).
 
 Hint Constructors eval.
-Theorem subject_reduction M V : M ⇓ V -> forall T, · ⊢ M ⇐ T -> · ⊢ V ⇐ T.
+Theorem subject_reduction {M V} : M ⇓ V -> forall T, · ⊢ M ⇐ T -> · ⊢ V ⇐ T.
 induction 1; intros; eauto.
 nice_inversion H2.
 eapply IHeval3.
@@ -127,4 +127,94 @@ apply IHeval2.
 assumption.
 nice_inversion H0. eauto.
 nice_inversion H0. eauto.
+Qed.
+
+Reserved Notation "M ⇑" (at level 90).
+CoInductive diverge : exp ∅ -> Prop :=
+| app_div1 : forall M N,
+     M ⇑ ->
+     (app M N) ⇑ 
+| app_div2 : forall M {γ} T (x:∅↪γ) (M':exp γ) N ,
+     M ⇓ (lam x T M') ->
+     N ⇑ ->
+     (app M N) ⇑
+| app_div3 : forall M {γ} T (x:∅↪γ) (M':exp γ) N V1,
+     M ⇓ (lam x T M') ->
+     N ⇓ V1 ->
+     (single_subst x M' V1) ⇑ ->
+     (app M N) ⇑ 
+| inl_div : forall M T,
+     M ⇑ ->
+     (inl T M) ⇑
+| inr_div : forall M T,
+     M ⇑ ->
+     (inr T M) ⇑
+where "M ⇑" := (diverge M).
+
+Axiom classical : forall P, P \/ ~P.
+Hint Constructors val.
+
+Inductive canonical : exp ∅ -> tp -> Prop :=
+| tt_canon: canonical tt one
+| lam_canon : forall U T {γ} (x:∅↪γ) (M:exp γ), canonical (lam x U M) (arrow U T)
+| inl_canon : forall M T S, canonical (inl T M) (sum S T)
+| inr_canon : forall M T S, canonical (inr S M) (sum S T).
+Hint Constructors canonical.
+
+Lemma canonical_forms {V T} : val V -> · ⊢ V ⇐ T -> canonical V T.
+intros. nice_inversion H0; eauto.
+destruct (empty_is_empty x).
+nice_inversion H.
+Qed.
+
+Lemma eval_to_val {M V} : M ⇓ V -> val V.
+induction 1; eauto.
+Qed.
+Hint Resolve @eval_to_val.
+
+Theorem progress : forall M T, · ⊢ M ⇐ T -> 
+ (forall V, ~ (M ⇓ V)) -> (M ⇑).
+cofix. intros.
+nice_inversion H.
+destruct (H0 tt); eauto.
+destruct (empty_is_empty x).
+destruct (H0 (lam x T0 M0)); eauto.
+destruct (classical (exists V, M0 ⇓ V)).
+destruct H3.
+pose proof (eval_to_val H3).
+pose proof (subject_reduction H3 H1).
+pose proof (canonical_forms H4 H5).
+nice_inversion H6.
+nice_inversion H5.
+destruct (classical (exists V, N ⇓ V)).
+destruct H7.
+destruct (classical (exists V, single_subst x0 M x ⇓ V)).
+destruct H9.
+destruct (H0 x1); eauto.
+eapply app_div3; eauto.
+eapply progress.
+eapply single_subst_lemma; eauto.
+eapply subject_reduction; eauto.
+intros. contradict H9.
+exists V. auto.
+eapply app_div2; eauto.
+eapply app_div1; eauto.
+econstructor.
+destruct (classical (exists V, M0 ⇓ V)).
+destruct H2.
+destruct (H0 (inl S x)); eauto.
+eapply progress; eauto.
+econstructor.
+destruct (classical (exists V, M0 ⇓ V)).
+destruct H2.
+destruct (H0 (inr T0 x)); eauto.
+eapply progress; eauto.
+Qed.
+
+Theorem progress' M T : · ⊢ M ⇐ T ->
+(exists V, (M ⇓ V)) \/ (M ⇑).
+intros.
+destruct (classical (exists V, M ⇓ V)).
+tauto.
+right. eapply progress; eauto.
 Qed.
