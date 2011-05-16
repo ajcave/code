@@ -1,4 +1,4 @@
-
+Require Import Coq.Program.Equality.
 Parameter world : Set.
 Parameter empty : world.
 Notation "∅" := empty.
@@ -32,3 +32,6 @@ Definition cdot {A} : name ∅ -> A :=
 fun n => match (empty_is_empty n) with end.
 Notation "·" := cdot.
 Notation "Γ ,, ( x , T )" := ((maybe Γ T) ○ (export x)) (at level 90).
+
+Tactic Notation "nice_inversion" hyp(H) := inversion H; subst; simpl_existTs; subst.
+Tactic Notation "nice_inversion" integer(N) := inversion N; subst; simpl_existTs; subst.

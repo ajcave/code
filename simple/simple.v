@@ -2,6 +2,7 @@ Require Import Coq.Program.Equality.
 Require Import worlds.
 Require Import typing.
 Set Implicit Arguments.
+
 Inductive closure : Set :=
 | clos : forall γ, exp γ -> (name γ -> closure) -> closure.
 Definition env γ := name γ -> closure.
@@ -66,9 +67,6 @@ Inductive eval : closure -> closure -> Prop :=
         (*========================*) ->
           (inr T M)[ρ] ⇓ (inr T V)[ρ']
 where "C ⇓ V" := (eval C V).
-
-Tactic Notation "nice_inversion" hyp(H) := inversion H; subst; simpl_existTs; subst.
-Tactic Notation "nice_inversion" integer(N) := inversion N; subst; simpl_existTs; subst.
 
 Hint Constructors eval val closure_of.
 
