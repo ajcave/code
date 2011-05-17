@@ -12,7 +12,9 @@ Inductive exp (α:world) : Set :=
 | lam : forall β, α↪β -> tp -> exp β -> exp α
 | app : exp α -> exp α -> exp α
 | inl : tp -> exp α -> exp α
-| inr : tp -> exp α -> exp α.
+| inr : tp -> exp α -> exp α
+| case : exp α -> forall β, (α↪β) -> exp β ->
+         forall γ, (α↪γ) -> exp γ -> exp α.
 Implicit Arguments tt [α].
 Coercion var : name >-> exp.
 
@@ -43,5 +45,11 @@ Inductive of {γ} (Γ:tp_ctx γ) : exp γ -> tp -> Prop :=
           Γ ⊢ M ⇐ S
         (*===============================*) ->
           Γ ⊢ inr T M ⇐ (sum T S)
+| case_of : forall α β(x:γ↪α)(y:γ↪β)T S U M N1 N2,
+          Γ ⊢ M ⇐ (sum T S) ->
+          Γ,,(x,T) ⊢ N1 ⇐ U ->
+          Γ,,(y,S) ⊢ N2 ⇐ U
+        (*===============================*) ->
+          Γ ⊢ (case M x N1 y N2) ⇐ U
 where "Γ ⊢ E ⇐ T" := (@of _ Γ E T).
 Hint Constructors of.

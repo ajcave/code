@@ -66,6 +66,16 @@ Inductive eval : closure -> closure -> Prop :=
           M[ρ] ⇓ V[ρ']
         (*========================*) ->
           (inr T M)[ρ] ⇓ (inr T V)[ρ']
+| case_l_eval : forall γ γ' α β (ρ:env γ) (ρ':env γ') (x:γ↪α) (y:γ↪β) M N1 N2 T U V,
+          M[ρ] ⇓ (inl T U)[ρ'] ->
+          N1[ρ,,(x,U[ρ'])] ⇓ V
+        (*========================*) ->
+          (case M x N1 y N2)[ρ] ⇓ V
+| case_r_eval : forall γ γ' α β (ρ:env γ) (ρ':env γ') (x:γ↪α) (y:γ↪β) M N1 N2 T U V,
+          M[ρ] ⇓ (inr T U)[ρ'] ->
+          N2[ρ,,(y,U[ρ'])] ⇓ V
+        (*========================*) ->
+          (case M x N1 y N2)[ρ] ⇓ V
 where "C ⇓ V" := (eval C V).
 
 Hint Constructors eval val closure_of.
@@ -100,4 +110,20 @@ nice_inversion H6.
 assert (V [ρ'] ∷ S); eauto.
 nice_inversion H1.
 eauto.
+nice_inversion H7.
+assert (M[ρ] ∷ (sum T1 S)); eauto.
+apply IHeval1 in H2.
+nice_inversion H2.
+nice_inversion H10.
+eapply IHeval2.
+econstructor; eauto.
+eapply env_tp_cons; eauto.
+nice_inversion H7.
+assert (M[ρ] ∷ (sum T1 S)); eauto.
+apply IHeval1 in H2.
+nice_inversion H2.
+nice_inversion H10.
+eapply IHeval2.
+econstructor; eauto.
+eapply env_tp_cons; eauto.
 Qed.
