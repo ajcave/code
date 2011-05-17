@@ -40,7 +40,7 @@ where "[ θ ] M" := (app_subst θ M).
 Lemma rename_lemma : forall {δ} M T (Δ:tp_ctx δ),
   Δ ⊢ M ⇐ T ->
   forall {γ} θ (Γ:tp_ctx γ), (forall x, Γ (θ x) = Δ x)
-(*====================================================*) ->
+(*===========================================*) ->
   Γ ⊢ rename θ M ⇐ T. 
 induction 1; simpl; intros; subst; eauto.
 econstructor.
@@ -77,7 +77,6 @@ unfold compose. erewrite export_self.
 reflexivity.
 Qed.
 
-(* Single substitution practically requires simultaneous?*)
 Definition single_subst {γ γ'} (x:γ↪γ') (M:exp γ') (N:exp γ) := [@var γ,,(x,N)] M. 
 
 Lemma single_subst_lemma : forall {γ γ'} (x:γ↪γ') M N U T (Γ:tp_ctx γ),
@@ -151,7 +150,6 @@ CoInductive diverge : exp ∅ -> Prop :=
      (inr T M) ⇑
 where "M ⇑" := (diverge M).
 
-Axiom classical : forall P, P \/ ~P.
 Hint Constructors val.
 
 Inductive canonical : exp ∅ -> tp -> Prop :=
@@ -172,6 +170,7 @@ induction 1; eauto.
 Qed.
 Hint Resolve @eval_to_val.
 
+Axiom classical : forall P, P \/ ~P.
 Theorem progress : forall M T, · ⊢ M ⇐ T -> 
  (forall V, ~ (M ⇓ V)) -> (M ⇑).
 cofix. intros.

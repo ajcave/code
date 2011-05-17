@@ -40,10 +40,9 @@ Inductive eval : closure -> closure -> Prop :=
  | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
              E [θ ;; ρ] ⇓ V
           -> (coercion E T) [θ ;; ρ] ⇓ V
-(* TODO!!! Uh oh, this should have said y:γ'↪γ''! Since E can be inan extended context *)
  | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ'
   (y:γ ↪ γ')
-  (E:checked_exp δ γ') θ' ρ' (E2:checked_exp δ γ) V2 V,
+  (E:checked_exp δ γ'') θ' ρ' (E2:checked_exp δ γ) V2 V,
              I1 [θ ;; ρ] ⇓ (fn y E) [θ' ;; ρ']
           -> E2 [θ ;; ρ] ⇓ V2
           -> E [θ' ;; (ρ' ,, (y,V2))] ⇓ V
