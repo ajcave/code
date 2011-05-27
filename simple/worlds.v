@@ -30,8 +30,18 @@ Notation "f ○ g" := (compose g f) (at level 10).
 
 Definition cdot {A} : name ∅ -> A :=
 fun n => match (empty_is_empty n) with end.
+
 Notation "·" := cdot.
+
+(* Γ : name α -> tp *)
 Notation "Γ ,, ( x , T )" := ((maybe Γ T) ○ (export x)) (at level 90).
+(* i.e.
+  (Γ ,, (x,T)) y :=
+    match (export x y) with 
+     | inl n => Γ n
+     | inr _ => T
+    end
+*)
 
 Tactic Notation "nice_inversion" hyp(H) := inversion H; subst; simpl_existTs; subst.
 Tactic Notation "nice_inversion" integer(N) := inversion N; subst; simpl_existTs; subst.

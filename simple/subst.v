@@ -5,7 +5,7 @@ Set Implicit Arguments.
 
 Section rename_sect.
 Reserved Notation "[ θ ] T " (at level 90).
-Definition rn_cons {α β γ δ} (θ:name α -> name β) (y:β↪γ) (x:α↪δ) := ((import y) ○ θ,,(x,y)).
+Definition rn_cons {α β γ δ} (θ:name α -> name β) (z:β↪γ) (y:α↪δ) := ((import z) ○ θ,,(y,z)).
 Notation "θ × ( y // x )" := (rn_cons θ y x) (at level 90).
 Fixpoint rename {α β} (θ:name α -> name β) (M:exp α) : exp β := match M with
 | var n => var (θ n)
@@ -56,7 +56,7 @@ End rename_sect.
 Definition import_exp {α β} (x:α↪β) : exp α -> exp β :=
  rename (import x).
 
-Reserved Notation "[ θ ] T" (at level 90).
+Reserved Notation "[ θ ]".
 Definition subst_cons {α β γ δ} (θ:name α -> exp β) (y:β↪γ) (x:α↪δ) := ((import_exp y) ○ θ,,(x,y)).
 Notation "θ × ( y // x )" := (subst_cons θ y x) (at level 90).
 Fixpoint app_subst {α β} (θ:name α -> exp β) (M:exp α) : exp β :=
@@ -75,7 +75,7 @@ match M with
        z ([θ × (z // x)] N1)
        z ([θ × (z // y)] N2)      
 end
-where "[ θ ] M" := (app_subst θ M).
+where "[ θ ]" := (app_subst θ).
 
 
 Notation "Γ ⊩ θ ⇐ Δ" := (forall x, Γ ⊢ θ x ⇐ Δ x) (at level 90).
@@ -313,4 +313,55 @@ intros.
 destruct (classical (exists V, M ⇓ V)).
 tauto.
 right. eapply progress; eauto.
+Qed.
+
+Definition subst_compose {α β γ}
+ (θ:name β -> exp γ)
+ (θ':name α -> exp β)
+:= [θ] ○ θ'.
+Notation "θ ** θ'" := (subst_compose θ θ') (at level 40).
+
+Require Import Coq.Logic.FunctionalExtensionality.
+
+Definition subst α β := name α -> exp β.
+
+Theorem rename_is_a_subst {α β} (θ : name α -> name β) : rename θ = [@var _ ○ θ].
+Admitted.
+
+Lemma hom_admitted : forall (α β : world) (l : α ↪ β),
+  forall (γ γ' β0 β0' : world) (θ : subst α β0) (η : subst β0 γ)(l0:γ↪γ') (l1:β0↪β0'),
+    ((η ** θ) ×  (l0 // l)) = (η ×  (l0 // l1)) ** (θ ×  (l1 // l)).
+intros.
+eapply functional_extensionality_dep. intros.
+unfold subst_compose.
+unfold subst_cons.
+unfold compose at 1 4 5.
+destruct (export l x); simpl.
+unfold compose at 1 2 5.
+Admitted.
+
+Theorem hom {α β γ} (θ:subst α β) (η:subst β γ) :
+ [η ** θ] = [η] ○ [θ].
+eapply functional_extensionality_dep. intros.
+generalize dependent β. generalize dependent γ.
+induction x; intros.
+Focus 3.
+simpl.
+unfold compose; simpl.
+set (next_link γ). set (next_link β0).
+f_equal.
+unfold compose in IHx.
+erewrite <- IHx.
+f_equal.
+eapply hom_admitted.
+Admitted.
+
+Theorem associativity {α β γ δ} (θ:subst α β) (η:subst β γ) (ζ:subst γ δ) :
+ (ζ ** η) ** θ = ζ ** (η ** θ).
+eapply functional_extensionality_dep. intros.
+pose proof (hom η ζ).
+unfold subst_compose in *.
+unfold compose in *.
+erewrite H.
+reflexivity.
 Qed.
