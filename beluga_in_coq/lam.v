@@ -255,5 +255,6 @@ end.
    I think so. I think we are permitted to ask if M is in the range of some substitution
    So, e.g. "Is (M …) in the range of "⇑ ○ …"? And the resulting preimage N is "viewable".
    Then that looks smooth in Agda...
-   eta (lam M)          with preim_dec M 
+   eta (lam M)          with preim_dec M … 
    eta (lam .(N ⇑ ○ …)) | preim N *)
+(* Interesting that rather than write "lam (\x. N ..)" now we write "lam (N ⇑…)" *)
