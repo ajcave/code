@@ -18,8 +18,6 @@ Axiom export_self : forall {α β} (y:α↪β), export y y = inr _ tt.
 Axiom export_import_inv : forall {α β} (y:α↪β) (n:name α), export y (import y n) = inl _ n.
 Axiom export_inr : forall {α β} (y:α↪β) x v, inr _ v = export y x -> x = y.  
 Axiom export_inl : forall {α β} (y:α↪β) x v, inl _ v = export y x -> x = import y v.
-(* Axiom destruct1 : forall α β γ (x:α↪β) (y:α↪γ), β = γ.
-Axiom destruct : forall α β γ (x:α↪β) (y:α↪γ), x ~= y. *)
 Axiom empty_is_empty : forall {C:Set}, name ∅ -> C.
 
 Inductive star {A} (R:A -> A -> Set) (a:A) : A -> Type :=
@@ -29,7 +27,8 @@ Notation "a ↪* b" := (star link a b) (at level 90).
 
 Axiom empty_is_initial : forall α, ∅↪*α.
 
-Notation "x ≠ y" := (export x y) (at level 90).
+Definition neq {α β} (y:α↪β) (n:name β) := export y n.
+Notation "x ≠ y" := (neq x y) (at level 90).
 
 Fixpoint export_star {α β} (l:α↪*β) : name β -> name α + unit :=
 match l in star _ _ b return name b -> name α + unit with
@@ -61,7 +60,7 @@ Inductive exp ψ : Set :=
 Definition sub α β := name α -> name β.
 Notation "β [ α ]" := (sub β α) (at level 90).
 
-Reserved Notation "[ σ ]" (at level 90).
+Reserved Notation "[ σ ]" (at level 50).
 Fixpoint app_subst {ψ φ} (σ:φ[ψ]) (M:exp φ) : exp ψ :=
 match M with
 | var x => var (σ x)
@@ -94,7 +93,7 @@ Notation "…" := id.
 Lemma id_is_id {A B} (f:A -> B) : (f ○ id) = f.
 eapply functional_extensionality_dep; intros.
 reflexivity.
-Admitted.
+Qed.
 
 Theorem foo : forall (ψ φ φ0 φ0' χ χ': world) (l : ψ ↪ φ) 
                            (σ1 : ψ [φ0]) (σ2 : φ0 [χ]) 
@@ -238,7 +237,18 @@ Inductive subst_range2 {ψ' φ} (σ:φ[ψ']) : name ψ' -> Set :=
 | subst_range2_yes  : forall x, subst_range2 σ (σ x).
 
 Axiom name_eq_dec : forall {α} (x y:name α), {x = y} + {x <> y}.
-Axiom export_diff : forall {α β} (y:α↪β) (x:name β), x <> y -> exists z, export y x = inl _ z.
+Lemma export_diff : forall {α β} (y:α↪β) (x:name β), x <> y -> exists z, export y x = inl _ z.
+intros.
+remember (export y x).
+destruct s.
+pose proof (export_inl Heqs).
+subst.
+exists n.
+reflexivity.
+pose proof (export_inr Heqs).
+contradiction.
+Qed.
+
 (* TODO: It may be possible to prove this without name_eq_dec, or even prove name_eq_dec, in the style similar to the previous proof *)
 Lemma is_in_range2 {φ} : forall {ψ'} (y:name ψ') (σ:φ[ψ']), subst_range2 σ y + {subst_range2 σ y -> False}.
 pose proof (empty_is_initial φ) as l.
@@ -296,22 +306,6 @@ match M with
 | app_v _ _ M1 σ1 _ _ M2 σ2 => app (eta (M1 _ σ1)) (eta (M2 _ σ2))
 end.
 
-(* TODO: Another "view" might be not to have substitutions applied to the subterms, but
-   to have and additional hypothesis "view (strengthen M)". Does this generalize smoothly?
-   I think so. I think we are permitted to ask if M is in the range of some substitution
-   So, e.g. "Is (M …) in the range of "⇑"? And the resulting preimage N is "viewable".
-   This might have to handle renamings... The "fresh" variables under binders might pose
-   a problem in the definition of preimage
-   Then that looks smooth in Agda...
-   eta (lam M)       with preim_dec (M …) ⇑ 
-   eta (lam .(⇑ N))     | preim N                     *)
-(* Interesting that rather than write "lam (\x. N ..)" now we write "lam (N ⇑)" 
-   Can we *really* make the resulting view structurally smaller?
-   Key is that preim_dec can't do funny things...
-   Maybe it's a "mutual view" where preim is defined with view. Make sure to get
-   the mutual induction hypothesis. Or maybe we need
-   something wacky like induction recursion. *)
-(* This might also allow us to write cnt with exchange in a more transparent way *)
 
 (* TODO: We just need one definition of im, and use it on [σ], not σ. Can unite with the variable version *)
 Inductive im ψ φ (σ:ψ[φ]) : exp φ -> Set :=
@@ -319,7 +313,6 @@ Inductive im ψ φ (σ:ψ[φ]) : exp φ -> Set :=
 
 Definition preimages_viewable (view:forall ψ, exp ψ -> Set) {ψ} (M:exp ψ) :=
  forall χ (σ:χ[ψ]), forall (N:exp χ), (M = [σ]N) -> view _ N.
-
 
 Inductive view2 ψ : exp ψ -> Set :=
 | var_2 : forall (x:name ψ), view2 (var x)
@@ -458,6 +451,9 @@ Notation "⇑ y" := (import y) (at level 90).
 Axiom i : forall {ψ} (M:exp ψ), M = […]M.
 Implicit Arguments i [ψ M].
 
+(* Interesting that rather than write "lam (\x. N ..)" now we write "lam (N ⇑)"  *)
+(* We might wish to define substitution on views directly, and state im_dec in terms of views
+   to get it really clean looking in Agda *)
 Fixpoint eta2 {ψ} {m:exp ψ} (M:view3 m) : exp ψ :=
 match M with
 | var_3 x => var x
@@ -475,4 +471,68 @@ match M with
   end 
 | app_3 _ M1 _ M2 => app (eta2 (M1 _ … _ i)) (eta2 (M2 _ … _ i))
 end.
-(* TODO: cnt in this style *)
+
+Fixpoint cnt2 {ψ'} {m:exp ψ'} (M:view3 m) {ψ} (x:ψ↪ψ') : nat :=
+match M with
+| var_3 y => if x ≠ y then 0 else 1
+| lam_3 _ y n N =>
+  match im_c_dec (exchange x y) n with
+   | im_cl _ e => cnt2 (N _ (exchange x y) _ e) y
+   | _ => 0 (* :( *)
+  end
+| app_3 _ M1 _ M2 => (cnt2 (M1 _ … _ i) x) + (cnt2 (M2 _ … _ i) x)
+end.
+
+Lemma exchange_inv {ψ φ χ} (x:ψ↪φ) (y:φ↪χ) : ((exchange x y) ○ (exchange x y)) = id.
+eapply functional_extensionality_dep; intros.
+unfold exchange. unfold compose.
+remember (export y x0).
+destruct s; simpl.
+unfold id.
+remember (export x n).
+destruct s; simpl.
+erewrite export_import_inv. simpl.
+erewrite export_import_inv. simpl.
+pose proof (export_inl Heqs); subst.
+pose proof (export_inl Heqs0); subst.
+reflexivity.
+erewrite export_self. simpl.
+pose proof (export_inl Heqs). subst.
+pose proof (export_inr Heqs0). subst.
+reflexivity.
+erewrite export_import_inv. simpl.
+erewrite export_self. simpl. unfold id.
+pose proof (export_inr Heqs). subst.
+reflexivity.
+Qed.
+
+Inductive im_c2 {ψ φ} (σ:ψ[φ]) (M:exp φ) : Set :=
+| im_c2l : forall N, M = ([σ]N) -> im_c2 σ M.
+
+Lemma inv_im_c2 {ψ φ} (σ:ψ[φ]) (ρ:φ[ψ]) (M:exp φ) : ((σ ○ ρ) = …) -> im_c2 σ M.
+intros.
+erewrite i. 
+erewrite <- H. 
+erewrite <- subst_compose.
+econstructor. reflexivity.
+Qed.
+
+Fixpoint cnt3 {ψ'} {m:exp ψ'} (M:view3 m) {ψ} (x:ψ↪ψ') : nat :=
+match M with
+| var_3 y => if x ≠ y then 0 else 1
+| lam_3 _ y n N =>
+  let (_,eq) := inv_im_c2 n (exchange_inv x y) in
+     cnt2 (N _ (exchange x y) _ eq) y
+| app_3 _ M1 _ M2 => (cnt2 (M1 _ … _ i) x) + (cnt2 (M2 _ … _ i) x)
+end.
+Print Assumptions cnt3.
+(* The cost of doing it this way is that now coverage is a burden.
+   So view2 might be the most convenient in that it encompasses both *)
+(* I imagine Brigitte might recognize this condition ("is the substitution invertible?")
+   from coverage checking in Beluga *)
+
+(* Observe that we're proving really general lemmas. Essentially, we're
+   proving the theorems and lemmas that justify Beluga, and then writing the
+   Beluga program *)
+
+(* TODO: Try a proof. Say, subject reduction *)
