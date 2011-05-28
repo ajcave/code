@@ -91,6 +91,11 @@ Inductive view ψ : exp ψ -> Set :=
 Definition id {A} := fun (x:A) => x.
 Notation "…" := id.
 
+Lemma id_is_id {A B} (f:A -> B) : (f ○ id) = f.
+eapply functional_extensionality_dep; intros.
+reflexivity.
+Admitted.
+
 Theorem foo : forall (ψ φ φ0 φ0' χ χ': world) (l : ψ ↪ φ) 
                            (σ1 : ψ [φ0]) (σ2 : φ0 [χ]) 
                            (l0 : χ ↪ χ') (l1 : φ0 ↪ φ0'),
@@ -229,6 +234,40 @@ eexact H.
 Qed.
 
 
+Inductive subst_range2 {ψ' φ} (σ:φ[ψ']) : name ψ' -> Set :=
+| subst_range2_yes  : forall x, subst_range2 σ (σ x).
+
+Axiom name_eq_dec : forall {α} (x y:name α), {x = y} + {x <> y}.
+Axiom export_diff : forall {α β} (y:α↪β) (x:name β), x <> y -> exists z, export y x = inl _ z.
+(* TODO: It may be possible to prove this without name_eq_dec, or even prove name_eq_dec, in the style similar to the previous proof *)
+Lemma is_in_range2 {φ} : forall {ψ'} (y:name ψ') (σ:φ[ψ']), subst_range2 σ y + {subst_range2 σ y -> False}.
+pose proof (empty_is_initial φ) as l.
+induction l; intros.
+right. intros.
+inversion H.
+eapply empty_is_empty; eauto.
+destruct (IHl _ y (σ ○ import r)).
+inversion s; subst.
+left. unfold compose. econstructor 1.
+destruct (name_eq_dec (σ r) y).
+subst.
+left. econstructor.
+right.
+intros.
+inversion H.
+destruct (name_eq_dec x r).
+subst.
+contradict n. reflexivity.
+pose proof (export_diff n0).
+destruct H1.
+symmetry in H1.
+pose proof (export_inl H1).
+subst.
+apply f.
+change (σ (import r x0)) with ((σ ○ import r) x0).
+econstructor.
+Qed.
+
 (* TODO: Define the strengthening view! *)
 
 (* Note that there is some extra "flexibility" in this 
@@ -274,6 +313,7 @@ end.
    something wacky like induction recursion. *)
 (* This might also allow us to write cnt with exchange in a more transparent way *)
 
+(* TODO: We just need one definition of im, and use it on [σ], not σ. Can unite with the variable version *)
 Inductive im ψ φ (σ:ψ[φ]) : exp φ -> Set :=
 | in_im : forall M, im σ ([σ]M).
 
@@ -321,4 +361,80 @@ Qed.
 Hint Constructors view3.
 Theorem view3_all {ψ} (M:exp ψ) : view3 M.
 induction M; eauto using @view3_preim.
+Qed.
+
+Axiom world_eq_dec : forall (α β:world), {α = β} + {α <> β}.
+Axiom link_eq_dec : forall {α β} (x y:α↪β), {x = y} + {x <> y}. (* Is this provable from the export axioms? *)
+Lemma im_dec φ (M:exp φ) : forall ψ (σ:ψ[φ]), (im σ M) + {im σ M -> False}.
+induction M; intros.
+destruct (is_in_range2 n σ).
+inversion s. left.
+change (im σ ([σ] (var x))).
+econstructor.
+right.
+intros.
+inversion H.
+destruct M; simpl in H1; try discriminate.
+inversion H1; subst.
+apply f.
+econstructor.
+
+(* lam *)
+destruct (world_eq_dec φ (s_w ψ)).
+subst.
+destruct (link_eq_dec l (s_l ψ)).
+subst.
+destruct (IHM _ (σ × (s_l ψ) // (s_l ψ0))).
+left.
+inversion i; subst.
+change (im σ ([σ] (lam (s_l ψ0) M0))).
+econstructor.
+
+right.
+intros.
+inversion H.
+destruct M0; simpl in H1; try discriminate.
+inversion H1; subst; simpl_existTs; subst.
+apply f.
+pose proof (foo l … σ (s_l ψ) (s_l ψ0)).
+erewrite id_is_id in H0.
+rewrite <- H0.
+erewrite <- subst_compose.
+econstructor.
+
+right.
+intros.
+inversion H.
+destruct M0; simpl in H1; try discriminate.
+inversion H1; subst; simpl_existTs; subst.
+apply n. reflexivity.
+
+right.
+intros.
+inversion H.
+destruct M0; simpl in H1; try discriminate.
+inversion H1; subst; simpl_existTs; subst.
+apply n. reflexivity.
+
+(* app *)
+destruct (IHM1 _ σ).
+destruct (IHM2 _ σ).
+inversion i; subst.
+inversion i0; subst. 
+left.
+change (im σ ([σ] (app M M0))).
+econstructor.
+right.
+intros.
+inversion H.
+destruct M; simpl in H1; try discriminate.
+inversion H1; subst.
+apply f.
+econstructor.
+right.
+intro.
+inversion H.
+destruct M; simpl in H1; try discriminate.
+inversion H1; subst.
+apply f. econstructor.
 Qed.
