@@ -29,6 +29,8 @@ Notation "a ↪* b" := (star link a b) (at level 90).
 
 Axiom empty_is_initial : forall α, ∅↪*α.
 
+Notation "x ≠ y" := (export x y) (at level 90).
+
 Fixpoint export_star {α β} (l:α↪*β) : name β -> name α + unit :=
 match l in star _ _ b return name b -> name α + unit with
 | s_nil => fun x => inl _ x
@@ -59,7 +61,7 @@ Inductive exp ψ : Set :=
 Definition sub α β := name α -> name β.
 Notation "β [ α ]" := (sub β α) (at level 90).
 
-Reserved Notation "[ σ ] M" (at level 90).
+Reserved Notation "[ σ ]" (at level 90).
 Fixpoint app_subst {ψ φ} (σ:φ[ψ]) (M:exp φ) : exp ψ :=
 match M with
 | var x => var (σ x)
@@ -68,7 +70,7 @@ match M with
   let z := s_l ψ in
   lam z ([σ × z // x] M)
 end
-where "[ σ ] M" := (app_subst σ M). 
+where "[ σ ]" := (app_subst σ). 
 
 Inductive sview ψ : exp ψ -> Set :=
 | var_s : forall (x:name ψ), sview (var x)
@@ -153,7 +155,7 @@ Definition exchange {ψ φ χ} (x:ψ↪φ) (y:φ↪χ) :=
 
 Fixpoint cnt {ψ'} {m:exp ψ'} (M:sview m) {ψ} (x:ψ↪ψ') : nat :=
 match M with
-| var_s y => if (export x y) then 0 else 1
+| var_s y => if x ≠ y then 0 else 1
 | lam_s _ y _ N => cnt (N _ (exchange x y)) y (* Swap x for y and then count the ys *)
 | app_s _ M1 _ M2 => (cnt (M1 _ …) x) + (cnt (M2 _ …) x)
 end.
@@ -219,7 +221,6 @@ unfold compose in H.
 eexact H.
 Qed.
 
-Notation "x ≠ y" := (export x y) (at level 90).
 
 (* TODO: Define the strengthening view! *)
 
@@ -236,7 +237,7 @@ match M with
 | var_v x => var x
 | lam_v _ _ x _ N σ =>
  match (N _ σ) with 
- | app_v _ m1 M1 σ1 _ (var y) M2 σ2 =>
+ | app_v _ _ M1 σ1 _ (var y) M2 σ2 =>
     if x ≠ (σ2 y) then
        lam x (eta (N _ σ))
     else
@@ -248,3 +249,11 @@ match M with
  end
 | app_v _ _ M1 σ1 _ _ M2 σ2 => app (eta (M1 _ σ1)) (eta (M2 _ σ2))
 end.
+
+(* TODO: Another "view" might be not to have substitutions applied to the subterms, but
+   to have and additional hypothesis "view (strengthen M)". Does this generalize smoothly?
+   I think so. I think we are permitted to ask if M is in the range of some substitution
+   So, e.g. "Is (M …) in the range of "⇑ ○ …"? And the resulting preimage N is "viewable".
+   Then that looks smooth in Agda...
+   eta (lam M)          with preim_dec M 
+   eta (lam .(N ⇑ ○ …)) | preim N *)
