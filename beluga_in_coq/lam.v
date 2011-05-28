@@ -253,8 +253,16 @@ end.
 (* TODO: Another "view" might be not to have substitutions applied to the subterms, but
    to have and additional hypothesis "view (strengthen M)". Does this generalize smoothly?
    I think so. I think we are permitted to ask if M is in the range of some substitution
-   So, e.g. "Is (M …) in the range of "⇑ ○ …"? And the resulting preimage N is "viewable".
+   So, e.g. "Is (M …) in the range of "⇑"? And the resulting preimage N is "viewable".
+   This might have to handle renamings... The "fresh" variables under binders might pose
+   a problem in the definition of preimage
    Then that looks smooth in Agda...
-   eta (lam M)          with preim_dec M … 
-   eta (lam .(N ⇑ ○ …)) | preim N *)
-(* Interesting that rather than write "lam (\x. N ..)" now we write "lam (N ⇑…)" *)
+   eta (lam M)       with preim_dec (M …) ⇑ 
+   eta (lam .(⇑ N))     | preim N                     *)
+(* Interesting that rather than write "lam (\x. N ..)" now we write "lam (N ⇑)" 
+   Can we *really* make the resulting view structurally smaller?
+   Key is that preim_dec can't do funny things...
+   Maybe it's a "mutual view" where preim is defined with view. Make sure to get
+   the mutual induction hypothesis. Or maybe we need
+   something wacky like induction recursion. *)
+(* This might also allow us to write cnt with exchange in a more transparent way *)
