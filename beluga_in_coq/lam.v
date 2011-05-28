@@ -365,6 +365,7 @@ Qed.
 
 Axiom world_eq_dec : forall (α β:world), {α = β} + {α <> β}.
 Axiom link_eq_dec : forall {α β} (x y:α↪β), {x = y} + {x <> y}. (* Is this provable from the export axioms? *)
+(* The above axioms and their use in this lemma messes with alpha equality, I think. *)
 Lemma im_dec φ (M:exp φ) : forall ψ (σ:ψ[φ]), (im σ M) + {im σ M -> False}.
 induction M; intros.
 destruct (is_in_range2 n σ).
@@ -438,3 +439,40 @@ destruct M; simpl in H1; try discriminate.
 inversion H1; subst.
 apply f. econstructor.
 Qed.
+
+Inductive im_c {ψ φ} (σ:ψ[φ]) (M:exp φ) : Set :=
+| im_cl : forall N, M = ([σ]N) -> im_c σ M
+| im_cr : (forall N, M <> ([σ]N)) -> im_c σ M.
+
+Theorem im_c_dec {ψ φ} (σ:ψ[φ]) (M:exp φ) : im_c σ M.
+destruct (im_dec M σ).
+inversion i; subst. econstructor 1. reflexivity.
+econstructor 2. intros.
+intro. subst.
+apply f.
+econstructor.
+Qed.
+
+Notation "⇑ y" := (import y) (at level 90).
+
+Axiom i : forall {ψ} (M:exp ψ), M = […]M.
+Implicit Arguments i [ψ M].
+
+Fixpoint eta2 {ψ} {m:exp ψ} (M:view3 m) : exp ψ :=
+match M with
+| var_3 x => var x
+| lam_3 _ x _ N =>
+  match (N _ … _ i) with
+   | app_3 m1 M1 (var y) M2 =>
+     if x ≠ y then
+       lam x (eta2 (N _ … _ i))
+     else
+       match im_c_dec (⇑x) m1 with (* TODO: Could use M1 here.. *)
+        | im_cl _ e => (eta2 (M1 _ (⇑x) _ e))
+        | im_cr _ => lam x (eta2 (N _ … _ i))
+       end
+   | _ => lam x (eta2 (N _ … _ i))
+  end 
+| app_3 _ M1 _ M2 => app (eta2 (M1 _ … _ i)) (eta2 (M2 _ … _ i))
+end.
+(* TODO: cnt in this style *)
