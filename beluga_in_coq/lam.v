@@ -72,18 +72,20 @@ match M with
 end
 where "[ σ ]" := (app_subst σ). 
 
+Definition instances_viewable (view:forall ψ, exp ψ -> Set) {ψ} (M:exp ψ) := forall χ (σ:ψ[χ]), view _ ([σ]M).
+
 Inductive sview ψ : exp ψ -> Set :=
 | var_s : forall (x:name ψ), sview (var x)
-| lam_s : forall {ψ'} (x:ψ↪ψ') (M:exp ψ'), (forall χ (σ:ψ'[χ]), @sview _ ([σ]M)) -> sview (lam x M)
-| app_s : forall (M1:exp ψ), (forall χ1 (σ1:ψ[χ1]), @sview _ ([σ1]M1)) ->
-          forall (M2:exp ψ), (forall χ2 (σ2:ψ[χ2]), @sview _ ([σ2]M2)) ->
+| lam_s : forall {ψ'} (x:ψ↪ψ') (M:exp ψ'), instances_viewable (@sview) M -> sview (lam x M)
+| app_s : forall (M1:exp ψ), instances_viewable (@sview) M1 ->
+          forall (M2:exp ψ), instances_viewable (@sview) M2 ->
             sview (app M1 M2).
 
 Inductive view ψ : exp ψ -> Set :=
 | var_v : forall (x:name ψ), view (var x) (* Generalize? *)
-| lam_v : forall {φ ψ'} (x:ψ↪ψ') (M:exp φ), (forall χ (σ:φ[χ]), @view _ ([σ]M)) -> forall (σ:φ[ψ']), view (lam x ([σ]M))
-| app_v : forall {φ1} (M1:exp φ1), (forall χ1 (σ1:φ1[χ1]), @view _ ([σ1]M1)) -> forall (σ1:φ1[ψ]),
-          forall {φ2} (M2:exp φ2), (forall χ2 (σ2:φ2[χ2]), @view _ ([σ2]M2)) -> forall (σ2:φ2[ψ]),
+| lam_v : forall {φ ψ'} (x:ψ↪ψ') (M:exp φ), instances_viewable (@view) M-> forall (σ:φ[ψ']), view (lam x ([σ]M))
+| app_v : forall {φ1} (M1:exp φ1), instances_viewable (@view) M1 -> forall (σ1:φ1[ψ]),
+          forall {φ2} (M2:exp φ2), instances_viewable (@view) M2 -> forall (σ2:φ2[ψ]),
             view (app ([σ1]M1) ([σ2]M2)).
 
 Definition id {A} := fun (x:A) => x.
@@ -124,16 +126,17 @@ Theorem sview_sub {φ} (M:exp φ) : forall ψ (σ:φ[ψ]), sview ([σ]M).
 induction M; intros.
 econstructor.
 simpl.
-econstructor.
+econstructor. unfold instances_viewable.
 intros.
 erewrite subst_compose; eauto.
 simpl.
-econstructor; intros.
+econstructor; unfold instances_viewable; intros.
 erewrite subst_compose; eauto.
 erewrite subst_compose; eauto.
 Qed.
 
 Hint Constructors sview.
+Hint Unfold instances_viewable.
 Theorem id_sview {ψ} (M:exp ψ) : sview M.
 induction M; eauto using @sview_sub.
 Qed.
