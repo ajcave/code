@@ -121,6 +121,10 @@ erewrite IHM2.
 reflexivity.
 Qed.
 Print Assumptions subst_compose.
+Lemma subst_compose_nice ψ φ (σ1:ψ[φ]) χ (σ2:φ[χ]) : ([σ2] ○ [σ1]) = [σ2 ○ σ1].
+eapply functional_extensionality_dep; intros.
+eapply subst_compose.
+Qed.
 
 Theorem sview_sub {φ} (M:exp φ) : forall ψ (σ:φ[ψ]), sview ([σ]M).
 induction M; intros.
@@ -269,3 +273,52 @@ end.
    the mutual induction hypothesis. Or maybe we need
    something wacky like induction recursion. *)
 (* This might also allow us to write cnt with exchange in a more transparent way *)
+
+Inductive im ψ φ (σ:ψ[φ]) : exp φ -> Set :=
+| in_im : forall M, im σ ([σ]M).
+
+Definition preimages_viewable (view:forall ψ, exp ψ -> Set) {ψ} (M:exp ψ) :=
+ forall χ (σ:χ[ψ]), forall (N:exp χ), (M = [σ]N) -> view _ N.
+
+
+Inductive view2 ψ : exp ψ -> Set :=
+| var_2 : forall (x:name ψ), view2 (var x)
+| lam_2 : forall {ψ'} (x:ψ↪ψ') (M:exp ψ'), instances_viewable (@view2) M -> view2 (lam x M)
+| app_2 : forall (M1:exp ψ), (forall χ1 (σ1:χ1[ψ]) (N1:exp χ1), (M1 = [σ1]N1) -> instances_viewable (@view2) N1) ->
+          forall (M2:exp ψ), (forall χ2 (σ2:χ2[ψ]) (N2:exp χ2), (M2 = [σ2]N2) -> instances_viewable (@view2) N2) ->
+            view2 (app M1 M2).
+
+Inductive view3 ψ : exp ψ -> Set :=
+| var_3 : forall (x:name ψ), view3 (var x)
+| lam_3 : forall {ψ'} (x:ψ↪ψ') (M:exp ψ'), preimages_viewable (@view3) M -> view3 (lam x M)
+| app_3 : forall (M1:exp ψ), preimages_viewable (@view3) M1 ->
+          forall (M2:exp ψ), preimages_viewable (@view3) M2 ->
+            view3 (app M1 M2).
+
+Lemma view3_preim {ψ} (m:exp ψ) (M:view3 m) : preimages_viewable (@view3) m.
+induction M; unfold preimages_viewable in *; intros.
+destruct N; simpl in H; try discriminate.
+econstructor.
+destruct N; simpl in H0; try discriminate.
+inversion H0; subst; simpl_existTs; subst.
+econstructor.
+intro. intros; subst.
+eapply p.
+erewrite subst_compose.
+reflexivity.
+destruct N; simpl in H1; try discriminate.
+inversion H1; subst; simpl_existTs; subst.
+econstructor;
+intro; intros; subst.
+eapply p.
+erewrite subst_compose.
+reflexivity.
+eapply p0.
+erewrite subst_compose.
+reflexivity.
+Qed.
+
+Hint Constructors view3.
+Theorem view3_all {ψ} (M:exp ψ) : view3 M.
+induction M; eauto using @view3_preim.
+Qed.
