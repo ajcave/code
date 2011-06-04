@@ -125,8 +125,6 @@ Inductive synth_exp (δ γ:world) : Set :=
   | meta : meta_term δ -> checked_exp δ γ
   | fn : forall γ', γ↪γ' -> checked_exp δ γ' -> checked_exp δ γ
   | mlam : forall δ', δ↪δ' -> checked_exp δ' γ -> checked_exp δ γ
-  | case_i :  synth_exp δ γ -> list (branch δ γ) -> checked_exp δ γ
-  | case_c : meta_term δ -> list (branch δ γ) -> checked_exp δ γ
   | rec : forall γ', γ↪γ' -> checked_exp δ γ' -> checked_exp δ γ
   | fold : checked_exp δ γ -> checked_exp δ γ
   | inl : checked_exp δ γ -> checked_exp δ γ
@@ -134,10 +132,13 @@ Inductive synth_exp (δ γ:world) : Set :=
   | pack : meta_term δ -> checked_exp δ γ -> checked_exp δ γ
   | pair : checked_exp δ γ -> checked_exp δ γ -> checked_exp δ γ
   | tt : checked_exp δ γ
+  | clos : forall δ' γ', checked_exp δ' γ' -> msubst δ' δ -> (name γ' -> checked_exp δ γ) -> checked_exp δ γ
+  | case_i :  synth_exp δ γ -> list (branch δ γ) -> checked_exp δ γ
  with branch (δ γ:world) : Set :=
-  | br : forall δi, meta_term δi -> msubst δ δi -> checked_exp δi γ -> branch δ γ.
+  | br : forall δi γi, checked_exp δi γi -> msubst δ δi -> checked_exp δi γ -> branch δ γ.
 Implicit Arguments tt [δ γ].
 Coercion synth : synth_exp >-> checked_exp.
+Notation "E [ θ ;; ρ ]" := (clos E θ ρ) (at level 80).
 
 Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
 Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
@@ -179,10 +180,6 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
   | mlam_c : forall δ' (X:δ↪δ') E U T,
              (〚↑X〛 ○ (Δ,, (X,U)));(〚↑X〛 ○ Γ) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (mlam X E) ⇐ (pi X U T)
-  | case_i_c : forall I U Bs T,
-             Δ;Γ ⊢ I ⇒ U
-          -> (forall B, In B Bs -> branch_tp B (arr U T))
-          -> Δ;Γ ⊢ (case_i I Bs) ⇐ T
   | rec_c : forall γ' (f:γ↪γ') E T,
              Δ;(Γ,, (f,T)) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (rec f E) ⇐ T
@@ -206,6 +203,15 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                           (single_subst X C T))
            -> Δ;Γ ⊢ fold E ⇐ (tapp (mu Z X U T) C)
   | tt_c : Δ;Γ ⊢ tt ⇐ unit
+  | clos_c : forall δ' γ' Δ' Γ' (E:checked_exp δ' γ') T ρ θ,
+              Δ';Γ' ⊢ E ⇐ T
+           -> Δ ⊩ θ ∷ Δ'
+           -> (forall x, Δ;Γ ⊢ (ρ x) ⇐ 〚θ〛(Γ' x))
+           -> Δ;Γ ⊢ E[θ;;ρ] ⇐ 〚θ〛T
+ (* | case_i_c : forall I U Bs T,
+             Δ;Γ ⊢ I ⇒ U
+          -> (forall B, In B Bs -> branch_tp B (arr U T))
+          -> Δ;Γ ⊢ (case_i I Bs) ⇐ T 
  with branch_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                      : branch δ γ -> tp δ -> Prop :=
   | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
@@ -214,6 +220,6 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
              Δi ⊨ C ∷ 〚θi〛 U
           -> Δi ⊩ θi ∷ Δ
           -> Δi;(〚θi〛 ○ Γ) ⊢ E ⇐ 〚θi〛T
-          -> branch_tp (br C θi E) (arr (m_tp' U) (m_tp' T))
+          -> branch_tp (br C θi E) (arr (m_tp' U) (m_tp' T)) *)
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@synth_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1).
