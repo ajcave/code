@@ -1,6 +1,7 @@
-Require Import comp.
-Inductive eval : closure -> closure -> Prop :=
- | ev_val : forall V, val V -> eval V V 
+Require Export comp.
+
+Reserved Notation "E ⇓ V" (at level 90).
+Inductive eval : checked_exp ∅ ∅ -> checked_exp ∅ ∅ -> Prop :=
  | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
              E [θ ;; ρ] ⇓ V
           -> (coercion E T) [θ ;; ρ] ⇓ V
@@ -14,9 +15,9 @@ Inductive eval : closure -> closure -> Prop :=
  | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ'
   (X:δ ↪ δ') (E:checked_exp δ' γ) θ' ρ' C V,
              I [θ ;; ρ] ⇓ (mlam X E) [θ';; ρ']
-          -> E [(θ' ,, (X, (⟦θ⟧ C))) ;; ρ'] ⇓ V
+          -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇓ V
           -> (mapp I C) [θ ;; ρ] ⇓ V
- | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
+(* | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
   (θk:msubst δ δi) Bs Ck Ek V,
             (θ /≐ θk)
          -> case_i I Bs [θ ;; ρ] ⇓ V
@@ -34,16 +35,15 @@ Inductive eval : closure -> closure -> Prop :=
          -> I [θ ;; ρ] ⇓ meta_term_closure C
          -> (C ≑ ⟦θ'⟧ Ck // θ'')
          -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
-         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V 
+         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V *)
  | ev_var : forall δ (θ:msubst δ ∅) γ ρ (y:name γ) V1 V,
             ρ y = V1
          -> V1 ⇓ V
          -> (var _ y) [θ ;; ρ] ⇓ V
  | ev_rec : forall δ θ γ ρ γ' (f:γ↪γ') (E:checked_exp δ γ') V,
        E [ θ ;; ρ ,, (f, (rec f E)[θ;;ρ]) ] ⇓ V
-    -> rec f E [θ ;; ρ] ⇓ V
- | ev_inl : forall δ (θ:msubst δ ∅) γ (ρ:env γ) E
-            δ' (θ':msubst δ' ∅) γ' (ρ':env γ') V,
-            E[θ;;ρ] ⇓ V[θ';;ρ']
-         -> (inl E)[θ;;ρ] ⇓ (inl V)[θ';;ρ']
+    -> (rec f E) [θ ;; ρ] ⇓ V
+ | ev_inl : forall δ (θ:msubst δ ∅) γ (ρ:env γ) E V,
+            E[θ;;ρ] ⇓ V
+         -> (inl E)[θ;;ρ] ⇓ (inl V)
 where "E1 ⇓ V1" := (eval E1 V1).

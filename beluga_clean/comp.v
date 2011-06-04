@@ -70,8 +70,8 @@ End app_msubst_tp_sect.
 Instance tp_substitutable' {ψ} : substitutable (tp' ψ) := {
   app_subst := @app_msubst_tp ψ
 }.
-(* TODO *)
-Admitted.
+admit.
+Defined.
 
 Instance tp_substitutable : substitutable tp := {
   app_subst := @app_subst _ tp_substitutable';
@@ -138,7 +138,8 @@ Inductive synth_exp (δ γ:world) : Set :=
   | br : forall δi γi, checked_exp δi γi -> msubst δ δi -> checked_exp δi γ -> branch δ γ.
 Implicit Arguments tt [δ γ].
 Coercion synth : synth_exp >-> checked_exp.
-Notation "E [ θ ;; ρ ]" := (clos E θ ρ) (at level 80).
+Definition env γ := name γ -> checked_exp ∅ ∅.
+Notation "E [ θ ;; ρ ]" := (clos E θ ρ) (at level 0).
 
 Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
 Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
