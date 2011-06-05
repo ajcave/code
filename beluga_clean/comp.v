@@ -26,9 +26,6 @@ Definition m_tp' {δ} := @m_tp ∅ δ : mtype δ -> tp δ.
 Coercion m_tp' : mtype >-> tp.
 
 
-Definition context_mult {δ δ'} (θ:msubst δ δ') {δ'' δ'''} (y:δ'↪δ''') (x:δ↪δ'') := (〚↑y〛 ○ θ,, (x,m_var y)).
-Notation "θ × ( y // x )" := (context_mult θ y x) (at level 10).
-
 Section app_msubst_tp_sect.
 
 Reserved Notation "[ θ ] T" (at level 90).
@@ -158,7 +155,7 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
   | mapp_s : forall I δ' (X:δ↪δ') U C T,
               Δ;Γ ⊢ I ⇒ (pi X U T)
            -> Δ ⊨ C ∷ U
-           -> Δ;Γ ⊢ (mapp I C) ⇒ (single_subst X C T)
+           -> Δ;Γ ⊢ (mapp I C) ⇒ (〚single_subst X C〛 T)
   | coerce_s : forall E T,
               Δ;Γ ⊢ E ⇐ T
            -> Δ;Γ ⊢ (coercion E T) ⇒ T
@@ -166,7 +163,7 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
               Δ;Γ ⊢ I ⇒ (tapp (mu Z X U T) C) 
            -> Δ;Γ ⊢ unfold I ⇒ (app_tp_subst_single
                           (mu Z X U T) 
-                          (single_subst X C T))
+                          (〚single_subst X C〛 T))
  with checks_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : checked_exp δ γ -> tp δ -> Prop :=
   | synth_c : forall I T,
@@ -196,12 +193,12 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
           -> Δ;Γ ⊢ (pair E1 E2) ⇐ (prod T S)
   | pack_c : forall E δ' (X:δ↪δ') U C T,
               Δ ⊨ C ∷ U
-           -> Δ;Γ ⊢ E ⇐ (single_subst X C T) 
+           -> Δ;Γ ⊢ E ⇐ (〚single_subst X C〛 T) 
            -> Δ;Γ ⊢ (pack C E) ⇐ (sigma X U T)
   | fold_c : forall E δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
               Δ;Γ ⊢ E ⇐ (app_tp_subst_single
                           (mu Z X U T) 
-                          (single_subst X C T))
+                          (〚single_subst X C〛 T))
            -> Δ;Γ ⊢ fold E ⇐ (tapp (mu Z X U T) C)
   | tt_c : Δ;Γ ⊢ tt ⇐ unit
   | clos_c : forall δ' γ' Δ' Γ' (E:checked_exp δ' γ') T ρ θ,
@@ -224,3 +221,4 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
           -> branch_tp (br C θi E) (arr (m_tp' U) (m_tp' T)) *)
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@synth_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1).
+

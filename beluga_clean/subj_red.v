@@ -1,6 +1,7 @@
 Require Import ssreflect.
 Require Export bigstep.
 Require Import Coq.Program.Equality.
+Set Implicit Arguments.
 
 Ltac clean_substs :=
 (match goal with
@@ -38,6 +39,9 @@ match goal with
 | [ H : _;_ ⊢ fn _ _ ⇐ _ |- _] => nice_inversion_clear H
 | [ H : _;_ ⊢ mapp _ _ ⇒ _ |- _] => nice_inversion_clear H
 | [ H : _;_ ⊢ mlam _ _ ⇐ _ |- _] => nice_inversion_clear H
+| [ H : _;_ ⊢ var _ _ ⇒ _ |- _] => nice_inversion_clear H
+| [ H : _;_ ⊢ rec _ _ ⇐ _ |- _] => nice_inversion_clear H
+| [ H : _;_ ⊢ inl _ ⇐ _ |- _ ] => nice_inversion_clear H
 end.
 Ltac invert_typing := repeat invert_typing_1.
 
@@ -53,11 +57,40 @@ assert (·;· ⊢ V2 ⇐ 〚θ〛T1) by eauto.
 assert (·;· ⊢ (fn y E)[θ';;ρ'] ⇐ 〚θ〛(arr T1 T0)) by eauto.
 invert_typing.
 change (arr (〚θ'〛T2) (〚θ'〛T3) = arr (〚θ〛T1) (〚θ〛T0)) in H14. (* TODO *) nice_inversion H14. (* Combine with this? *)
-admit. (*TODO: by eauto *)
 
+erewrite <- H6.
+eapply IHeval3.
+econstructor; eauto.
+admit. (*TODO: Same damn lemma. Should be added to hints *)
+
+(* mapp *)
 assert (·;· ⊢ (mlam X E)[θ';;ρ'] ⇐ 〚θ〛(pi X0 U T)) by eauto.
 invert_typing.
 nice_inversion H12.
-unfold single_subst.
-erewrite assoc.
-(* Ah! Use the × combine result *)
+erewrite assoc. erewrite msubst_over_single.
+rewrite <- (common_var (〚θ〛C) H1).
+
+eapply IHeval2.
+econstructor.
+eauto.
+
+admit. (* TODO: Lemmas *)
+admit.
+
+(* Var *)
+by eauto.
+
+(* Rec *)
+eapply IHeval.
+econstructor; eauto.
+admit. (* Same lemma *)
+
+(* Inl *)
+change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)). (* TODO: Should be together with a tactic for the arr case *)
+by eauto.
+Qed.
+
+(* Notes:
+Focus on simultaneous substitutions means proofs and
+intermediate results are very algebraic.
+*)
