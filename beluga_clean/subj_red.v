@@ -17,8 +17,8 @@ Ltac clean_substs :=
  | [ H : context f [app_msubst_tp ?t ?T] |- _ ] =>
    replace (app_msubst_tp t T) with (〚 t 〛 T) in H;
    try reflexivity
- | [ H : context f [app_msubst ?t] |- _ ] =>
-   replace (app_msubst t) with (〚 t 〛) in H;
+ | [ H : context f [app_msubst ?t ?T] |- _ ] =>
+   replace (app_msubst t T) with (〚 t 〛 T) in H;
    try reflexivity
  | _ => fail
 end).
@@ -45,6 +45,8 @@ match goal with
 | [ H : _;_ ⊢ inr _ ⇐ _ |- _ ] => nice_inversion_clear H
 | [ H : _;_ ⊢ pair _ _ ⇐ _ |- _ ] => nice_inversion_clear H
 | [ H : _;_ ⊢ pack _ _ ⇐ _ |- _ ] => nice_inversion_clear H
+| [ H : _;_ ⊢ fold _ ⇐ _ |- _ ] => nice_inversion_clear H
+| [ H : _;_ ⊢ unfold _ ⇒ _ |- _ ] => nice_inversion_clear H
 end.
 Ltac invert_typing := repeat invert_typing_1.
 
@@ -106,6 +108,19 @@ change (〚θ〛(sigma X U T)) with (sigma ₁ (〚θ〛U) (〚θ × (₁//X)〛
 econstructor; eauto.
 erewrite single_subst_commute'.
 by eauto.
+
+(* fold *)
+change (〚θ〛(tapp (mu Z X U T) C)) with (tapp (mu (ψ:=empty) Z ₁ (〚θ〛 U) (〚θ ×  (₁ // X) 〛 T))
+       (〚θ〛 C)).
+econstructor.
+apply IHeval.
+pose proof (clos_c ρ H1 H8 H9).
+admit. (* Need some commuting lemma *)
+
+(* unfold *)
+assert (·;· ⊢ (fold V) ⇐ (〚θ〛 (tapp (mu Z X U T) C))) by eauto.
+invert_typing.
+admit. (* Etc *)
 Qed.
 
 (* Notes:
