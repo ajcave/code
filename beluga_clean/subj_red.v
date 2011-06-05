@@ -42,10 +42,14 @@ match goal with
 | [ H : _;_ ⊢ var _ _ ⇒ _ |- _] => nice_inversion_clear H
 | [ H : _;_ ⊢ rec _ _ ⇐ _ |- _] => nice_inversion_clear H
 | [ H : _;_ ⊢ inl _ ⇐ _ |- _ ] => nice_inversion_clear H
+| [ H : _;_ ⊢ inr _ ⇐ _ |- _ ] => nice_inversion_clear H
+| [ H : _;_ ⊢ pair _ _ ⇐ _ |- _ ] => nice_inversion_clear H
+| [ H : _;_ ⊢ pack _ _ ⇐ _ |- _ ] => nice_inversion_clear H
 end.
 Ltac invert_typing := repeat invert_typing_1.
 
 Hint Constructors synth_tp checks_tp.
+Hint Resolve @subst_lemma.
 
 Theorem subj_red (L:checked_exp ∅ ∅) V :
 L ⇓ V -> forall T, (·;· ⊢ L ⇐ T) -> (·;· ⊢ V ⇐ T).
@@ -87,6 +91,20 @@ admit. (* Same lemma *)
 
 (* Inl *)
 change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)). (* TODO: Should be together with a tactic for the arr case *)
+by eauto.
+
+(* Inr *)
+change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)).
+by eauto.
+
+(* Pair *)
+change (〚θ〛(prod T S)) with (prod (〚θ〛T) (〚θ〛S)).
+by eauto 6.
+
+(* pack *)
+change (〚θ〛(sigma X U T)) with (sigma ₁ (〚θ〛U) (〚θ × (₁//X)〛T)).
+econstructor; eauto.
+erewrite single_subst_commute'.
 by eauto.
 Qed.
 

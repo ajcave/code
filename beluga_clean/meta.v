@@ -170,3 +170,29 @@ erewrite assoc in H1. erewrite single_subst_mult in H1.
 erewrite assoc in H1. erewrite single_subst_mult in H1.
 assumption.
 Qed.
+
+
+Lemma single_subst_commute {α α' β β'} (θ:msubst α β) (y:α↪α')
+                           (z:β↪β') C :
+  〚single_subst z (〚θ〛C)〛 ○ (θ × (z // y))
+= 〚θ〛 ○ (single_subst y C).
+erewrite single_subst_mult.
+erewrite msubst_over_single.
+reflexivity.
+Qed.
+
+Lemma single_subst_commute' {α α' β β'} (θ:msubst α β) (y:α↪α')
+ (z:β↪β') C {T} `{H:substitutable T} M :
+  〚single_subst z (〚θ〛C)〛 (〚θ × (z // y)〛 M)
+= 〚θ〛 (〚single_subst y C〛 M).
+erewrite assoc.
+erewrite assoc.
+erewrite single_subst_commute.
+reflexivity.
+Qed.
+
+Axiom subst_lemma : forall {δ δ'} (θ:msubst δ' δ)
+                   (Δ:mtype_assign δ) (Δ':mtype_assign δ') C U,
+   Δ' ⊨ C ∷ U
+-> Δ  ⊩ θ ∷ Δ'
+-> Δ  ⊨ 〚θ〛C ∷ 〚θ〛U.

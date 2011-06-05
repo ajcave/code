@@ -46,4 +46,14 @@ Inductive eval : checked_exp ∅ ∅ -> checked_exp ∅ ∅ -> Prop :=
  | ev_inl : forall δ (θ:msubst δ ∅) γ (ρ:env γ) E V,
             E[θ;;ρ] ⇓ V
          -> (inl E)[θ;;ρ] ⇓ (inl V)
+ | ev_inr : forall δ (θ:msubst δ ∅) γ (ρ:env γ) E V,
+            E[θ;;ρ] ⇓ V
+         -> (inr E)[θ;;ρ] ⇓ (inr V)
+ | ev_pair : forall δ (θ:msubst δ ∅) γ (ρ:env γ) E1 E2 V1 V2,
+            E1[θ;;ρ] ⇓ V1
+         -> E2[θ;;ρ] ⇓ V2
+         -> (pair E1 E2)[θ;;ρ] ⇓ pair V1 V2
+ | ev_pack : forall δ (θ:msubst δ ∅) γ (ρ:env γ) C E V,
+            E[θ;;ρ] ⇓ V
+         -> (pack C E)[θ;;ρ] ⇓ pack (〚θ〛C) V
 where "E1 ⇓ V1" := (eval E1 V1).
