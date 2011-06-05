@@ -89,6 +89,7 @@ _+_ : nat -> nat -> nat
 z + y = y
 (s x) + y = s (x + y)
 
+-- Give inl and inr better names
 cnt : ∀ {ψ φ} -> {m : Exp φ} -> (M : sview m) -> (x : ψ ↪ φ) -> nat
 cnt (var y) x        with (cmp x y) 
 cnt (var y) x        | inl _    = z
