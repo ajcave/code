@@ -142,11 +142,9 @@ postulate
 
 eta : ∀ {ψ} {m : Exp ψ} (M : view m) -> Exp ψ
 eta (var x) = var x
-eta {ψ} {ƛ x m}                               (ƛ .x M) with (M … m refl) -- Arrg I want to name this
-eta {ψ} {ƛ x (r      · (var y))}        (ƛ .x M) | R · N with (cmp x y)
-eta {ψ} {ƛ x (r      · (var .(⌞ x ⌟)))} (ƛ .x M) | R · N | same with im_dec (↑ x) r
+eta {ψ} {ƛ x m}                         (ƛ .x M) with (M … m refl) -- Arrg I want to name this
+eta {ψ} {ƛ x (r      · (var y))}        (ƛ .x M) | R · N with (cmp x y) | im_dec (↑ x) r
 eta {ψ} {ƛ x (.(⇧ r) · (var .(⌞ x ⌟)))} (ƛ .x M) | R · N | same | inIm r = eta (R (↑ x) r i)
-eta {ψ} {ƛ x (r      · (var .(⌞ x ⌟)))} (ƛ .x M) | _ · _ | same | _      = ƛ x (eta (M … (r · var ⌞ x ⌟) refl))
-eta {ψ} {ƛ x (r      · (var y))}        (ƛ .x M) | _ · _ | _             = ƛ x (eta (M … (r · (var y)) refl))
+eta {ψ} {ƛ x (r      · (var y))}        (ƛ .x M) | _ · _ | _    | _      = ƛ x (eta (M … (r · (var y)) refl))
 eta {ψ} {ƛ x m} (ƛ .x M)                         | _                     = ƛ x (eta (M … m refl))
 eta {ψ} {m · n} (M · N)                                                  = (eta (M … m refl)) · eta (N … n refl)
