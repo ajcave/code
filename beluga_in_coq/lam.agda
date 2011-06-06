@@ -102,10 +102,45 @@ z + y = y
 cnt : ∀ {ψ φ} -> {m : Exp φ} -> (M : sview m) -> (x : ψ ↪ φ) -> nat
 cnt (var y) x        with (cmp x y) 
 cnt (var .(⌞ x ⌟)) x | same   = s z
-cnt (var .(⇑ y)) x   | diff y = z
+cnt (var .(⇑ y))   x | diff y = z
 cnt (ƛ y M) x = cnt (M (exch x y)) y
 cnt (M · N) x = (cnt (M …) x) + (cnt (N …) x) 
 
 -- Now we just need some crazy bananas for things like exchange
--- Seems like it may actually be an applicative functor
 
+all_preims : ∀ {ψ} -> (∀ {ψ} -> Exp ψ -> Set) -> (M : Exp ψ) -> Set
+all_preims {ψ} view M = {χ : world } -> (σ : vsub χ ψ)
+           -> (N : Exp χ) -> [ … ] M == [ σ ] N -> view N
+
+data view {ψ} : Exp ψ -> Set where
+ var : ∀ x -> view (var x)
+ ƛ : ∀ {φ} -> (x : ψ ↪ φ) -> ∀ {m}
+           -> all_preims view m
+           -> view (ƛ x m)
+ _·_ : ∀ {m n} -> all_preims view m
+               -> all_preims view n
+               -> view (m · n)
+
+data im {ψ φ} (σ : vsub ψ φ) (M : Exp φ) : Set where
+ inIm : (N : _) -> [ … ] M == [ σ ] N -> im σ M
+ notInIm : im σ M -- Should make this stronger?
+
+postulate
+ im_dec : ∀ {ψ φ} (σ : vsub ψ φ) (M : Exp φ) -> im σ M
+
+data Inspect {A : Set} : (x : A) -> Set where
+   _with-≡_ : (x y : A) → Inspect x
+
+inspect : ∀ {A : Set} (x : A) → Inspect x
+inspect x = x with-≡ x
+
+eta : ∀ {ψ} {m : Exp ψ} (M : view m) -> Exp ψ
+eta (var x) = var x
+eta {ψ} {ƛ x m}                    (ƛ .x M) with (M … m refl) -- Arrg I want to name this
+eta {ψ} {ƛ x (r · (var y))}        (ƛ .x M) | R · N with (cmp x y)
+eta {ψ} {ƛ x (r · (var .(⌞ x ⌟)))} (ƛ .x M) | R · N | same with im_dec (↑ x) r
+eta {ψ} {ƛ x (r · (var .(⌞ x ⌟)))} (ƛ .x M) | R · N | same | inIm r' e = eta (R (↑ x) r' e) 
+eta {ψ} {ƛ x (r · (var .(⌞ x ⌟)))} (ƛ .x M) | R · N | same | _         = ƛ x (eta (M … (r · (var ⌞ x ⌟)) refl))
+eta {ψ} {ƛ x (r · (var y))}        (ƛ .x M) | _ · _ | _                = ƛ x (eta (M … (r · (var y)) refl))
+eta {ψ} {ƛ x m} (ƛ .x M)                    | _                        = ƛ x (eta (M … m refl))
+eta {ψ} {m · n} (M · N)                                                = (eta (M … m refl)) · eta (N … n refl)
