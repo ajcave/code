@@ -148,3 +148,21 @@ eta {ψ} {ƛ x (.(⇧ r) · (var .(⌞ x ⌟)))} (ƛ .x M)    | same    | inIm r
 eta {ψ} {ƛ x (r      · (var y))}        (ƛ .x M)    | _       | _                 = ƛ x (eta (M … (r · (var y)) refl))
 eta {ψ} {ƛ x m} (ƛ .x M)                                                          = ƛ x (eta (M … m refl))
 eta {ψ} {m · n} (M · N)                                                           = (eta (M … m refl)) · eta (N … n refl)
+
+data isEtaRedex {ψ φ} (x : ψ ↪ φ) : Exp φ -> Set where
+ yes : (r : Exp ψ) -> isEtaRedex x (([ ↑ x ] r) · (var ⌞ x ⌟))
+ no : ∀ {m} -> isEtaRedex x m
+
+isEtaRedexDec : ∀ {ψ φ} (x : ψ ↪ φ) (m : Exp φ) -> isEtaRedex x m
+isEtaRedexDec x (m · var y) with cmp x y | im_dec (↑ x) m 
+isEtaRedexDec x (.(⇧ N) · var .(⌞ x ⌟)) | same | inIm N = yes N
+isEtaRedexDec x (m · var y) | _ | _ = no
+isEtaRedexDec x m = no
+
+eta2 : ∀ {ψ} {m : Exp ψ} (M : view m) -> Exp ψ
+eta2 {ψ} {var x} M = var x
+eta2 {ψ} {ƛ x m}                  _     with isEtaRedexDec x m
+eta2 {ψ} {ƛ x .(⇧ r · var ⌞ x ⌟)} (ƛ .x M) | yes r with M … ([ ↑ x ] r · var ⌞ x ⌟) refl
+...                                                   | R · N = eta2 (R (↑ x) r i)
+eta2 {ψ} {ƛ x m} (ƛ .x M)                  | _                = ƛ x (eta2 (M … m refl))
+eta2 {ψ} {m · n} (M · N)                                      = (eta2 (M … m refl)) · eta2 (N … n refl) 
