@@ -57,7 +57,8 @@ Hint Resolve @subst_cons_typing @meta_type_eq @env_tp_cons.
 Theorem subj_red (L:checked_exp ∅ ∅) V :
 L ⇓ V -> forall T, (·;· ⊢ L ⇐ T) -> (·;· ⊢ V ⇐ T).
 induction 1; intros; invert_typing.
-by eauto. (* Coercion *)
+(* coercion *)
+by eauto.
 
 (* app *)
 assert (·;· ⊢ V2 ⇐ 〚θ〛T1) by eauto.
