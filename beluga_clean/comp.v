@@ -70,6 +70,12 @@ Instance tp_substitutable' {ψ} : substitutable (tp' ψ) := {
 admit.
 Defined.
 
+Instance neutral_tp_substitutable' {ψ} : substitutable (neutral_tp ψ) := {
+  app_subst := @app_msubst_neutral_tp ψ
+}.
+admit.
+Defined.
+
 Instance tp_substitutable : substitutable tp := {
   app_subst := @app_subst _ tp_substitutable';
   assoc := @assoc _ tp_substitutable'
@@ -143,6 +149,11 @@ Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
 
 Definition tp_assign γ δ := name γ -> tp δ.
 
+
+Definition env_tp {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ) ρ (Γ':tp_assign γ' δ) (tp_rel:checked_exp δ γ -> tp δ -> Prop) :=
+forall x, tp_rel (ρ x) (Γ' x).
+Reserved Notation "Δ ; Γ ⊪ ρ ⇐ Γ'" (at level 90).
+
 Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : synth_exp δ γ -> tp δ -> Prop :=
   | var_s : forall x T,
@@ -176,7 +187,8 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
              Δ;(Γ,, (y,T1)) ⊢ E ⇐ T2
           -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
   | mlam_c : forall δ' (X:δ↪δ') E U T,
-             (〚↑X〛 ○ (Δ,, (X,U)));(〚↑X〛 ○ Γ) ⊢ E ⇐ T
+             (* TODO: Clean this up *)
+             (〚@m_var _ ○ ↑X〛 ○ (Δ,, (X,U)));(〚@m_var _ ○ ↑X〛 ○ Γ) ⊢ E ⇐ T
           -> Δ;Γ ⊢ (mlam X E) ⇐ (pi X U T)
   | rec_c : forall γ' (f:γ↪γ') E T,
              Δ;(Γ,, (f,T)) ⊢ E ⇐ T
@@ -204,7 +216,7 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
   | clos_c : forall δ' γ' Δ' Γ' (E:checked_exp δ' γ') T ρ θ,
               Δ';Γ' ⊢ E ⇐ T
            -> Δ ⊩ θ ∷ Δ'
-           -> (forall x, Δ;Γ ⊢ (ρ x) ⇐ 〚θ〛(Γ' x))
+           -> Δ;Γ ⊪ ρ ⇐ (〚θ〛 ○ Γ')
            -> Δ;Γ ⊢ E[θ;;ρ] ⇐ 〚θ〛T
  (* | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U
@@ -220,5 +232,33 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
           -> Δi;(〚θi〛 ○ Γ) ⊢ E ⇐ 〚θi〛T
           -> branch_tp (br C θi E) (arr (m_tp' U) (m_tp' T)) *)
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@synth_tp _ _ D1 G1 t1 T1)
-  and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1).
+  and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1)
+  and   "Δ ; Γ ⊪ ρ ⇐ Γ'" := (env_tp Δ Γ ρ Γ' (@checks_tp _ _ Δ Γ)).
 
+Lemma tp_subst_commute {δ ψ δ'} (T:neutral_tp ∅ δ) (U:tp' ψ δ) : forall  (θ:msubst δ δ'),
+〚θ〛 (app_tp_subst_single T U) = app_tp_subst_single (〚θ〛T) (〚θ〛 U).
+induction U; intros; simpl.
+admit. (* TODO *)
+unfold app_tp_subst_single.
+simpl.
+f_equal.
+apply IHU1.
+apply IHU2.
+Admitted. (* TODO *)
+
+Lemma env_tp_cons {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ) (Γ':tp_assign γ' δ) ρ {γ''} (y:γ'↪γ'') V T:
+   Δ;Γ ⊪ ρ ⇐ Γ'
+-> Δ;Γ ⊢ V ⇐ T
+-> Δ;Γ ⊪ (ρ,, (y, V)) ⇐ (Γ',, (y, T)).
+intros. intro.
+unfold compose.
+destruct (export y x); simpl; eauto.
+Qed.
+
+Lemma env_typing_eq {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+(Γ' Γ'':tp_assign γ' δ) ρ :
+   Γ'' = Γ' 
+-> Δ;Γ ⊪ ρ ⇐ Γ'
+-> Δ;Γ ⊪ ρ ⇐ Γ''.
+intros. subst. assumption.
+Qed.

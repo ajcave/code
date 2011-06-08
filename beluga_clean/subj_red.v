@@ -52,6 +52,7 @@ Ltac invert_typing := repeat invert_typing_1.
 
 Hint Constructors synth_tp checks_tp.
 Hint Resolve @subst_lemma.
+Hint Resolve @subst_cons_typing @meta_type_eq @env_tp_cons.
 
 Theorem subj_red (L:checked_exp ∅ ∅) V :
 L ⇓ V -> forall T, (·;· ⊢ L ⇐ T) -> (·;· ⊢ V ⇐ T).
@@ -67,7 +68,9 @@ change (arr (〚θ'〛T2) (〚θ'〛T3) = arr (〚θ〛T1) (〚θ〛T0)) in H14.
 erewrite <- H6.
 eapply IHeval3.
 econstructor; eauto.
-admit. (*TODO: Same damn lemma. Should be added to hints *)
+erewrite compose_cons. (* TODO: This is part of normalization *)
+rewrite H4.
+by eauto.
 
 (* mapp *)
 assert (·;· ⊢ (mlam X E)[θ';;ρ'] ⇐ 〚θ〛(pi X0 U T)) by eauto.
@@ -77,19 +80,18 @@ erewrite assoc. erewrite msubst_over_single.
 rewrite <- (common_var (〚θ〛C) H1).
 
 eapply IHeval2.
-econstructor.
-eauto.
-
-admit. (* TODO: Lemmas *)
-admit.
+econstructor; eauto.
+erewrite cons_import_mvar.
+by assumption.
 
 (* Var *)
-by eauto.
+by firstorder.
 
 (* Rec *)
 eapply IHeval.
 econstructor; eauto.
-admit. (* Same lemma *)
+erewrite compose_cons. (* TODO: Part of normalizing *)
+by eauto.
 
 (* Inl *)
 change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)). (* TODO: Should be together with a tactic for the arr case *)
@@ -114,13 +116,17 @@ change (〚θ〛(tapp (mu Z X U T) C)) with (tapp (mu (ψ:=empty) Z ₁ (〚θ�
        (〚θ〛 C)).
 econstructor.
 apply IHeval.
-pose proof (clos_c ρ H1 H8 H9).
-admit. (* Need some commuting lemma *)
+pose proof (clos_c H1 H8 H9).
+erewrite single_subst_commute'.
+erewrite tp_subst_commute in H0.
+exact H0.
 
 (* unfold *)
 assert (·;· ⊢ (fold V) ⇐ (〚θ〛 (tapp (mu Z X U T) C))) by eauto.
 invert_typing.
-admit. (* Etc *)
+erewrite tp_subst_commute.
+erewrite single_subst_commute' in H4.
+exact H4.
 Qed.
 
 (* Notes:

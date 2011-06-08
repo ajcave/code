@@ -1,6 +1,7 @@
 Require Export util.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Setoid.
+Require Import ssreflect.
 Set Implicit Arguments.
 
 Axiom mtype : world -> Set.
@@ -49,7 +50,7 @@ Definition single_subst {γ γ'} (x:γ↪γ') (N:meta_term γ) : msubst γ' γ :
  (@m_var γ,,(x,N)).
 
 (* TODO: This may cause me trouble later *)
-Definition msubst_oft {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := forall x, Δ' ⊨ (θ x) ∷ 〚θ〛(Δ x).
+Definition msubst_oft {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := forall x, Δ' ⊨ (θ x) ∷ ((〚θ〛 ○ Δ) x).
 Notation "Δ' ⊩ θ ∷ Δ" := (@msubst_oft _ Δ _ Δ' θ) (at level 90).
 
 Ltac clean_msubsts :=
@@ -63,15 +64,26 @@ end).
 Definition context_mult {δ δ'} (θ:msubst δ δ') {δ'' δ'''} (y:δ'↪δ''') (x:δ↪δ'') := (〚@m_var _ ○ ↑y〛 ○ θ,, (x,y)).
 Notation "θ × ( y // x )" := (context_mult θ y x) (at level 10).
 
-Lemma compose_cons :
+(* TODO: Consistently name these variants. (See below) *)
+Lemma compose_cons' :
   forall δ δ' β γ
-  (s : δ ↪ δ')
-  (θ : msubst δ β) (θ' : msubst β γ) C,
-  (〚θ'〛 ○ (θ,, (s,C))) =
-   ((〚θ'〛 ○ θ),, (s,〚θ'〛C)).
-intros. eapply functional_extensionality. intros.
+  (s : δ ↪ δ') {T} `{H:substitutable T}
+  (θ : name δ -> T β) (θ' : msubst β γ) C x,
+  (〚θ'〛 ((θ,, (s,C)) x)) =
+   ((〚θ'〛 ○ θ),, (s,〚θ'〛C)) x.
+intros.
 unfold compose at 1 2 3.
 destruct (export s x); reflexivity.
+Qed.
+
+Lemma compose_cons :
+  forall δ δ' β γ
+  (s : δ ↪ δ') {T} `{H:substitutable T}
+  (θ : name δ -> T β) (θ' : msubst β γ) C,
+  (〚θ'〛 ○ (θ,, (s,C))) =
+   ((〚θ'〛 ○ θ),, (s,〚θ'〛C)).
+intros. eapply functional_extensionality. 
+eapply compose_cons'.
 Qed.
 
 Lemma compose_mvar {α β} (θ:msubst α β) : 〚θ〛○(@m_var _) = θ.
@@ -79,7 +91,7 @@ apply functional_extensionality.
 apply app_msubst_mvar.
 Qed.
 
-Lemma subst_assoc {α β γ δ} (θ1:msubst α β) θ2 (θ3:msubst γ δ) :
+Lemma subst_assoc {β γ δ} {T} `{H:substitutable T} {A:Set} (θ1:A  -> T β) θ2 (θ3:msubst γ δ) :
  〚〚θ3〛 ○ θ2〛 ○ θ1 = 〚θ3〛 ○ (〚θ2〛 ○ θ1).
 apply functional_extensionality. intros.
 unfold compose at 1 3 4.
@@ -196,3 +208,32 @@ Axiom subst_lemma : forall {δ δ'} (θ:msubst δ' δ)
    Δ' ⊨ C ∷ U
 -> Δ  ⊩ θ ∷ Δ'
 -> Δ  ⊨ 〚θ〛C ∷ 〚θ〛U.
+
+Lemma cons_import_mvar {δ δ' δ''} (X:δ↪δ') C (θ:msubst δ δ'')
+{T} `{H:substitutable T} {A:Set} (M:A -> T δ):
+〚θ,, (X,C)〛 ○ (〚@m_var _ ○ ↑ X〛 ○ M) = 〚θ〛 ○ M.
+erewrite <- subst_assoc.
+erewrite compose_assoc.
+erewrite compose_mvar.
+erewrite cons_import.
+reflexivity.
+Qed.
+
+Lemma subst_cons_typing {δ δ'} (Δ:mtype_assign δ) (Δ':mtype_assign δ') (θ:msubst δ' δ) {δ''} (X:δ'↪δ'') C U :
+   Δ ⊩ θ ∷ Δ'
+-> Δ ⊨ C ∷ 〚θ〛U
+-> Δ ⊩ θ,,(X,C) ∷ 〚@m_var _ ○ ↑X〛 ○ (Δ',,(X,U)).
+intros. intro.
+erewrite cons_import_mvar.
+unfold compose.
+destruct (export X x); unfold maybe at 1 2.
+by firstorder.
+assumption.
+Qed.
+
+Lemma meta_type_eq {δ} {Δ:mtype_assign δ} C U V:
+   U = V
+-> Δ ⊨ C ∷ U
+-> Δ ⊨ C ∷ V.
+intros. subst. assumption.
+Qed.
