@@ -16,9 +16,36 @@ Theorem progress : forall {δ γ} θ ρ (E:checked_exp δ γ) T,
 -> E[θ;;ρ] ⇑.
 cofix. intros. invert_typing. nice_inversion H7.
 
-(* synth... hmmm *)
+(* synth *)
+nice_inversion H.
+
+(* var *)
 clear progress.
 admit. (* TODO *)
+
+(* app *)
+doesItConverge (I0[θ;;ρ]).
+doesItConverge (E[θ;;ρ]).
+clear progress. admit. (* TODO: Eval to val, canonical forms *)
+eapply div_app2; eauto 7.
+eapply div_app1; eauto 7.
+
+(* mapp *)
+doesItConverge (I0[θ;;ρ]).
+clear progress. admit. (* TODO *)
+eapply div_mapp1; eauto 7.
+
+(* coercion *)
+econstructor.
+eapply progress; eauto.
+intros v Hy.
+eapply H0; eauto.
+
+(* unfold *)
+econstructor.
+eapply progress; eauto.
+intros v Hy.
+clear progress. admit. (* TODO: Canonical forms *)
 
 (* meta *)
 edestruct H0; by eauto.

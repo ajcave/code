@@ -9,9 +9,8 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) :
   (E2:checked_exp δ γ),
              I1 [θ ;; ρ] ⇑
           -> (app I1 E2) [θ ;; ρ] ⇑
- | div_app2 : forall (I1:synth_exp δ γ) γ' γ'' (y:γ' ↪ γ'')
-  (E:checked_exp δ γ'') θ' ρ' (E2:checked_exp δ γ),
-             I1 [θ ;; ρ] ⇓ (fn y E) [θ' ;; ρ']
+ | div_app2 : forall (I1:synth_exp δ γ) (E2:checked_exp δ γ) V,
+             I1 [θ ;; ρ] ⇓ V
           -> E2 [θ ;; ρ] ⇑ 
           -> (app I1 E2) [θ ;; ρ] ⇑
  | div_app3 : forall (I1:synth_exp δ γ) γ' γ'' (y:γ' ↪ γ'')
