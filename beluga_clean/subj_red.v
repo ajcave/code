@@ -47,6 +47,8 @@ match goal with
 | [ H : _;_ ⊢ pack _ _ ⇐ _ |- _ ] => nice_inversion_clear H
 | [ H : _;_ ⊢ fold _ ⇐ _ |- _ ] => nice_inversion_clear H
 | [ H : _;_ ⊢ unfold _ ⇒ _ |- _ ] => nice_inversion_clear H
+| [ H : _;_ ⊢ meta _ _ ⇐ _ |- _ ] => nice_inversion_clear H
+| [ H : _;_ ⊢ tt ⇐ _ |- _] => nice_inversion_clear H
 end.
 Ltac invert_typing := repeat invert_typing_1.
 
@@ -56,9 +58,7 @@ Hint Resolve @subst_cons_typing @meta_type_eq @env_tp_cons.
 
 Theorem subj_red (L:checked_exp ∅ ∅) V :
 L ⇓ V -> forall T, (·;· ⊢ L ⇐ T) -> (·;· ⊢ V ⇐ T).
-induction 1; intros; invert_typing.
-(* coercion *)
-by eauto.
+induction 1; intros; invert_typing; try by eauto.
 
 (* app *)
 assert (·;· ⊢ V2 ⇐ 〚θ〛T1) by eauto.
@@ -128,6 +128,13 @@ invert_typing.
 erewrite tp_subst_commute.
 erewrite single_subst_commute' in H4.
 exact H4.
+
+(* meta *)
+simpl. econstructor.
+eapply subst_lemma; by eauto.
+
+(* unit *)
+simpl. eauto.
 Qed.
 
 (* Notes:

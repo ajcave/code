@@ -1,7 +1,7 @@
 Require Export bigstep.
 
 Reserved Notation "E [ θ ;; ρ ] ⇑" (at level 0).
-Inductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) : checked_exp δ γ -> Prop :=
+CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) : checked_exp δ γ -> Prop :=
  | div_coerce : forall (E:checked_exp δ γ) T,
              E [θ ;; ρ] ⇑
           -> (coercion E T) [θ ;; ρ] ⇑

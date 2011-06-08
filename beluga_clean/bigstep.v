@@ -62,6 +62,14 @@ Inductive eval : checked_exp ∅ ∅ -> checked_exp ∅ ∅ -> Prop :=
  | ev_unfold : forall δ (θ:msubst δ ∅) γ (ρ:env γ) I V,
             (synth I)[θ;;ρ] ⇓ fold V
          -> (unfold I)[θ;;ρ] ⇓ V
+ | ev_meta : forall δ θ γ (ρ:env γ) (C:meta_term δ),
+            (meta γ C)[θ;;ρ] ⇓ (meta ∅ (〚θ〛C))
+ | ev_fn : forall δ θ γ ρ γ' (y:γ↪γ') (E:checked_exp δ γ'), 
+            (fn y E)[θ;;ρ] ⇓ (fn y E)[θ;;ρ]
+ | ev_mlam : forall δ θ γ ρ δ' (X:δ↪δ') (E:checked_exp δ' γ),
+            (mlam X E)[θ;;ρ] ⇓ (mlam X E)[θ;;ρ]
+ | ev_tt : forall δ (θ:msubst δ ∅) γ (ρ:env γ),
+            tt[θ;;ρ] ⇓ tt 
 where "E1 ⇓ V1" := (eval E1 V1).
 
 (* TODO: We can simplify this definition by making it a 3 (4) place predicate, so we don't have to quantify over θ and ρ every time *)
