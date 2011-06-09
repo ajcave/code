@@ -22,8 +22,8 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) :
  | div_mapp1 : forall (I:synth_exp δ γ) C,
              I [θ ;; ρ] ⇑
           -> (mapp I C) [θ ;; ρ] ⇑
- | div_mapp2 : forall (I:synth_exp δ γ) δ' γ'
-  (X:δ ↪ δ') (E:checked_exp δ' γ') θ' ρ' C,
+ | div_mapp2 : forall (I:synth_exp δ γ) δ' δ'' γ'
+  (X:δ' ↪ δ'') (E:checked_exp δ'' γ') θ' ρ' C,
              I [θ ;; ρ] ⇓ (mlam X E) [θ';; ρ']
           -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇑
           -> (mapp I C) [θ ;; ρ] ⇑

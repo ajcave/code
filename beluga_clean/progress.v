@@ -89,13 +89,17 @@ assert (canonical V (〚θ〛(arr T1 T0))) as Hy by eauto.
 doesItConverge (E0[θ0;;(ρ0,,(y,V0))]).
 edestruct H0. by eauto.
 eapply div_app3; eauto. 
-(* eapply progress; eauto. *) admit. (* TODO *)
+(* eapply progress; eauto. *) clear progress. admit. (* TODO *)
 eapply div_app2; eauto 7.
 eapply div_app1; eauto 7.
 
 (* mapp *)
 doesItConverge (I0[θ;;ρ]).
-
+assert (canonical V (〚θ〛(pi X U T))) as Hy by eauto.
+nice_inversion Hy.
+doesItConverge (E[θ0,,(X0,〚θ〛C);;ρ0]).
+edestruct H0; eauto.
+eapply div_mapp2; eauto.
 clear progress. admit. (* TODO *)
 eapply div_mapp1; eauto 7.
 
