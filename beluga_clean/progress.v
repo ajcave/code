@@ -40,8 +40,7 @@ dependent induction H0; eauto.
 assert (val (fn y E0)[θ';;ρ']) by eauto.
 nice_inversion H0.
 eapply IHeval3.
-eapply val_env_cons.
-eexact H2.
+eapply val_env_cons. eexact H2.
 econstructor.
 eapply IHeval2.
 eexact H.
@@ -50,10 +49,7 @@ eapply @refl_equal.
 
 (* mlam *)
 assert (val (mlam X E0)[θ';;ρ']) by eauto.
-nice_inversion H0.
-eapply IHeval2.
-eexact H2.
-eapply @refl_equal.
+nice_inversion H0. by eauto.
 
 (* var *)
 nice_inversion H.
@@ -65,7 +61,7 @@ by eauto.
 eapply IHeval.
 eapply val_env_cons.
 eexact H.
-econstructor 2. eexact H.
+econstructor 2; eexact H.
 by eapply @refl_equal.
 
 (* fold *)
