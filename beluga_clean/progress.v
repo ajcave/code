@@ -251,3 +251,27 @@ edestruct H0; by eauto.
 
 clear progress. admit. (* TODO *)
 Qed.
+
+
+
+Lemma dot_val_env : val_env ·.
+econstructor. intro. edestruct (empty_is_empty x).
+Qed.
+
+Lemma dot_subst_typing : · ⊩ · ∷ ·.
+intro. edestruct (empty_is_empty x).
+Qed.
+
+Lemma dot_env_typing Δ : ·; · ⊪ · ⇐ Δ.
+intro. edestruct (empty_is_empty x).
+Qed.
+Hint Resolve dot_val_env dot_subst_typing dot_env_typing.
+
+Theorem progress' : forall E T,
+   ·;· ⊢ E ⇐ T
+-> (exists V, E[·;;·] ⇓ V) \/ E[·;;·] ⇑.
+intros.
+destruct (classical (exists V, E[·;;·] ⇓ V)); eauto.
+right.
+eapply progress; eauto.
+Qed.
