@@ -67,6 +67,18 @@ Ltac doesItConverge E :=
  let H := fresh "H" in
  destruct (classical (exists V, E ⇓ V)) as [ (V, H) | H ].
 
+Ltac canonical :=
+match goal with
+| [ H : ?E[?θ;;_] ⇓ ?V,
+    H0 : _;_ ⊢ ?E ⇐ ?T |- _] =>
+     assert (·;· ⊢ V ⇐ (〚θ〛T)) by eauto using subj_red; 
+     assert (canonical V (〚θ〛T)) by eauto; clear H0
+| [ H : (synth ?I)[?θ;;_] ⇓ ?V,
+    H0 : _;_ ⊢ ?I ⇒ ?T |- _] =>
+     assert (·;· ⊢ V ⇐ (〚θ〛T)) by eauto using subj_red;
+     assert (canonical V (〚θ〛T)) by eauto; clear H0
+end.
+
 Theorem progress : forall {δ γ} θ ρ (E:checked_exp δ γ) T,
    ·;· ⊢ E[θ;;ρ] ⇐ T
 -> (forall V, ~ (E[θ;;ρ] ⇓ V))
@@ -83,24 +95,30 @@ admit. (* TODO *)
 (* app *)
 doesItConverge (I0[θ;;ρ]).
 doesItConverge (E[θ;;ρ]).
-assert (canonical V (〚θ〛(arr T1 T0))) as Hy by eauto.
-  nice_inversion Hy.
-
+repeat canonical. nice_inversion H10. invert_typing.
+nice_inversion H16.
 doesItConverge (E0[θ0;;(ρ0,,(y,V0))]).
 edestruct H0. by eauto.
 eapply div_app3; eauto. 
-(* eapply progress; eauto. *) clear progress. admit. (* TODO *)
+eapply progress.
+econstructor. eauto.  eauto.
+erewrite compose_cons.
+eapply env_tp_cons.
+eauto.
+rewrite H1. by eauto.
+by eauto.
 eapply div_app2; eauto 7.
 eapply div_app1; eauto 7.
 
 (* mapp *)
 doesItConverge (I0[θ;;ρ]).
-assert (canonical V (〚θ〛(pi X U T))) as Hy by eauto.
-nice_inversion Hy.
+canonical. nice_inversion H5. invert_typing. nice_inversion H14.
 doesItConverge (E[θ0,,(X0,〚θ〛C);;ρ0]).
 edestruct H0; eauto.
 eapply div_mapp2; eauto.
-clear progress. admit. (* TODO *)
+eapply progress. econstructor.
+by eauto. by eauto. erewrite cons_import_mvar. by eauto.
+by eauto.
 eapply div_mapp1; eauto 7.
 
 (* coercion *)
