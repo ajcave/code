@@ -190,6 +190,5 @@ eapply H0; by eauto.
 (* tt *)
 edestruct H0; by eauto.
 
-clear progress.
-admit.
+clear progress. admit. (* TODO *)
 Qed.
