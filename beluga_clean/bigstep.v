@@ -1,5 +1,20 @@
 Require Export comp.
 
+Inductive val {δ γ} : checked_exp δ γ -> Prop :=
+| val_var : forall x, val (var δ x)
+| val_tt : val tt
+| val_fold : forall E, val E -> val (fold E)
+| val_inl : forall E, val E -> val (inl E)
+| val_inr : forall E, val E -> val (inr E)
+| val_pair : forall E1 E2, val E1 -> val E2 -> val (pair E1 E2)
+| val_pack : forall E C, val E -> val (pack C E)
+| val_fn : forall δ' γ' γ'' (y:γ'↪γ'') (E:checked_exp δ' γ'') θ ρ,
+           val ((fn y E)[θ;;ρ])
+| val_mlam : forall δ' δ'' γ' (X:δ'↪δ'')(E:checked_exp δ'' γ') θ ρ,
+           val ((mlam X E)[θ;;ρ])
+| val_meta : forall C, val (meta _ C)
+.
+
 Reserved Notation "E ⇓ V" (at level 90).
 Inductive eval : checked_exp ∅ ∅ -> checked_exp ∅ ∅ -> Prop :=
  | ev_coerce : forall δ θ γ ρ (E:checked_exp δ γ) T V,
@@ -36,10 +51,14 @@ Inductive eval : checked_exp ∅ ∅ -> checked_exp ∅ ∅ -> Prop :=
          -> (C ≑ ⟦θ'⟧ Ck // θ'')
          -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V *)
- | ev_var : forall δ (θ:msubst δ ∅) γ ρ (y:name γ) V1 V,
+ | ev_var1 : forall δ (θ:msubst δ ∅) γ ρ (y:name γ) V1 V,
             ρ y = V1
          -> V1 ⇓ V
          -> (var _ y) [θ ;; ρ] ⇓ V
+ | ev_var2 : forall δ (θ:msubst δ ∅) γ ρ (y:name γ) V1,
+            ρ y = V1
+         -> val V1
+         -> (var _ y) [θ ;; ρ] ⇓ V1
  | ev_rec : forall δ θ γ ρ γ' (f:γ↪γ') (E:checked_exp δ γ') V,
        E [ θ ;; ρ ,, (f, (rec f E)[θ;;ρ]) ] ⇓ V
     -> (rec f E) [θ ;; ρ] ⇓ V

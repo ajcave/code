@@ -2,20 +2,7 @@ Require Import divergence.
 Require Import subj_red.
 Set Implicit Arguments.
 
-Inductive val {δ γ} : checked_exp δ γ -> Prop :=
-| val_var : forall x, val (var δ x)
-| val_tt : val tt
-| val_fold : forall E, val E -> val (fold E)
-| val_inl : forall E, val E -> val (inl E)
-| val_inr : forall E, val E -> val (inr E)
-| val_pair : forall E1 E2, val E1 -> val E2 -> val (pair E1 E2)
-| val_pack : forall E C, val E -> val (pack C E)
-| val_fn : forall δ' γ' γ'' (y:γ'↪γ'') (E:checked_exp δ' γ'') θ ρ,
-           val ((fn y E)[θ;;ρ])
-| val_mlam : forall δ' δ'' γ' (X:δ'↪δ'')(E:checked_exp δ'' γ') θ ρ,
-           val ((mlam X E)[θ;;ρ])
-| val_meta : forall C, val (meta _ C)
-.
+
 
 Hint Constructors val.
 Lemma eval_to_val E V : E ⇓ V -> val V.
@@ -79,7 +66,16 @@ match goal with
      assert (canonical V (〚θ〛T)) by eauto; clear H0
 end.
 
-Theorem progress : forall {δ γ} θ ρ (E:checked_exp δ γ) T,
+Inductive extended_val : checked_exp ∅ ∅ -> Prop :=
+| ext_val_val : forall V, val V -> extended_val V
+| ext_val_rec : forall δ γ γ' (f:γ↪γ') (E:checked_exp δ γ') θ ρ,
+                val_env ρ -> extended_val ((rec f E)[θ;;ρ])
+with val_env : forall {γ} (ρ:env γ), Prop :=
+| is_val_env : forall γ (ρ:env γ),
+               (forall x, extended_val (ρ x)) -> val_env ρ.
+
+Theorem progress : forall {δ γ} θ ρ (Hyp:val_env ρ)
+(E:checked_exp δ γ) T,
    ·;· ⊢ E[θ;;ρ] ⇐ T
 -> (forall V, ~ (E[θ;;ρ] ⇓ V))
 -> E[θ;;ρ] ⇑.
@@ -89,8 +85,12 @@ cofix. intros. invert_typing. nice_inversion H7.
 nice_inversion H.
 
 (* var *)
-clear progress.
-admit. (* TODO *)
+nice_inversion Hyp. specialize (H3 x). inversion H3.
+edestruct H0. eauto.
+econstructor; eauto.
+eapply progress; eauto.
+rewrite H1. by eauto.
+intros v Hy. eapply H0; by eauto.
 
 (* app *)
 doesItConverge (I0[θ;;ρ]).
@@ -101,6 +101,7 @@ doesItConverge (E0[θ0;;(ρ0,,(y,V0))]).
 edestruct H0. by eauto.
 eapply div_app3; eauto. 
 eapply progress.
+clear progress. admit. (* TODO *)
 econstructor; eauto.
 erewrite compose_cons.
 eapply env_tp_cons; eauto.
@@ -115,7 +116,9 @@ canonical. nice_inversion H5. invert_typing. nice_inversion H14.
 doesItConverge (E[θ0,,(X0,〚θ〛C);;ρ0]).
 edestruct H0; eauto.
 eapply div_mapp2; eauto.
-eapply progress; eauto. econstructor; eauto.
+eapply progress; eauto.
+clear progress. admit. (* TODO *)
+econstructor; eauto.
 erewrite cons_import_mvar. by assumption.
 eapply div_mapp1; by eauto 7.
 
@@ -146,6 +149,7 @@ doesItConverge (E0 [θ;; ρ,, (f, (rec f E0) [θ;; ρ])]).
 edestruct H0; by eauto.
 econstructor.
 eapply progress.
+clear progress. admit. (* TODO *)
 econstructor; eauto.
 erewrite compose_cons.
 by eauto.

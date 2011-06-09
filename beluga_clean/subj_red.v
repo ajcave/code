@@ -85,7 +85,10 @@ econstructor; eauto.
 erewrite cons_import_mvar.
 by assumption.
 
-(* Var *)
+(* Var (extended value) *)
+by firstorder.
+
+(* Var (value) *)
 by firstorder.
 
 (* Rec *)
