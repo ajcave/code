@@ -252,8 +252,6 @@ edestruct H0; by eauto.
 clear progress. admit. (* TODO *)
 Qed.
 
-
-
 Lemma dot_val_env : val_env ·.
 econstructor. intro. edestruct (empty_is_empty x).
 Qed.
@@ -272,6 +270,5 @@ Theorem progress' : forall E T,
 -> (exists V, E[·;;·] ⇓ V) \/ E[·;;·] ⇑.
 intros.
 destruct (classical (exists V, E[·;;·] ⇓ V)); eauto.
-right.
-eapply progress; eauto.
+right. eapply progress; eauto.
 Qed.
