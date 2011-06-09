@@ -65,6 +65,7 @@ Definition context_mult {δ δ'} (θ:msubst δ δ') {δ'' δ'''} (y:δ'↪δ''')
 Notation "θ × ( y // x )" := (context_mult θ y x) (at level 10).
 
 (* TODO: Consistently name these variants. (See below) *)
+(* TODO: This actually has nothing to do with substitutions *)
 Lemma compose_cons' :
   forall δ δ' β γ
   (s : δ ↪ δ') {T} `{H:substitutable T}

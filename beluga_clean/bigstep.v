@@ -6,14 +6,14 @@ Inductive eval : checked_exp ∅ ∅ -> checked_exp ∅ ∅ -> Prop :=
              E [θ ;; ρ] ⇓ V
           -> (coercion E T) [θ ;; ρ] ⇓ V
  | ev_app : forall δ θ γ ρ (I1:synth_exp δ γ) γ' γ''
-  (y:γ' ↪ γ'')
-  (E:checked_exp δ γ'') θ' ρ' (E2:checked_exp δ γ) V2 V,
+  (y:γ' ↪ γ'') δ'
+  (E:checked_exp δ' γ'') θ' ρ' (E2:checked_exp δ γ) V2 V,
              I1 [θ ;; ρ] ⇓ (fn y E) [θ' ;; ρ']
           -> E2 [θ ;; ρ] ⇓ V2
           -> E [θ' ;; (ρ' ,, (y,V2))] ⇓ V
           -> (app I1 E2) [θ ;; ρ] ⇓ V
- | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ'
-  (X:δ ↪ δ') (E:checked_exp δ' γ) θ' ρ' C V,
+ | ev_mapp : forall δ θ γ ρ (I:synth_exp δ γ) δ' γ'
+  (X:δ ↪ δ') (E:checked_exp δ' γ') θ' ρ' C V,
              I [θ ;; ρ] ⇓ (mlam X E) [θ';; ρ']
           -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇓ V
           -> (mapp I C) [θ ;; ρ] ⇓ V

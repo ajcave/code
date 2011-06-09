@@ -13,8 +13,8 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) :
              I1 [θ ;; ρ] ⇓ V
           -> E2 [θ ;; ρ] ⇑ 
           -> (app I1 E2) [θ ;; ρ] ⇑
- | div_app3 : forall (I1:synth_exp δ γ) γ' γ'' (y:γ' ↪ γ'')
-  (E:checked_exp δ γ'') θ' ρ' (E2:checked_exp δ γ) V2,
+ | div_app3 : forall (I1:synth_exp δ γ) γ' γ'' (y:γ' ↪ γ'') δ'
+  (E:checked_exp δ' γ'') θ' ρ' (E2:checked_exp δ γ) V2,
              I1 [θ ;; ρ] ⇓ (fn y E) [θ' ;; ρ']
           -> E2 [θ ;; ρ] ⇓ V2
           -> E [θ' ;; (ρ' ,, (y,V2))] ⇑
@@ -22,8 +22,8 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) :
  | div_mapp1 : forall (I:synth_exp δ γ) C,
              I [θ ;; ρ] ⇑
           -> (mapp I C) [θ ;; ρ] ⇑
- | div_mapp2 : forall (I:synth_exp δ γ) δ'
-  (X:δ ↪ δ') (E:checked_exp δ' γ) θ' ρ' C,
+ | div_mapp2 : forall (I:synth_exp δ γ) δ' γ'
+  (X:δ ↪ δ') (E:checked_exp δ' γ') θ' ρ' C,
              I [θ ;; ρ] ⇓ (mlam X E) [θ';; ρ']
           -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇑
           -> (mapp I C) [θ ;; ρ] ⇑
