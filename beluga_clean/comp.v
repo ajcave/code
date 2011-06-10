@@ -28,7 +28,7 @@ Coercion m_tp' : mtype >-> tp.
 
 Section app_msubst_tp_sect.
 
-Reserved Notation "[ θ ] T" (at level 90).
+Reserved Notation "[ θ ]" (at level 90).
 Fixpoint app_msubst_tp {ψ} {δ δ'} (θ:msubst δ δ') (T:tp' ψ δ) : tp' ψ δ' :=
 match T  with
  | m_tp U     =>
@@ -60,20 +60,66 @@ match N with
     let X' := succ_link δ' in
     mu Z X' (〚θ〛 U) ([ θ × (X' // X) ] T0)
 end
-where "[ θ ] T" := (app_msubst_tp θ T).
+where "[ θ ]" := (app_msubst_tp θ).
+Scheme tp'_ind2 := Induction for tp' Sort Prop
+with neutral_tp_ind2 := Induction for neutral_tp Sort Prop.
 
+Require Import Coq.Logic.FunctionalExtensionality.
+Lemma app_msubst_tp_hom : forall ψ δ (T:tp' ψ δ) {δ' δ''} (θ2:msubst δ' δ'') (θ1:msubst δ δ'),
+[θ2]([θ1]T) = [〚θ2〛 ○ θ1]T.
+eapply (tp'_ind2
+ (fun ψ δ T => forall {δ' δ''} (θ2:msubst δ' δ'') (θ1:msubst δ δ'),
+    [θ2]([θ1]T) = [〚θ2〛 ○ θ1]T)
+ (fun ψ δ T => forall {δ' δ''} (θ2:msubst δ' δ'') (θ1:msubst δ δ'),
+    app_msubst_neutral_tp θ2 (app_msubst_neutral_tp θ1 T) = app_msubst_neutral_tp (〚θ2〛 ○ θ1) T)); intros.
+unfold app_msubst_tp. erewrite assoc. reflexivity.
+simpl. f_equal.
+erewrite H. reflexivity.
+erewrite H0. reflexivity.
+simpl. f_equal.
+erewrite app_msubst_mtype_assoc. reflexivity.
+erewrite H.
+f_equal. erewrite compose_product. reflexivity.
+simpl. f_equal.
+erewrite app_msubst_mtype_assoc. reflexivity.
+erewrite H.
+f_equal. erewrite compose_product. reflexivity.
+reflexivity.
+simpl. f_equal.
+erewrite H. reflexivity.
+erewrite H0. reflexivity.
+simpl. f_equal.
+erewrite H. reflexivity.
+erewrite H0. reflexivity.
+simpl. f_equal.
+erewrite H. reflexivity.
+erewrite app_msubst_assoc. reflexivity.
+simpl. f_equal.
+erewrite app_msubst_assoc. reflexivity.
+erewrite app_msubst_assoc. reflexivity.
+erewrite H. reflexivity.
+reflexivity.
+simpl. f_equal.
+erewrite app_msubst_mtype_assoc. reflexivity.
+erewrite H. f_equal.
+erewrite compose_product. reflexivity.
+Qed.
 End app_msubst_tp_sect.
 
 Instance tp_substitutable' {ψ} : substitutable (tp' ψ) := {
   app_subst := @app_msubst_tp ψ
 }.
-admit.
+intros. eapply app_msubst_tp_hom.
 Defined.
 
 Instance neutral_tp_substitutable' {ψ} : substitutable (neutral_tp ψ) := {
   app_subst := @app_msubst_neutral_tp ψ
 }.
-admit.
+intros.
+destruct t. simpl. reflexivity.
+simpl. f_equal. erewrite app_msubst_mtype_assoc. reflexivity.
+erewrite app_msubst_tp_hom. f_equal.
+erewrite compose_product. reflexivity.
 Defined.
 
 Instance tp_substitutable : substitutable tp := {
