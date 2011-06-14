@@ -147,6 +147,7 @@ Ltac doesItConverge E :=
  destruct (classical (exists V, E ⇓ V)) as [ (V, H) | H ].
 
 Ltac canonical :=
+let H1 := fresh "H" in
 match goal with
 | [ H : ?E[?θ;;_] ⇓ ?V,
     H0 : _;_ ⊢ ?E ⇐ ?T |- _] =>
