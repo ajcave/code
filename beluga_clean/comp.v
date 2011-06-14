@@ -283,13 +283,13 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
 
 Lemma tp_subst_commute {δ ψ δ'} (T:neutral_tp ∅ δ) (U:tp' ψ δ) : forall  (θ:msubst δ δ'),
 〚θ〛 (app_tp_subst_single T U) = app_tp_subst_single (〚θ〛T) (〚θ〛 U).
-induction U; intros; simpl.
-admit. (* TODO *)
-unfold app_tp_subst_single.
-simpl.
+induction U; intros; unfold app_tp_subst_single; simpl.
+reflexivity.
 f_equal.
 apply IHU1.
 apply IHU2.
+f_equal.
+
 Admitted. (* TODO *)
 
 Lemma env_tp_cons {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ) (Γ':tp_assign γ' δ) ρ {γ''} (y:γ'↪γ'') V T:
@@ -308,3 +308,29 @@ Lemma env_typing_eq {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
 -> Δ;Γ ⊪ ρ ⇐ Γ''.
 intros. subst. assumption.
 Qed.
+
+(* The source language should not contain closures.
+   This predicate expresses that. It's expressions minus
+   closures *)
+Inductive ssrc_lang {δ} {γ} : synth_exp δ γ -> Prop :=
+| src_var : forall x, ssrc_lang (var _ x)
+| src_app : forall I E, ssrc_lang I -> src_lang E
+   -> ssrc_lang (app I E)
+| src_mapp : forall I C, ssrc_lang I -> ssrc_lang (mapp I C)
+| src_coercion : forall E T, src_lang E -> ssrc_lang (coercion E T)
+| src_unfold : forall I, ssrc_lang I -> ssrc_lang (unfold I)
+with src_lang {δ γ} : checked_exp δ γ -> Prop :=
+| src_synth : forall I, ssrc_lang I -> src_lang (synth I)
+| src_meta : forall C, src_lang (meta _ C)
+| src_fn : forall γ' (x:γ↪γ') E, @src_lang _ _ E -> src_lang (fn x E)
+| src_mlam : forall δ' (X:δ↪δ') E, @src_lang _ _ E
+   -> src_lang (mlam X E)
+| src_rec : forall γ' (f:γ↪γ') E, @src_lang _ _ E -> src_lang (rec f E)
+| src_fold : forall E, src_lang E -> src_lang (fold E)
+| src_inl : forall E, src_lang E -> src_lang (inl E)
+| src_inr : forall E, src_lang E -> src_lang (inr E)
+| src_pack : forall C E, src_lang E -> src_lang (pack C E)
+| src_pair : forall E1 E2, src_lang E1 -> src_lang E2
+   -> src_lang (pair E1 E2)
+| src_tt : src_lang tt
+| src_case : forall E Bs, src_lang (case_i E Bs) (* TODO *).

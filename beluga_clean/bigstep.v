@@ -3,10 +3,11 @@ Require Export comp.
 Inductive extended_val : checked_exp ∅ ∅ -> Prop :=
 | ext_val_val : forall V, val V -> extended_val V
 | ext_val_rec : forall δ γ γ' (f:γ↪γ') (E:checked_exp δ γ') θ ρ,
-                val_env ρ -> extended_val ((rec f E)[θ;;ρ])
+       val_env ρ -> src_lang E -> extended_val ((rec f E)[θ;;ρ])
 with val_env : forall {γ} (ρ:env γ), Prop :=
 | is_val_env : forall γ (ρ:env γ),
-               (forall x, extended_val (ρ x)) -> val_env ρ
+               (forall x, extended_val (ρ x))
+            -> val_env ρ
 with val : checked_exp ∅ ∅ -> Prop :=
 | val_tt : val tt
 | val_fold : forall E, val E -> val (fold E)
@@ -15,9 +16,9 @@ with val : checked_exp ∅ ∅ -> Prop :=
 | val_pair : forall E1 E2, val E1 -> val E2 -> val (pair E1 E2)
 | val_pack : forall E C, val E -> val (pack C E)
 | val_fn : forall δ' γ' γ'' (y:γ'↪γ'') (E:checked_exp δ' γ'') θ ρ,
-           val_env ρ -> val ((fn y E)[θ;;ρ])
+           val_env ρ -> src_lang E -> val ((fn y E)[θ;;ρ])
 | val_mlam : forall δ' δ'' γ' (X:δ'↪δ'')(E:checked_exp δ'' γ') θ ρ,
-           val_env ρ -> val ((mlam X E)[θ;;ρ])
+           val_env ρ -> src_lang E -> val ((mlam X E)[θ;;ρ])
 | val_meta : forall C, val (meta _ C)
 .
 
