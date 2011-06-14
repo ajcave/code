@@ -165,7 +165,9 @@ Theorem progress : forall {δ γ} θ ρ (Hyp:val_env ρ)
    ·;· ⊢ E[θ;;ρ] ⇐ T
 -> (forall V, (E[θ;;ρ] ⇓ V) -> False)
 -> E[θ;;ρ] ⇑.
-cofix. intros. invert_typing. nice_inversion H7; invert_src.
+cofix. intros. invert_typing. nice_inversion H7; invert_src;
+try (econstructor; by eauto);
+try (edestruct H0; by eauto).
 
 (* synth *)
 nice_inversion H; invert_src.
@@ -210,15 +212,6 @@ econstructor.
 eapply progress; eauto.
 intros v Hy. canonical. nice_inversion H3. by eauto.
 
-(* meta *)
-edestruct H0; by eauto.
-
-(* fn *)
-edestruct H0; by eauto.
-
-(* mlam *)
-edestruct H0; by eauto.
-
 (* rec *)
 econstructor.
 eapply progress; eauto.
@@ -226,25 +219,10 @@ econstructor; eauto.
 erewrite compose_cons.
 by eauto.
 
-(* inl *)
-econstructor; by eauto.
-
-(* inr *)
-econstructor;by eauto.
-
 (* pair *)
 doesItConverge (E1[θ;;ρ]).
 eapply div_pair2; by eauto.
 eapply div_pair1; by eauto.
-
-(* pack *)
-econstructor. by eauto.
-
-(* fold *)
-econstructor. by eauto.
-
-(* tt *)
-edestruct H0; by eauto.
 Qed.
 
 Lemma dot_val_env : val_env ·.
