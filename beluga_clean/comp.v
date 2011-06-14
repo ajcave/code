@@ -4,6 +4,8 @@ Set Implicit Arguments.
 
 (* Note we only allow one type variable at a time.
    Hmm. Why is this OK again? *)
+(* Note that we only index by a single meta_term in tapp,
+   unlike the general theory. *)
 Inductive tp' ψ (δ:world):=
   | m_tp : mtype δ -> tp' ψ δ
   | arr : tp' ψ δ -> tp' ψ δ -> tp' ψ δ
@@ -162,6 +164,7 @@ Definition app_tp_subst_single {ψ δ}
 (N:neutral_tp ∅ δ) (T:tp' ψ δ) : tp' ∅ δ :=
 app_tp_subst (fun n => N) T.
 End app_tp_subst_sec.
+Notation "〈 T 〉" := (app_tp_subst_single T) (at level 0).
 
 Inductive synth_exp (δ γ:world) : Set :=
   | var : name γ -> synth_exp δ γ
@@ -218,9 +221,7 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
            -> Δ;Γ ⊢ (coercion E T) ⇒ T
   | unfold_c : forall I δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
               Δ;Γ ⊢ I ⇒ (tapp (mu Z X U T) C) 
-           -> Δ;Γ ⊢ unfold I ⇒ (app_tp_subst_single
-                          (mu Z X U T) 
-                          (〚single_subst X C〛 T))
+           -> Δ;Γ ⊢ unfold I ⇒ 〈mu Z X U T〉 (〚single_subst X C〛 T)
  with checks_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : checked_exp δ γ -> tp δ -> Prop :=
   | synth_c : forall I T,
@@ -254,9 +255,7 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
            -> Δ;Γ ⊢ E ⇐ (〚single_subst X C〛 T) 
            -> Δ;Γ ⊢ (pack C E) ⇐ (sigma X U T)
   | fold_c : forall E δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
-              Δ;Γ ⊢ E ⇐ (app_tp_subst_single
-                          (mu Z X U T) 
-                          (〚single_subst X C〛 T))
+              Δ;Γ ⊢ E ⇐ 〈mu Z X U T〉 (〚single_subst X C〛 T)
            -> Δ;Γ ⊢ fold E ⇐ (tapp (mu Z X U T) C)
   | tt_c : Δ;Γ ⊢ tt ⇐ unit
   | clos_c : forall δ' γ' Δ' Γ' (E:checked_exp δ' γ') T ρ θ,
@@ -280,17 +279,72 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@synth_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1)
   and   "Δ ; Γ ⊪ ρ ⇐ Γ'" := (env_tp Δ Γ ρ Γ' (@checks_tp _ _ Δ Γ)).
+Ltac simpl_tp_subst_single :=
+match goal with
+| [ |- context f [〈?T〉 (arr ?U1 ?U2)] ] =>
+ replace (〈T〉 (arr U1 U2)) with (arr (〈T〉 U1) (〈T〉 U2)) by reflexivity
+| [ |- context f [〈?T〉 (pi ?X ?U1 ?U2)] ] =>
+ replace (〈T〉 (pi X U1 U2)) with (pi X U2 (〈app_msubst_neutral_tp (↑X) ○ T〉 U2)) by reflexivity
+end.
 
-Lemma tp_subst_commute {δ ψ δ'} (T:neutral_tp ∅ δ) (U:tp' ψ δ) : forall  (θ:msubst δ δ'),
-〚θ〛 (app_tp_subst_single T U) = app_tp_subst_single (〚θ〛T) (〚θ〛 U).
-induction U; intros; unfold app_tp_subst_single; simpl.
+Ltac simpl_app_subst_tp :=
+match goal with
+| [ |- context f [〚?θ〛 (arr ?T ?U)] ] =>
+ replace (〚θ〛(arr T U)) with (arr (〚θ〛 T) (〚θ〛 U)) by reflexivity
+end.
+
+(* TODO: Clean this up *)
+Lemma tp_subst_commute' {δ ψ} (U:tp' ψ δ) : forall (T:name ψ -> neutral_tp ∅ δ) {δ'} (θ:msubst δ δ'),
+〚θ〛 (app_tp_subst T U) = app_tp_subst (〚θ〛○T) (〚θ〛 U).
+induction U; intros;
+unfold app_subst in *; unfold tp_substitutable in *;
+unfold app_subst in *;
+unfold tp_substitutable' in *;
+unfold neutral_tp_substitutable' in *;
+simpl; f_equal; firstorder.
+
+(* pi *)
+specialize (IHU ((app_msubst_neutral_tp (fun x : name δ => (↑l) x)) ○ T) _ (θ × (succ_link δ'0 // l))).
+erewrite IHU.
+f_equal.
+extensionality x.
+unfold compose.
+pose proof (@assoc _ (@neutral_tp_substitutable' ∅)).
+unfold app_subst in H. unfold neutral_tp_substitutable' in H.
+erewrite H. erewrite H.
+f_equal.
+extensionality y. unfold compose.
+erewrite app_msubst_mvar.
+unfold context_mult.  unfold compose at 1.
+erewrite export_import_inv. simpl.
 reflexivity.
-f_equal.
-apply IHU1.
-apply IHU2.
-f_equal.
 
-Admitted. (* TODO *)
+(* sigma *)
+specialize (IHU ((app_msubst_neutral_tp (fun x : name δ => (↑l) x)) ○ T) _ (θ × (succ_link δ'0 // l))).
+erewrite IHU.
+f_equal.
+extensionality x.
+unfold compose.
+pose proof (@assoc _ (@neutral_tp_substitutable' ∅)).
+unfold app_subst in H. unfold neutral_tp_substitutable' in H.
+erewrite H. erewrite H.
+f_equal.
+extensionality y. unfold compose.
+erewrite app_msubst_mvar.
+unfold context_mult.  unfold compose at 1.
+erewrite export_import_inv. simpl.
+reflexivity.
+
+(* neutral *)
+destruct n.
+reflexivity.
+reflexivity.
+Qed.
+
+Lemma tp_subst_commute {δ ψ} (T:neutral_tp ∅ δ) (U:tp' ψ δ) : forall  {δ'} (θ:msubst δ δ'),
+〚θ〛 (〈T〉 U) = 〈〚θ〛T〉 (〚θ〛 U).
+intros. eapply tp_subst_commute'.
+Qed.
 
 Lemma env_tp_cons {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ) (Γ':tp_assign γ' δ) ρ {γ''} (y:γ'↪γ'') V T:
    Δ;Γ ⊪ ρ ⇐ Γ'
