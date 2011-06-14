@@ -289,7 +289,7 @@ intro. edestruct (empty_is_empty x).
 Qed.
 Hint Resolve dot_val_env dot_subst_typing dot_env_typing.
 
-Theorem progress' : forall E T,
+Theorem progress' : forall E T (Hyp:src_lang E),
    ·;· ⊢ E ⇐ T
 -> (exists V, E[·;;·] ⇓ V) \/ E[·;;·] ⇑.
 intros.
