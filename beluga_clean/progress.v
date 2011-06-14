@@ -163,7 +163,7 @@ end.
 Theorem progress : forall {δ γ} θ ρ (Hyp:val_env ρ)
 (E:checked_exp δ γ) (Hyp:src_lang E) T,
    ·;· ⊢ E[θ;;ρ] ⇐ T
--> (forall V, ~ (E[θ;;ρ] ⇓ V))
+-> (forall V, (E[θ;;ρ] ⇓ V) -> False)
 -> E[θ;;ρ] ⇑.
 cofix. intros. invert_typing. nice_inversion H7; invert_src.
 
@@ -176,7 +176,6 @@ edestruct H0. eauto.
 econstructor; eauto.
 eapply progress; eauto.
 rewrite H1. by eauto.
-intros v Hy. eapply H0; by eauto 2.
 
 (* app *)
 doesItConverge (I0[θ;;ρ]).
@@ -190,7 +189,6 @@ econstructor; eauto.
 erewrite compose_cons.
 eapply env_tp_cons; eauto.
 rewrite H1. by eauto.
-intros v Hy. eapply H0; by eauto.
 eapply div_app2; by eauto 7.
 eapply div_app1. eapply progress; by eauto.
 
@@ -202,21 +200,15 @@ nice_inversion H10.
 eapply progress; eauto.
 econstructor; eauto.
 erewrite cons_import_mvar. by eauto.
-intros v Hy. eapply H0; by eauto.
 eapply div_mapp1; eapply progress; by eauto 7.
 
 (* coercion *)
-econstructor.
-eapply progress; eauto.
-intros v Hy.
-eapply H0; by eauto.
+econstructor. by eauto. 
 
 (* unfold *)
 econstructor.
 eapply progress; eauto.
-intros v Hy.
-canonical. nice_inversion H3.
-eapply H0; by eauto.
+intros v Hy. canonical. nice_inversion H3. by eauto.
 
 (* meta *)
 edestruct H0; by eauto.
@@ -233,40 +225,23 @@ eapply progress; eauto.
 econstructor; eauto.
 erewrite compose_cons.
 by eauto.
-intros v Hy.
-eapply H0; by eauto.
 
 (* inl *)
-econstructor.
-eapply progress; eauto.
-intros v Hy.
-eapply H0; by eauto.
+econstructor; by eauto.
 
 (* inr *)
-econstructor.
-eapply progress; eauto.
-intros v Hy.
-eapply H0; by eauto.
+econstructor;by eauto.
 
 (* pair *)
 doesItConverge (E1[θ;;ρ]).
-eapply div_pair2; eauto.
-eapply progress; eauto.
-intros v Hy. eapply H0; by eauto.
-eapply div_pair1; eauto.
-eapply progress; by eauto.
+eapply div_pair2; by eauto.
+eapply div_pair1; by eauto.
 
 (* pack *)
-econstructor.
-eapply progress; eauto.
-intros v Hy. 
-eapply H0; by eauto.
+econstructor. by eauto.
 
 (* fold *)
-econstructor.
-eapply progress; eauto.
-intros v Hy.
-eapply H0; by eauto.
+econstructor. by eauto.
 
 (* tt *)
 edestruct H0; by eauto.
