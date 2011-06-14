@@ -183,30 +183,26 @@ doesItConverge (I0[θ;;ρ]).
 doesItConverge (E[θ;;ρ]).
 repeat canonical. nice_inversion H13. invert_typing.
 nice_inversion H20.
-doesItConverge (E0[θ0;;(ρ0,,(y,V0))]).
-edestruct H0. by eauto.
-eapply div_app3; eauto. 
+eapply div_app3; eauto.
 nice_inversion H14.
-eapply progress. by eauto.
-assumption.
+eapply progress; eauto.
 econstructor; eauto.
 erewrite compose_cons.
 eapply env_tp_cons; eauto.
 rewrite H1. by eauto.
-by eauto.
+intros v Hy. eapply H0; by eauto.
 eapply div_app2; by eauto 7.
 eapply div_app1. eapply progress; by eauto.
 
 (* mapp *)
 doesItConverge (I0[θ;;ρ]).
 canonical. nice_inversion H6. invert_typing. nice_inversion H16.
-doesItConverge (E[θ0,,(X0,〚θ〛C);;ρ0]).
-edestruct H0; eauto.
 eapply div_mapp2; eauto.
 nice_inversion H10.
 eapply progress; eauto.
 econstructor; eauto.
-erewrite cons_import_mvar. by assumption.
+erewrite cons_import_mvar. by eauto.
+intros v Hy. eapply H0; by eauto.
 eapply div_mapp1; eapply progress; by eauto 7.
 
 (* coercion *)
@@ -232,13 +228,13 @@ edestruct H0; by eauto.
 edestruct H0; by eauto.
 
 (* rec *)
-doesItConverge (E0 [θ;; ρ,, (f, (rec f E0) [θ;; ρ])]).
-edestruct H0; by eauto.
 econstructor.
 eapply progress; eauto.
 econstructor; eauto.
 erewrite compose_cons.
 by eauto.
+intros v Hy.
+eapply H0; by eauto.
 
 (* inl *)
 econstructor.
