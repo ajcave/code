@@ -56,8 +56,8 @@ Hint Constructors synth_tp checks_tp.
 Hint Resolve @subst_lemma.
 Hint Resolve @subst_cons_typing @meta_type_eq @env_tp_cons.
 
-Theorem subj_red (L:checked_exp ∅ ∅) V :
-L ⇓ V -> forall T, (·;· ⊢ L ⇐ T) -> (·;· ⊢ V ⇐ T).
+Theorem subj_red {δ γ} (L:checked_exp δ γ) θ ρ V :
+L[θ;;ρ] ⇓ V -> forall T, (·;· ⊢ L[θ;;ρ] ⇐ T) -> (·;· ⊢ V ⇐ T).
 induction 1; intros; invert_typing; try by eauto.
 
 (* app *)
@@ -86,6 +86,7 @@ erewrite cons_import_mvar.
 by assumption.
 
 (* Var (extended value) *)
+specialize (H10 y). rewrite H in H10. 
 by firstorder.
 
 (* Var (value) *)

@@ -17,19 +17,15 @@ unfold compose. destruct (export y x); unfold maybe; eauto.
 Qed.
 Hint Resolve @val_env_cons.
 
-Inductive is_closure : checked_exp ∅ ∅ -> Prop :=
-| is_clos : forall δ γ (E:checked_exp δ γ) θ ρ,
-                 val_env ρ -> src_lang E -> is_closure (E[θ;;ρ]).
-
-Lemma only_closures_eval V1 V2 :
-   extended_val V1
--> V1 ⇓ V2
--> is_closure V1. 
+Lemma extval_srclang {δ γ} θ ρ (W:checked_exp δ γ) V2 :
+   extended_val (W[θ;;ρ])
+-> W[θ;;ρ] ⇓ V2
+-> src_lang W /\ val_env ρ.
 intros.
 nice_inversion H0; nice_inversion H;
 try match goal with 
 | [ H : val (_[_;;_]) |- _] => nice_inversion H
-end; eauto using is_clos.
+end; eauto.
 Qed.
 
 Ltac invert_src_1 :=
@@ -62,25 +58,23 @@ intros.
 dependent induction H0; invert_src; eauto 3.
 
 (* fn *)
-assert (val (fn y E0)[θ';;ρ']) by eauto.
+assert (val (fn y E)[θ';;ρ']) by eauto.
 nice_inversion H0.
 eapply IHeval3. eexact H11.
 eapply val_env_cons. eexact H5.
 econstructor.
 eapply IHeval2.
 eexact H4. eexact H.
-eapply @refl_equal.
-eapply @refl_equal.
 
 (* mlam *)
-assert (val (mlam X E0)[θ';;ρ']) by eauto.
+assert (val (mlam X E)[θ';;ρ']) by eauto.
 nice_inversion H0. by eauto.
 
 (* var *)
 nice_inversion H.
-specialize (H3 y).
-pose proof (only_closures_eval H3 H0). nice_inversion H1.
-by eauto.
+specialize (H4 y). rewrite H0 in *.
+pose proof (extval_srclang H4 H1).
+by tauto.
 
 (* rec *)
 eapply IHeval.
@@ -89,7 +83,6 @@ eapply val_env_cons.
 eexact H.
 econstructor 2. eexact H.
 eassumption.
-by eapply @refl_equal.
 
 (* pair *)
 econstructor; by eauto.
@@ -141,22 +134,22 @@ Axiom classical : forall P, P \/ ~P.
 
 Hint Constructors eval div.
 
-Ltac doesItConverge E :=
+Ltac doesItConverge E θ ρ :=
  let V := fresh "V" in
  let H := fresh "H" in
- destruct (classical (exists V, E ⇓ V)) as [ (V, H) | H ].
+ destruct (classical (exists V, E[θ;;ρ] ⇓ V)) as [ (V, H) | H ].
 
 Ltac canonical :=
 let H1 := fresh "H" in
 match goal with
 | [ H : ?E[?θ;;_] ⇓ ?V,
     H0 : _;_ ⊢ ?E ⇐ ?T |- _] =>
-     assert (·;· ⊢ V ⇐ (〚θ〛T)) by eauto 4 using subj_red; 
+     assert (·;· ⊢ V ⇐ (〚θ〛T)) by eauto 4 using @subj_red; 
      assert (canonical V (〚θ〛T)) by eauto 4;
      assert (val V) by eauto 4; clear H0
 | [ H : (synth ?I)[?θ;;_] ⇓ ?V,
     H0 : _;_ ⊢ ?I ⇒ ?T |- _] =>
-     assert (·;· ⊢ V ⇐ (〚θ〛T)) by eauto 4 using subj_red;
+     assert (·;· ⊢ V ⇐ (〚θ〛T)) by eauto 4 using @subj_red;
      assert (canonical V (〚θ〛T)) by eauto 4;
      assert (val V) by eauto 4; clear H0
 end.
@@ -181,8 +174,8 @@ eapply progress; eauto.
 rewrite H1. by eauto.
 
 (* app *)
-doesItConverge (I0[θ;;ρ]).
-doesItConverge (E[θ;;ρ]).
+doesItConverge I0 θ ρ.
+doesItConverge E θ ρ.
 repeat canonical. nice_inversion H13. invert_typing.
 nice_inversion H20.
 eapply div_app3; eauto.
@@ -196,7 +189,7 @@ eapply div_app2; by eauto 7.
 eapply div_app1. eapply progress; by eauto.
 
 (* mapp *)
-doesItConverge (I0[θ;;ρ]).
+doesItConverge I0 θ ρ.
 canonical. nice_inversion H6. invert_typing. nice_inversion H16.
 eapply div_mapp2; eauto.
 nice_inversion H10.
@@ -221,7 +214,7 @@ erewrite compose_cons.
 by eauto.
 
 (* pair *)
-doesItConverge (E1[θ;;ρ]).
+doesItConverge E1 θ ρ.
 eapply div_pair2; by eauto.
 eapply div_pair1; by eauto.
 Qed.
