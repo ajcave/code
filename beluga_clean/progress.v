@@ -38,26 +38,32 @@ eapply progress; by eauto.
 (* app *)
 doesItConverge I0 θ ρ.
 doesItConverge E θ ρ.
-(* eapply div_app3.
-assert (V ∈ (〚θ〛(arr T1 T0))) by eauto using @subj_red. *)
-clear progress. admit.
-(* eapply progress; eauto.
+
+assert (V ∈ (〚θ〛(arr T1 T0))) by eauto using @subj_red.
+assert (V0 ∈ (〚θ〛T1)) by eauto using @subj_red.
+(* canonical form *)
+nice_inversion_clear H5; invert_typing; try discriminate.
+nice_inversion H17.
+eapply div_app3; eauto.
+eapply progress; eauto.
 econstructor; eauto.
 erewrite compose_cons.
 eapply env_tp_cons; eauto.
-rewrite H1. by eauto. *)
+rewrite H5.
+econstructor.
+firstorder.
 eapply div_app2; by eauto 7.
 eapply div_app1. eapply progress; by eauto.
 
 (* mapp *)
 doesItConverge I0 θ ρ.
-(*canonical. nice_inversion H6. invert_typing. nice_inversion H16.
+assert (V ∈ (〚θ〛(pi X U T))) by eauto using @subj_red.
+nice_inversion_clear H4; invert_typing; try discriminate.
 eapply div_mapp2; eauto.
-nice_inversion H10.
+nice_inversion H17.
 eapply progress; eauto.
 econstructor; eauto.
-erewrite cons_import_mvar. by eauto. *)
-clear progress. admit.
+erewrite cons_import_mvar. by eauto.
 eapply div_mapp1; eapply progress; by eauto 7.
 
 (* coercion *)
@@ -67,8 +73,9 @@ econstructor. by eauto.
 econstructor.
 eapply progress; eauto.
 intros v Hy.
-clear progress. admit.
-(* canonical. nice_inversion H3. by eauto. *)
+assert (v ∈ (〚θ〛(tapp (mu Z X U T) C))) by eauto using @subj_red.
+nice_inversion_clear H2; invert_typing; try discriminate.
+by eauto.
 
 (* rec *)
 econstructor.

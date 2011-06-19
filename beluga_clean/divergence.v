@@ -1,5 +1,6 @@
 Require Export bigstep.
 
+Set Implicit Arguments.
 Reserved Notation "E [ θ ;; ρ ] ⇑" (at level 0).
 CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Prop :=
  | div_coerce : forall (E:checked_exp δ γ) T,
