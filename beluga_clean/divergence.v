@@ -1,7 +1,7 @@
 Require Export bigstep.
 
 Reserved Notation "E [ θ ;; ρ ] ⇑" (at level 0).
-CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) : checked_exp δ γ -> Prop :=
+CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Prop :=
  | div_coerce : forall (E:checked_exp δ γ) T,
              E [θ ;; ρ] ⇑
           -> (coercion E T) [θ ;; ρ] ⇑
@@ -15,7 +15,7 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) :
           -> (app I1 E2) [θ ;; ρ] ⇑
  | div_app3 : forall (I1:synth_exp δ γ) γ' γ'' (y:γ' ↪ γ'') δ'
   (E:checked_exp δ' γ'') θ' ρ' (E2:checked_exp δ γ) V2,
-             I1 [θ ;; ρ] ⇓ ((fn y E) [θ' ;; ρ'])
+             I1 [θ ;; ρ] ⇓ (vfn y E θ' ρ')
           -> E2 [θ ;; ρ] ⇓ V2
           -> E [θ' ;; (ρ' ,, (y,V2))] ⇑
           -> (app I1 E2) [θ ;; ρ] ⇑
@@ -24,7 +24,7 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) :
           -> (mapp I C) [θ ;; ρ] ⇑
  | div_mapp2 : forall (I:synth_exp δ γ) δ' δ'' γ'
   (X:δ' ↪ δ'') (E:checked_exp δ'' γ') θ' ρ' C,
-             I [θ ;; ρ] ⇓ ((mlam X E) [θ';; ρ'])
+             I [θ ;; ρ] ⇓ (vmlam X E θ' ρ')
           -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇑
           -> (mapp I C) [θ ;; ρ] ⇑
 (* | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
@@ -46,13 +46,13 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:name γ -> checked_exp ∅ ∅) :
          -> (C ≑ ⟦θ'⟧ Ck // θ'')
          -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
          -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V *)
- | div_var : forall (y:name γ) δ' γ' (W:checked_exp δ' γ')
+ | div_var : forall (y:name γ) δ' γ' γ'' (E:checked_exp δ' γ'') (f:γ'↪γ'')
                     (θ':msubst δ' ∅) ρ',
-            ρ y = (W[θ';;ρ'])
-         -> W[θ';;ρ'] ⇑
+            ρ y = (evrec f E θ' ρ')
+         -> (rec f E)[θ';;ρ'] ⇑
          -> (var _ y) [θ ;; ρ] ⇑
  | div_rec : forall γ' (f:γ↪γ') (E:checked_exp δ γ'),
-       E [ θ ;; ρ ,, (f, (rec f E)[θ;;ρ]) ] ⇑
+       E [ θ ;; ρ ,, (f, (evrec f E θ ρ)) ] ⇑
     -> (rec f E) [θ ;; ρ] ⇑
  | div_inl : forall E,
             E[θ;;ρ] ⇑

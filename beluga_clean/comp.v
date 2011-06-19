@@ -1,5 +1,6 @@
 Require Export meta.
 Require Export List.
+Require Export Coq.Program.Equality.
 Set Implicit Arguments.
 
 (* Note we only allow one type variable at a time.
@@ -184,24 +185,36 @@ Inductive synth_exp (δ γ:world) : Set :=
   | pack : meta_term δ -> checked_exp δ γ -> checked_exp δ γ
   | pair : checked_exp δ γ -> checked_exp δ γ -> checked_exp δ γ
   | tt : checked_exp δ γ
-  | clos : forall δ' γ', checked_exp δ' γ' -> msubst δ' δ -> (name γ' -> checked_exp δ γ) -> checked_exp δ γ
   | case_i :  synth_exp δ γ -> list (branch δ γ) -> checked_exp δ γ
  with branch (δ γ:world) : Set :=
   | br : forall δi γi, checked_exp δi γi -> msubst δ δi -> checked_exp δi γ -> branch δ γ.
 Implicit Arguments tt [δ γ].
 Coercion synth : synth_exp >-> checked_exp.
-Definition env γ := name γ -> checked_exp ∅ ∅.
-Notation "E [ θ ;; ρ ]" := (clos E θ ρ) (at level 0).
 
-Reserved Notation "D1 ; G1 ⊢ t1 ⇐ T1" (at level 90).
-Reserved Notation "D1 ; G1 ⊢ t1 ⇒ T2" (at level 90).
+Inductive val : Set :=
+  | vmeta : meta_term ∅ -> val
+  | vfn : forall δ γ γ', γ↪γ' -> checked_exp δ γ'
+      -> msubst δ ∅ -> (name γ -> extended_val) -> val
+  | vmlam : forall δ δ' γ, δ↪δ' -> checked_exp δ' γ
+      -> msubst δ ∅ -> (name γ -> extended_val) -> val
+  | vfold : val -> val
+  | vinl : val -> val
+  | vinr : val -> val
+  | vpack : meta_term ∅ -> val -> val
+  | vpair : val -> val -> val
+  | vtt : val
+with extended_val : Set :=
+| evval : val -> extended_val
+| evrec : forall δ γ γ' (f:γ↪γ') (E:checked_exp δ γ') (θ:msubst δ ∅)
+           (ρ:name γ -> extended_val), extended_val.
+Coercion evval : val >-> extended_val.
+Definition env γ := name γ -> extended_val.
+
+Reserved Notation "Δ ; Γ ⊢ t ⇐ T" (at level 90).
+Reserved Notation "Δ ; Γ ⊢ t ⇒ T" (at level 90).
 
 Definition tp_assign γ δ := name γ -> tp δ.
 
-
-Definition env_tp {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ) ρ (Γ':tp_assign γ' δ) (tp_rel:checked_exp δ γ -> tp δ -> Prop) :=
-forall x, tp_rel (ρ x) (Γ' x).
-Reserved Notation "Δ ; Γ ⊪ ρ ⇐ Γ'" (at level 90).
 
 Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
                    : synth_exp δ γ -> tp δ -> Prop :=
@@ -258,11 +271,11 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
               Δ;Γ ⊢ E ⇐ 〈mu Z X U T〉 (〚single_subst X C〛 T)
            -> Δ;Γ ⊢ fold E ⇐ (tapp (mu Z X U T) C)
   | tt_c : Δ;Γ ⊢ tt ⇐ unit
-  | clos_c : forall δ' γ' Δ' Γ' (E:checked_exp δ' γ') T ρ θ,
+(*  | clos_c : forall δ' γ' Δ' Γ' (E:checked_exp δ' γ') T ρ θ,
               Δ';Γ' ⊢ E ⇐ T
            -> Δ ⊩ θ ∷ Δ'
            -> Δ;Γ ⊪ ρ ⇐ (〚θ〛 ○ Γ')
-           -> Δ;Γ ⊢ E[θ;;ρ] ⇐ 〚θ〛T
+           -> Δ;Γ ⊢ E[θ;;ρ] ⇐ 〚θ〛T *)
  (* | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U
           -> (forall B, In B Bs -> branch_tp B (arr U T))
@@ -277,8 +290,56 @@ Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
           -> Δi;(〚θi〛 ○ Γ) ⊢ E ⇐ 〚θi〛T
           -> branch_tp (br C θi E) (arr (m_tp' U) (m_tp' T)) *)
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@synth_tp _ _ D1 G1 t1 T1)
-  and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1)
-  and   "Δ ; Γ ⊪ ρ ⇐ Γ'" := (env_tp Δ Γ ρ Γ' (@checks_tp _ _ Δ Γ)).
+  and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1).
+
+
+
+Reserved Notation "V ∈ T" (at level 90).
+Reserved Notation "⊪ ρ ⇐ Γ" (at level 90). 
+Inductive val_tp : val -> tp ∅ -> Prop :=
+  | vmeta_c : forall C U,
+              · ⊨ C ∷ U 
+           -> (vmeta C) ∈ U
+  | vfn_c : forall δ γ γ' (y:γ↪γ') (E:checked_exp δ γ') (θ:msubst δ ∅) (ρ:env γ) T,
+              clos_tp (fn y E) θ ρ T 
+           -> (vfn y E θ ρ) ∈ T
+  | vmlam_c : forall γ δ δ' (X:δ↪δ') (E:checked_exp δ' γ) (θ:msubst δ ∅) (ρ:env γ) T,
+              clos_tp (mlam X E) θ ρ T 
+           -> (vmlam X E θ ρ) ∈ T
+  | vinl_c : forall E T S,
+             E ∈ T
+          -> (vinl E) ∈ (sum T S)
+  | vinr_c : forall E T S,
+             E ∈ S
+          -> (vinr E) ∈ (sum T S)
+  | vpair_c : forall V1 V2 T S,
+             V1 ∈ T
+          -> V2 ∈ S
+          -> (vpair V1 V2) ∈ (prod T S)
+  | vpack_c : forall V δ' (X:∅↪δ') U C T,
+              · ⊨ C ∷ U
+           -> V ∈ (〚single_subst X C〛 T) 
+           -> (vpack C V) ∈ (sigma X U T)
+  | vfold_c : forall V δ (X:∅↪δ) ψ (Z:∅↪ψ) U C T,
+              V ∈ 〈mu Z X U T〉 (〚single_subst X C〛 T)
+           -> vfold V ∈ (tapp (mu Z X U T) C)
+  | vtt_c : vtt ∈ unit
+with extended_val_tp : extended_val -> tp ∅ -> Prop :=
+  | evval_c : forall V T, V ∈ T -> extended_val_tp V T
+  | evrec_c : forall δ γ γ' (f:γ↪γ') (E:checked_exp δ γ') (θ:msubst δ ∅) (ρ:env γ) T,
+              clos_tp (rec f E) θ ρ T 
+           -> extended_val_tp (evrec f E θ ρ) T
+with env_tp : forall {γ'} (ρ:env γ') (Γ':tp_assign γ' ∅), Prop :=
+  | env_c : forall γ' (ρ:env γ') Γ', (forall x, extended_val_tp (ρ x) (Γ' x)) -> ⊪ ρ ⇐ Γ'
+with clos_tp : forall {δ γ} (E:checked_exp δ γ) (θ:msubst δ ∅) (ρ:env γ), tp ∅ -> Prop :=
+  | clos_c : forall δ γ (E:checked_exp δ γ) θ ρ Δ Γ T,
+              Δ;Γ ⊢ E ⇐ T
+           -> · ⊩ θ ∷ Δ
+           -> ⊪ ρ ⇐ (〚θ〛 ○ Γ)
+           -> clos_tp E θ ρ (〚θ〛T)
+  where "V ∈ T" := (@val_tp V T)
+  and "⊪ ρ ⇐ Γ" := (env_tp ρ Γ).
+
 Ltac simpl_tp_subst_single :=
 match goal with
 | [ |- context f [〈?T〉 (arr ?U1 ?U2)] ] =>
@@ -346,45 +407,59 @@ Lemma tp_subst_commute {δ ψ} (T:neutral_tp ∅ δ) (U:tp' ψ δ) : forall  {δ
 intros. eapply tp_subst_commute'.
 Qed.
 
-Lemma env_tp_cons {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ) (Γ':tp_assign γ' δ) ρ {γ''} (y:γ'↪γ'') V T:
-   Δ;Γ ⊪ ρ ⇐ Γ'
--> Δ;Γ ⊢ V ⇐ T
--> Δ;Γ ⊪ (ρ,, (y, V)) ⇐ (Γ',, (y, T)).
-intros. intro.
+
+Ltac clean_substs :=
+(match goal with
+ | [ H : context f [tp_substitutable ?w1 ?w2 ?s1 ?t1] |- ?g ] =>
+   replace (tp_substitutable w1 w2 s1 t1)
+    with (〚 s1 〛 t1) in H; try reflexivity 
+ | [ H : context f [app_msubst_mtype ?t ?w] |- ?g ] =>
+   replace (app_msubst_mtype t w) with (〚 t 〛 w) in H;
+   try reflexivity
+ | [ H : _ |- context f [app_msubst_tp ?t ?T] ] =>
+   replace (app_msubst_tp t T) with (〚 t 〛 T);
+   try reflexivity
+ | [ H : context f [app_msubst_tp ?t ?T] |- _ ] =>
+   replace (app_msubst_tp t T) with (〚 t 〛 T) in H;
+   try reflexivity
+ | [ H : context f [(app_msubst_tp ?t) ○ ?Γ] |- _ ] =>
+   replace ((app_msubst_tp t) ○ Γ) with (〚 t 〛 ○ Γ) in H;
+   try reflexivity
+ | [ H : context f [app_msubst ?t ?T] |- _ ] =>
+   replace (app_msubst t T) with (〚 t 〛 T) in H;
+   try reflexivity
+ | _ => fail
+end).
+Ltac clean_inversion := subst; simpl_existTs; subst; repeat clean_substs.
+
+Tactic Notation "nice_inversion" integer(H) := inversion H; clean_inversion.
+
+Tactic Notation "nice_inversion" hyp(H) := inversion H; clean_inversion.
+
+Hint Constructors clos_tp env_tp extended_val_tp val_tp.
+Lemma env_tp_cons {γ'} (Γ':tp_assign γ' ∅) ρ {γ''} (y:γ'↪γ'') W T:
+   ⊪ ρ ⇐ Γ'
+-> extended_val_tp W T
+-> ⊪ (ρ,, (y, W)) ⇐ (Γ',, (y, T)).
+intros. econstructor. nice_inversion H. intro.
 unfold compose.
 destruct (export y x); simpl; eauto.
 Qed.
 
-Lemma env_typing_eq {δ γ γ'} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
-(Γ' Γ'':tp_assign γ' δ) ρ :
+Lemma env_typing_eq {γ'}
+(Γ' Γ'':tp_assign γ' ∅) ρ :
    Γ'' = Γ' 
--> Δ;Γ ⊪ ρ ⇐ Γ'
--> Δ;Γ ⊪ ρ ⇐ Γ''.
+-> ⊪ ρ ⇐ Γ'
+-> ⊪ ρ ⇐ Γ''.
 intros. subst. assumption.
 Qed.
 
-(* The source language should not contain closures.
-   This predicate expresses that. It's expressions minus
-   closures *)
-Inductive ssrc_lang {δ} {γ} : synth_exp δ γ -> Prop :=
-| src_var : forall x, ssrc_lang (var _ x)
-| src_app : forall I E, ssrc_lang I -> src_lang E
-   -> ssrc_lang (app I E)
-| src_mapp : forall I C, ssrc_lang I -> ssrc_lang (mapp I C)
-| src_coercion : forall E T, src_lang E -> ssrc_lang (coercion E T)
-| src_unfold : forall I, ssrc_lang I -> ssrc_lang (unfold I)
-with src_lang {δ γ} : checked_exp δ γ -> Prop :=
-| src_synth : forall I, ssrc_lang I -> src_lang (synth I)
-| src_meta : forall C, src_lang (meta _ C)
-| src_fn : forall γ' (x:γ↪γ') E, @src_lang _ _ E -> src_lang (fn x E)
-| src_mlam : forall δ' (X:δ↪δ') E, @src_lang _ _ E
-   -> src_lang (mlam X E)
-| src_rec : forall γ' (f:γ↪γ') E, @src_lang _ _ E -> src_lang (rec f E)
-| src_fold : forall E, src_lang E -> src_lang (fold E)
-| src_inl : forall E, src_lang E -> src_lang (inl E)
-| src_inr : forall E, src_lang E -> src_lang (inr E)
-| src_pack : forall C E, src_lang E -> src_lang (pack C E)
-| src_pair : forall E1 E2, src_lang E1 -> src_lang E2
-   -> src_lang (pair E1 E2)
-| src_tt : src_lang tt
-| src_case : forall E Bs, src_lang (case_i E Bs) (* TODO *).
+Lemma env_tp_app γ (ρ:env γ) Γ x : ⊪ ρ ⇐ Γ -> extended_val_tp (ρ x) (Γ x).
+intro. nice_inversion H. by eauto.
+Qed.
+Hint Resolve @env_tp_app.
+
+Lemma env_tp_app' γ (ρ:env γ) Γ x E : ⊪ ρ ⇐ Γ -> ρ x = E -> extended_val_tp E (Γ x).
+intros. subst. by eauto.
+Qed.
+Hint Resolve @env_tp_app'.
