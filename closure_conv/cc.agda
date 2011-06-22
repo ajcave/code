@@ -22,21 +22,24 @@ data exp (Γ : ctx tp) : tp -> Set where
 data ctp : Set where
  i : ctp
  _⇝_ : ctp -> ctp -> ctp
- _×_ : ctp -> ctp -> ctp
+ ∧_ : (Γ : ctx ctp) -> ctp -- Type of records
  clos : ctp -> ctp -> ctp
-infixr 14 _×_
 infixr 13 _⇝_
 
-data cexp (Γ : ctx ctp) : ctp -> Set where
- v : ∀ {T} -> var Γ T -> cexp Γ T
- _·_ : ∀ {T S} -> cexp Γ (T ⇝ S) -> cexp Γ T -> cexp Γ S
- ƛ : ∀ {T S} -> cexp (⊡ , T) S -> cexp Γ (T ⇝ S)
- letx : ∀ {T S} -> cexp Γ T -> cexp (Γ , T) S -> cexp Γ S
- clos : ∀ {T Env S} -> cexp Γ (T × Env ⇝ S) -> cexp Γ Env -> cexp Γ (clos T S) 
- copen : ∀ {T S U} -> cexp Γ (clos T S) -> (∀ {Env} -> cexp (Γ , (T × Env ⇝ S), Env) U) -> cexp Γ U
- fst : ∀ {T S} -> cexp Γ (T × S) -> cexp Γ T
- snd : ∀ {T S} -> cexp Γ (T × S) -> cexp Γ S
- pair : ∀ {T S} -> cexp Γ T -> cexp Γ S -> cexp Γ (T × S)
+mutual
+ data cexp (Γ : ctx ctp) : ctp -> Set where
+  v : ∀ {T} -> var Γ T -> cexp Γ T
+  _·_ : ∀ {T S} -> cexp Γ (T ⇝ S) -> cexp Γ T -> cexp Γ S
+  ƛ : ∀ {T S} -> cexp (⊡ , T) S -> cexp Γ (T ⇝ S)
+  letx : ∀ {Δ S} -> subst Δ Γ -> cexp Δ S -> cexp Γ S -- aka explicit substitution
+  let1 : ∀ {T S} -> cexp Γ T -> cexp (Γ , T) S -> cexp Γ S -- Can be defined in terms of letx
+  clos : ∀ {T Env S} -> cexp Γ ((∧ (Env , T)) ⇝ S) -> cexp Γ (∧ Env) -> cexp Γ (clos T S) 
+  copen : ∀ {T S U} -> cexp Γ (clos T S) -> (∀ {Env} -> cexp (Γ , ((∧ (Env , T)) ⇝ S), (∧ Env)) U) -> cexp Γ U
+  create : ∀ {Δ} -> (∀ {T} -> var Δ T -> cexp Γ T) -> cexp Γ (∧ Δ)
+  proj : ∀ {Δ T} -> cexp Γ (∧ Δ) -> var Δ T -> cexp Γ T
+
+ subst : ctx ctp -> ctx ctp -> Set
+ subst Δ Γ = ∀ {T} -> var Δ T -> cexp Γ T
 
 〚_〛 : tp -> ctp
 〚 i 〛 = i
@@ -49,8 +52,12 @@ data cexp (Γ : ctx ctp) : ctp -> Set where
 wkn : ∀ {Γ T S} -> cexp Γ S -> cexp (Γ , T) S
 wkn M = {!!}
 
+_,,_ : ∀ {Γ Env T} -> cexp Γ (∧ Env) -> cexp Γ T -> ∀ {S} -> var (Env , T) S -> cexp Γ S
+(recrd ,, M) z = M
+(recrd ,, M) (s y) = proj recrd y
+
 conv : ∀ {Γ T} -> exp Γ T -> cexp < Γ > 〚 T 〛
 conv (v x) = v {!!}
-conv (M · N) = copen (conv M) (v (s z) · (pair (wkn (wkn (conv N))) (v z)))
-conv (ƛ M) = clos (ƛ {!!}) {!!}
-conv (letx M N) = letx (conv M) (conv N)
+conv (M · N) = copen (conv M) ((v (s z)) · create ((v z) ,, (wkn (wkn (conv N)))))
+conv {Γ} (ƛ M) = clos (ƛ (letx (proj (v z)) (conv M))) (create v)
+conv (letx M N) = let1 (conv M) (conv N) 
