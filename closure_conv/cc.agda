@@ -19,12 +19,17 @@ data exp (Γ : ctx tp) : tp -> Set where
  ƛ : ∀ {T S} -> (M : exp (Γ , T) S) -> exp Γ (T ⇝ S)
  let1 : ∀ {T S} -> (M : exp Γ T) -> (N : exp (Γ , T) S) -> exp Γ S 
 
-data ctp : Set where
- i : ctp
- _⇝_ : ctp -> ctp -> ctp
- ∧_ : (Γ : ctx ctp) -> ctp -- Type of records
- clos : ctp -> ctp -> ctp
+mutual
+ data ctp : Set where
+  i : ctp
+  _⇝_ : ctp -> ctp -> ctp
+  ∧_ : (Lbls : labelSet) -> ctp -- Type of records with label set Lbls
+  clos : ctp -> ctp -> ctp
+ labelSet = ctx ctp
 infixr 13 _⇝_
+
+label : labelSet -> ctp -> Set
+label Lbls T = var Lbls T
 
 mutual
  data cexp (Γ : ctx ctp) : ctp -> Set where
@@ -35,11 +40,13 @@ mutual
   let1 : ∀ {T S} -> cexp Γ T -> cexp (Γ , T) S -> cexp Γ S -- Can be defined in terms of letx
   clos : ∀ {T Env S} -> cexp Γ (∧ (Env , T) ⇝ S) -> cexp Γ (∧ Env) -> cexp Γ (clos T S) 
   copen : ∀ {T S U} -> cexp Γ (clos T S) -> (∀ {Env} -> cexp (Γ , (∧ (Env , T) ⇝ S), (∧ Env)) U) -> cexp Γ U
-  create : ∀ {Δ} -> subst Δ Γ -> cexp Γ (∧ Δ)
-  proj : ∀ {Δ T} -> cexp Γ (∧ Δ) -> var Δ T -> cexp Γ T
+  create : ∀ {Lbls} -> labelAssignment Lbls Γ -> cexp Γ (∧ Lbls)
+  proj : ∀ {Lbls T} -> cexp Γ (∧ Lbls) -> label Lbls T -> cexp Γ T
 
  subst : ctx ctp -> ctx ctp -> Set
  subst Δ Γ = ∀ {T} -> var Δ T -> cexp Γ T
+ labelAssignment : labelSet -> ctx ctp -> Set
+ labelAssignment Lbls Γ = ∀ {T} -> label Lbls T -> cexp Γ T
 
 〚_〛 : tp -> ctp
 〚 i 〛 = i
@@ -47,12 +54,12 @@ mutual
 
 <_> : ctx tp -> ctx ctp
 < ⊡ > = ⊡
-< Γ , T > = < Γ > , 〚 T 〛 
+< Γ , T > = < Γ > , 〚 T 〛
 
 wkn : ∀ {Γ T S} -> cexp Γ S -> cexp (Γ , T) S
 wkn M = letx (λ x → v (s x)) M
 
-_,,_ : ∀ {Γ Env T} -> cexp Γ (∧ Env) -> cexp Γ T -> subst (Env , T) Γ
+_,,_ : ∀ {Γ Env T} -> cexp Γ (∧ Env) -> cexp Γ T -> labelAssignment (Env , T) Γ
 (recrd ,, M) z = M
 (recrd ,, M) (s y) = proj recrd y
 
@@ -63,5 +70,5 @@ vconv (s y) = s (vconv y)
 conv : ∀ {Γ T} -> exp Γ T -> cexp < Γ > 〚 T 〛
 conv (v x) = v (vconv x)
 conv (M · N) = copen (conv M) ((v (s z)) · create ((v z) ,, (wkn (wkn (conv N)))))
-conv {Γ} (ƛ M) = clos (ƛ (letx (proj (v z)) (conv M))) (create v)
+conv (ƛ M) = clos (ƛ (letx (proj (v z)) (conv M))) (create v)
 conv (let1 M N) = let1 (conv M) (conv N) 
