@@ -17,7 +17,7 @@ data exp (Γ : ctx tp) : tp -> Set where
  v : ∀ {T} -> (x : var Γ T) -> exp Γ T
  _·_ : ∀ {T S} -> (M : exp Γ (T ⇝ S)) -> (N : exp Γ T) -> exp Γ S
  ƛ : ∀ {T S} -> (M : exp (Γ , T) S) -> exp Γ (T ⇝ S)
- letx : ∀ {T S} -> (M : exp Γ T) -> (N : exp (Γ , T) S) -> exp Γ S 
+ let1 : ∀ {T S} -> (M : exp Γ T) -> (N : exp (Γ , T) S) -> exp Γ S 
 
 data ctp : Set where
  i : ctp
@@ -33,9 +33,9 @@ mutual
   ƛ : ∀ {T S} -> cexp (⊡ , T) S -> cexp Γ (T ⇝ S)
   letx : ∀ {Δ S} -> subst Δ Γ -> cexp Δ S -> cexp Γ S -- aka explicit substitution
   let1 : ∀ {T S} -> cexp Γ T -> cexp (Γ , T) S -> cexp Γ S -- Can be defined in terms of letx
-  clos : ∀ {T Env S} -> cexp Γ ((∧ (Env , T)) ⇝ S) -> cexp Γ (∧ Env) -> cexp Γ (clos T S) 
-  copen : ∀ {T S U} -> cexp Γ (clos T S) -> (∀ {Env} -> cexp (Γ , ((∧ (Env , T)) ⇝ S), (∧ Env)) U) -> cexp Γ U
-  create : ∀ {Δ} -> (∀ {T} -> var Δ T -> cexp Γ T) -> cexp Γ (∧ Δ)
+  clos : ∀ {T Env S} -> cexp Γ (∧ (Env , T) ⇝ S) -> cexp Γ (∧ Env) -> cexp Γ (clos T S) 
+  copen : ∀ {T S U} -> cexp Γ (clos T S) -> (∀ {Env} -> cexp (Γ , (∧ (Env , T) ⇝ S), (∧ Env)) U) -> cexp Γ U
+  create : ∀ {Δ} -> subst Δ Γ -> cexp Γ (∧ Δ)
   proj : ∀ {Δ T} -> cexp Γ (∧ Δ) -> var Δ T -> cexp Γ T
 
  subst : ctx ctp -> ctx ctp -> Set
@@ -50,14 +50,18 @@ mutual
 < Γ , T > = < Γ > , 〚 T 〛 
 
 wkn : ∀ {Γ T S} -> cexp Γ S -> cexp (Γ , T) S
-wkn M = {!!}
+wkn M = letx (λ x → v (s x)) M
 
-_,,_ : ∀ {Γ Env T} -> cexp Γ (∧ Env) -> cexp Γ T -> ∀ {S} -> var (Env , T) S -> cexp Γ S
+_,,_ : ∀ {Γ Env T} -> cexp Γ (∧ Env) -> cexp Γ T -> subst (Env , T) Γ
 (recrd ,, M) z = M
 (recrd ,, M) (s y) = proj recrd y
 
+vconv : ∀ {Γ T} -> var Γ T -> var < Γ > 〚 T 〛
+vconv z = z
+vconv (s y) = s (vconv y)
+
 conv : ∀ {Γ T} -> exp Γ T -> cexp < Γ > 〚 T 〛
-conv (v x) = v {!!}
+conv (v x) = v (vconv x)
 conv (M · N) = copen (conv M) ((v (s z)) · create ((v z) ,, (wkn (wkn (conv N)))))
 conv {Γ} (ƛ M) = clos (ƛ (letx (proj (v z)) (conv M))) (create v)
-conv (letx M N) = let1 (conv M) (conv N) 
+conv (let1 M N) = let1 (conv M) (conv N) 
