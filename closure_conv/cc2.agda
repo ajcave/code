@@ -1,12 +1,12 @@
-module cc where
+module cc2 where
 
 data tp : Set where
  i : tp
  _⇝_ : tp -> tp -> tp
 
-data ctx (A : Set) : Set where
- ⊡ : ctx A
- _,_ : (Γ : ctx A) -> (T : A) -> ctx A
+data ctx (Tp : Set) : Set where
+ ⊡ : ctx Tp
+ _,_ : (Γ : ctx Tp) -> (T : Tp) -> ctx Tp
 infixl 14 _,_
 
 data var {A : Set} : ctx A -> A -> Set where
@@ -26,7 +26,7 @@ mutual
   ∧_ : (Lbls : labelSet) -> ctp -- Type of records with label set Lbls
   clos : ctp -> ctp -> ctp
 
- labelSet = ctx ctp
+ labelSet = ctx ctp -- They're both just lists of ctps
 
 infixr 13 _⇝_
 
@@ -50,9 +50,17 @@ mutual
  labelAssignment : labelSet -> ctx ctp -> Set
  labelAssignment Lbls Γ = ∀ {T} -> label Lbls T -> cexp Γ T
 
+data tpRel : tp -> ctp -> Set where
+ i : tpRel i i
+ _⇝_ : ∀ {T T' S S'} -> tpRel T T' -> tpRel S S' -> tpRel (T ⇝ S) (clos T' S')
+
 〚_〛 : tp -> ctp
 〚 i 〛 = i
 〚 T ⇝ S 〛 = clos 〚 T 〛 〚 S 〛
+
+data ctxRel : ctx tp -> ctx ctp -> Set where
+ ⊡ : ctxRel ⊡ ⊡
+ _,_ : ∀ {Γ Γ' T T'} -> ctxRel Γ Γ' -> tpRel T T' -> ctxRel (Γ , T) (Γ' , T')
 
 <_> : ctx tp -> ctx ctp
 < ⊡ > = ⊡
@@ -65,15 +73,35 @@ _,,_ : ∀ {Γ Env T} -> cexp Γ (∧ Env) -> cexp Γ T -> labelAssignment (Env 
 (recrd ,, M) z = M
 (recrd ,, M) (s y) = proj recrd y
 
-vconv : ∀ {Γ T} -> var Γ T -> var < Γ > 〚 T 〛
-vconv z = z
-vconv (s y) = s (vconv y)
+data Σ_ {A : Set} (B : A -> Set) : Set where
+ ex : ∀ (x : A) (y : B x) -> Σ B
 
-conv : ∀ {Γ T} -> exp Γ T -> cexp < Γ > 〚 T 〛
-conv (v x) = v (vconv x)
-conv (M · N) = copen (conv M) ((v (s z)) · create ((v z) ,, (wkn (wkn (conv N)))))
-conv (ƛ M) = clos (ƛ (letx (proj (v z)) (conv M))) (create v)
-conv (let1 M N) = let1 (conv M) (conv N) 
+tpRelTotal : (T : tp) -> Σ (tpRel T)
+tpRelTotal i = ex i i
+tpRelTotal (T ⇝ S) with tpRelTotal T | tpRelTotal S
+tpRelTotal (T ⇝ S) | ex T' RT'  | ex S' RS' = ex (clos T' S') (RT' ⇝ RS')
+
+data _==_ {A : Set} (x : A) : A -> Set where
+ refl : x == x
+
+tpRelDeter : ∀ {T T1 T2} -> tpRel T T1 -> tpRel T T2 -> T1 == T2
+tpRelDeter i i = refl
+tpRelDeter (RT1 ⇝ RS1) (RT2 ⇝ RS2) with tpRelDeter RT1 RT2 | tpRelDeter RS1 RS2
+tpRelDeter (RT1 ⇝ RS1) (RT2 ⇝ RS2) | refl | refl = refl
+
+vconv : ∀ {Γ Γ' T T'} -> ctxRel Γ Γ' -> tpRel T T' -> var Γ T -> var Γ' T'
+vconv ⊡ Tr () 
+vconv (_ , Tr1) Tr2 z with tpRelDeter Tr1 Tr2
+vconv (_ , _) _ z | refl = z
+vconv (R , _) TR (s y) = s (vconv R TR y)
+
+conv : ∀ {Γ Γ' T T'} -> ctxRel Γ Γ' -> tpRel T T' -> exp Γ T -> cexp Γ' T'
+conv R Tr (v x) = v (vconv R Tr x)
+conv R Tr (_·_ {S} M N) with tpRelTotal S
+... | ex _ TrS = copen (conv R (TrS ⇝ Tr) M) ((v (s z)) · (create ((v z) ,, (wkn (wkn (conv R TrS N))))))
+conv R (TrS ⇝ TrT) (ƛ M) = clos (ƛ (letx (proj (v z)) (conv (R , TrS) TrT M))) (create v)
+conv R Tr (let1 {S} M N) with tpRelTotal S
+... | ex _ TrS = let1 (conv R TrS M) (conv (R , TrS) Tr N)
 
 -- If you're concerned about the efficiency of building up complex record access functions
 -- then "force" them at every stage.
