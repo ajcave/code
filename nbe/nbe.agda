@@ -3,6 +3,7 @@ module nbe where
 
 postulate
  atomic_tp : Set
+ i : atomic_tp
 
 data tp : Set where
  atom : (A : atomic_tp) -> tp
@@ -22,8 +23,7 @@ vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
 mutual
  data sem (Γ : ctx) : (T : tp) -> Set where 
   neut : ∀ {A} -> neu Γ (atom A) -> sem Γ (atom A)
-  ƛ : ∀ {T S} -> (∀ {Δ} -> (∀ {U} -> var Γ U -> var Δ U)
-                        -> sem Δ T -> sem Δ S) -> sem Γ (T ⇝ S)
+  ƛ : ∀ {T S} -> (∀ {Δ} -> vsubst Γ Δ -> sem Δ T -> sem Δ S) -> sem Γ (T ⇝ S)
  data neu (Γ : ctx) : (T : tp) -> Set where
   v : ∀ {T} -> var Γ T -> neu Γ T
   _·_ : ∀ {T S} -> neu Γ (T ⇝ S) -> sem Γ T -> neu Γ S
@@ -71,10 +71,12 @@ extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
+app : ∀ {Γ T U} -> sem Γ (T ⇝ U) -> sem Γ T -> sem Γ U
+app (ƛ f) N = f id N
+
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
-eval θ (M · N) with eval θ M
-eval θ (M · N) | ƛ f = f id (eval θ N)
+eval θ (M · N) = app (eval θ M) (eval θ N)
 eval θ (ƛ M) = ƛ (λ σ → λ s → eval (extend (λ x → appSubst σ (θ x)) s) M)
 
 init : subst ⊡ ⊡
@@ -104,3 +106,27 @@ mutual
 
 nbe' : ∀ {T} -> tm ⊡ T -> ntm ⊡ T
 nbe' M = reify' (eval init M)
+
+----------------------------------------
+I : ∀ {Δ T} -> sem Δ (T ⇝ T)
+I = ƛ (λ σ → λ x → x)
+
+K : ∀ {Δ T U} -> sem Δ (T ⇝ (U ⇝ T))
+K = ƛ (λ σ → λ x → ƛ (λ σ' → λ y → appSubst σ' x))
+
+snd : ∀ {Δ T U} -> sem Δ (T ⇝ (U ⇝ U))
+snd = app K I
+
+nasty : ∀ {Δ U T} -> sem Δ U -> sem Δ (T ⇝ (T ⇝ T))
+nasty (neut _) = K
+nasty (ƛ _) = snd
+
+weird : ∀ {Δ U T} -> sem Δ (U ⇝ (T ⇝ (T ⇝ T)))
+weird = ƛ (λ σ → nasty)
+
+foo : ∀ {U T} -> ntm ⊡ (U ⇝ (T ⇝ (T ⇝ T)))
+foo = reify' weird
+
+bar = foo {atom i} {atom i}
+
+-- Interesting... Can we prove some kind of adequacy theorem?
