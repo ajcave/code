@@ -49,8 +49,6 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
 
-
-
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
@@ -71,7 +69,7 @@ subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
 
 extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
-extend θ M (s y) = appSubst id (θ y)
+extend θ M (s y) = θ y
 
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
