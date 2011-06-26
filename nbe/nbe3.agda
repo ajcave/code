@@ -100,3 +100,6 @@ eval θ (v y) = θ y
 eval θ (M · N) with eval θ M
 eval θ (M · N) | f = f _ id (eval θ N)
 eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
+
+nbe : ∀ {T} -> tm ⊡ T -> ntm ⊡ T
+nbe M = reify (eval (λ ()) M) 
