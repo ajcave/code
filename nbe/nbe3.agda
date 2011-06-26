@@ -3,7 +3,6 @@ module nbe3 where
 
 postulate
  atomic_tp : Set
- i : atomic_tp
 
 data tp : Set where
  atom : (A : atomic_tp) -> tp
@@ -19,22 +18,6 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
 
 vsubst : ctx -> ctx -> Set 
 vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
-
-record Σ_ {A : Set} (B : A -> Set) : Set where
- constructor _,_ 
- field
-    fst : A
-    snd : B fst
-
-record _×_ (A B : Set) : Set where
- constructor _,_
- field
-    fst : A
-    snd : B
-
-data _==_ {A : Set} (x : A) : A -> Set where
- refl : x == x
-
 
 mutual 
  data rtm (Γ : ctx) : (T : tp) -> Set where
