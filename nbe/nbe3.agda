@@ -52,7 +52,7 @@ data tm (Γ : ctx) : (T : tp) -> Set where
 mutual
  sem : (Γ : ctx) -> (T : tp) -> Set
  sem Γ (atom A) = rtm Γ (atom A)
- sem Γ (T ⇝ S) = ∀ {Δ} -> vsubst Γ Δ -> sem Δ T → sem Δ S 
+ sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
 
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
@@ -61,25 +61,20 @@ ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
 
-nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> tm Δ S -> tm Γ S
-nappSubst σ (v y) = v (σ y)
-nappSubst σ (M · N) = nappSubst σ M · nappSubst σ N
-nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
-
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
  rappSubst σ (v y) = v (σ y)
- rappSubst σ (M · N) = rappSubst σ M · nappSubst' σ N
- nappSubst' : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
- nappSubst' σ (ƛ M) = ƛ (nappSubst' (ext σ) M)
- nappSubst' σ (neut R) = neut (rappSubst σ R)
+ rappSubst σ (M · N) = rappSubst σ M · nappSubst σ N
+ nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
+ nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
+ nappSubst σ (neut R) = neut (rappSubst σ R)
 
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = rappSubst σ M
-appSubst (T ⇝ S) σ M = λ σ' → λ s → M (σ' ∘ σ) s
+appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -87,11 +82,11 @@ wkn x = s x
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
  reflect {atom A} N = N
- reflect {T ⇝ S} N = λ σ → λ s → reflect (rappSubst σ N · reify s)
+ reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
 
  reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
  reify {atom A} M = neut M
- reify {T ⇝ S} M = ƛ (reify (M wkn (reflect (v z))))
+ reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
@@ -103,5 +98,5 @@ extend θ M (s y) = θ y
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) with eval θ M
-eval θ (M · N) | f = f id (eval θ N)
-eval θ (ƛ M) = λ σ → λ s → eval (extend (λ x → appSubst _ σ (θ x)) s) M
+eval θ (M · N) | f = f _ id (eval θ N)
+eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
