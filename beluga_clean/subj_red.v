@@ -12,59 +12,119 @@ match goal with
 | [ H : clos_tp _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
 | [ H : _ ∈ _ |- _] => nice_inversion_clear H; [idtac] 
 | [ H : branch_tp _ _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
-(* | [ H : ⊪ _ ⇐ _ |- _] => nice_inversion_clear H; [idtac] *)
 | [ H : extended_val_tp _ _ |- _] => nice_inversion_clear H; [idtac]
+| [ H : checks_tp' _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
+| [ H : synth_tp' _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
 end.
 Ltac invert_typing := repeat invert_typing_1.
 
-Hint Constructors synth_tp checks_tp.
+Ltac normalize_subst := repeat (match goal with
+| [ |- context f [@app_subst tp tp_substitutable ?δ ?δ' ?θ ?T] ] =>
+ replace (@app_subst tp tp_substitutable δ δ' θ T) with
+         (@app_subst (tp' ∅) (@tp_substitutable' ∅) δ δ' θ T) by reflexivity
+| [ H : context f [@app_subst tp tp_substitutable ?δ ?δ' ?θ ?T] |- _ ] =>
+ replace (@app_subst tp tp_substitutable δ δ' θ T) with
+         (@app_subst (tp' ∅) (@tp_substitutable' ∅) δ δ' θ T) in H by reflexivity
+end).
+
+Hint Constructors synth_tp checks_tp synth_tp' checks_tp'.
 Hint Resolve @subst_lemma.
 Hint Resolve @subst_cons_typing @meta_type_eq @env_tp_cons.
 
+Lemma blah2 V Cs T : V ∈ T -> V ∈ (add_eq Cs T).
+intros.
+induction Cs. assumption.
+econstructor. eapply IHCs.
+Qed.
+Lemma blah3 V Cs T : V ∈ (add_eq Cs T) -> V ∈ T.
+intros.
+induction Cs. assumption.
+nice_inversion H.
+invert_typing. nice_inversion H6. 
+invert_typing. nice_inversion H6.
+by eauto.
+Qed.
+Lemma blah V Cs0 Cs1 T0 T1 : V ∈ T0 -> add_eq Cs0 T0 = add_eq Cs1 T1 -> V ∈ T1.
+intros.
+pose proof (blah2 Cs0 H).
+rewrite H0 in H1.
+eapply blah3; eauto.
+Qed.
+Lemma simpl_subst_add_eq {δ δ'} (θ:msubst δ δ') Cs (T:tp' ∅ δ) :
+(@app_subst tp (@tp_substitutable) δ δ' θ (add_eq Cs T))
+= add_eq (map 〚θ〛 Cs) (〚θ〛T).
+induction Cs; simpl in *; congruence.
+Qed.
+Lemma simpl_subst_add_eq' {δ δ'} (θ:msubst δ δ') Cs (T:tp' ∅ δ) :
+(@app_subst (@tp' empty) (@tp_substitutable' empty) δ δ' θ (add_eq Cs T))
+= add_eq (map 〚θ〛 Cs) (〚θ〛T).
+induction Cs; simpl in *; congruence.
+Qed.
+Hint Resolve blah blah2 blah3.
 
 Theorem subj_red {δ γ} (L:checked_exp δ γ) θ ρ V :
 L[θ;;ρ] ⇓ V -> forall T, (clos_tp L θ ρ T) -> (V ∈ T).
-induction 1; intros; invert_typing; try by eauto.
+induction 1; intros; invert_typing.
+
+(* Coercion *)
+assert (V ∈ 〚θ〛T).
+eapply IHeval. econstructor. eexact H2. eauto. eauto.
+assert (〚θ〛(add_eq Cs0 T) = 〚θ〛(add_eq Cs T1)) by congruence.
+repeat erewrite simpl_subst_add_eq' in H3.
+by eauto.
 
 (* app *)
-assert (V2 ∈ 〚θ〛T1) by eauto.
-assert ((vfn y E θ' ρ') ∈ 〚θ〛(arr T1 T0)) by eauto.
-invert_typing.
-change (arr (〚θ'〛T2) (〚θ'〛T3) = arr (〚θ〛T1) (〚θ〛T0)) in H12. (* TODO *) nice_inversion H12. (* Combine with this? *)
-
-erewrite <- H6.
-eapply IHeval3.
-econstructor; eauto.
-erewrite compose_cons. (* TODO: This is part of normalization *)
-rewrite H4.
+assert (V2 ∈ 〚θ〛T) by eauto.
+assert ((vfn y E θ' ρ') ∈ 〚θ〛(arr (add_eq Cs0 T) (add_eq Cs T0))) by eauto.
+invert_typing.  nice_inversion H12.
+assert (V ∈ 〚θ'〛T1).
+eapply IHeval3. econstructor; eauto.
+erewrite compose_cons. eapply env_tp_cons. by eassumption.
+econstructor.
+rewrite H7. erewrite simpl_subst_add_eq'. by eauto.
+repeat erewrite simpl_subst_add_eq' in H8.
 by eauto.
 
 (* mapp *)
 assert ((vmlam X E θ' ρ') ∈ 〚θ〛(pi X0 U T)) by eauto.
 invert_typing.
-nice_inversion H10.
-erewrite assoc. erewrite msubst_over_single.
-rewrite <- (common_var (〚θ〛C) H1).
-
+nice_inversion H11.
+assert (V ∈ (〚θ',, (X,〚θ〛C) 〛 (add_eq Cs1 T1))).
+erewrite simpl_subst_add_eq.
+eapply blah2.
 eapply IHeval2.
 econstructor; eauto.
-erewrite cons_import_mvar.
+erewrite cons_import_mvar. by eassumption.
+normalize_subst.
+rewrite -> (common_var (〚θ〛C) H3) in H7.
+erewrite <- msubst_over_single in H7.
+erewrite <- assoc in H7.
+erewrite H4 in H7.
+normalize_subst.
+erewrite simpl_subst_add_eq' in H7.
 by eauto.
 
 (* Var (extended value) *)
 unfold compose in *.
 pose proof (env_tp_app' y H9 H).
 invert_typing.
-erewrite <- H6.
+erewrite H3 in H7.
+assert (V ∈ 〚θ'〛 (add_eq Cs0 T1)) by eauto.
+normalize_subst.
+repeat erewrite simpl_subst_add_eq' in H7, H2.
+erewrite simpl_subst_add_eq' in H7.
 by eauto.
 
 (* Var (value) *)
 unfold compose in *.
 pose proof (env_tp_app' y H8 H).
 invert_typing.
-by assumption.
+rewrite H2 in H3.
+normalize_subst. erewrite simpl_subst_add_eq' in H3.
+by eauto.
 
 (* Rec *)
+normalize_subst. erewrite simpl_subst_add_eq'. eapply blah2.
 eapply IHeval.
 econstructor; eauto.
 erewrite compose_cons. (* TODO: Part of normalizing *)

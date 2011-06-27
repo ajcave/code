@@ -43,9 +43,6 @@ Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checke
  | ev_fold : forall E V,
             E[θ;;ρ] ⇓ V
          -> (fold E)[θ;;ρ] ⇓ (vfold V)
- | ev_unfold : forall I V,
-            (synth I)[θ;;ρ] ⇓ (vfold V)
-         -> (unfold I)[θ;;ρ] ⇓ V
  | ev_meta : forall (C:meta_term δ),
             (meta γ C)[θ;;ρ] ⇓ (vmeta (〚θ〛C))
  | ev_fn : forall γ' (y:γ↪γ') (E:checked_exp δ γ'), 

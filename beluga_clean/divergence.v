@@ -77,7 +77,4 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Pr
  | div_fold : forall E,
             E[θ;;ρ] ⇑
          -> (fold E)[θ;;ρ] ⇑
- | ev_unfold : forall I,
-            (synth I)[θ;;ρ] ⇑
-         -> (unfold I)[θ;;ρ] ⇑ 
 where "E [ θ ;; ρ ] ⇑" := (@div _ _ θ ρ E).

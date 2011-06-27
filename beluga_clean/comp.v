@@ -179,13 +179,18 @@ Inductive pat (γ δ:world) : Set :=
   | ptt : pat γ δ.
 Implicit Arguments ptt [γ δ].
 
+Fixpoint add_eq {ψ δ} (constraints:list (meta_term δ)) (T:tp' ψ δ) : tp' ψ δ :=
+match constraints with
+| nil => T
+| cons C Cs => eq_constraint C C (add_eq Cs T)
+end.
+
 Definition tp_assign γ δ := name γ -> tp δ.
 Inductive synth_exp (δ γ:world) : Set :=
   | var : name γ -> synth_exp δ γ
   | app :  synth_exp δ γ -> checked_exp δ γ -> synth_exp δ γ
   | mapp : synth_exp δ γ -> meta_term δ -> synth_exp δ γ
   | coercion : checked_exp δ γ -> tp δ -> synth_exp δ γ
-  | unfold : synth_exp δ γ -> synth_exp δ γ
  with checked_exp (δ γ:world) : Set := 
   | synth : synth_exp δ γ -> checked_exp δ γ
   | meta : meta_term δ -> checked_exp δ γ
@@ -255,67 +260,74 @@ Inductive pat_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
            -> pat_tp Δ Γ (pfold E) (tapp (mu Z X U T) C)
   | ptt_c : pat_tp Δ Γ ptt unit.
 
-Inductive synth_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
-                   : synth_exp δ γ -> tp δ -> Prop :=
+Inductive synth_tp' {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : synth_exp δ γ -> tp δ -> Set :=
   | var_s : forall x T,
              Γ x = T
-           -> Δ;Γ ⊢ (var _ x) ⇒ T
+           -> synth_tp' Δ Γ (var _ x) T
   | app_s : forall I T1 E T2,
               Δ;Γ ⊢ I ⇒ (arr T1 T2)
            -> Δ;Γ ⊢ E ⇐ T1
-           -> Δ;Γ ⊢ (app I E) ⇒ T2
+           -> synth_tp' Δ Γ (app I E) T2
   | mapp_s : forall I δ' (X:δ↪δ') U C T,
               Δ;Γ ⊢ I ⇒ (pi X U T)
            -> Δ ⊨ C ∷ U
-           -> Δ;Γ ⊢ (mapp I C) ⇒ (〚single_subst X C〛 T)
+           -> synth_tp' Δ Γ (mapp I C) (〚single_subst X C〛 T)
   | coerce_s : forall E T,
               Δ;Γ ⊢ E ⇐ T
-           -> Δ;Γ ⊢ (coercion E T) ⇒ T
-  | unfold_c : forall I δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
-              Δ;Γ ⊢ I ⇒ (tapp (mu Z X U T) C) 
-           -> Δ;Γ ⊢ unfold I ⇒ 〈mu Z X U T〉 (〚single_subst X C〛 T)
- with checks_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
-                   : checked_exp δ γ -> tp δ -> Prop :=
+           -> synth_tp' Δ Γ (coercion E T) T
+ with synth_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : synth_exp δ γ -> tp δ -> Set :=
+  | eq_constraint_s : forall I T Cs,
+              synth_tp' Δ Γ I (add_eq Cs T)
+           -> Δ;Γ ⊢ I ⇒ T
+ with checks_tp' {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : checked_exp δ γ -> tp δ -> Set :=
   | synth_c : forall I T,
               Δ;Γ ⊢ I ⇒ T
-           -> Δ;Γ ⊢ I ⇐ T
+           -> checks_tp' Δ Γ I T
   | meta_c : forall C U,
               Δ ⊨ C ∷ U 
-           -> Δ;Γ ⊢ (meta γ C) ⇐ U
+           -> checks_tp' Δ Γ (meta γ C) U
   | fn_c : forall γ' (y:γ↪γ') E T1 T2,
              Δ;(Γ,, (y,T1)) ⊢ E ⇐ T2
-          -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
+          -> checks_tp' Δ Γ (fn y E) (arr T1 T2)
   | mlam_c : forall δ' (X:δ↪δ') E U T,
              (* TODO: Clean this up *)
              (〚@m_var _ ○ ↑X〛 ○ (Δ,, (X,U)));(〚@m_var _ ○ ↑X〛 ○ Γ) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (mlam X E) ⇐ (pi X U T)
+          -> checks_tp' Δ Γ (mlam X E) (pi X U T)
   | rec_c : forall γ' (f:γ↪γ') E T,
              Δ;(Γ,, (f,T)) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (rec f E) ⇐ T
+          -> checks_tp' Δ Γ (rec f E) T
   | inl_c : forall E T S,
              Δ;Γ ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (inl E) ⇐ (sum T S)
+          -> checks_tp' Δ Γ (inl E) (sum T S)
   | inr_c : forall E T S,
              Δ;Γ ⊢ E ⇐ S
-          -> Δ;Γ ⊢ (inr E) ⇐ (sum T S)
+          -> checks_tp' Δ Γ (inr E) (sum T S)
   | pair_c : forall E1 E2 T S,
              Δ;Γ ⊢ E1 ⇐ T
           -> Δ;Γ ⊢ E2 ⇐ S
-          -> Δ;Γ ⊢ (pair E1 E2) ⇐ (prod T S)
+          -> checks_tp' Δ Γ (pair E1 E2) (prod T S)
   | pack_c : forall E δ' (X:δ↪δ') U C T,
               Δ ⊨ C ∷ U
            -> Δ;Γ ⊢ E ⇐ (〚single_subst X C〛 T) 
-           -> Δ;Γ ⊢ (pack C E) ⇐ (sigma X U T)
+           -> checks_tp' Δ Γ (pack C E) (sigma X U T)
   | fold_c : forall E δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
               Δ;Γ ⊢ E ⇐ 〈mu Z X U T〉 (〚single_subst X C〛 T)
-           -> Δ;Γ ⊢ fold E ⇐ (tapp (mu Z X U T) C)
-  | tt_c : Δ;Γ ⊢ tt ⇐ unit
+           -> checks_tp' Δ Γ (fold E) (tapp (mu Z X U T) C)
+  | tt_c : checks_tp' Δ Γ tt unit
   | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U
           -> (forall B, In B Bs -> branch_tp Δ Γ B U T)
-          -> Δ;Γ ⊢ (case_i I Bs) ⇐ T 
+          -> checks_tp' Δ Γ (case_i I Bs) T 
+ with checks_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : checked_exp δ γ -> tp δ -> Set :=
+  | eq_constraint_c : forall E T Cs,
+             checks_tp' Δ Γ E T
+          -> Δ;Γ ⊢ E ⇐ (add_eq Cs T)
  with branch_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
-                     : branch δ γ -> tp δ -> tp δ -> Prop :=
+                     : branch δ γ -> tp δ -> tp δ -> Set :=
   | br_c : forall δi n (θi:msubst δ δi) U T
                   (Δi:mtype_assign δi) (Γi:vec (tp δi) n) (p:pat (∅ + n) δi) E,
              pat_tp Δi (· * Γi) p (〚θi〛 U)
@@ -355,6 +367,7 @@ Inductive val_tp : val -> tp ∅ -> Prop :=
               V ∈ 〈mu Z X U T〉 (〚single_subst X C〛 T)
            -> vfold V ∈ (tapp (mu Z X U T) C)
   | vtt_c : vtt ∈ unit
+  | veq_constr : forall V T C, V ∈ T -> V ∈ (eq_constraint C C T)
 with extended_val_tp : extended_val -> tp ∅ -> Prop :=
   | evval_c : forall V T, V ∈ T -> extended_val_tp V T
   | evrec_c : forall δ γ γ' (f:γ↪γ') (E:checked_exp δ γ') (θ:msubst δ ∅) (ρ:env γ) T,
@@ -364,7 +377,7 @@ with env_tp : forall {γ'} (ρ:env γ') (Γ':tp_assign γ' ∅), Prop :=
   | env_c : forall γ' (ρ:env γ') Γ', (forall x, extended_val_tp (ρ x) (Γ' x)) -> ⊪ ρ ⇐ Γ'
 with clos_tp : forall {δ γ} (E:checked_exp δ γ) (θ:msubst δ ∅) (ρ:env γ), tp ∅ -> Prop :=
   | clos_c : forall δ γ (E:checked_exp δ γ) θ ρ Δ Γ T,
-              Δ;Γ ⊢ E ⇐ T
+              checks_tp' Δ Γ E T
            -> · ⊩ θ ∷ Δ
            -> ⊪ ρ ⇐ (〚θ〛 ○ Γ)
            -> clos_tp E θ ρ (〚θ〛T)
@@ -534,3 +547,9 @@ match p with
 end
 where "[ ρ ]" := (psubst ρ).
 End app_subst_pat_sect.
+
+Scheme checks_synth_ind := Induction for checks_tp Sort Prop
+ with synth_checks_ind := Induction for synth_tp Sort Prop
+ with br_tp_ind := Induction for branch_tp Sort Prop.
+(* Combined Scheme checks_synth_multind from checks_synth_ind,
+ synth_checks_ind, br_tp_ind. *)
