@@ -11,6 +11,7 @@ match goal with
 | [ H : _;_ ⊢ _ ⇒ _ |- _ ] => nice_inversion_clear H; [idtac]
 | [ H : clos_tp _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
 | [ H : _ ∈ _ |- _] => nice_inversion_clear H; [idtac] 
+| [ H : branch_tp _ _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
 (* | [ H : ⊪ _ ⇐ _ |- _] => nice_inversion_clear H; [idtac] *)
 | [ H : extended_val_tp _ _ |- _] => nice_inversion_clear H; [idtac]
 end.
@@ -108,6 +109,30 @@ exact H4.
 (* meta *)
 simpl. econstructor.
 eapply subst_lemma; by eauto.
+
+(* case. happy case *)
+assert (psubst (· * ρ') (〚θ'〛 pa) ∈ (〚〚θ'〛 ○ θi〛U)) by eauto.
+assert (branch_tp Δ Γ (br _ Δi Γi pa θi Ei) U T0) by firstorder.
+invert_typing.
+eapply IHeval2.
+erewrite <- assoc.
+econstructor.
+eauto.
+admit. (* TODO *)
+erewrite compose_prod.
+admit. (* TODO *)
+
+(* case *)
+eapply IHeval2.
+econstructor; eauto.
+econstructor; eauto. intros.
+eapply H6; by firstorder.
+
+(* case *)
+eapply IHeval2.
+econstructor; eauto.
+econstructor; eauto. intros.
+eapply H6; by firstorder.
 Qed.
 
 (* Notes:

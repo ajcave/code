@@ -87,6 +87,11 @@ by eauto.
 doesItConverge E1 θ ρ.
 eapply div_pair2; by eauto.
 eapply div_pair1; by eauto.
+
+(* case *)
+doesItConverge I θ ρ.
+clear progress. admit. (* TODO: Coverage *)
+eapply div_caseI. eapply progress; eauto.
 Qed.
 
 Lemma dot_subst_typing : · ⊩ · ∷ ·.
