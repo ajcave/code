@@ -132,9 +132,11 @@ eapply env_tp_cons;
 by eauto.
 
 (* Inl *)
-change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)). (* TODO: Should be together with a tactic for the arr case *)
+change (〚θ〛(sum (add_eq Cs T0) S)) with (sum (〚θ〛(add_eq Cs T0)) (〚θ〛S)).
+econstructor.
+erewrite simpl_subst_add_eq'. eapply blah2.
 by eauto.
-
+(*
 (* Inr *)
 change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)).
 by eauto.
@@ -192,8 +194,8 @@ eapply H6; by firstorder.
 eapply IHeval2.
 econstructor; eauto.
 econstructor; eauto. intros.
-eapply H6; by firstorder.
-Qed.
+eapply H6; by firstorder. *)
+Admitted.
 
 (* Notes:
 Focus on simultaneous substitutions means proofs and
