@@ -16,7 +16,7 @@ max (suc n) (suc m) = suc (max n m)
  
 {-# BUILTIN LEVELMAX max #-}
 
-record Σ_ {A : Set}(B : A -> Set) : Set where
+record Σ_ {l} {A : Set l}(B : A -> Set l) : Set l where
   constructor _,_ 
   field
     fst : A
@@ -135,13 +135,30 @@ max≤right zero m = refl
 max≤right (suc y) zero = zero≤all (suc y)
 max≤right (suc y) (suc y') = s≤ (max≤right y y')
 
+_⇔_ : ∀ {l} -> (A B : Set l) -> Set (suc l)
+_⇔_ {l} A B = A -> B -> Set l
+
+data Rel (l : Level) : Set (suc l) where
+ rel : ∀ {A B : Set l} -> A ⇔ B -> Rel l
+
+_⇒·_ : ∀ {l m} {A A' : Set l} {B B' : Set m} -> A ⇔ A' -> B ⇔ B' -> (A → B) ⇔ (A' → B')
+(A ⇒· B) f f' = ∀ a a' → A a a' → B (f a) (f' a')
+
+Π·_ : ∀ {l m} {F F' : Set l -> Set m}
+ -> (FF : ∀ {A A' : Set l} -> A ⇔ A' -> F A ⇔ F' A')
+ -> (∀ A -> F A) ⇔ (∀ A' -> F' A')
+(Π· FF) g g' = ∀ {A A'} (AA : A ⇔ A') → FF AA (g A) (g' A')
+
 〚_〛 : (Δ : lctx) -> Set (suc (nmax Δ))
 〚 ⊡ 〛 = Lifted unit
 〚 Δ , l 〛 =   importSet (s≤ (max≤right l (nmax Δ))) 〚 Δ 〛
-           * importSet (s≤ (max≤left  l (nmax Δ))) (Set l)
+           * importSet (s≤ (max≤left  l (nmax Δ))) (Rel l)
 
-
-
+_〈_〉 : ∀ {l} {Δ : lctx} (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Rel l
+Δ' 〈 v y 〉 = {!y!}
+Δ' 〈 T ⇒ S 〉 with Δ' 〈 T 〉 | Δ' 〈 S 〉
+Δ' 〈 T ⇒ S 〉 | rel TT | rel SS = rel (TT ⇒· SS)
+Δ' 〈 Π T 〉 = {!!}
 
 
 
