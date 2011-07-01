@@ -32,10 +32,9 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
 
-mutual
- sem : (Γ : ctx) -> (T : tp) -> Set
- sem Γ (atom A) = rtm Γ (atom A)
- sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
+sem : (Γ : ctx) -> (T : tp) -> Set
+sem Γ (atom A) = rtm Γ (atom A)
+sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
 
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
