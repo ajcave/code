@@ -154,11 +154,20 @@ _⇒·_ : ∀ {l m} {A A' : Set l} {B B' : Set m} -> A ⇔ A' -> B ⇔ B' -> (A 
 〚 Δ , l 〛 =   importSet (s≤ (max≤right l (nmax Δ))) 〚 Δ 〛
            * importSet (s≤ (max≤left  l (nmax Δ))) (Rel l)
 
-_〈_〉 : ∀ {l} {Δ : lctx} (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Rel l
-Δ' 〈 v y 〉 = {!y!}
-Δ' 〈 T ⇒ S 〉 with Δ' 〈 T 〉 | Δ' 〈 S 〉
-Δ' 〈 T ⇒ S 〉 | rel TT | rel SS = rel (TT ⇒· SS)
-Δ' 〈 Π T 〉 = {!!}
+importContent : ∀ {l m} (p : l ≤ m) {A : Set l} (x : A) -> importSet p A
+importContent refl x = x
+importContent (s y) x = lift (importContent y x) 
+
+blahl : ∀ l (Δ : lctx) (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Set l
+blahl l Δ Δ' (v y) = {!!}
+blahl .(max l m) Δ Δ' (_⇒_ {l} {m} T S) = blahl l Δ Δ' T → blahl m Δ Δ' S
+blahl .(suc (max m l)) Δ Δ' (Π {l} {m} T) = (A : Set l)
+  → blahl {!!} (Δ , l) (importContent (s≤ (max≤right l (nmax Δ))) Δ' , importContent (s≤ (max≤left l (nmax Δ))) (rel {!!})) {!!}
+
+conv : ∀ l (Δ : lctx) (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Rel l
+conv l Δ Δ' (v y) = {!!}
+conv .(max l m) Δ Δ' (_⇒_ {l} {m} T S) = {!!}
+conv .(suc (max m l)) Δ Δ' (Π {l} {m} T) = rel (Π· (λ A → {!!}))
 
 
 
