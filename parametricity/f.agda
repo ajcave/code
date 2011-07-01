@@ -5,6 +5,14 @@ data Level : Set where
        zero : Level
        suc  : Level → Level
 
+data nat : Set where
+ z : nat
+ s : nat -> nat
+
+data Fin : nat -> Set where
+ z : ∀ {n} -> Fin (s n)
+ s : ∀ {n} -> Fin n -> Fin (s n)
+
 {-# BUILTIN LEVEL     Level #-}
 {-# BUILTIN LEVELZERO zero  #-}
 {-# BUILTIN LEVELSUC  suc   #-}
@@ -36,7 +44,7 @@ data tvar {A : Set} : ∀ (Δ : ctx A) (x : A) -> Set where
  z : ∀ {Δ T} -> tvar (Δ , T) T
  s : ∀ {Δ T S} -> tvar Δ T -> tvar (Δ , S) T
 
-record unit : Set where
+record unit {l}: Set l where
 
 
 lctx = ctx Level
@@ -44,7 +52,7 @@ lctx = ctx Level
 data tp (Δ : lctx) : (l : Level) -> Set where
  v : ∀ {l} -> tvar Δ l -> tp Δ l
  _⇒_ : ∀ {l m} (T : tp Δ l) -> (S : tp Δ m) -> tp Δ (max l m)
- Π : ∀ {l m} (T : tp (Δ , l) m) -> tp Δ (suc (max m l))
+ Π : ∀ {l m} (T : tp (Δ , l) m) -> tp Δ (max m (suc l))
 
 data tctx (Δ : lctx) : Set where
  ⊡ : tctx Δ
@@ -64,7 +72,7 @@ tvsubst Δ1 Δ2 = ∀ {l : Level} -> (T : tvar Δ1 l) -> tvar Δ2 l
 tsubst : ∀ Δ1 Δ2 -> Set
 tsubst Δ1 Δ2 = ∀ {l} -> (T : tvar Δ1 l) -> tp Δ2 l
 
-_∘_ : ∀ {l} {A B C : Set l} (g : B -> C) (f : A -> B) -> A -> C
+_∘_ : ∀ {l m n} {A : Set l} {B : Set m} {C : Set n} (g : B -> C) (f : A -> B) -> A -> C
 (g ∘ f) x = g (f x)
 
 _,,_ : ∀ {Δ1 Δ2 l} -> tvsubst Δ1 Δ2 -> tvar Δ2 l -> tvsubst (Δ1 , l) Δ2
@@ -135,39 +143,79 @@ max≤right zero m = refl
 max≤right (suc y) zero = zero≤all (suc y)
 max≤right (suc y) (suc y') = s≤ (max≤right y y')
 
-_⇔_ : ∀ {l} -> (A B : Set l) -> Set (suc l)
-_⇔_ {l} A B = A -> B -> Set l
+tuple : nat -> (l : Level) -> Set (suc l)
+tuple n l = Fin n -> Set l
 
-data Rel (l : Level) : Set (suc l) where
- rel : ∀ {A B : Set l} -> A ⇔ B -> Rel l
+∧_ : ∀ {n l} (A : Fin n -> Set l) -> Set l
+∧ A = ∀ i -> A i
 
-_⇒·_ : ∀ {l m} {A A' : Set l} {B B' : Set m} -> A ⇔ A' -> B ⇔ B' -> (A → B) ⇔ (A' → B')
-(A ⇒· B) f f' = ∀ a a' → A a a' → B (f a) (f' a')
+⇔_ : ∀ {l n} (A : Fin n -> Set l) -> Set (suc l)
+⇔_ {l} A = ∧ A -> Set l
 
-Π·_ : ∀ {l m} {F F' : Set l -> Set m}
- -> (FF : ∀ {A A' : Set l} -> A ⇔ A' -> F A ⇔ F' A')
- -> (∀ A -> F A) ⇔ (∀ A' -> F' A')
-(Π· FF) g g' = ∀ {A A'} (AA : A ⇔ A') → FF AA (g A) (g' A')
+data Rel (l : Level) (n : nat) : Set (suc l) where
+ rel : ∀ {A : Fin n -> Set l} -> ⇔ A -> Rel l n
 
-〚_〛 : (Δ : lctx) -> Set (suc (nmax Δ))
-〚 ⊡ 〛 = Lifted unit
-〚 Δ , l 〛 =   importSet (s≤ (max≤right l (nmax Δ))) 〚 Δ 〛
-           * importSet (s≤ (max≤left  l (nmax Δ))) (Rel l)
+S : ∀ {l m n} {A : Set l} {B : A -> Set m} {C : (x : A) -> B x -> Set n}
+ (f : (x : A) -> (y : B x) -> C x y) (g : (x : A) -> B x) -> ((x : A) -> C x (g x))
+S f g i = f i (g i)
+
+-- interesting how the S combinator shows up naturally here
+_⇒·_ : ∀ {n l m} {A : tuple n l} {B : tuple n m} -> ⇔ A -> ⇔ B -> ⇔ (λ i -> A i → B i)
+(A ⇒· B) f = ∀ a → A a → B (S f a)
+
+Π·_ : ∀ {n l m} {F : Fin n -> Set l -> Set m}
+ -> (FF : ∀ {A : tuple n l} -> ⇔ A -> ⇔ (S F A))
+ -> ⇔ (λ i -> ∀ A -> F i A)
+(Π· FF) g = ∀ {A} (AA : ⇔ A) → FF AA (S g A)
+
+〚_〛 : (Δ : lctx) -> nat -> Set (suc (nmax Δ))
+〚 ⊡ 〛 n = unit
+〚 Δ , l 〛 n = importSet (s≤ (max≤right l (nmax Δ))) (〚 Δ 〛 n)
+           * importSet (s≤ (max≤left  l (nmax Δ))) (Rel l n)
+
+〚_〛₁ : (Δ : lctx) -> nat -> Set (suc (nmax Δ))
+〚 ⊡ 〛₁ n = unit
+〚 Δ , l 〛₁ n = importSet (s≤ (max≤right l (nmax Δ))) (〚 Δ 〛₁ n)
+            * importSet (s≤ (max≤left  l (nmax Δ))) (Set l)
+
 
 importContent : ∀ {l m} (p : l ≤ m) {A : Set l} (x : A) -> importSet p A
 importContent refl x = x
 importContent (s y) x = lift (importContent y x) 
 
-blahl : ∀ l (Δ : lctx) (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Set l
-blahl l Δ Δ' (v y) = {!!}
-blahl .(max l m) Δ Δ' (_⇒_ {l} {m} T S) = blahl l Δ Δ' T → blahl m Δ Δ' S
-blahl .(suc (max m l)) Δ Δ' (Π {l} {m} T) = (A : Set l)
-  → blahl {!!} (Δ , l) (importContent (s≤ (max≤right l (nmax Δ))) Δ' , importContent (s≤ (max≤left l (nmax Δ))) (rel {!!})) {!!}
+data view {l m} (p : l ≤ m) {A : Set l} : importSet p A -> Set l where 
+ viewc : (x : A) -> view p (importContent p x)
 
-conv : ∀ l (Δ : lctx) (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Rel l
-conv l Δ Δ' (v y) = {!!}
-conv .(max l m) Δ Δ' (_⇒_ {l} {m} T S) = {!!}
-conv .(suc (max m l)) Δ Δ' (Π {l} {m} T) = rel (Π· (λ A → {!!}))
+viewable : ∀ {l m} (p : l ≤ m) {A : Set l} (x : importSet p A) -> view p x
+viewable refl x = viewc x
+viewable (s p) (lift x) with viewable p x
+viewable (s p) (lift .(importContent p x)) | viewc x = viewc x 
+
+s≤l : ∀ l m -> suc l ≤ suc (max l (nmax m))
+s≤l l m = s≤ (max≤left l (nmax m)) 
+s≤r : ∀ l m -> suc (nmax m) ≤ suc (max l (nmax m))
+s≤r l m = s≤ (max≤right l (nmax m))
+
+proj : ∀ {Δ : lctx} {n} -> (Δ' : 〚 Δ 〛 n) -> (i : Fin n) -> 〚 Δ 〛₁ n
+proj {⊡} Δ' i = _
+proj {Δ , l} (Δ' , α) i with viewable (s≤r l Δ) Δ' | viewable (s≤l l Δ) α
+proj {Δ , l} (.(importContent (s≤r l Δ) Δ') , .(importContent (s≤l l Δ) (rel AA))) i | viewc Δ' | viewc (rel {A} AA) = (importContent (s≤r l Δ) (proj Δ' i)) , (importContent (s≤l l Δ) (A i))
+
+vari : ∀ l {n} (Δ : lctx) (Δ' : 〚 Δ 〛₁ n) (α : tvar Δ l) -> Set l
+vari l .(Δ , l) (Δ' , α) (z {Δ}) with viewable (s≤l l Δ) α
+vari l .(Δ , _) (Δ' , .(importContent (s≤l l Δ) α)) (z {Δ}) | viewc α = α
+vari l .(Δ , m) (Δ' , α) (s {Δ} {.l} {m} y) with viewable (s≤r m Δ) Δ'
+vari l .(Δ , m) (.(importContent (s≤r m Δ) Δ') , α) (s {Δ} {.l} {m} y) | viewc Δ' = vari l Δ Δ' y
+
+--blahl : ∀ l (Δ : lctx) (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Set l
+--blahl l Δ Δ' (v y) = varl l Δ Δ' y
+--blahl .(max l m) Δ Δ' (_⇒_ {l} {m} T S) = blahl l Δ Δ' T → blahl m Δ Δ' S
+--blahl .(max m (suc l)) Δ Δ' (Π {l} {m} T) = (A : Set l) -> blahl m (Δ , l) (importContent (s≤r l Δ) Δ' , importContent (s≤-- (max≤left l (nmax Δ))) (rel (λ B → λ B' → A))) T
+
+--conv : ∀ {l} {Δ : lctx} (Δ' : 〚 Δ 〛) (T : tp Δ l) -> (blahl l Δ Δ' T -> blahr l Δ Δ' T -> Set l)
+--conv Δ' (v y) = {!!}
+--conv Δ' (T ⇒ S) = (conv Δ' T) ⇒· (conv Δ' S)
+--conv {.(max m (suc l))} {Δ} Δ' (Π {l} {m} T) = Π·_ {l} {m} {F = ?} (λ AA → conv ((importContent (s≤r l Δ) Δ') , importContent (s≤l l Δ) (rel AA)) T)
 
 
 
