@@ -22,6 +22,12 @@ record Σ_ {A : Set}(B : A -> Set) : Set where
     fst : A
     snd : B fst
 
+record _*_ {l} (A : Set l) (B : Set l) : Set l where
+  constructor _,_ 
+  field
+    fst : A
+    snd : B
+
 data ctx (A : Set) : Set where
  ⊡ : ctx A
  _,_ : (Γ : ctx A) -> (x : A) -> ctx A
@@ -31,6 +37,7 @@ data tvar {A : Set} : ∀ (Δ : ctx A) (x : A) -> Set where
  s : ∀ {Δ T S} -> tvar Δ T -> tvar (Δ , S) T
 
 record unit : Set where
+
 
 lctx = ctx Level
 
@@ -92,5 +99,49 @@ data tm (Δ : lctx) (Γ : tctx Δ) : ∀ {l} -> tp Δ l -> Set where
  ƛ : ∀ {l} {T S : tp Δ l} -> tm Δ (Γ , T) S -> tm Δ Γ (T ⇒ S)
  Λ : ∀ {l m} {T : tp (Δ , l) m} -> tm (Δ , l) (tctxM [ s ] Γ) T -> tm Δ Γ (Π T)
  _·_ : ∀ {l m} {T : tp Δ l} {S : tp Δ m} -> tm Δ Γ (T ⇒ S) -> tm Δ Γ T -> tm Δ Γ S
- _$_ : ∀ {l m} {T : tp (Δ , l) m} -> tm Δ Γ (Π T) -> (S : tp Δ l) -> tm Δ Γ ([[ (v ∘ …) ,,, S ]] T)
+ _$_ : ∀ {l m} {T : tp (Δ , l) m} -> tm Δ Γ (Π T) -> (S : tp Δ l)
+         -> tm Δ Γ ([[ (v ∘ …) ,,, S ]] T)
+
+nmax : (Δ : lctx) -> Level
+nmax ⊡ = zero
+nmax (Γ , l) = max l (nmax Γ)
+
+data Lifted {a} (A : Set a) : Set (suc a) where
+       lift : A → Lifted A
+
+data _≤_ : Level -> Level -> Set where
+ refl : ∀ {l} -> l ≤ l
+ s : ∀ {l m} -> l ≤ m -> l ≤ (suc m)
+
+importSet : ∀ {l m} -> l ≤ m -> Set l -> Set m
+importSet refl S = S
+importSet (s y) S = Lifted (importSet y S)
+
+zero≤all : ∀ l -> zero ≤ l
+zero≤all zero = refl
+zero≤all (suc y) = s (zero≤all y)
+
+s≤ : ∀ {l m} -> l ≤ m -> suc l ≤ suc m
+s≤ refl = refl
+s≤ (s y) = s (s≤ y)
+
+max≤left : ∀ l m -> l ≤ (max l m)
+max≤left zero m = zero≤all m
+max≤left (suc y) zero = refl
+max≤left (suc y) (suc y') = s≤ (max≤left y y')
+
+max≤right : ∀ l m -> m ≤ (max l m)
+max≤right zero m = refl
+max≤right (suc y) zero = zero≤all (suc y)
+max≤right (suc y) (suc y') = s≤ (max≤right y y')
+
+〚_〛 : (Δ : lctx) -> Set (suc (nmax Δ))
+〚 ⊡ 〛 = Lifted unit
+〚 Δ , l 〛 =   importSet (s≤ (max≤right l (nmax Δ))) 〚 Δ 〛
+           * importSet (s≤ (max≤left  l (nmax Δ))) (Set l)
+
+
+
+
+
 
