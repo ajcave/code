@@ -201,16 +201,23 @@ proj {⊡} Δ' i = _
 proj {Δ , l} (Δ' , α) i with viewable (s≤r l Δ) Δ' | viewable (s≤l l Δ) α
 proj {Δ , l} (.(importContent (s≤r l Δ) Δ') , .(importContent (s≤l l Δ) (rel AA))) i | viewc Δ' | viewc (rel {A} AA) = (importContent (s≤r l Δ) (proj Δ' i)) , (importContent (s≤l l Δ) (A i))
 
-vari : ∀ l {n} (Δ : lctx) (Δ' : 〚 Δ 〛₁ n) (α : tvar Δ l) -> Set l
-vari l .(Δ , l) (Δ' , α) (z {Δ}) with viewable (s≤l l Δ) α
-vari l .(Δ , _) (Δ' , .(importContent (s≤l l Δ) α)) (z {Δ}) | viewc α = α
-vari l .(Δ , m) (Δ' , α) (s {Δ} {.l} {m} y) with viewable (s≤r m Δ) Δ'
-vari l .(Δ , m) (.(importContent (s≤r m Δ) Δ') , α) (s {Δ} {.l} {m} y) | viewc Δ' = vari l Δ Δ' y
+vari : ∀ {l} {n} {Δ : lctx} (Δ' : 〚 Δ 〛₁ n) (α : tvar Δ l) -> Set l
+vari {l} (Δ' , α) (z {Δ}) with viewable (s≤l l Δ) α
+vari {l} (Δ' , .(importContent (s≤l l Δ) α)) (z {Δ}) | viewc α = α
+vari {l} (Δ' , α) (s {Δ} {.l} {m} y) with viewable (s≤r m Δ) Δ'
+vari {l} (.(importContent (s≤r m Δ) Δ') , α) (s {Δ} {.l} {m} y) | viewc Δ' = vari Δ' y
 
---blahl : ∀ l (Δ : lctx) (Δ' : 〚 Δ 〛) (T : tp Δ l) -> Set l
---blahl l Δ Δ' (v y) = varl l Δ Δ' y
---blahl .(max l m) Δ Δ' (_⇒_ {l} {m} T S) = blahl l Δ Δ' T → blahl m Δ Δ' S
---blahl .(max m (suc l)) Δ Δ' (Π {l} {m} T) = (A : Set l) -> blahl m (Δ , l) (importContent (s≤r l Δ) Δ' , importContent (s≤-- (max≤left l (nmax Δ))) (rel (λ B → λ B' → A))) T
+tpi : ∀ {l} {n} {Δ : lctx} (Δ' : 〚 Δ 〛₁ n) (T : tp Δ l) -> Set l
+tpi Δ' (v y) = vari Δ' y
+tpi Δ' (_⇒_ {l} {m} T S) = tpi Δ' T → tpi Δ' S
+tpi {Δ = Δ} Δ' (Π {l} {m} T) = (A : Set l) → tpi ((importContent (s≤r l Δ) Δ') , (importContent (s≤l l Δ) A)) T
+
+conv : ∀ {l n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (T : tp Δ l) -> ((∀ i -> tpi (proj Δ' i) T) -> Set l)
+conv Δ' (v y) = {!!}
+conv Δ' (T ⇒ S) = (conv Δ' T) ⇒· (conv Δ' S)
+conv {Δ = Δ} Δ' (Π {l} {m} T) = Π· (λ AA → conv (importContent (s≤r l Δ) Δ' , importContent (s≤l l Δ) (rel AA) ) T )
+
+-- (importContent (s≤r l Δ) Δ' , ? ) T)
 
 --conv : ∀ {l} {Δ : lctx} (Δ' : 〚 Δ 〛) (T : tp Δ l) -> (blahl l Δ Δ' T -> blahr l Δ Δ' T -> Set l)
 --conv Δ' (v y) = {!!}
