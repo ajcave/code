@@ -87,6 +87,18 @@ intros. eapply functional_extensionality.
 eapply compose_cons'.
 Qed.
 
+Lemma compose_prod : 
+  forall δ α β (θ:msubst α β) {T} `{H:substitutable T}
+  (Γ1:name δ -> T α) n (Γ2:vec (T α) n),
+  〚θ〛 ○ (Γ1 * Γ2) = (〚θ〛 ○ Γ1) * (smap 〚θ〛 Γ2).
+intros.
+induction Γ2; simpl.
+reflexivity.
+erewrite compose_cons.
+rewrite IHΓ2.
+reflexivity.
+Qed.
+
 Lemma compose_mvar {α β} (θ:msubst α β) : 〚θ〛○(@m_var _) = θ.
 apply functional_extensionality.
 apply app_msubst_mvar.

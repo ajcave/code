@@ -28,6 +28,9 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Pr
              I [θ ;; ρ] ⇓ (vmlam X E θ' ρ')
           -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇑
           -> (mapp I C) [θ ;; ρ] ⇑
+ | div_caseI : forall (I:synth_exp δ γ) Bs,
+            I [θ ;; ρ] ⇑
+         -> (case_i I Bs) [θ ;; ρ] ⇑
 (* | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
   (θk:msubst δ δi) Bs Ck Ek V,
             (θ /≐ θk)
@@ -74,7 +77,4 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Pr
  | div_fold : forall E,
             E[θ;;ρ] ⇑
          -> (fold E)[θ;;ρ] ⇑
- | ev_unfold : forall I,
-            (synth I)[θ;;ρ] ⇑
-         -> (unfold I)[θ;;ρ] ⇑ 
 where "E [ θ ;; ρ ] ⇑" := (@div _ _ θ ρ E).

@@ -41,3 +41,29 @@ Qed.
 Lemma eta {A B:Set} (f:A -> B) : (fun x => f x) = f.
 apply functional_extensionality. reflexivity.
 Qed.
+
+
+Set Implicit Arguments.
+Inductive vec (T:Set) : nat -> Set :=
+| snil : vec T 0
+| scons : forall n, vec T n -> T -> vec T (S n).
+
+Fixpoint smap {A B:Set} {n} (f:A -> B) (xs:vec A n) : vec B n :=
+match xs with
+| snil => snil _
+| scons _ xs t => scons (smap f xs) (f t)
+end.
+
+Fixpoint wplus α (n:nat) : world :=
+match n with
+| 0 => α
+| S m => succ_world (α + m)
+end
+where "α + xs" := (wplus α xs).
+
+Fixpoint ctx_times {α n} {T:Set} (Γ:name α -> T) (Δ:vec T n) : name (α + n) -> T :=
+match Δ in vec _ n return name (α + n) -> T with
+| snil => Γ
+| scons _ Δ' t => (Γ * Δ'),,(succ_link _,t)
+end
+where "Γ * Δ" := (ctx_times Γ Δ).

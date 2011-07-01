@@ -24,22 +24,21 @@ try (econstructor; by eauto);
 try (edestruct H0; by eauto).
 
 (* synth *)
-nice_inversion H.
+nice_inversion H. nice_inversion H1.
 
 (* var *)
 pose proof (env_tp_app x H8).
 remember (ρ x).
 destruct e.
 edestruct H0. eauto.
-invert_typing.
-econstructor; eauto.
-eapply progress; by eauto.
+nice_inversion H3. nice_inversion H15. nice_inversion H13.
+econstructor; by eauto.
 
 (* app *)
 doesItConverge I0 θ ρ.
 doesItConverge E θ ρ.
 
-assert (V ∈ (〚θ〛(arr T1 T0))) by eauto using @subj_red.
+assert (V ∈ (〚θ〛(arr T1 (add_eq Cs T0)))) by eauto using @subj_red.
 assert (V0 ∈ (〚θ〛T1)) by eauto using @subj_red.
 nice_inversion_clear H5; invert_typing; try discriminate.
 nice_inversion H17.
@@ -87,6 +86,11 @@ by eauto.
 doesItConverge E1 θ ρ.
 eapply div_pair2; by eauto.
 eapply div_pair1; by eauto.
+
+(* case *)
+doesItConverge I θ ρ.
+clear progress. admit. (* TODO: Coverage *)
+eapply div_caseI. eapply progress; eauto.
 Qed.
 
 Lemma dot_subst_typing : · ⊩ · ∷ ·.
