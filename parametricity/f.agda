@@ -223,8 +223,9 @@ tpi Δ' (_⇒_ {l} {m} T S) = tpi Δ' T → tpi Δ' S
 tpi {Δ = Δ} Δ' (Π {l} {m} T) = (A : Set l) → tpi ((importContent (s≤r l Δ) Δ') , (importContent (s≤l l Δ) A)) T
 
 vconv : ∀ {l n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (y : tvar Δ l) -> ((∀ i -> vari (proj Δ' i) y) -> Set l)
-vconv Δ' z = {!!}
-vconv Δ' (s y) = {!!}
+vconv {l} (Δ' , α) (z {Δ}) with viewable (s≤l l Δ) α | viewable (s≤r l Δ) Δ'
+vconv {l} (.(importContent (s≤r l Δ) Δ') , .(importContent (s≤l l Δ) α)) (z {Δ}) | viewc α | viewc Δ' rewrite grar (s≤r l Δ) Δ' | grar (s≤l l Δ) α = {!!}
+vconv (Δ' , α) (s y) = {!!}
 
 conv : ∀ {l n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (T : tp Δ l) -> ((∀ i -> tpi (proj Δ' i) T) -> Set l)
 conv Δ' (v y) = vconv Δ' y
@@ -234,6 +235,8 @@ conv {Δ = Δ} Δ' (Π {l} {m} T) =  Π· foo
                → tpi (importContent (s≤r l Δ) (proj Δ' i) , importContent (s≤l l Δ) (A i)) T) → Set m
        foo AA with conv (importContent (s≤r l Δ) Δ' , importContent (s≤l l Δ) (rel AA) ) T
        ... | w rewrite grar (s≤r l Δ) Δ' | grar (s≤l l Δ) (rel AA) = w
+
+
 
 
 
