@@ -24,6 +24,12 @@ max (suc n) (suc m) = suc (max n m)
  
 {-# BUILTIN LEVELMAX max #-}
 
+data _≡_ {l} {A : Set l} (x : A) : A -> Set where
+ refl : x ≡ x
+
+{-# BUILTIN EQUALITY _≡_ #-}
+{-# BUILTIN REFL refl #-}
+
 record Σ_ {l} {A : Set l}(B : A -> Set l) : Set l where
   constructor _,_ 
   field
@@ -191,6 +197,10 @@ viewable refl x = viewc x
 viewable (s p) (lift x) with viewable p x
 viewable (s p) (lift .(importContent p x)) | viewc x = viewc x 
 
+grar : ∀ {l m} (p : l ≤ m) {A : Set l} (x : A) -> viewable p (importContent p x) ≡ viewc x
+grar refl x = refl
+grar (s y) x rewrite grar y x = refl
+
 s≤l : ∀ l m -> suc l ≤ suc (max l (nmax m))
 s≤l l m = s≤ (max≤left l (nmax m)) 
 s≤r : ∀ l m -> suc (nmax m) ≤ suc (max l (nmax m))
@@ -212,17 +222,18 @@ tpi Δ' (v y) = vari Δ' y
 tpi Δ' (_⇒_ {l} {m} T S) = tpi Δ' T → tpi Δ' S
 tpi {Δ = Δ} Δ' (Π {l} {m} T) = (A : Set l) → tpi ((importContent (s≤r l Δ) Δ') , (importContent (s≤l l Δ) A)) T
 
+vconv : ∀ {l n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (y : tvar Δ l) -> ((∀ i -> vari (proj Δ' i) y) -> Set l)
+vconv Δ' z = {!!}
+vconv Δ' (s y) = {!!}
+
 conv : ∀ {l n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (T : tp Δ l) -> ((∀ i -> tpi (proj Δ' i) T) -> Set l)
-conv Δ' (v y) = {!!}
+conv Δ' (v y) = vconv Δ' y
 conv Δ' (T ⇒ S) = (conv Δ' T) ⇒· (conv Δ' S)
-conv {Δ = Δ} Δ' (Π {l} {m} T) = Π· (λ AA → conv (importContent (s≤r l Δ) Δ' , importContent (s≤l l Δ) (rel AA) ) T )
-
--- (importContent (s≤r l Δ) Δ' , ? ) T)
-
---conv : ∀ {l} {Δ : lctx} (Δ' : 〚 Δ 〛) (T : tp Δ l) -> (blahl l Δ Δ' T -> blahr l Δ Δ' T -> Set l)
---conv Δ' (v y) = {!!}
---conv Δ' (T ⇒ S) = (conv Δ' T) ⇒· (conv Δ' S)
---conv {.(max m (suc l))} {Δ} Δ' (Π {l} {m} T) = Π·_ {l} {m} {F = ?} (λ AA → conv ((importContent (s≤r l Δ) Δ') , importContent (s≤l l Δ) (rel AA)) T)
+conv {Δ = Δ} Δ' (Π {l} {m} T) =  Π· foo
+ where foo : ∀ {A : tuple _ l} -> (AA : ⇔ A) -> ((i : Fin _)
+               → tpi (importContent (s≤r l Δ) (proj Δ' i) , importContent (s≤l l Δ) (A i)) T) → Set m
+       foo AA with conv (importContent (s≤r l Δ) Δ' , importContent (s≤l l Δ) (rel AA) ) T
+       ... | w rewrite grar (s≤r l Δ) Δ' | grar (s≤l l Δ) (rel AA) = w
 
 
 
