@@ -150,10 +150,12 @@ vconv : ∀ {n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (y : tvar Δ _) -> ((∀ i -> v
 vconv {Δ = ⊡} _ ()
 vconv {Δ = Δ , t} (Δ' , α) z with α
 vconv {Δ = Δ , t} (Δ' , α) z | rel y = y
-vconv {Δ = Δ , t} (Δ' , α) (s y) = ? -- vconv Δ' y
+vconv {n} {Δ , t} (Δ' , rel y) (s y') = vconv Δ' y'
 
 conv : ∀ {n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (T : tp Δ) -> ((∀ i -> tpi (proj Δ' i) T) -> Set)
 conv Δ' (v y) = vconv Δ' y
 conv Δ' (T ⇒ S) = (conv Δ' T) ⇒· (conv Δ' S)
 conv {Δ = Δ} Δ' (Π T) =  Π· (λ AA -> conv (Δ' , rel AA) T )
+
+
 
