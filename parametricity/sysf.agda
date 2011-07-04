@@ -177,8 +177,8 @@ tmi Δ' Γ' (v y) = vtmi Δ' Γ' y
 tmi Δ' Γ' (ƛ M) = λ x → tmi Δ' (Γ' , x) M
 tmi Δ' Γ' (Λ M) = λ A → tmi (Δ' , A) {!!} M
 tmi Δ' Γ' (M · N) = tmi Δ' Γ' M (tmi Δ' Γ' N)
-tmi Δ' Γ' (M $ S) with tmi Δ' Γ' M
-... | w = {!!}
+tmi Δ' Γ' (M $ U) with tmi Δ' Γ' M | tpi Δ' U
+... | w | q = {!!}
 
 tvconv : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛 n) (Γ' : 〚 Γ 〛₂ n Δ') {T : tp Δ} (y : var Γ T) -> (conv Δ' T (λ i -> vtmi (proj Δ' i) (tproj Δ' Γ' i) y))
 tvconv Δ' (Γ' , (T' , Tr)) z = Tr
@@ -188,8 +188,9 @@ tconv : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛 n) (Γ' : 〚 Γ 〛₂ n Δ') {T : 
 tconv Δ' Γ' (v y) = tvconv Δ' Γ' y
 tconv Δ' Γ' (ƛ M) = λ x → λ xr → tconv Δ' (Γ' , (x , xr)) M
 tconv Δ' Γ' (Λ M) = λ AA → tconv (Δ' , AA) {!!} {!!}
-tconv Δ' Γ' (M · N) = tconv Δ' Γ' M {!!} {!!} --(tconv Δ' Γ' N)
-tconv Δ' Γ' (M $ S) = {!!}
+tconv Δ' Γ' (M · N) = tconv Δ' Γ' M _ (tconv Δ' Γ' N)
+tconv Δ' Γ' (M $ U) with tconv Δ' Γ' M | conv Δ' U
+... | w | q = {!!}
 
 
 
