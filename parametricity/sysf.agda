@@ -146,11 +146,10 @@ tpi Δ' (v y) = vari Δ' y
 tpi Δ' (T ⇒ S) = tpi Δ' T → tpi Δ' S
 tpi Δ' (Π T) = (A : Set) → tpi ( Δ' , A) T
 
-vconv : ∀ {n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (y : tvar Δ _) -> ((∀ i -> vari (proj Δ' i) y) -> Set)
-vconv {Δ = ⊡} _ ()
-vconv {Δ = Δ , t} (Δ' , α) z with α
-vconv {Δ = Δ , t} (Δ' , α) z | rel y = y
-vconv {n} {Δ , t} (Δ' , rel y) (s y') = vconv Δ' y'
+vconv : ∀ {Δ : lctx} {n} (Δ' : 〚 Δ 〛 n) (y : tvar Δ _) -> ((∀ i -> vari (proj Δ' i) y) -> Set)
+vconv {⊡} _ ()
+vconv {Δ , t} (Δ' , rel α) z = α
+vconv {Δ , t} (Δ' , rel α) (s β) = vconv Δ' β
 
 conv : ∀ {n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (T : tp Δ) -> ((∀ i -> tpi (proj Δ' i) T) -> Set)
 conv Δ' (v y) = vconv Δ' y
