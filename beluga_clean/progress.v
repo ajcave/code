@@ -39,7 +39,8 @@ doesItConverge I0 θ ρ.
 doesItConverge E θ ρ.
 
 assert (V ∈ (〚θ〛(arr T1 (add_eq Cs T0)))) by eauto using @subj_red.
-assert (V0 ∈ (〚θ〛T1)) by eauto using @subj_red.
+nice_inversion H3.
+assert (V0 ∈ (〚θ〛T)) by eauto using @subj_red.
 nice_inversion_clear H5; invert_typing; try discriminate.
 nice_inversion H17.
 eapply div_app3; eauto.
