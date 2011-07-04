@@ -41,16 +41,16 @@ doesItConverge E θ ρ.
 assert (V ∈ (〚θ〛(arr T1 (add_eq Cs T0)))) by eauto using @subj_red.
 nice_inversion H3.
 assert (V0 ∈ (〚θ〛T)) by eauto using @subj_red.
-nice_inversion_clear H5; invert_typing; try discriminate.
+nice_inversion_clear H9; nice_inversion H12; nice_inversion H18; try discriminate. nice_inversion H16.
 nice_inversion H17.
 eapply div_app3; eauto.
 eapply progress; eauto.
 econstructor; eauto.
 erewrite compose_cons.
 eapply env_tp_cons; eauto.
-rewrite H5.
-econstructor.
-firstorder.
+rewrite H14. erewrite simpl_subst_add_eq'.
+econstructor. eapply blah2.
+by assumption.
 eapply div_app2; by eauto 7.
 eapply div_app1. eapply progress; by eauto.
 
