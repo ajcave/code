@@ -138,7 +138,7 @@ proj {⊡} Δ' i = _
 proj {Δ , l} (Δ' , rel {A} α) i = proj Δ' i , A i
 
 vari : ∀ {n} {Δ : lctx} (Δ' : 〚 Δ 〛₁ n) (α : tvar Δ _) -> Set
-vari (Δ' , α) (z ) = α
+vari (Δ' , α) z = α
 vari (Δ' , α) (s y) = vari Δ' y
 
 tpi : ∀ {n} {Δ : lctx} (Δ' : 〚 Δ 〛₁ n) (T : tp Δ) -> Set
@@ -151,10 +151,47 @@ vconv {⊡} _ ()
 vconv {Δ , t} (Δ' , rel α) z = α
 vconv {Δ , t} (Δ' , rel α) (s β) = vconv Δ' β
 
-conv : ∀ {n} {Δ : lctx} (Δ' : 〚 Δ 〛 n) (T : tp Δ) -> ((∀ i -> tpi (proj Δ' i) T) -> Set)
+conv : ∀ {Δ : lctx} {n} (Δ' : 〚 Δ 〛 n) (T : tp Δ) -> ((∀ i -> tpi (proj Δ' i) T) -> Set)
 conv Δ' (v y) = vconv Δ' y
 conv Δ' (T ⇒ S) = (conv Δ' T) ⇒· (conv Δ' S)
-conv {Δ = Δ} Δ' (Π T) =  Π· (λ AA -> conv (Δ' , rel AA) T )
+conv Δ' (Π T) =  Π· (λ AA -> conv (Δ' , rel AA) T)
+
+〚_〛₂ : ∀ {Δ : lctx} (Γ : tctx Δ) -> (n : nat) -> (Δ' : 〚 Δ 〛 n) -> Set
+〚 ⊡ 〛₂ n Δ' = unit
+〚 Γ , T 〛₂ n Δ' = (〚 Γ 〛₂ n Δ') * (Σ_ {∀ i -> tpi (proj Δ' i) T} (conv Δ' T))
+
+〚_〛₂' : ∀ {Δ : lctx} (Γ : tctx Δ) -> (n : nat) -> (Δ' : 〚 Δ 〛₁ n) -> Set
+〚 ⊡ 〛₂' n Δ' = unit
+〚 Γ , T 〛₂' n Δ' = (〚 Γ 〛₂' n Δ') * (tpi Δ' T)
+
+tproj : ∀ {Δ : lctx} {Γ : tctx Δ} {n} -> (Δ' : 〚 Δ 〛 n) -> (Γ' : 〚 Γ 〛₂ n Δ') -> (i : Fin n) -> 〚 Γ 〛₂' n (proj Δ' i)
+tproj {Δ} {⊡} Δ' Γ' i = _
+tproj {Δ} {Γ , T} Δ' (Γ' , (T' , _)) i = (tproj Δ' Γ' i) , T' i
+
+vtmi : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛₁ n) (Γ' : 〚 Γ 〛₂' n Δ') {T : tp Δ} (y : var Γ T) -> tpi Δ' T
+vtmi Δ' (Γ' , T) z = T
+vtmi Δ' (Γ' , T) (s y) = vtmi Δ' Γ' y
+
+tmi : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛₁ n) (Γ' : 〚 Γ 〛₂' n Δ') {T : tp Δ} (t : tm Δ Γ T) -> tpi Δ' T
+tmi Δ' Γ' (v y) = vtmi Δ' Γ' y
+tmi Δ' Γ' (ƛ M) = λ x → tmi Δ' (Γ' , x) M
+tmi Δ' Γ' (Λ M) = λ A → tmi (Δ' , A) {!!} M
+tmi Δ' Γ' (M · N) = tmi Δ' Γ' M (tmi Δ' Γ' N)
+tmi Δ' Γ' (M $ S) with tmi Δ' Γ' M
+... | w = {!!}
+
+tvconv : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛 n) (Γ' : 〚 Γ 〛₂ n Δ') {T : tp Δ} (y : var Γ T) -> (conv Δ' T (λ i -> vtmi (proj Δ' i) (tproj Δ' Γ' i) y))
+tvconv Δ' (Γ' , (T' , Tr)) z = Tr
+tvconv Δ' (Γ' , T) (s y0) = tvconv Δ' Γ' y0
+
+tconv : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛 n) (Γ' : 〚 Γ 〛₂ n Δ') {T : tp Δ} (t : tm Δ Γ T) -> (conv Δ' T (λ i -> tmi (proj Δ' i) (tproj Δ' Γ' i) t))
+tconv Δ' Γ' (v y) = tvconv Δ' Γ' y
+tconv Δ' Γ' (ƛ M) = λ x → λ xr → tconv Δ' (Γ' , (x , xr)) M
+tconv Δ' Γ' (Λ M) = λ AA → tconv (Δ' , AA) {!!} {!!}
+tconv Δ' Γ' (M · N) = tconv Δ' Γ' M {!!} {!!} --(tconv Δ' Γ' N)
+tconv Δ' Γ' (M $ S) = {!!}
+
+
 
 
 
