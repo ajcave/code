@@ -36,6 +36,7 @@ data tvar {A : Set} : ∀ (Δ : ctx A) (x : A) -> Set where
  s : ∀ {Δ T S} -> tvar Δ T -> tvar (Δ , S) T
 
 record unit : Set where
+ constructor tt
 
 lctx = ctx unit
 
@@ -172,10 +173,30 @@ vtmi : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛₁ n) (Γ' : 〚 Γ 〛₂' n Δ') {T
 vtmi Δ' (Γ' , T) z = T
 vtmi Δ' (Γ' , T) (s y) = vtmi Δ' Γ' y
 
+lem1 : ∀ {Δ} {n} (Δ' : 〚 Δ 〛₁ n) (A : _) (T : _) -> tpi (Δ' , A) ([ s ] T) ≡ tpi Δ' T
+lem1 Δ' A (v y) = refl
+lem1 Δ' A (T ⇒ S) rewrite lem1 Δ' A T | lem1 Δ' A S = refl
+lem1 Δ' A (Π T) = {!!}
+
+--lem1' : ∀ {Δ} {n} (Δ' : 〚 Δ 〛 n) (A : _) (T : _) -> tpi (Δ' , A) ([ s ] T) ≡ tpi Δ' T
+--lem1' Δ' A (v y) = refl
+--lem1' Δ' A (T ⇒ S) rewrite lem1' Δ' A T | lem1' Δ' A S = refl
+--lem1' Δ' A (Π T) = {!!}
+
+lem : ∀ {Δ} Γ {n} (Δ' : 〚 Δ 〛₁ n) (A : _) ->  〚 tctxM [ s ] Γ 〛₂' n (Δ' , A) ≡ 〚 Γ 〛₂' n Δ'
+lem ⊡ Δ' A = refl
+lem (Γ , T) Δ' A rewrite lem Γ Δ' A | lem1 Δ' A T = refl
+
+lem2 : ∀ {Δ} Γ {n} (Δ' : 〚 Δ 〛 n) (AA : _) ->  〚 tctxM [ s ] Γ 〛₂ n (Δ' , AA) ≡ 〚 Γ 〛₂ n Δ'
+lem2 ⊡ Δ' A = refl
+lem2 (Γ , T) Δ' A  rewrite lem2 Γ Δ' A = {!!}
+
 tmi : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛₁ n) (Γ' : 〚 Γ 〛₂' n Δ') {T : tp Δ} (t : tm Δ Γ T) -> tpi Δ' T
 tmi Δ' Γ' (v y) = vtmi Δ' Γ' y
 tmi Δ' Γ' (ƛ M) = λ x → tmi Δ' (Γ' , x) M
-tmi Δ' Γ' (Λ M) = λ A → tmi (Δ' , A) {!!} M
+tmi {Γ = Γ} Δ' Γ' (Λ M) = λ A → tmi (Δ' , A) (rw A) M
+  where rw : (A : Set) -> 〚 tctxM [ s ] Γ 〛₂' _ (Δ' , A)
+        rw A rewrite lem Γ Δ' A = Γ'
 tmi Δ' Γ' (M · N) = tmi Δ' Γ' M (tmi Δ' Γ' N)
 tmi Δ' Γ' (M $ U) with tmi Δ' Γ' M | tpi Δ' U
 ... | w | q = {!!}
@@ -186,8 +207,10 @@ tvconv Δ' (Γ' , T) (s y0) = tvconv Δ' Γ' y0
 
 tconv : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛 n) (Γ' : 〚 Γ 〛₂ n Δ') {T : tp Δ} (t : tm Δ Γ T) -> (conv Δ' T (λ i -> tmi (proj Δ' i) (tproj Δ' Γ' i) t))
 tconv Δ' Γ' (v y) = tvconv Δ' Γ' y
-tconv Δ' Γ' (ƛ M) = λ x → λ xr → tconv Δ' (Γ' , (x , xr)) M
-tconv Δ' Γ' (Λ M) = λ AA → tconv (Δ' , AA) {!!} {!!}
+tconv Δ' Γ' (ƛ M) = λ x xr → tconv Δ' (Γ' , (x , xr)) M
+tconv {Δ} {Γ} {n} Δ' Γ' (Λ {S} M) = λ {A} AA → tconv {Δ , tt} {tctxM [ s ] Γ} {n} (Δ' , rel AA) (rw A AA) {S} {!!}
+  where rw : (A : Fin n -> Set) -> (AA : ((i : Fin n) -> A i) -> Set) -> 〚 tctxM [ s ] Γ 〛₂ n (Δ' , (rel AA))
+        rw A AA rewrite lem2 Γ Δ' (rel AA) = Γ'
 tconv Δ' Γ' (M · N) = tconv Δ' Γ' M _ (tconv Δ' Γ' N)
 tconv Δ' Γ' (M $ U) with tconv Δ' Γ' M | conv Δ' U
 ... | w | q = {!!}
