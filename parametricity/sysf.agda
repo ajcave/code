@@ -46,9 +46,9 @@ data tp (Δ : lctx) : Set where
 
 data tctx (Δ : lctx) : Set where
  ⊡ : tctx Δ
- _,_ : ∀ {l} -> (Γ : tctx Δ) -> (T : tp Δ) -> tctx Δ
+ _,_ : ∀ (Γ : tctx Δ) -> (T : tp Δ) -> tctx Δ
 
-data var {Δ : lctx} : ∀ (Γ : tctx Δ) {l} (T : tp Δ) -> Set where
+data var {Δ : lctx} : ∀ (Γ : tctx Δ) (T : tp Δ) -> Set where
  z : ∀ {Γ} {T : tp Δ} -> var (Γ , T) T
  s : ∀ {Γ} {T : tp Δ} {S : tp Δ} -> var Γ T -> var (Γ , S) T
 
