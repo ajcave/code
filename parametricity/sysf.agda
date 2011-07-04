@@ -126,6 +126,7 @@ _⇒·_ : ∀ {n} {A : tuple n} {B : tuple n} -> ⇔ A -> ⇔ B -> ⇔ (λ i -> 
  -> ⇔ (λ i -> ∀ A -> F i A)
 (Π· FF) g = ∀ {A} (AA : ⇔ A) → FF AA (S g A)
 
+-- TODO: Dammit! This is just (tvar Δ -> Set). Same below.
 〚_〛 : (Δ : lctx) -> nat -> Set
 〚 ⊡ 〛 n = unit
 〚 Δ , l 〛 n = (〚 Δ 〛 n) * (Rel n)
@@ -214,6 +215,11 @@ tconv {Δ} {Γ} {n} Δ' Γ' (Λ {S} M) = λ {A} AA → tconv {Δ , tt} {tctxM [ 
 tconv Δ' Γ' (M · N) = tconv Δ' Γ' M _ (tconv Δ' Γ' N)
 tconv Δ' Γ' (M $ U) with tconv Δ' Γ' M | conv Δ' U
 ... | w | q = {!!}
+
+idty : ∀ {Δ} -> tp Δ
+idty = Π ((v z) ⇒ (v z))
+
+
 
 
 
