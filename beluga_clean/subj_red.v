@@ -60,7 +60,7 @@ Lemma simpl_subst_add_eq' {δ δ'} (θ:msubst δ δ') Cs (T:tp' ∅ δ) :
 = add_eq (map 〚θ〛 Cs) (〚θ〛T).
 induction Cs; simpl in *; congruence.
 Qed.
-Hint Resolve blah blah2 blah3.
+(*Hint Resolve blah blah2 blah3.*)
 
 Theorem subj_red {δ γ} (L:checked_exp δ γ) θ ρ V :
 L[θ;;ρ] ⇓ V -> forall T, (clos_tp L θ ρ T) -> (V ∈ T).
@@ -71,7 +71,7 @@ assert (V ∈ 〚θ〛T).
 eapply IHeval. econstructor. eexact H2. eauto. eauto.
 assert (〚θ〛(add_eq Cs0 T) = 〚θ〛(add_eq Cs T1)) by congruence.
 repeat erewrite simpl_subst_add_eq' in H3.
-by eauto.
+eapply blah; by eauto.
 
 (* app *)
 assert (V2 ∈ 〚θ〛T) by eauto.
@@ -81,9 +81,9 @@ assert (V ∈ 〚θ'〛T1).
 eapply IHeval3. econstructor; eauto.
 erewrite compose_cons. eapply env_tp_cons. by eassumption.
 econstructor.
-rewrite H7. erewrite simpl_subst_add_eq'. by eauto.
+rewrite H7. erewrite simpl_subst_add_eq'. eapply blah2. by eauto.
 repeat erewrite simpl_subst_add_eq' in H8.
-by eauto.
+eapply blah; by eauto.
 
 (* mapp *)
 assert ((vmlam X E θ' ρ') ∈ 〚θ〛(pi X0 U T)) by eauto.
@@ -102,7 +102,7 @@ erewrite <- assoc in H7.
 erewrite H4 in H7.
 normalize_subst.
 erewrite simpl_subst_add_eq' in H7.
-by eauto.
+eapply blah3; by eauto.
 
 (* Var (extended value) *)
 unfold compose in *.
@@ -113,7 +113,7 @@ assert (V ∈ 〚θ'〛 (add_eq Cs0 T1)) by eauto.
 normalize_subst.
 repeat erewrite simpl_subst_add_eq' in H7, H2.
 erewrite simpl_subst_add_eq' in H7.
-by eauto.
+eapply blah. eapply blah3. eexact H2. by eauto.
 
 (* Var (value) *)
 unfold compose in *.
@@ -121,13 +121,13 @@ pose proof (env_tp_app' y H8 H).
 invert_typing.
 rewrite H2 in H3.
 normalize_subst. erewrite simpl_subst_add_eq' in H3.
-by eauto.
+eapply blah3; by eauto.
 
 (* Rec *)
 normalize_subst. erewrite simpl_subst_add_eq'. eapply blah2.
 eapply IHeval.
 econstructor; eauto.
-erewrite compose_cons. (* TODO: Part of normalizing *)
+erewrite compose_cons.
 eapply env_tp_cons;
 by eauto.
 
@@ -136,50 +136,59 @@ change (〚θ〛(sum (add_eq Cs T0) S)) with (sum (〚θ〛(add_eq Cs T0)) (〚�
 econstructor.
 erewrite simpl_subst_add_eq'. eapply blah2.
 by eauto.
-(*
+
 (* Inr *)
-change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)).
+change (〚θ〛(sum T (add_eq Cs T0))) with (sum (〚θ〛T) (〚θ〛(add_eq Cs T0))).
+econstructor.
+erewrite simpl_subst_add_eq'. eapply blah2.
 by eauto.
 
 (* Pair *)
-change (〚θ〛(prod T S)) with (prod (〚θ〛T) (〚θ〛S)).
-econstructor; by eauto.
+change (〚θ〛(prod (add_eq Cs0 T1) (add_eq Cs T0))) with (prod (〚θ〛(add_eq Cs0 T1)) (〚θ〛(add_eq Cs T0))).
+econstructor; erewrite simpl_subst_add_eq'; eapply blah2; by eauto.
 
 (* pack *)
 change (〚θ〛(sigma X U T)) with (sigma ₁ (〚θ〛U) (〚θ × (₁//X)〛T)).
-econstructor; eauto.
+econstructor. by eauto.
 erewrite single_subst_commute'.
+erewrite <- H0. erewrite simpl_subst_add_eq. eapply blah2.
 by eauto.
 
 (* fold *)
 change (〚θ〛(tapp (mu Z X U T) C)) with (tapp (mu (ψ:=empty) Z ₁ (〚θ〛 U) (〚θ ×  (₁ // X) 〛 T))
        (〚θ〛 C)).
 econstructor.
-apply IHeval.
-pose proof (clos_c H1 H7 H8).
 erewrite single_subst_commute'.
-erewrite tp_subst_commute in H0.
-exact H0.
-
-(* unfold *)
-assert ((vfold V) ∈ (〚θ〛 (tapp (mu Z X U T) C))) by eauto.
-invert_typing.
-erewrite tp_subst_commute.
-erewrite single_subst_commute' in H4.
-exact H4.
+change (mu Z ₁ (〚θ 〛 U) (〚θ ×  (₁ // X) 〛 T)) with (〚θ〛(mu (ψ:=empty) Z X U T)).
+erewrite <- tp_subst_commute.
+erewrite <- H0.
+erewrite simpl_subst_add_eq. eapply blah2.
+eapply IHeval.
+by eauto.
 
 (* meta *)
 simpl. econstructor.
 eapply subst_lemma; by eauto.
 
+(* fn *)
+econstructor. econstructor; by eauto.
+
+(* mlam *)
+econstructor. econstructor; by eauto.
+
+(* tt *)
+econstructor.
+
 (* case. happy case *)
 assert (psubst (· * ρ') (〚θ'〛 pa) ∈ (〚〚θ'〛 ○ θi〛U)) by eauto.
 assert (branch_tp Δ Γ (br _ Δi Γi pa θi Ei) U T0) by firstorder.
 invert_typing.
-eapply IHeval2.
+(* eapply IHeval2. *)
 erewrite <- assoc.
+erewrite <- H3. erewrite simpl_subst_add_eq. eapply blah2.
+eapply IHeval2.
 econstructor.
-eauto.
+by eauto.
 admit. (* TODO *)
 erewrite compose_prod.
 admit. (* TODO *)
@@ -194,10 +203,7 @@ eapply H6; by firstorder.
 eapply IHeval2.
 econstructor; eauto.
 econstructor; eauto. intros.
-eapply H6; by firstorder. *)
+eapply H6; by firstorder.
+
 Admitted.
 
-(* Notes:
-Focus on simultaneous substitutions means proofs and
-intermediate results are very algebraic.
-*)

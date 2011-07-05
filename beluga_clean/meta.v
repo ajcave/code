@@ -250,3 +250,5 @@ Lemma meta_type_eq {δ} {Δ:mtype_assign δ} C U V:
 -> Δ ⊨ C ∷ V.
 intros. subst. assumption.
 Qed.
+
+
