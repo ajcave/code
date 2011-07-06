@@ -104,9 +104,22 @@ destruct (classical (exists δi', exists θ', exists Δi' : mtype_assign δi', m
 destruct (classical (exists ρ', exists θ'', pmatch Δi' (· * (smap 〚θ'〛 Γi)) V (〚θ'〛p) (· * ρ') θ'')) as [(ρ', (θ'', Hy1)) | Hy1].
 eapply div_case3; eauto.
 eapply progress.
+
+destruct Hy. destruct Hy1 as [ Hy2 (Hy3,Hy4) ].
 econstructor. eexact H12.
-clear progress. admit. (* TODO *)
-clear progress. admit. (* TODO *)
+
+intro. erewrite subst_assoc. unfold compose. eapply subst_lemma. eapply H11. by eauto.
+erewrite compose_prod.
+eapply env_tp_prod.
+
+erewrite subst_assoc. rewrite (compose_assoc Γ 〚θi〛 〚θ'〛). erewrite <- assoc'. erewrite <- H10.
+erewrite <- subst_assoc. erewrite compose_assoc. erewrite <- assoc'.
+erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@m_var _)).
+erewrite mvar_left_unit. by assumption.
+erewrite assoc'. erewrite smap_functorial.
+do 2 erewrite smap_coerce_functorial.
+eexact Hy3.
+
 by eauto.
 eapply div_case2; eauto.
 eapply progress. econstructor; eauto. econstructor; eauto. by firstorder.
