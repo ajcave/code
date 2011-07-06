@@ -227,4 +227,3 @@ econstructor; eauto.
 econstructor; eauto. intros.
 eapply H7; by firstorder.
 Qed.
-
