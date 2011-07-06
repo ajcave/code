@@ -7,7 +7,7 @@ Definition mgu {δ δi δi'} (Δi : mtype_assign δi)
 
 Definition pmatch {δ γ} (Δ : mtype_assign δ) (Γ : tp_assign γ δ)(V : val) pa (ρ:name γ -> val)
  (θ : msubst δ ∅) : Prop
- := (V = psubst ρ (〚θ〛 pa)) /\ (⊪ ρ ⇐ (〚θ〛 ○ Γ)).
+ := (V = psubst ρ (〚θ〛 pa)) /\ (⊪ ρ ⇐ (〚θ〛 ○ Γ)) /\ (· ⊩ θ ∷ Δ).
 
 Reserved Notation "E [ θ ;; ρ ] ⇓ V" (at level 0).
 Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checked_exp δ γ -> val -> Prop :=
@@ -68,17 +68,15 @@ Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checke
          -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇓ V
  | ev_case1 : forall n (I:synth_exp δ γ) δi Δi Γi
  (θi:msubst δ δi) Bs (pa:pat (∅ + n) δi) Ei V1 V ,
-            (~exists θ', θ = 〚θ'〛 ○ θi)
+            (~(exists δi', exists θ', exists Δi' : mtype_assign δi', mgu Δi θ θi θ' Δi'))
          -> I [θ ;; ρ] ⇓ V1
          -> (case_i I Bs) [θ ;; ρ] ⇓ V
          -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇓ V
  | ev_case2 : forall n (I:synth_exp δ γ) δi Δi Γi
- (θi:msubst δ δi) θ' Bs (pa:pat (∅ + n) δi) Ei V1 V,
-           (θ = 〚θ'〛 ○ θi)
+ (θi:msubst δ δi) {δi'} θ' (Δi':mtype_assign δi') Bs (pa:pat (∅ + n) δi) Ei V1 V,
+            (mgu Δi θ θi θ' Δi')
          -> I [θ ;; ρ] ⇓ V1
-         -> (~exists ρ', V1 = psubst (· * ρ') (〚θ'〛 pa))
+         -> (~(exists ρ', exists θ'', pmatch Δi' (· * (smap 〚θ'〛 Γi)) V1 (〚θ'〛pa) (· * ρ') θ''))
          -> (case_i I Bs) [θ ;; ρ] ⇓ V
          -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇓ V
 where "E [ θ ;; ρ ] ⇓ V" := (@eval _  _ θ ρ E V).
-
-(* TODO: We can simplify this definition by making it a 3 (4) place predicate, so we don't have to quantify over θ and ρ every time *)

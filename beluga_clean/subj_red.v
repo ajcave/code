@@ -199,9 +199,11 @@ erewrite <- H8.
 
 erewrite simpl_subst_add_eq. eapply blah2.
 eapply IHeval2.
+destruct H5.
 econstructor.
 by eauto.
-admit. (* TODO *)
+intro.
+erewrite subst_assoc. unfold compose. eapply subst_lemma. eapply H4. by eauto.
 erewrite compose_prod.
 admit. (* TODO *)
 
@@ -215,7 +217,6 @@ eapply H6; by firstorder.
 eapply IHeval2.
 econstructor; eauto.
 econstructor; eauto. intros.
-eapply H6; by firstorder.
-
-Admitted.
+eapply H7; by firstorder.
+Qed.
 
