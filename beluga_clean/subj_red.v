@@ -180,7 +180,7 @@ econstructor. econstructor; by eauto.
 econstructor.
 
 (* case. happy case *)
-destruct H. destruct H1. subst.
+destruct H as [ (H,H4) Hy2 ]. destruct H1. subst.
 assert ((psubst (· * ρ') (〚θ''〛 (〚θ'〛 pa))) ∈ 〚θ''〛 (〚〚θ'〛 ○ θi〛 U)).
 eapply IHeval1. erewrite <- H. erewrite assoc. erewrite compose_assoc.
 erewrite <- assoc''.

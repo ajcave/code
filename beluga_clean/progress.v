@@ -105,7 +105,7 @@ destruct (classical (exists ρ', exists θ'', pmatch Δi' (· * (smap 〚θ'〛 
 eapply div_case3; eauto.
 eapply progress.
 
-destruct Hy. destruct Hy1 as [ Hy2 (Hy3,Hy4) ].
+destruct Hy as [ (H10,H11) Hy7 ]. destruct Hy1 as [ Hy2 (Hy3,Hy4) ].
 econstructor. eexact H12.
 
 intro. erewrite subst_assoc. unfold compose. eapply subst_lemma. eapply H11. by eauto.

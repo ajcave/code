@@ -573,12 +573,19 @@ pose proof (IHρ2 _ H H1). nice_inversion H2.
 destruct (export (succ_link (γ + n)) x); simpl in *; by eauto.
 Qed.
 
-
-Definition mgu {δ δi δi'} (Δi : mtype_assign δi) 
+Definition unifies {δ δi δi'} (Δi : mtype_assign δi) 
  (θ : msubst δ ∅) (θi : msubst δ δi) (θ' : msubst δi δi') (Δi' : mtype_assign δi') : Prop
  := (〚·〛 ○ θ = 〚θ'〛 ○ θi) /\ (Δi' ⊩ θ' ∷ Δi).
-(* TODO: This is missing the "most general" part, which is important to show that divergence and convergence
-   are mutually exclusive. *)
+
+Definition factors {δ1 δ2 δ3} (θ1:msubst δ1 δ2) (θ2:msubst δ1 δ3) Δ2 Δ3
+ := exists θ3, (θ2 = 〚θ3〛 ○ θ1) /\ (Δ3 ⊩ θ3 ∷ Δ2).
+
+(* most general unifier *)
+Definition mgu {δ δi δi'} (Δi : mtype_assign δi) 
+ (θ : msubst δ ∅) (θi : msubst δ δi) (θ' : msubst δi δi') (Δi' : mtype_assign δi') : Prop
+ := unifies Δi θ θi θ' Δi'
+    /\ (forall {δi''} (Δi'':mtype_assign δi'') θ'', unifies Δi θ θi θ'' Δi''
+        -> factors θ' θ'' Δi' Δi''). 
 
 Definition pmatch {δ γ} (Δ : mtype_assign δ) (Γ : tp_assign γ δ)(V : val) pa (ρ:name γ -> val)
  (θ : msubst δ ∅) : Prop
