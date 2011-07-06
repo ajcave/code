@@ -147,3 +147,7 @@ destruct (classical (exists V, E[·;;·] ⇓ V)); eauto.
 right. eapply progress; eauto.
 Qed.
 Print Assumptions progress'.
+
+(* Note that determinacy requires linearity of patterns (not done) *)
+(* And the mutual exclusiveness of divergence and convergence requires determinacy *)
+
