@@ -18,4 +18,5 @@ Axiom export : forall {α β} (y:α↪β) (n:name β), name α + unit.
 Axiom export_self : forall {α β} (y:α↪β), export y y = inr _ tt.
 Axiom export_import_inv : forall {α β} (y:α↪β) (n:name α), export y (import y n) = inl _ n.
 
-(* Axiom empty_initial : forall α, ∅↪*α. *)
+Definition empty_initial : forall (C : Set), name ∅ -> C
+ := fun C x => match (empty_is_empty x) with end.

@@ -232,7 +232,6 @@ Definition env γ := name γ -> extended_val.
 Reserved Notation "Δ ; Γ ⊢ t ⇐ T" (at level 90).
 Reserved Notation "Δ ; Γ ⊢ t ⇒ T" (at level 90).
 
-(* TODO: Enforce linearity? *)
 Inductive pat_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
                    : pat γ δ -> tp δ -> Prop :=
   | pvar_c : forall x T,

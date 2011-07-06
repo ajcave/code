@@ -1,5 +1,14 @@
 Require Export comp.
 
+Definition mgu {δ δi δi'} (Δi : mtype_assign δi) 
+ (θ : msubst δ ∅) (θi : msubst δ δi) (θ' : msubst δi δi') (Δi' : mtype_assign δi') : Prop
+ := (〚empty_initial _〛 ○ θ = 〚θ'〛 ○ θi) /\ (Δi' ⊩ θ' ∷ Δi).
+(* TODO: This is missing the MGU part, which is important for progress *)
+
+Definition pmatch {δ γ} (Δ : mtype_assign δ) (Γ : tp_assign γ δ)(V : val) pa (ρ:name γ -> val)
+ (θ : msubst δ ∅) : Prop
+ := V = psubst ρ (〚θ〛 pa).
+
 Reserved Notation "E [ θ ;; ρ ] ⇓ V" (at level 0).
 Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checked_exp δ γ -> val -> Prop :=
  | ev_coerce : forall (E:checked_exp δ γ) T V,
@@ -51,11 +60,11 @@ Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checke
             (mlam X E)[θ;;ρ] ⇓ (vmlam X E θ ρ)
  | ev_tt : tt[θ;;ρ] ⇓ vtt 
  | ev_case3 : forall n (I:synth_exp δ γ) δi Δi Γi (ρ':vec val n)
- (θi:msubst δ δi) θ' Bs pa Ei V1 V,
-            (θ = 〚θ'〛 ○ θi)
+ (θi:msubst δ δi) {δi'} θ' Bs pa Ei V1 V (Δi':mtype_assign δi') θ'' ,
+            (mgu Δi θ θi θ' Δi')
          -> I [θ ;; ρ] ⇓ V1
-         -> (V1 = psubst (· * ρ') (〚θ'〛 pa))
-         -> Ei [ θ' ;; ρ * (smap evval ρ') ] ⇓ V
+         -> (pmatch Δi' (· * (smap 〚θ'〛 Γi)) V1 (〚θ'〛pa) (· * ρ') θ'')
+         -> Ei [ (〚θ''〛 ○ θ') ;; ρ * (smap evval ρ') ] ⇓ V
          -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇓ V
  | ev_case1 : forall n (I:synth_exp δ γ) δi Δi Γi
  (θi:msubst δ δi) Bs (pa:pat (∅ + n) δi) Ei V1 V ,
