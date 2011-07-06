@@ -179,11 +179,6 @@ lem1 Δ' A (v y) = refl
 lem1 Δ' A (T ⇒ S) rewrite lem1 Δ' A T | lem1 Δ' A S = refl
 lem1 Δ' A (Π T) = {!!}
 
---lem1' : ∀ {Δ} {n} (Δ' : 〚 Δ 〛 n) (A : _) (T : _) -> tpi (Δ' , A) ([ s ] T) ≡ tpi Δ' T
---lem1' Δ' A (v y) = refl
---lem1' Δ' A (T ⇒ S) rewrite lem1' Δ' A T | lem1' Δ' A S = refl
---lem1' Δ' A (Π T) = {!!}
-
 lem : ∀ {Δ} Γ {n} (Δ' : 〚 Δ 〛₁ n) (A : _) ->  〚 tctxM [ s ] Γ 〛₂' n (Δ' , A) ≡ 〚 Γ 〛₂' n Δ'
 lem ⊡ Δ' A = refl
 lem (Γ , T) Δ' A rewrite lem Γ Δ' A | lem1 Δ' A T = refl
@@ -195,9 +190,10 @@ lem2 (Γ , T) Δ' A  rewrite lem2 Γ Δ' A = {!!}
 tmi : ∀ {Δ} {Γ} {n} (Δ' : 〚 Δ 〛₁ n) (Γ' : 〚 Γ 〛₂' n Δ') {T : tp Δ} (t : tm Δ Γ T) -> tpi Δ' T
 tmi Δ' Γ' (v y) = vtmi Δ' Γ' y
 tmi Δ' Γ' (ƛ M) = λ x → tmi Δ' (Γ' , x) M
-tmi {Γ = Γ} Δ' Γ' (Λ M) = λ A → tmi (Δ' , A) (rw A) M
-  where rw : (A : Set) -> 〚 tctxM [ s ] Γ 〛₂' _ (Δ' , A)
-        rw A rewrite lem Γ Δ' A = Γ'
+tmi {Δ} {Γ} {n} Δ' Γ' (Λ M) = λ A → tmi (Δ' , A) (rw A) M
+    where rw : (A : Set) -> 〚 tctxM [ s ] Γ 〛₂' n (Δ' , A)
+          rw A with  〚 tctxM [ s ] Γ 〛₂' n (Δ' , A) | lem Γ Δ' A
+          ... | ._ | refl = Γ'
 tmi Δ' Γ' (M · N) = tmi Δ' Γ' M (tmi Δ' Γ' N)
 tmi Δ' Γ' (M $ U) with tmi Δ' Γ' M | tpi Δ' U
 ... | w | q = {!!}
