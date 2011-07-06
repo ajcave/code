@@ -149,5 +149,6 @@ Qed.
 Print Assumptions progress'.
 
 (* Note that determinacy requires linearity of patterns (not done) *)
-(* And the mutual exclusiveness of divergence and convergence requires determinacy *)
+(* And the mutual exclusiveness of divergence and convergence requires determinacy
+   and the assumption that most general unifiers exists for C *)
 
