@@ -97,7 +97,23 @@ nice_inversion H. econstructor; by eauto.
 (* case *)
 nice_inversion H.
 doesItConverge I θ ρ.
-clear progress. admit. (* TODO: Coverage *)
+destruct Bs.
+eapply div_case_coverage; by eauto. (* TODO: Coverage *)
+assert (branch_tp Δ Γ b U T0) by firstorder. invert_typing.
+destruct (classical (exists δi', exists θ', exists Δi' : mtype_assign δi', mgu Δi θ θi θ' Δi')) as [(δi',(θ',(Δi',Hy))) | Hy].
+destruct (classical (exists ρ', exists θ'', pmatch Δi' (· * (smap 〚θ'〛 Γi)) V (〚θ'〛p) (· * ρ') θ'')) as [(ρ', (θ'', Hy1)) | Hy1].
+eapply div_case3; eauto.
+eapply progress.
+econstructor. eexact H12.
+clear progress. admit. (* TODO *)
+clear progress. admit. (* TODO *)
+by eauto.
+eapply div_case2; eauto.
+eapply progress. econstructor; eauto. econstructor; eauto. by firstorder.
+by eauto.
+eapply div_case1; eauto.
+eapply progress. econstructor; eauto. econstructor; eauto. by firstorder.
+by eauto.
 eapply div_caseI. eapply progress; eauto.
 Qed.
 
