@@ -54,6 +54,11 @@ match xs with
 | scons _ xs t => scons (smap f xs) (f t)
 end.
 
+Lemma smap_functorial {A B C:Set} (f:A -> B) (g:B -> C) {n} (xs:vec A n)
+ : smap (g ○ f) xs = smap g (smap f xs).
+induction xs; simpl in *; unfold compose in *; firstorder congruence.
+Qed.
+
 Fixpoint wplus α (n:nat) : world :=
 match n with
 | 0 => α
@@ -67,3 +72,18 @@ match Δ in vec _ n return name (α + n) -> T with
 | scons _ Δ' t => (Γ * Δ'),,(succ_link _,t)
 end
 where "Γ * Δ" := (ctx_times Γ Δ).
+
+
+Lemma empty_is_initial {A:Set} (θ1 θ2 : name ∅ -> A) : θ1 = θ2.
+extensionality x. edestruct (empty_is_empty x).
+Qed.
+
+Lemma smap_coerce_functorial {A B:Set} {n} (f:A -> B) (xs:vec A n)
+ : · * smap f xs = f ○ (· * xs).
+induction xs; simpl in *.
+eapply empty_is_initial.
+extensionality x. unfold compose in *.
+destruct (export (succ_link (∅ + n)) x); simpl in *.
+erewrite IHxs. reflexivity.
+reflexivity.
+Qed.

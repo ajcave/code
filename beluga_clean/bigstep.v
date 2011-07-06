@@ -2,7 +2,7 @@ Require Export comp.
 
 Definition mgu {δ δi δi'} (Δi : mtype_assign δi) 
  (θ : msubst δ ∅) (θi : msubst δ δi) (θ' : msubst δi δi') (Δi' : mtype_assign δi') : Prop
- := (〚empty_initial _〛 ○ θ = 〚θ'〛 ○ θi) /\ (Δi' ⊩ θ' ∷ Δi).
+ := (〚·〛 ○ θ = 〚θ'〛 ○ θi) /\ (Δi' ⊩ θ' ∷ Δi).
 (* TODO: This is missing the MGU part, which is important for progress *)
 
 Definition pmatch {δ γ} (Δ : mtype_assign δ) (Γ : tp_assign γ δ)(V : val) pa (ρ:name γ -> val)

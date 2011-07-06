@@ -205,7 +205,15 @@ by eauto.
 intro.
 erewrite subst_assoc. unfold compose. eapply subst_lemma. eapply H4. by eauto.
 erewrite compose_prod.
-admit. (* TODO *)
+eapply env_tp_prod.
+
+erewrite subst_assoc. rewrite (compose_assoc Γ 〚θi〛 〚θ'〛). erewrite <- assoc'. erewrite <- H.
+erewrite <- subst_assoc. erewrite compose_assoc. erewrite <- assoc'.
+erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@m_var _)).
+erewrite mvar_left_unit. by assumption.
+erewrite assoc'. erewrite smap_functorial.
+do 2 erewrite smap_coerce_functorial.
+eexact H5.
 
 (* case *)
 eapply IHeval2.
