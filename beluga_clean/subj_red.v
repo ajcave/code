@@ -180,12 +180,24 @@ econstructor. econstructor; by eauto.
 econstructor.
 
 (* case. happy case *)
-assert (psubst (· * ρ') (〚θ'〛 pa) ∈ (〚〚θ'〛 ○ θi〛U)) by eauto.
+destruct H. destruct H1. subst.
+assert ((psubst (· * ρ') (〚θ''〛 (〚θ'〛 pa))) ∈ 〚θ''〛 (〚〚θ'〛 ○ θi〛 U)).
+eapply IHeval1. erewrite <- H. erewrite assoc. erewrite compose_assoc.
+erewrite <- assoc''.
+erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@m_var _)).
+erewrite mvar_left_unit. by eauto.
+
 assert (branch_tp Δ Γ (br _ Δi Γi pa θi Ei) U T0) by firstorder.
 invert_typing.
-(* eapply IHeval2. *)
-erewrite <- assoc.
-erewrite <- H3. erewrite simpl_subst_add_eq. eapply blah2.
+assert (〚〚θ''〛 ○ θ'〛 (add_eq Cs0 T) = 〚〚θ''〛 ○ θ'〛(〚θi〛 T0)) by congruence.
+erewrite assoc in H8. change (〚(app_msubst (〚θ''〛 ○ θ') ○ θi) 〛 T0) with (〚〚〚θ''〛 ○ θ'〛 ○ θi 〛 T0) in H8. 
+erewrite subst_assoc in H8. erewrite <- H in H8. erewrite compose_assoc in H8.
+erewrite <- assoc' in H8.
+erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@m_var _)) in H8.
+erewrite mvar_left_unit in H8.
+erewrite <- H8.
+
+erewrite simpl_subst_add_eq. eapply blah2.
 eapply IHeval2.
 econstructor.
 by eauto.

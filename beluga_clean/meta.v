@@ -135,6 +135,12 @@ erewrite assoc.
 reflexivity.
 Qed.
 
+Lemma assoc'' {α β γ} {T} `{H:substitutable T} (θ1:msubst α β)
+(θ2:msubst β γ) :
+ 〚〚θ2〛 ○ θ1〛 = (app_msubst θ2) ○ 〚θ1〛.
+eapply @assoc'.
+Qed.
+
 Lemma compose_product :
   forall δ δ' β γ x x0
   (s : δ ↪ δ')
@@ -251,4 +257,10 @@ Lemma meta_type_eq {δ} {Δ:mtype_assign δ} C U V:
 intros. subst. assumption.
 Qed.
 
+Lemma empty_is_initial {δ} (θ1 θ2 : msubst ∅ δ) : θ1 = θ2.
+extensionality x. edestruct (empty_is_empty x).
+Qed.
 
+Lemma mvar_left_unit {δ1 δ2} (θ:msubst δ1 δ2) : 〚@m_var _〛 ○ θ = θ.
+erewrite mvar_unit. extensionality x. reflexivity.
+Qed.

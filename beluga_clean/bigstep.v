@@ -7,7 +7,7 @@ Definition mgu {δ δi δi'} (Δi : mtype_assign δi)
 
 Definition pmatch {δ γ} (Δ : mtype_assign δ) (Γ : tp_assign γ δ)(V : val) pa (ρ:name γ -> val)
  (θ : msubst δ ∅) : Prop
- := V = psubst ρ (〚θ〛 pa).
+ := (V = psubst ρ (〚θ〛 pa)) /\ (⊪ ρ ⇐ (〚θ〛 ○ Γ)).
 
 Reserved Notation "E [ θ ;; ρ ] ⇓ V" (at level 0).
 Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checked_exp δ γ -> val -> Prop :=
