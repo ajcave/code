@@ -559,18 +559,14 @@ Lemma env_tp_prod {γ} {n} (ρ1:env γ) ρ2 (Γ1 : tp_assign γ ∅) (Γ2 : vec 
  : ⊪ ρ1 ⇐ Γ1 -> ⊪ (· * ρ2) ⇐ (· * Γ2) -> ⊪ ρ1 * ρ2 ⇐ Γ1 * Γ2.
 induction ρ2; intros; dependent destruction Γ2; simpl in *.
 by assumption.
-econstructor. intro. unfold compose.
 nice_inversion H0.
 assert (⊪ · * ρ2 ⇐ · * Γ2).  econstructor. intro.
-pose proof (H4 (import (succ_link (∅ + n)) x0)).
+pose proof (H4 (import (succ_link (∅ + n)) x)).
 unfold compose in H1. erewrite export_import_inv in H1. simpl in *.
 assumption.
-
 specialize (H4 (succ_link (∅ + n))).
 unfold compose in H4. erewrite export_self in H4. simpl in *.
-
-pose proof (IHρ2 _ H H1). nice_inversion H2.
-destruct (export (succ_link (γ + n)) x); simpl in *; by eauto.
+eapply env_tp_cons; by eauto.
 Qed.
 
 Definition unifies {δ δi δi'} (Δi : mtype_assign δi) 
