@@ -49,7 +49,7 @@ mutual
  〚_〛s σ (N , S) = (〚 σ 〛n N) , (〚 σ 〛s S)
 
 -- Should spines go the other way?
-appSp : ∀ {ρ Γ τ σ} -> spine Γ ρ (σ ⇒ τ) -> nf Γ σ -> spine Γ ρ τ
+{- appSp : ∀ {ρ Γ τ σ} -> spine Γ ρ (σ ⇒ τ) -> nf Γ σ -> spine Γ ρ τ
 appSp ε N = N , ε
 appSp (N , S) N' = N , appSp S N'
 
@@ -79,7 +79,7 @@ mutual
 
  _◆_ : ∀ {Γ σ τ} -> nf Γ σ -> spine Γ σ τ -> nf Γ τ
  N ◆ ε = N
- ƛ N ◆ (N' , S) = ([ … ,, N' ] N) ◆ S
+ ƛ N ◆ (N' , S) = ([ … ,, N' ] N) ◆ S -}
 
 -- What follows is the implementation straight out of Keller's paper
 
