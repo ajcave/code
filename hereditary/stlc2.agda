@@ -69,11 +69,24 @@ mutual
   ε : spine Γ {z} (λ())
   _,_ : ∀ {m k} {ψ : ctx m} {φ : ctx k} {α} -> spine Γ ψ -> nf (Γ ⊕ φ) α -> spine Γ (ψ ,, α [ φ ])
 
+_∘_ : ∀ {A B C : Set} -> (f : B -> C) -> (g : A -> B) -> (A -> C)
+(f ∘ g) x = f (g x)
+
 subst : ∀ {n m} -> ctx n -> ctx m -> Set
 subst {n} {m} Γ Δ = Σ {fin n -> fin m} (λ f -> ∀ i -> Γ i ≡ Δ (f i))
 
-sem : ∀ {n} -> ctx n -> type -> Set
+{-sem : ∀ {n} -> ctx n -> type -> Set
 sem Γ (α [ ψ ]) = ∀ {m} {Δ : ctx m} → subst Γ Δ → (∀ i -> sem Δ (ψ i)) → nf Δ α
 
+appSubst : ∀ {n m} {Γ : ctx n} {Δ : ctx m} {S} -> subst Δ Γ -> nf Δ S -> nf Γ S
+appSubst (σ , pf) (▹ y' sp) = {!!}
 
+reflect : ∀ {n m} (Γ : ctx n) (ψ : ctx m) α -> nf (Γ ⊕ ψ) α -> sem Γ (α [ ψ ])
+reflect {n} {m1} Γ ψ α M = λ σ → λ s' → {!!}
+
+reify : ∀ {n m} (Γ : ctx n) α (ψ : ctx m) -> sem Γ (α [ ψ ]) -> nf (Γ ⊕ ψ) α
+reify {n} {m} Γ α ψ M = M (inl {n} {m}, {!!}) (λ i → {!!}) -}
+
+sem : ∀ {n} -> ctx n -> atype -> Set
+sem ψ α = ∀ {m} {Δ : ctx m} → subst ψ Δ → (∀ i -> sem Δ (ψ i)) → nf Δ α
 
