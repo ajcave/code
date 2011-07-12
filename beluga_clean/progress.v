@@ -49,7 +49,7 @@ econstructor; eauto.
 erewrite compose_cons.
 eapply env_tp_cons; eauto.
 rewrite H14. erewrite simpl_subst_add_eq'.
-econstructor. eapply blah2.
+econstructor. eapply val_add_eqs.
 by assumption.
 nice_inversion H3. eapply div_app2; by eauto 7.
 nice_inversion H3. eapply div_app1. eapply progress; by eauto.

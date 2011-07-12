@@ -3,8 +3,7 @@ Require Export List.
 Require Export Coq.Program.Equality.
 Set Implicit Arguments.
 
-(* Note we only allow one type variable at a time.
-   Hmm. Why is this OK again? *)
+(* Note we only allow one type variable at a time. *)
 (* Note that we only index by a single meta_term in tapp,
    unlike the general theory. *)
 Inductive tp' ψ (δ:world):=
@@ -397,7 +396,6 @@ match goal with
  replace (〚θ〛(arr T U)) with (arr (〚θ〛 T) (〚θ〛 U)) by reflexivity
 end.
 
-(* TODO: Clean this up *)
 Lemma tp_subst_commute' {δ ψ} (U:tp' ψ δ) : forall (T:name ψ -> neutral_tp ∅ δ) {δ'} (θ:msubst δ δ'),
 〚θ〛 (app_tp_subst T U) = app_tp_subst (〚θ〛○T) (〚θ〛 U).
 induction U; intros;
@@ -550,8 +548,6 @@ End app_subst_pat_sect.
 Scheme checks_synth_ind := Induction for checks_tp Sort Prop
  with synth_checks_ind := Induction for synth_tp Sort Prop
  with br_tp_ind := Induction for branch_tp Sort Prop.
-(* Combined Scheme checks_synth_multind from checks_synth_ind,
- synth_checks_ind, br_tp_ind. *)
 
 Require Import Coq.Program.Equality.
 

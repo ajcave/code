@@ -31,12 +31,12 @@ Hint Constructors synth_tp checks_tp synth_tp' checks_tp'.
 Hint Resolve @subst_lemma.
 Hint Resolve @subst_cons_typing @meta_type_eq @env_tp_cons.
 
-Lemma blah2 V Cs T : V ∈ T -> V ∈ (add_eq Cs T).
+Lemma val_add_eqs V Cs T : V ∈ T -> V ∈ (add_eq Cs T).
 intros.
 induction Cs. assumption.
 econstructor. eapply IHCs.
 Qed.
-Lemma blah3 V Cs T : V ∈ (add_eq Cs T) -> V ∈ T.
+Lemma val_rm_eqs V Cs T : V ∈ (add_eq Cs T) -> V ∈ T.
 intros.
 induction Cs. assumption.
 nice_inversion H.
@@ -44,11 +44,11 @@ invert_typing. nice_inversion H6.
 invert_typing. nice_inversion H6.
 by eauto.
 Qed.
-Lemma blah V Cs0 Cs1 T0 T1 : V ∈ T0 -> add_eq Cs0 T0 = add_eq Cs1 T1 -> V ∈ T1.
+Lemma val_add_rm_eqs V Cs0 Cs1 T0 T1 : V ∈ T0 -> add_eq Cs0 T0 = add_eq Cs1 T1 -> V ∈ T1.
 intros.
-pose proof (blah2 Cs0 H).
+pose proof (val_add_eqs Cs0 H).
 rewrite H0 in H1.
-eapply blah3; eauto.
+eapply val_rm_eqs; eauto.
 Qed.
 Lemma simpl_subst_add_eq {δ δ'} (θ:msubst δ δ') Cs (T:tp' ∅ δ) :
 (@app_subst tp (@tp_substitutable) δ δ' θ (add_eq Cs T))
@@ -60,7 +60,6 @@ Lemma simpl_subst_add_eq' {δ δ'} (θ:msubst δ δ') Cs (T:tp' ∅ δ) :
 = add_eq (map 〚θ〛 Cs) (〚θ〛T).
 induction Cs; simpl in *; congruence.
 Qed.
-(*Hint Resolve blah blah2 blah3.*)
 
 Theorem subj_red {δ γ} (L:checked_exp δ γ) θ ρ V :
 L[θ;;ρ] ⇓ V -> forall T, (clos_tp L θ ρ T) -> (V ∈ T).
@@ -71,7 +70,7 @@ assert (V ∈ 〚θ〛T).
 eapply IHeval. econstructor. eexact H2. eauto. eauto.
 assert (〚θ〛(add_eq Cs0 T) = 〚θ〛(add_eq Cs T1)) by congruence.
 repeat erewrite simpl_subst_add_eq' in H3.
-eapply blah; by eauto.
+eapply val_add_rm_eqs; by eauto.
 
 (* app *)
 assert (V2 ∈ 〚θ〛T) by eauto.
@@ -81,9 +80,9 @@ assert (V ∈ 〚θ'〛T1).
 eapply IHeval3. econstructor; eauto.
 erewrite compose_cons. eapply env_tp_cons. by eassumption.
 econstructor.
-rewrite H7. erewrite simpl_subst_add_eq'. eapply blah2. by eauto.
+rewrite H7. erewrite simpl_subst_add_eq'. eapply val_add_eqs. by eauto.
 repeat erewrite simpl_subst_add_eq' in H8.
-eapply blah; by eauto.
+eapply val_add_rm_eqs; by eauto.
 
 (* mapp *)
 assert ((vmlam X E θ' ρ') ∈ 〚θ〛(pi X0 U T)) by eauto.
@@ -91,7 +90,7 @@ invert_typing.
 nice_inversion H11.
 assert (V ∈ (〚θ',, (X,〚θ〛C) 〛 (add_eq Cs1 T1))).
 erewrite simpl_subst_add_eq.
-eapply blah2.
+eapply val_add_eqs.
 eapply IHeval2.
 econstructor; eauto.
 erewrite cons_import_mvar. by eassumption.
@@ -102,7 +101,7 @@ erewrite <- assoc in H7.
 erewrite H4 in H7.
 normalize_subst.
 erewrite simpl_subst_add_eq' in H7.
-eapply blah3; by eauto.
+eapply val_rm_eqs; by eauto.
 
 (* Var (extended value) *)
 unfold compose in *.
@@ -113,7 +112,7 @@ assert (V ∈ 〚θ'〛 (add_eq Cs0 T1)) by eauto.
 normalize_subst.
 repeat erewrite simpl_subst_add_eq' in H7, H2.
 erewrite simpl_subst_add_eq' in H7.
-eapply blah. eapply blah3. eexact H2. by eauto.
+eapply val_add_rm_eqs. eapply val_rm_eqs. eexact H2. by eauto.
 
 (* Var (value) *)
 unfold compose in *.
@@ -121,10 +120,10 @@ pose proof (env_tp_app' y H8 H).
 invert_typing.
 rewrite H2 in H3.
 normalize_subst. erewrite simpl_subst_add_eq' in H3.
-eapply blah3; by eauto.
+eapply val_rm_eqs; by eauto.
 
 (* Rec *)
-normalize_subst. erewrite simpl_subst_add_eq'. eapply blah2.
+normalize_subst. erewrite simpl_subst_add_eq'. eapply val_add_eqs.
 eapply IHeval.
 econstructor; eauto.
 erewrite compose_cons.
@@ -134,24 +133,24 @@ by eauto.
 (* Inl *)
 change (〚θ〛(sum (add_eq Cs T0) S)) with (sum (〚θ〛(add_eq Cs T0)) (〚θ〛S)).
 econstructor.
-erewrite simpl_subst_add_eq'. eapply blah2.
+erewrite simpl_subst_add_eq'. eapply val_add_eqs.
 by eauto.
 
 (* Inr *)
 change (〚θ〛(sum T (add_eq Cs T0))) with (sum (〚θ〛T) (〚θ〛(add_eq Cs T0))).
 econstructor.
-erewrite simpl_subst_add_eq'. eapply blah2.
+erewrite simpl_subst_add_eq'. eapply val_add_eqs.
 by eauto.
 
 (* Pair *)
 change (〚θ〛(prod (add_eq Cs0 T1) (add_eq Cs T0))) with (prod (〚θ〛(add_eq Cs0 T1)) (〚θ〛(add_eq Cs T0))).
-econstructor; erewrite simpl_subst_add_eq'; eapply blah2; by eauto.
+econstructor; erewrite simpl_subst_add_eq'; eapply val_add_eqs; by eauto.
 
 (* pack *)
 change (〚θ〛(sigma X U T)) with (sigma ₁ (〚θ〛U) (〚θ × (₁//X)〛T)).
 econstructor. by eauto.
 erewrite single_subst_commute'.
-erewrite <- H0. erewrite simpl_subst_add_eq. eapply blah2.
+erewrite <- H0. erewrite simpl_subst_add_eq. eapply val_add_eqs.
 by eauto.
 
 (* fold *)
@@ -162,7 +161,7 @@ erewrite single_subst_commute'.
 change (mu Z ₁ (〚θ 〛 U) (〚θ ×  (₁ // X) 〛 T)) with (〚θ〛(mu (ψ:=empty) Z X U T)).
 erewrite <- tp_subst_commute.
 erewrite <- H0.
-erewrite simpl_subst_add_eq. eapply blah2.
+erewrite simpl_subst_add_eq. eapply val_add_eqs.
 eapply IHeval.
 by eauto.
 
@@ -197,7 +196,7 @@ erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@
 erewrite mvar_left_unit in H8.
 erewrite <- H8.
 
-erewrite simpl_subst_add_eq. eapply blah2.
+erewrite simpl_subst_add_eq. eapply val_add_eqs.
 eapply IHeval2.
 destruct H5.
 econstructor.

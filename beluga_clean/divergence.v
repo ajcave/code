@@ -31,6 +31,7 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Pr
  | div_caseI : forall (I:synth_exp δ γ) Bs,
             I [θ ;; ρ] ⇑
          -> (case_i I Bs) [θ ;; ρ] ⇑
+(* We cheat and allow a case coverage failure as a kind of divergence: *)
  | div_case_coverage : forall (I:synth_exp δ γ) V,
             I [θ ;; ρ] ⇓ V
          -> (case_i I nil) [θ ;; ρ] ⇑

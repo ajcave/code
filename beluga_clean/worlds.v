@@ -1,3 +1,4 @@
+(* The abstract interface to Pouillard and Pottier's (ICFP '10) "Fresh look" approach to binding *)
 Parameter world : Set.
 Parameter empty : world.
 Notation "∅" := empty.

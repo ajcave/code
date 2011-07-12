@@ -1,3 +1,4 @@
+(* The abstract index domain C and its typing and substitutions *)
 Require Export util.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Setoid.
@@ -49,7 +50,6 @@ Instance mtype_substitutable : substitutable mtype := {
 Definition single_subst {γ γ'} (x:γ↪γ') (N:meta_term γ) : msubst γ' γ :=
  (@m_var γ,,(x,N)).
 
-(* TODO: This may cause me trouble later *)
 Definition msubst_oft {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := forall x, Δ' ⊨ (θ x) ∷ ((〚θ〛 ○ Δ) x).
 Notation "Δ' ⊩ θ ∷ Δ" := (@msubst_oft _ Δ _ Δ' θ) (at level 90).
 
@@ -64,8 +64,6 @@ end).
 Definition context_mult {δ δ'} (θ:msubst δ δ') {δ'' δ'''} (y:δ'↪δ''') (x:δ↪δ'') := (〚@m_var _ ○ ↑y〛 ○ θ,, (x,y)).
 Notation "θ × ( y // x )" := (context_mult θ y x) (at level 10).
 
-(* TODO: Consistently name these variants. (See below) *)
-(* TODO: This actually has nothing to do with substitutions *)
 Lemma compose_cons' :
   forall δ δ' β γ
   (s : δ ↪ δ') {T} `{H:substitutable T}
@@ -256,7 +254,6 @@ Lemma meta_type_eq {δ} {Δ:mtype_assign δ} C U V:
 -> Δ ⊨ C ∷ V.
 intros. subst. assumption.
 Qed.
-
 
 Lemma mvar_left_unit {δ1 δ2} (θ:msubst δ1 δ2) : 〚@m_var _〛 ○ θ = θ.
 erewrite mvar_unit. extensionality x. reflexivity.
