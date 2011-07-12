@@ -1,3 +1,4 @@
+(* The abstract index domain C and its typing and substitutions *)
 Require Export util.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Setoid.
@@ -49,7 +50,6 @@ Instance mtype_substitutable : substitutable mtype := {
 Definition single_subst {γ γ'} (x:γ↪γ') (N:meta_term γ) : msubst γ' γ :=
  (@m_var γ,,(x,N)).
 
-(* TODO: This may cause me trouble later *)
 Definition msubst_oft {α} (Δ:mtype_assign α) {β} (Δ':mtype_assign β) θ := forall x, Δ' ⊨ (θ x) ∷ ((〚θ〛 ○ Δ) x).
 Notation "Δ' ⊩ θ ∷ Δ" := (@msubst_oft _ Δ _ Δ' θ) (at level 90).
 
@@ -64,8 +64,6 @@ end).
 Definition context_mult {δ δ'} (θ:msubst δ δ') {δ'' δ'''} (y:δ'↪δ''') (x:δ↪δ'') := (〚@m_var _ ○ ↑y〛 ○ θ,, (x,y)).
 Notation "θ × ( y // x )" := (context_mult θ y x) (at level 10).
 
-(* TODO: Consistently name these variants. (See below) *)
-(* TODO: This actually has nothing to do with substitutions *)
 Lemma compose_cons' :
   forall δ δ' β γ
   (s : δ ↪ δ') {T} `{H:substitutable T}
@@ -85,6 +83,18 @@ Lemma compose_cons :
    ((〚θ'〛 ○ θ),, (s,〚θ'〛C)).
 intros. eapply functional_extensionality. 
 eapply compose_cons'.
+Qed.
+
+Lemma compose_prod : 
+  forall δ α β (θ:msubst α β) {T} `{H:substitutable T}
+  (Γ1:name δ -> T α) n (Γ2:vec (T α) n),
+  〚θ〛 ○ (Γ1 * Γ2) = (〚θ〛 ○ Γ1) * (smap 〚θ〛 Γ2).
+intros.
+induction Γ2; simpl.
+reflexivity.
+erewrite compose_cons.
+rewrite IHΓ2.
+reflexivity.
 Qed.
 
 Lemma compose_mvar {α β} (θ:msubst α β) : 〚θ〛○(@m_var _) = θ.
@@ -121,6 +131,12 @@ apply functional_extensionality. intro.
 unfold compose.
 erewrite assoc.
 reflexivity.
+Qed.
+
+Lemma assoc'' {α β γ} {T} `{H:substitutable T} (θ1:msubst α β)
+(θ2:msubst β γ) :
+ 〚〚θ2〛 ○ θ1〛 = (app_msubst θ2) ○ 〚θ1〛.
+eapply @assoc'.
 Qed.
 
 Lemma compose_product :
@@ -237,4 +253,8 @@ Lemma meta_type_eq {δ} {Δ:mtype_assign δ} C U V:
 -> Δ ⊨ C ∷ U
 -> Δ ⊨ C ∷ V.
 intros. subst. assumption.
+Qed.
+
+Lemma mvar_left_unit {δ1 δ2} (θ:msubst δ1 δ2) : 〚@m_var _〛 ○ θ = θ.
+erewrite mvar_unit. extensionality x. reflexivity.
 Qed.

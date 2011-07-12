@@ -28,25 +28,33 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Pr
              I [θ ;; ρ] ⇓ (vmlam X E θ' ρ')
           -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇑
           -> (mapp I C) [θ ;; ρ] ⇑
-(* | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
-  (θk:msubst δ δi) Bs Ck Ek V,
-            (θ /≐ θk)
-         -> case_i I Bs [θ ;; ρ] ⇓ V
-         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
- | ev_case2 : forall δ θ γ ρ (I:synth_exp δ γ) δi
-  (θk:msubst δ δi) θ' Bs (C:meta_term ∅) Ek V Ck,
-            (θ ≐ θk // θ')
-         -> I [θ ;; ρ] ⇓ meta_term_closure C
-         -> (C /≑ ⟦θ'⟧ Ck)
-         -> case_i I Bs [θ ;; ρ] ⇓ V
-         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
- | ev_case3 : forall δ θ γ ρ (I:synth_exp δ γ) δi
- (θk:msubst δ δi) θ' θ'' Bs (C:meta_term ∅) Ek V Ck,
-            (θ ≐ θk // θ')
-         -> I [θ ;; ρ] ⇓ meta_term_closure C
-         -> (C ≑ ⟦θ'⟧ Ck // θ'')
-         -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
-         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V *)
+ | div_caseI : forall (I:synth_exp δ γ) Bs,
+            I [θ ;; ρ] ⇑
+         -> (case_i I Bs) [θ ;; ρ] ⇑
+(* We cheat and allow a case coverage failure as a kind of divergence: *)
+ | div_case_coverage : forall (I:synth_exp δ γ) V,
+            I [θ ;; ρ] ⇓ V
+         -> (case_i I nil) [θ ;; ρ] ⇑
+ | div_case3 : forall n (I:synth_exp δ γ) δi Δi Γi (ρ':vec val n)
+ (θi:msubst δ δi) {δi'} θ' Bs pa Ei V1 (Δi':mtype_assign δi') θ'' ,
+            (mgu Δi θ θi θ' Δi')
+         -> I [θ ;; ρ] ⇓ V1
+         -> (pmatch Δi' (· * (smap 〚θ'〛 Γi)) V1 (〚θ'〛pa) (· * ρ') θ'')
+         -> Ei [ (〚θ''〛 ○ θ') ;; ρ * (smap evval ρ') ] ⇑
+         -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇑
+ | div_case1 : forall n (I:synth_exp δ γ) δi Δi Γi
+ (θi:msubst δ δi) Bs (pa:pat (∅ + n) δi) Ei V1 ,
+            (~(exists δi', exists θ', exists Δi' : mtype_assign δi', mgu Δi θ θi θ' Δi'))
+         -> I [θ ;; ρ] ⇓ V1
+         -> (case_i I Bs) [θ ;; ρ] ⇑
+         -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇑
+ | div_case2 : forall n (I:synth_exp δ γ) δi Δi Γi
+ (θi:msubst δ δi) {δi'} θ' (Δi':mtype_assign δi') Bs (pa:pat (∅ + n) δi) Ei V1,
+            (mgu Δi θ θi θ' Δi')
+         -> I [θ ;; ρ] ⇓ V1
+         -> (~(exists ρ', exists θ'', pmatch Δi' (· * (smap 〚θ'〛 Γi)) V1 (〚θ'〛pa) (· * ρ') θ''))
+         -> (case_i I Bs) [θ ;; ρ] ⇑
+         -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇑
  | div_var : forall (y:name γ) δ' γ' γ'' (E:checked_exp δ' γ'') (f:γ'↪γ'')
                     (θ':msubst δ' ∅) ρ',
             ρ y = (evrec f E θ' ρ')
@@ -74,7 +82,4 @@ CoInductive div {δ γ} (θ:msubst δ ∅) (ρ:env γ) : checked_exp δ γ -> Pr
  | div_fold : forall E,
             E[θ;;ρ] ⇑
          -> (fold E)[θ;;ρ] ⇑
- | ev_unfold : forall I,
-            (synth I)[θ;;ρ] ⇑
-         -> (unfold I)[θ;;ρ] ⇑ 
 where "E [ θ ;; ρ ] ⇑" := (@div _ _ θ ρ E).

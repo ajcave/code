@@ -3,8 +3,7 @@ Require Export List.
 Require Export Coq.Program.Equality.
 Set Implicit Arguments.
 
-(* Note we only allow one type variable at a time.
-   Hmm. Why is this OK again? *)
+(* Note we only allow one type variable at a time. *)
 (* Note that we only index by a single meta_term in tapp,
    unlike the general theory. *)
 Inductive tp' ψ (δ:world):=
@@ -167,12 +166,30 @@ app_tp_subst (fun n => N) T.
 End app_tp_subst_sec.
 Notation "〈 T 〉" := (app_tp_subst_single T) (at level 0).
 
+
+Inductive pat (γ δ:world) : Set :=
+  | pvar : name γ -> pat γ δ
+  | pmeta : meta_term δ -> pat γ δ
+  | pfold : pat γ δ -> pat γ δ
+  | pinl : pat γ δ -> pat γ δ
+  | pinr : pat γ δ -> pat γ δ
+  | ppack : meta_term δ -> pat γ δ -> pat γ δ
+  | ppair : pat γ δ -> pat γ δ -> pat γ δ
+  | ptt : pat γ δ.
+Implicit Arguments ptt [γ δ].
+
+Fixpoint add_eq {ψ δ} (constraints:list (meta_term δ)) (T:tp' ψ δ) : tp' ψ δ :=
+match constraints with
+| nil => T
+| cons C Cs => eq_constraint C C (add_eq Cs T)
+end.
+
+Definition tp_assign γ δ := name γ -> tp δ.
 Inductive synth_exp (δ γ:world) : Set :=
   | var : name γ -> synth_exp δ γ
   | app :  synth_exp δ γ -> checked_exp δ γ -> synth_exp δ γ
   | mapp : synth_exp δ γ -> meta_term δ -> synth_exp δ γ
   | coercion : checked_exp δ γ -> tp δ -> synth_exp δ γ
-  | unfold : synth_exp δ γ -> synth_exp δ γ
  with checked_exp (δ γ:world) : Set := 
   | synth : synth_exp δ γ -> checked_exp δ γ
   | meta : meta_term δ -> checked_exp δ γ
@@ -187,7 +204,8 @@ Inductive synth_exp (δ γ:world) : Set :=
   | tt : checked_exp δ γ
   | case_i :  synth_exp δ γ -> list (branch δ γ) -> checked_exp δ γ
  with branch (δ γ:world) : Set :=
-  | br : forall δi γi, checked_exp δi γi -> msubst δ δi -> checked_exp δi γ -> branch δ γ.
+  | br : forall δi (Δi:mtype_assign δi) n (Γi:vec (tp δi) n), pat (∅ + n) δi -> msubst δ δi
+    -> checked_exp δi (γ + n) -> branch δ γ.
 Implicit Arguments tt [δ γ].
 Coercion synth : synth_exp >-> checked_exp.
 
@@ -213,86 +231,109 @@ Definition env γ := name γ -> extended_val.
 Reserved Notation "Δ ; Γ ⊢ t ⇐ T" (at level 90).
 Reserved Notation "Δ ; Γ ⊢ t ⇒ T" (at level 90).
 
-Definition tp_assign γ δ := name γ -> tp δ.
+Inductive pat_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : pat γ δ -> tp δ -> Prop :=
+  | pvar_c : forall x T,
+             Γ x = T
+           -> pat_tp Δ Γ (pvar _ x) T
+  | pmeta_c : forall C U,
+              Δ ⊨ C ∷ U 
+           -> pat_tp Δ Γ (pmeta γ C) U
+  | pinl_c : forall E T S,
+             pat_tp Δ Γ E T
+          -> pat_tp Δ Γ (pinl E) (sum T S)
+  | pinr_c : forall E T S,
+             pat_tp Δ Γ E S
+          -> pat_tp Δ Γ (pinr E) (sum T S)
+  | ppair_c : forall E1 E2 T S,
+             pat_tp Δ Γ E1 T
+          -> pat_tp Δ Γ E2 S
+          -> pat_tp Δ Γ (ppair E1 E2) (prod T S)
+  | ppack_c : forall E δ' (X:δ↪δ') U C T,
+              Δ ⊨ C ∷ U
+           -> pat_tp Δ Γ E (〚single_subst X C〛 T) 
+           -> pat_tp Δ Γ (ppack C E) (sigma X U T)
+  | pfold_c : forall E δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
+              pat_tp Δ Γ E (〈mu Z X U T〉 (〚single_subst X C〛 T))
+           -> pat_tp Δ Γ (pfold E) (tapp (mu Z X U T) C)
+  | ptt_c : pat_tp Δ Γ ptt unit.
 
-
-Inductive synth_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
-                   : synth_exp δ γ -> tp δ -> Prop :=
+Inductive synth_tp' {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : synth_exp δ γ -> tp δ -> Set :=
   | var_s : forall x T,
              Γ x = T
-           -> Δ;Γ ⊢ (var _ x) ⇒ T
+           -> synth_tp' Δ Γ (var _ x) T
   | app_s : forall I T1 E T2,
               Δ;Γ ⊢ I ⇒ (arr T1 T2)
            -> Δ;Γ ⊢ E ⇐ T1
-           -> Δ;Γ ⊢ (app I E) ⇒ T2
+           -> synth_tp' Δ Γ (app I E) T2
   | mapp_s : forall I δ' (X:δ↪δ') U C T,
               Δ;Γ ⊢ I ⇒ (pi X U T)
            -> Δ ⊨ C ∷ U
-           -> Δ;Γ ⊢ (mapp I C) ⇒ (〚single_subst X C〛 T)
+           -> synth_tp' Δ Γ (mapp I C) (〚single_subst X C〛 T)
   | coerce_s : forall E T,
               Δ;Γ ⊢ E ⇐ T
-           -> Δ;Γ ⊢ (coercion E T) ⇒ T
-  | unfold_c : forall I δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
-              Δ;Γ ⊢ I ⇒ (tapp (mu Z X U T) C) 
-           -> Δ;Γ ⊢ unfold I ⇒ 〈mu Z X U T〉 (〚single_subst X C〛 T)
- with checks_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
-                   : checked_exp δ γ -> tp δ -> Prop :=
+           -> synth_tp' Δ Γ (coercion E T) T
+ with synth_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : synth_exp δ γ -> tp δ -> Set :=
+  | eq_constraint_s : forall I T Cs,
+              synth_tp' Δ Γ I (add_eq Cs T)
+           -> Δ;Γ ⊢ I ⇒ T
+ with checks_tp' {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : checked_exp δ γ -> tp δ -> Set :=
   | synth_c : forall I T,
               Δ;Γ ⊢ I ⇒ T
-           -> Δ;Γ ⊢ I ⇐ T
+           -> checks_tp' Δ Γ I T
   | meta_c : forall C U,
               Δ ⊨ C ∷ U 
-           -> Δ;Γ ⊢ (meta γ C) ⇐ U
+           -> checks_tp' Δ Γ (meta γ C) U
   | fn_c : forall γ' (y:γ↪γ') E T1 T2,
              Δ;(Γ,, (y,T1)) ⊢ E ⇐ T2
-          -> Δ;Γ ⊢ (fn y E) ⇐ (arr T1 T2)
+          -> checks_tp' Δ Γ (fn y E) (arr T1 T2)
   | mlam_c : forall δ' (X:δ↪δ') E U T,
              (* TODO: Clean this up *)
              (〚@m_var _ ○ ↑X〛 ○ (Δ,, (X,U)));(〚@m_var _ ○ ↑X〛 ○ Γ) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (mlam X E) ⇐ (pi X U T)
+          -> checks_tp' Δ Γ (mlam X E) (pi X U T)
   | rec_c : forall γ' (f:γ↪γ') E T,
              Δ;(Γ,, (f,T)) ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (rec f E) ⇐ T
+          -> checks_tp' Δ Γ (rec f E) T
   | inl_c : forall E T S,
              Δ;Γ ⊢ E ⇐ T
-          -> Δ;Γ ⊢ (inl E) ⇐ (sum T S)
+          -> checks_tp' Δ Γ (inl E) (sum T S)
   | inr_c : forall E T S,
              Δ;Γ ⊢ E ⇐ S
-          -> Δ;Γ ⊢ (inr E) ⇐ (sum T S)
+          -> checks_tp' Δ Γ (inr E) (sum T S)
   | pair_c : forall E1 E2 T S,
              Δ;Γ ⊢ E1 ⇐ T
           -> Δ;Γ ⊢ E2 ⇐ S
-          -> Δ;Γ ⊢ (pair E1 E2) ⇐ (prod T S)
+          -> checks_tp' Δ Γ (pair E1 E2) (prod T S)
   | pack_c : forall E δ' (X:δ↪δ') U C T,
               Δ ⊨ C ∷ U
            -> Δ;Γ ⊢ E ⇐ (〚single_subst X C〛 T) 
-           -> Δ;Γ ⊢ (pack C E) ⇐ (sigma X U T)
+           -> checks_tp' Δ Γ (pack C E) (sigma X U T)
   | fold_c : forall E δ' (X:δ↪δ') ψ (Z:∅↪ψ) U C T,
               Δ;Γ ⊢ E ⇐ 〈mu Z X U T〉 (〚single_subst X C〛 T)
-           -> Δ;Γ ⊢ fold E ⇐ (tapp (mu Z X U T) C)
-  | tt_c : Δ;Γ ⊢ tt ⇐ unit
-(*  | clos_c : forall δ' γ' Δ' Γ' (E:checked_exp δ' γ') T ρ θ,
-              Δ';Γ' ⊢ E ⇐ T
-           -> Δ ⊩ θ ∷ Δ'
-           -> Δ;Γ ⊪ ρ ⇐ (〚θ〛 ○ Γ')
-           -> Δ;Γ ⊢ E[θ;;ρ] ⇐ 〚θ〛T *)
- (* | case_i_c : forall I U Bs T,
+           -> checks_tp' Δ Γ (fold E) (tapp (mu Z X U T) C)
+  | tt_c : checks_tp' Δ Γ tt unit
+  | case_i_c : forall I U Bs T,
              Δ;Γ ⊢ I ⇒ U
-          -> (forall B, In B Bs -> branch_tp B (arr U T))
-          -> Δ;Γ ⊢ (case_i I Bs) ⇐ T 
- with branch_tp {δ γ:world} {Δ:mtype_assign δ} {Γ:tp_assign γ δ}
-                     : branch δ γ -> tp δ -> Prop :=
-  | br_c : forall δi (C:meta_term δi) (θi:msubst δ δi)
-                  (E:checked_exp δi γ) (U T:mtype δ)
-                  (Δi:mtype_assign δi),
-             Δi ⊨ C ∷ 〚θi〛 U
+          -> (forall B, In B Bs -> branch_tp Δ Γ B U T)
+          -> checks_tp' Δ Γ (case_i I Bs) T 
+ with checks_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                   : checked_exp δ γ -> tp δ -> Set :=
+  | eq_constraint_c : forall E T Cs,
+             checks_tp' Δ Γ E T
+          -> Δ;Γ ⊢ E ⇐ (add_eq Cs T)
+ with branch_tp {δ γ:world} (Δ:mtype_assign δ) (Γ:tp_assign γ δ)
+                     : branch δ γ -> tp δ -> tp δ -> Set :=
+  | br_c : forall δi n (θi:msubst δ δi) U T
+                  (Δi:mtype_assign δi) (Γi:vec (tp δi) n) (p:pat (∅ + n) δi) E,
+             pat_tp Δi (· * Γi) p (〚θi〛 U)
           -> Δi ⊩ θi ∷ Δ
-          -> Δi;(〚θi〛 ○ Γ) ⊢ E ⇐ 〚θi〛T
-          -> branch_tp (br C θi E) (arr (m_tp' U) (m_tp' T)) *)
+          -> Δi;((〚θi〛 ○ Γ)*Γi) ⊢ E ⇐ 〚θi〛T
+          -> branch_tp Δ Γ (br _ Δi Γi p θi E) U T
   where "D1 ; G1 ⊢ t1 ⇒ T1" := (@synth_tp _ _ D1 G1 t1 T1)
   and   "D1 ; G1 ⊢ t1 ⇐ T1" := (@checks_tp _ _ D1 G1 t1 T1).
-
-
 
 Reserved Notation "V ∈ T" (at level 90).
 Reserved Notation "⊪ ρ ⇐ Γ" (at level 90). 
@@ -324,6 +365,7 @@ Inductive val_tp : val -> tp ∅ -> Prop :=
               V ∈ 〈mu Z X U T〉 (〚single_subst X C〛 T)
            -> vfold V ∈ (tapp (mu Z X U T) C)
   | vtt_c : vtt ∈ unit
+  | veq_constr : forall V T C, V ∈ T -> V ∈ (eq_constraint C C T)
 with extended_val_tp : extended_val -> tp ∅ -> Prop :=
   | evval_c : forall V T, V ∈ T -> extended_val_tp V T
   | evrec_c : forall δ γ γ' (f:γ↪γ') (E:checked_exp δ γ') (θ:msubst δ ∅) (ρ:env γ) T,
@@ -333,7 +375,7 @@ with env_tp : forall {γ'} (ρ:env γ') (Γ':tp_assign γ' ∅), Prop :=
   | env_c : forall γ' (ρ:env γ') Γ', (forall x, extended_val_tp (ρ x) (Γ' x)) -> ⊪ ρ ⇐ Γ'
 with clos_tp : forall {δ γ} (E:checked_exp δ γ) (θ:msubst δ ∅) (ρ:env γ), tp ∅ -> Prop :=
   | clos_c : forall δ γ (E:checked_exp δ γ) θ ρ Δ Γ T,
-              Δ;Γ ⊢ E ⇐ T
+              checks_tp' Δ Γ E T
            -> · ⊩ θ ∷ Δ
            -> ⊪ ρ ⇐ (〚θ〛 ○ Γ)
            -> clos_tp E θ ρ (〚θ〛T)
@@ -354,7 +396,6 @@ match goal with
  replace (〚θ〛(arr T U)) with (arr (〚θ〛 T) (〚θ〛 U)) by reflexivity
 end.
 
-(* TODO: Clean this up *)
 Lemma tp_subst_commute' {δ ψ} (U:tp' ψ δ) : forall (T:name ψ -> neutral_tp ∅ δ) {δ'} (θ:msubst δ δ'),
 〚θ〛 (app_tp_subst T U) = app_tp_subst (〚θ〛○T) (〚θ〛 U).
 induction U; intros;
@@ -463,3 +504,83 @@ Lemma env_tp_app' γ (ρ:env γ) Γ x E : ⊪ ρ ⇐ Γ -> ρ x = E -> extended_
 intros. subst. by eauto.
 Qed.
 Hint Resolve @env_tp_app'.
+
+Section app_msubst_pat_sect.
+Reserved Notation "[ θ ]" (at level 90).
+
+Fixpoint app_msubst_pat {γ δ δ'} (θ:msubst δ δ') (p:pat γ δ) : pat γ δ' :=
+match p with
+| pvar y => pvar _ y 
+| pmeta C => pmeta _ (〚θ〛C)
+| pfold E => pfold ([θ] E)
+| pinl E => pinl ([θ] E)
+| pinr E => pinr ([θ] E)
+| ppair E1 E2 => ppair ([θ] E1) ([θ] E2)
+| ppack C E => ppack (〚θ〛C) ([θ] E)
+| ptt => ptt
+end
+where "[ θ ]" := (@app_msubst_pat _ _ _ θ).
+End app_msubst_pat_sect.
+
+Instance pat_substitutable {γ} : substitutable (pat γ) :=
+{
+ app_subst := @app_msubst_pat γ
+}.
+intros. induction t; simpl; try congruence; erewrite app_msubst_assoc; congruence.
+Defined.
+
+Section app_subst_pat_sect.
+Reserved Notation "[ ρ ]" (at level 90).
+Fixpoint psubst {γ} (ρ:name γ -> val) (p:pat γ ∅) : val :=
+match p with
+| pvar x => ρ x
+| pmeta C => vmeta C
+| pfold E => vfold ([ρ] E)
+| pinl E => vinl ([ρ] E)
+| pinr E => vinr ([ρ] E)
+| ppair E1 E2 => vpair ([ρ] E1) ([ρ] E2)
+| ppack C E => vpack C ([ρ] E)
+| ptt => vtt
+end
+where "[ ρ ]" := (psubst ρ).
+End app_subst_pat_sect.
+
+Scheme checks_synth_ind := Induction for checks_tp Sort Prop
+ with synth_checks_ind := Induction for synth_tp Sort Prop
+ with br_tp_ind := Induction for branch_tp Sort Prop.
+
+Require Import Coq.Program.Equality.
+
+Lemma env_tp_prod {γ} {n} (ρ1:env γ) ρ2 (Γ1 : tp_assign γ ∅) (Γ2 : vec (tp ∅) n)
+ : ⊪ ρ1 ⇐ Γ1 -> ⊪ (· * ρ2) ⇐ (· * Γ2) -> ⊪ ρ1 * ρ2 ⇐ Γ1 * Γ2.
+induction ρ2; intros; dependent destruction Γ2; simpl in *.
+by assumption.
+nice_inversion H0.
+assert (⊪ · * ρ2 ⇐ · * Γ2).  econstructor. intro.
+pose proof (H4 (import (succ_link (∅ + n)) x)).
+unfold compose in H1. erewrite export_import_inv in H1. simpl in *.
+assumption.
+specialize (H4 (succ_link (∅ + n))).
+unfold compose in H4. erewrite export_self in H4. simpl in *.
+eapply env_tp_cons; by eauto.
+Qed.
+
+Definition unifies {δ δi δi'} (Δi : mtype_assign δi) 
+ (θ : msubst δ ∅) (θi : msubst δ δi) (θ' : msubst δi δi') (Δi' : mtype_assign δi') : Prop
+ := (〚·〛 ○ θ = 〚θ'〛 ○ θi) /\ (Δi' ⊩ θ' ∷ Δi).
+
+Definition factors {δ1 δ2 δ3} (θ1:msubst δ1 δ2) (θ2:msubst δ1 δ3) Δ2 Δ3
+ := exists θ3, (θ2 = 〚θ3〛 ○ θ1) /\ (Δ3 ⊩ θ3 ∷ Δ2).
+
+(* most general unifier *)
+Definition mgu {δ δi δi'} (Δi : mtype_assign δi) 
+ (θ : msubst δ ∅) (θi : msubst δ δi) (θ' : msubst δi δi') (Δi' : mtype_assign δi') : Prop
+ := unifies Δi θ θi θ' Δi'
+    /\ (forall {δi''} (Δi'':mtype_assign δi'') θ'', unifies Δi θ θi θ'' Δi''
+        -> factors θ' θ'' Δi' Δi''). 
+
+Definition pmatch {δ γ} (Δ : mtype_assign δ) (Γ : tp_assign γ δ)(V : val) pa (ρ:name γ -> val)
+ (θ : msubst δ ∅) : Prop
+ := (V = psubst ρ (〚θ〛 pa)) /\ (⊪ ρ ⇐ (〚θ〛 ○ Γ)) /\ (· ⊩ θ ∷ Δ).
+
+ 

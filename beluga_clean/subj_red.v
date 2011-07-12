@@ -11,106 +11,218 @@ match goal with
 | [ H : _;_ ⊢ _ ⇒ _ |- _ ] => nice_inversion_clear H; [idtac]
 | [ H : clos_tp _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
 | [ H : _ ∈ _ |- _] => nice_inversion_clear H; [idtac] 
-(* | [ H : ⊪ _ ⇐ _ |- _] => nice_inversion_clear H; [idtac] *)
+| [ H : branch_tp _ _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
 | [ H : extended_val_tp _ _ |- _] => nice_inversion_clear H; [idtac]
+| [ H : checks_tp' _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
+| [ H : synth_tp' _ _ _ _ |- _] => nice_inversion_clear H; [idtac]
 end.
 Ltac invert_typing := repeat invert_typing_1.
 
-Hint Constructors synth_tp checks_tp.
+Ltac normalize_subst := repeat (match goal with
+| [ |- context f [@app_subst tp tp_substitutable ?δ ?δ' ?θ ?T] ] =>
+ replace (@app_subst tp tp_substitutable δ δ' θ T) with
+         (@app_subst (tp' ∅) (@tp_substitutable' ∅) δ δ' θ T) by reflexivity
+| [ H : context f [@app_subst tp tp_substitutable ?δ ?δ' ?θ ?T] |- _ ] =>
+ replace (@app_subst tp tp_substitutable δ δ' θ T) with
+         (@app_subst (tp' ∅) (@tp_substitutable' ∅) δ δ' θ T) in H by reflexivity
+end).
+
+Hint Constructors synth_tp checks_tp synth_tp' checks_tp'.
 Hint Resolve @subst_lemma.
 Hint Resolve @subst_cons_typing @meta_type_eq @env_tp_cons.
 
+Lemma val_add_eqs V Cs T : V ∈ T -> V ∈ (add_eq Cs T).
+intros.
+induction Cs. assumption.
+econstructor. eapply IHCs.
+Qed.
+Lemma val_rm_eqs V Cs T : V ∈ (add_eq Cs T) -> V ∈ T.
+intros.
+induction Cs. assumption.
+nice_inversion H.
+invert_typing. nice_inversion H6. 
+invert_typing. nice_inversion H6.
+by eauto.
+Qed.
+Lemma val_add_rm_eqs V Cs0 Cs1 T0 T1 : V ∈ T0 -> add_eq Cs0 T0 = add_eq Cs1 T1 -> V ∈ T1.
+intros.
+pose proof (val_add_eqs Cs0 H).
+rewrite H0 in H1.
+eapply val_rm_eqs; eauto.
+Qed.
+Lemma simpl_subst_add_eq {δ δ'} (θ:msubst δ δ') Cs (T:tp' ∅ δ) :
+(@app_subst tp (@tp_substitutable) δ δ' θ (add_eq Cs T))
+= add_eq (map 〚θ〛 Cs) (〚θ〛T).
+induction Cs; simpl in *; congruence.
+Qed.
+Lemma simpl_subst_add_eq' {δ δ'} (θ:msubst δ δ') Cs (T:tp' ∅ δ) :
+(@app_subst (@tp' empty) (@tp_substitutable' empty) δ δ' θ (add_eq Cs T))
+= add_eq (map 〚θ〛 Cs) (〚θ〛T).
+induction Cs; simpl in *; congruence.
+Qed.
 
 Theorem subj_red {δ γ} (L:checked_exp δ γ) θ ρ V :
 L[θ;;ρ] ⇓ V -> forall T, (clos_tp L θ ρ T) -> (V ∈ T).
-induction 1; intros; invert_typing; try by eauto.
+induction 1; intros; invert_typing.
+
+(* Coercion *)
+assert (V ∈ 〚θ〛T).
+eapply IHeval. econstructor. eexact H2. eauto. eauto.
+assert (〚θ〛(add_eq Cs0 T) = 〚θ〛(add_eq Cs T1)) by congruence.
+repeat erewrite simpl_subst_add_eq' in H3.
+eapply val_add_rm_eqs; by eauto.
 
 (* app *)
-assert (V2 ∈ 〚θ〛T1) by eauto.
-assert ((vfn y E θ' ρ') ∈ 〚θ〛(arr T1 T0)) by eauto.
-invert_typing.
-change (arr (〚θ'〛T2) (〚θ'〛T3) = arr (〚θ〛T1) (〚θ〛T0)) in H12. (* TODO *) nice_inversion H12. (* Combine with this? *)
-
-erewrite <- H6.
-eapply IHeval3.
-econstructor; eauto.
-erewrite compose_cons. (* TODO: This is part of normalization *)
-rewrite H4.
-by eauto.
+assert (V2 ∈ 〚θ〛T) by eauto.
+assert ((vfn y E θ' ρ') ∈ 〚θ〛(arr (add_eq Cs0 T) (add_eq Cs T0))) by eauto.
+invert_typing.  nice_inversion H12.
+assert (V ∈ 〚θ'〛T1).
+eapply IHeval3. econstructor; eauto.
+erewrite compose_cons. eapply env_tp_cons. by eassumption.
+econstructor.
+rewrite H7. erewrite simpl_subst_add_eq'. eapply val_add_eqs. by eauto.
+repeat erewrite simpl_subst_add_eq' in H8.
+eapply val_add_rm_eqs; by eauto.
 
 (* mapp *)
 assert ((vmlam X E θ' ρ') ∈ 〚θ〛(pi X0 U T)) by eauto.
 invert_typing.
-nice_inversion H10.
-erewrite assoc. erewrite msubst_over_single.
-rewrite <- (common_var (〚θ〛C) H1).
-
+nice_inversion H11.
+assert (V ∈ (〚θ',, (X,〚θ〛C) 〛 (add_eq Cs1 T1))).
+erewrite simpl_subst_add_eq.
+eapply val_add_eqs.
 eapply IHeval2.
 econstructor; eauto.
-erewrite cons_import_mvar.
-by eauto.
+erewrite cons_import_mvar. by eassumption.
+normalize_subst.
+rewrite -> (common_var (〚θ〛C) H3) in H7.
+erewrite <- msubst_over_single in H7.
+erewrite <- assoc in H7.
+erewrite H4 in H7.
+normalize_subst.
+erewrite simpl_subst_add_eq' in H7.
+eapply val_rm_eqs; by eauto.
 
 (* Var (extended value) *)
 unfold compose in *.
 pose proof (env_tp_app' y H9 H).
 invert_typing.
-erewrite <- H6.
-by eauto.
+erewrite H3 in H7.
+assert (V ∈ 〚θ'〛 (add_eq Cs0 T1)) by eauto.
+normalize_subst.
+repeat erewrite simpl_subst_add_eq' in H7, H2.
+erewrite simpl_subst_add_eq' in H7.
+eapply val_add_rm_eqs. eapply val_rm_eqs. eexact H2. by eauto.
 
 (* Var (value) *)
 unfold compose in *.
 pose proof (env_tp_app' y H8 H).
 invert_typing.
-by assumption.
+rewrite H2 in H3.
+normalize_subst. erewrite simpl_subst_add_eq' in H3.
+eapply val_rm_eqs; by eauto.
 
 (* Rec *)
+normalize_subst. erewrite simpl_subst_add_eq'. eapply val_add_eqs.
 eapply IHeval.
 econstructor; eauto.
-erewrite compose_cons. (* TODO: Part of normalizing *)
+erewrite compose_cons.
 eapply env_tp_cons;
 by eauto.
 
 (* Inl *)
-change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)). (* TODO: Should be together with a tactic for the arr case *)
+change (〚θ〛(sum (add_eq Cs T0) S)) with (sum (〚θ〛(add_eq Cs T0)) (〚θ〛S)).
+econstructor.
+erewrite simpl_subst_add_eq'. eapply val_add_eqs.
 by eauto.
 
 (* Inr *)
-change (〚θ〛(sum T S)) with (sum (〚θ〛T) (〚θ〛S)).
+change (〚θ〛(sum T (add_eq Cs T0))) with (sum (〚θ〛T) (〚θ〛(add_eq Cs T0))).
+econstructor.
+erewrite simpl_subst_add_eq'. eapply val_add_eqs.
 by eauto.
 
 (* Pair *)
-change (〚θ〛(prod T S)) with (prod (〚θ〛T) (〚θ〛S)).
-econstructor; by eauto.
+change (〚θ〛(prod (add_eq Cs0 T1) (add_eq Cs T0))) with (prod (〚θ〛(add_eq Cs0 T1)) (〚θ〛(add_eq Cs T0))).
+econstructor; erewrite simpl_subst_add_eq'; eapply val_add_eqs; by eauto.
 
 (* pack *)
 change (〚θ〛(sigma X U T)) with (sigma ₁ (〚θ〛U) (〚θ × (₁//X)〛T)).
-econstructor; eauto.
+econstructor. by eauto.
 erewrite single_subst_commute'.
+erewrite <- H0. erewrite simpl_subst_add_eq. eapply val_add_eqs.
 by eauto.
 
 (* fold *)
 change (〚θ〛(tapp (mu Z X U T) C)) with (tapp (mu (ψ:=empty) Z ₁ (〚θ〛 U) (〚θ ×  (₁ // X) 〛 T))
        (〚θ〛 C)).
 econstructor.
-apply IHeval.
-pose proof (clos_c H1 H7 H8).
 erewrite single_subst_commute'.
-erewrite tp_subst_commute in H0.
-exact H0.
-
-(* unfold *)
-assert ((vfold V) ∈ (〚θ〛 (tapp (mu Z X U T) C))) by eauto.
-invert_typing.
-erewrite tp_subst_commute.
-erewrite single_subst_commute' in H4.
-exact H4.
+change (mu Z ₁ (〚θ 〛 U) (〚θ ×  (₁ // X) 〛 T)) with (〚θ〛(mu (ψ:=empty) Z X U T)).
+erewrite <- tp_subst_commute.
+erewrite <- H0.
+erewrite simpl_subst_add_eq. eapply val_add_eqs.
+eapply IHeval.
+by eauto.
 
 (* meta *)
 simpl. econstructor.
 eapply subst_lemma; by eauto.
-Qed.
 
-(* Notes:
-Focus on simultaneous substitutions means proofs and
-intermediate results are very algebraic.
-*)
+(* fn *)
+econstructor. econstructor; by eauto.
+
+(* mlam *)
+econstructor. econstructor; by eauto.
+
+(* tt *)
+econstructor.
+
+(* case. happy case *)
+destruct H as [ (H,H4) Hy2 ]. destruct H1. subst.
+assert ((psubst (· * ρ') (〚θ''〛 (〚θ'〛 pa))) ∈ 〚θ''〛 (〚〚θ'〛 ○ θi〛 U)).
+eapply IHeval1. erewrite <- H. erewrite assoc. erewrite compose_assoc.
+erewrite <- assoc''.
+erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@m_var _)).
+erewrite mvar_left_unit. by eauto.
+
+assert (branch_tp Δ Γ (br _ Δi Γi pa θi Ei) U T0) by firstorder.
+invert_typing.
+assert (〚〚θ''〛 ○ θ'〛 (add_eq Cs0 T) = 〚〚θ''〛 ○ θ'〛(〚θi〛 T0)) by congruence.
+erewrite assoc in H8. change (〚(app_msubst (〚θ''〛 ○ θ') ○ θi) 〛 T0) with (〚〚〚θ''〛 ○ θ'〛 ○ θi 〛 T0) in H8. 
+erewrite subst_assoc in H8. erewrite <- H in H8. erewrite compose_assoc in H8.
+erewrite <- assoc' in H8.
+erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@m_var _)) in H8.
+erewrite mvar_left_unit in H8.
+erewrite <- H8.
+
+erewrite simpl_subst_add_eq. eapply val_add_eqs.
+eapply IHeval2.
+destruct H5.
+econstructor.
+by eauto.
+intro.
+erewrite subst_assoc. unfold compose. eapply subst_lemma. eapply H4. by eauto.
+erewrite compose_prod.
+eapply env_tp_prod.
+
+erewrite subst_assoc. rewrite (compose_assoc Γ 〚θi〛 〚θ'〛). erewrite <- assoc'. erewrite <- H.
+erewrite <- subst_assoc. erewrite compose_assoc. erewrite <- assoc'.
+erewrite (empty_is_initial (〚θ'' 〛 ○ (empty_initial (meta_term δi'))) (@m_var _)).
+erewrite mvar_left_unit. by assumption.
+erewrite assoc'. erewrite smap_functorial.
+do 2 erewrite smap_coerce_functorial.
+eexact H5.
+
+(* case *)
+eapply IHeval2.
+econstructor; eauto.
+econstructor; eauto. intros.
+eapply H6; by firstorder.
+
+(* case *)
+eapply IHeval2.
+econstructor; eauto.
+econstructor; eauto. intros.
+eapply H7; by firstorder.
+Qed.

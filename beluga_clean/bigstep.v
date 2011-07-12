@@ -1,5 +1,6 @@
 Require Export comp.
 
+
 Reserved Notation "E [ θ ;; ρ ] ⇓ V" (at level 0).
 Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checked_exp δ γ -> val -> Prop :=
  | ev_coerce : forall (E:checked_exp δ γ) T V,
@@ -17,25 +18,6 @@ Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checke
              I [θ ;; ρ] ⇓ (vmlam X E θ' ρ')
           -> E [(θ' ,, (X, (〚θ〛 C))) ;; ρ'] ⇓ V
           -> (mapp I C) [θ ;; ρ] ⇓ V
-(* | ev_case1 : forall δ θ γ ρ (I:synth_exp δ γ) δi
-  (θk:msubst δ δi) Bs Ck Ek V,
-            (θ /≐ θk)
-         -> case_i I Bs [θ ;; ρ] ⇓ V
-         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
- | ev_case2 : forall δ θ γ ρ (I:synth_exp δ γ) δi
-  (θk:msubst δ δi) θ' Bs (C:meta_term ∅) Ek V Ck,
-            (θ ≐ θk // θ')
-         -> I [θ ;; ρ] ⇓ meta_term_closure C
-         -> (C /≑ ⟦θ'⟧ Ck)
-         -> case_i I Bs [θ ;; ρ] ⇓ V
-         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V
- | ev_case3 : forall δ θ γ ρ (I:synth_exp δ γ) δi
- (θk:msubst δ δi) θ' θ'' Bs (C:meta_term ∅) Ek V Ck,
-            (θ ≐ θk // θ')
-         -> I [θ ;; ρ] ⇓ meta_term_closure C
-         -> (C ≑ ⟦θ'⟧ Ck // θ'')
-         -> Ek [ ⟦θ''⟧ θ' ;; ρ ] ⇓ V
-         -> case_i I ((br Ck θk Ek)::Bs) [θ ;; ρ] ⇓ V *)
  | ev_var1 : forall (y:name γ) δ' γ' γ'' (f:γ'↪γ'') (E:checked_exp δ' γ'') θ' ρ' V,
             ρ y = (evrec f E θ' ρ')
          -> (rec f E)[θ';;ρ'] ⇓ V
@@ -62,9 +44,6 @@ Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checke
  | ev_fold : forall E V,
             E[θ;;ρ] ⇓ V
          -> (fold E)[θ;;ρ] ⇓ (vfold V)
- | ev_unfold : forall I V,
-            (synth I)[θ;;ρ] ⇓ (vfold V)
-         -> (unfold I)[θ;;ρ] ⇓ V
  | ev_meta : forall (C:meta_term δ),
             (meta γ C)[θ;;ρ] ⇓ (vmeta (〚θ〛C))
  | ev_fn : forall γ' (y:γ↪γ') (E:checked_exp δ γ'), 
@@ -72,6 +51,24 @@ Inductive eval  {δ γ} (θ:msubst δ ∅) (ρ:name γ -> extended_val) : checke
  | ev_mlam : forall δ' (X:δ↪δ') (E:checked_exp δ' γ),
             (mlam X E)[θ;;ρ] ⇓ (vmlam X E θ ρ)
  | ev_tt : tt[θ;;ρ] ⇓ vtt 
+ | ev_case3 : forall n (I:synth_exp δ γ) δi Δi Γi (ρ':vec val n)
+ (θi:msubst δ δi) {δi'} θ' Bs pa Ei V1 V (Δi':mtype_assign δi') θ'' ,
+            (mgu Δi θ θi θ' Δi')
+         -> I [θ ;; ρ] ⇓ V1
+         -> (pmatch Δi' (· * (smap 〚θ'〛 Γi)) V1 (〚θ'〛pa) (· * ρ') θ'')
+         -> Ei [ (〚θ''〛 ○ θ') ;; ρ * (smap evval ρ') ] ⇓ V
+         -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇓ V
+ | ev_case1 : forall n (I:synth_exp δ γ) δi Δi Γi
+ (θi:msubst δ δi) Bs (pa:pat (∅ + n) δi) Ei V1 V ,
+            (~(exists δi', exists θ', exists Δi' : mtype_assign δi', mgu Δi θ θi θ' Δi'))
+         -> I [θ ;; ρ] ⇓ V1
+         -> (case_i I Bs) [θ ;; ρ] ⇓ V
+         -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇓ V
+ | ev_case2 : forall n (I:synth_exp δ γ) δi Δi Γi
+ (θi:msubst δ δi) {δi'} θ' (Δi':mtype_assign δi') Bs (pa:pat (∅ + n) δi) Ei V1 V,
+            (mgu Δi θ θi θ' Δi')
+         -> I [θ ;; ρ] ⇓ V1
+         -> (~(exists ρ', exists θ'', pmatch Δi' (· * (smap 〚θ'〛 Γi)) V1 (〚θ'〛pa) (· * ρ') θ''))
+         -> (case_i I Bs) [θ ;; ρ] ⇓ V
+         -> (case_i I ((br _ Δi Γi pa θi Ei)::Bs)) [θ ;; ρ] ⇓ V
 where "E [ θ ;; ρ ] ⇓ V" := (@eval _  _ θ ρ E V).
-
-(* TODO: We can simplify this definition by making it a 3 (4) place predicate, so we don't have to quantify over θ and ρ every time *)
