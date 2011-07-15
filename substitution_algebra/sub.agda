@@ -52,6 +52,7 @@ data ⊥ : Set where
 ¬ : Set -> Set
 ¬ A = A -> ⊥
 
+-- Oh, right, we need to say that you can only η expand where it doesn't introduce a beta redex...
 mutual
  data _↝_ : ∀ {A B} -> A ⟶ B -> A ⟶ B -> Set where
   βl : ∀ {A B C} (f : A ⟶ C) (g : B ⟶ C) -> < [ f , g ] > ◇ < inl {A} {B} > ↝ f
