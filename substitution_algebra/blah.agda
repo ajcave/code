@@ -25,22 +25,15 @@ mutual
   -- Why here? Why not in nf? 3rd category?
   _∘v[_]∘_ : ∀ {τ σ ρ α } -> (S : spine σ ρ) -> var τ σ -> nf α τ -> spine α ρ
 
-
-πl∘ : ∀ {τ σ ρ} -> (S : spine ρ (σ × τ)) -> spine ρ σ
-πl∘ id = id ∘πl
-πl∘ (S ∘πl) = πl∘ S ∘πl
-πl∘ (S ∘πr) = πl∘ S ∘πr
-πl∘ (S ∘v[ y ]∘ y') = πl∘ S ∘v[ y ]∘ y'
-
-πr∘ : ∀ {τ σ ρ} -> (S : spine ρ (σ × τ)) -> spine ρ τ
-πr∘ id = id ∘πr
-πr∘ (S ∘πl) = πr∘ S ∘πl
-πr∘ (S ∘πr) = πr∘ S ∘πr
-πr∘ (S ∘v[ y ]∘ y') = πr∘ S ∘v[ y ]∘ y'
+_∘₁_ : ∀ {Γ σ τ} -> spine Γ τ -> spine σ Γ -> spine σ τ
+t ∘₁ id = t
+t ∘₁ (S ∘πl) = (t ∘₁ S) ∘πl
+t ∘₁ (S ∘πr) = (t ∘₁ S) ∘πr
+t ∘₁ (S ∘v[ y ]∘ y') = (t ∘₁ S) ∘v[ y ]∘ y'
 
 η-exp : ∀ {τ σ} -> spine σ τ -> nf σ τ
 η-exp {▹ B} S = ▹ S
-η-exp {τ × σ} S = < (η-exp (πl∘ S)) , (η-exp (πr∘ S)) >
+η-exp {τ × σ} S = < (η-exp ((id ∘πl) ∘₁ S)) , (η-exp ((id ∘πr) ∘₁ S)) >
 η-exp {⊤} S = !
 
 mutual
