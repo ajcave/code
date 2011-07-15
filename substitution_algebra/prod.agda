@@ -140,14 +140,14 @@ cp5 A B C (π2∘ y) s = {!!} -}
 η-exp (y ⊗ y') t = < η-exp y (π1∘ t) , η-exp y' (π2∘ t) >
 η-exp (▹ y) t = ▹ t
 
-cp3 : ∀ A B C -> neut B C -> norm A B -> norm A C
+cp3 : ∀ A B C -> neut B C -> norm A B -> neut A C
 cp3 A B C (v∘ y y') s = {!!}
-cp3 A .C C id s = s
-cp3 A B C (π1∘ y) s = η-exp {!!} (π1∘ {!!})
+cp3 A .C C id s = {!!}
+cp3 A B C (π1∘ y) s = {!!}
 cp3 A B C (π2∘ y) s = {!!}
 
 cp4 : ∀ A B C -> norm B C -> norm A B -> norm A C
-cp4 A B .(▹ B') (▹ {.B} {B'} y) s = cp3 A B (▹ B') y s
+cp4 A B .(▹ B') (▹ {.B} {B'} y) s = {!!} -- cp3 A B (▹ B') y s
 cp4 A B .(T ⊗ S) (<_,_> {.B} {T} {S} y y') s = < (cp4 A B T y s) , (cp4 A B S y' s) >
 cp4 A B .⊤ ! s = !
 
