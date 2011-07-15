@@ -5,7 +5,6 @@ postulate
 
 data type : Set where
  ▹ : atype -> type
--- _⇒_ : type -> type -> type
  _×_ : type -> type -> type
  ⊤ : type
 
@@ -24,7 +23,7 @@ mutual
   _∘πl : ∀ {τ σ ρ} -> (S : spine σ ρ) -> spine (σ × τ) ρ
   _∘πr : ∀ {τ σ ρ} -> (S : spine τ ρ) -> spine (σ × τ) ρ
   -- Why here? Why not in nf? 3rd category?
-  _∘v[_]∘_ : ∀ {τ σ ρ α } -> (S : spine σ ρ) -> var τ σ -> nf α τ -> spine α ρ
+  _∘v[_]∘_ : ∀ {τ σ ρ α} -> (S : spine σ ρ) -> var τ σ -> nf α τ -> spine α ρ
 
 _∘₁_ : ∀ {Γ σ τ} -> spine Γ τ -> spine σ Γ -> spine σ τ
 t ∘₁ id = t
