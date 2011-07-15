@@ -1,10 +1,17 @@
 module sub where
 
 postulate
- O : Set
+ bO : Set
+
+data O : Set where
  zero : O
- _+_ : O -> O -> O -- Implement these as summation lists like the composition lists below
- 
+ _⊕_ : bO -> O -> O
+
+_+_ : O -> O -> O
+zero + B = B
+(A ⊕ As) + B = A ⊕ (As + B)
+
+postulate
  var : O -> O -> Set
 
 mutual
@@ -28,8 +35,17 @@ id ◇ g = g
 <_> : ∀ {A B} -> (A ⟹ B) -> (A ⟶ B)
 < f > = f ∘ id
 
-data _≡_ {A : Set} (x : A) : {B : Set} -> B -> Set where
+data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
+
+data _≡₁_ {A : Set₁} (x : A) : A -> Set where
+ refl : x ≡₁ x
+
+data _≡'_ {A : Set} (x : A) : {B : Set} -> B -> Set where
+ refl : x ≡' x
+
+≅⇒≡ : ∀ {A B} {x : A} {y : B} → x ≡' y → A ≡₁ B
+≅⇒≡ refl = refl
 
 data ⊥ : Set where
 
@@ -37,51 +53,66 @@ data ⊥ : Set where
 ¬ A = A -> ⊥
 
 mutual
--- infixr 20 _≈_ 
--- data _≈_ : ∀ {A B} -> A ⟹ B -> A ⟹ B -> Set where
---  refl : ∀ {A B} (f : var A B) -> (v f) ≈ (v f)
  data _↝_ : ∀ {A B} -> A ⟶ B -> A ⟶ B -> Set where
---  base : ∀ {A B} (f g : A ⟹ B) -> f ≈ g -> < f > ∼ < g >
-  βl : ∀ {A B C} (f : A ⟶ C) (g : B ⟶ C) -> < [ f , g ] > ◇ < inl > ↝ f
-  βr : ∀ {A B C} (f : A ⟶ C) (g : B ⟶ C) -> < [ f , g ] > ◇ < inr > ↝ g
-  !init : ∀ {A} (f : zero ⟶ A) -> ¬ (A ≡ zero) -> f ↝ < ! >
-  !zero : ∀ (f : zero ⟶ zero) -> ¬ (f ≡ (id {zero})) -> f ↝ id
-  η : ∀ {A B} -> < [ < inl {A} > , < inr {B} > ] > ↝ id -- I suspect this may cause me pain. Confluence in the presence of this?
+  βl : ∀ {A B C} (f : A ⟶ C) (g : B ⟶ C) -> < [ f , g ] > ◇ < inl {A} {B} > ↝ f
+  βr : ∀ {A B C} (f : A ⟶ C) (g : B ⟶ C) -> < [ f , g ] > ◇ < inr {B} {A} > ↝ g
+  !init : ∀ {A} (f : zero ⟶ A) -> ¬ (A ≡ zero) -> ¬ (f ≡ < ! >) -> f ↝ < ! >
+  !zero : ∀ (f : zero ⟶ zero) -> ¬ (f ≡ id) -> f ↝ id
+  η : ∀ {A B C} (f : (A + B) ⟶ C) -> f ↝ < [ f ◇ < inl {A} {B} > , f ◇ < inr {B} {A} > ] >
  
- data _⇾_ : ∀ {A B} -> A ⟶ B -> A ⟶ B -> Set where
-  context : ∀ {A B C D} (i : C ⟶ D) {f g : B ⟶ C} (h : A ⟶ B) -> (f ↝ g) -> (i ◇ f ◇ h) ⇾ (i ◇ g ◇ h)
+data ctx : O -> O -> O -> O -> Set where
+ concat : ∀ {A B C D E F} (i : C ⟶ D) (C : ctx B C E F) (h : A ⟶ B) -> ctx A D E F
+ caseL : ∀ {A B C E F} -> (Cf : ctx A C E F) -> (g : B ⟶ C) -> ctx (A + B) C E F
+ caseR : ∀ {A B C E F} -> (f : A ⟶ C) -> (Cg : ctx B C E F) -> ctx (A + B) C E F
+ here : ∀ {A B} -> ctx A B A B
 
--- Should I be able to show that if f : A -> C, g : B -> C, h : A + B -> C
--- are such that h ∘ inl = f and h ∘ inr = g then h = [f,g]?
--- This is uniqueness of [f,g]. Is this extensionality? Or just eta?
+plug : ∀ {A B C D} -> ctx A B C D -> (C ⟶ D) -> (A ⟶ B)
+plug (concat i C h) j = i ◇ plug C j ◇ h
+plug (caseL Cf g) j = < [ plug Cf j , g ] >
+plug (caseR f Cg) j = < [ f , plug Cg j ] >
+plug here j = j
+
+composeIdL : ∀ {A B} {f : B ⟶ A} {g : A ⟶ B} -> f ◇ g ≡ id -> f ≡' (id {A})
+composeIdL {f = id} r = refl
+composeIdL {f = f ∘ fs} ()
+
+plugId : ∀ {A C D} (Ct : ctx A A C D) {f : C ⟶ D} -> plug Ct f ≡ id -> f ≡' id {D}
+plugId (concat i C0 h) r = {!!}
+plugId (caseL Cf g) ()
+plugId (caseR f Cg) ()
+plugId here refl = {!refl!}
+
+data _⇾_ : ∀ {A B} -> A ⟶ B -> A ⟶ B -> Set where
+ context : ∀ {A B C D} {Ct : ctx A D B C} {f g : B ⟶ C} -> (f ↝ g) -> plug Ct f ⇾ plug Ct g
 
 -- Strongly normalizing
 data sn : ∀ {A B} -> A ⟶ B -> Set where
  sni : ∀ {A B} {f : A ⟶ B} -> (∀ {g} -> f ⇾ g -> sn g) -> sn f
 
 {-
-idDoesntStep : ∀ {A B} {C : Set} {f g : A ⟶ B} -> f ↝ g -> f ≡ (id {B}) -> C
+idDoesntStep : ∀ {A} {C : Set} {f g : A ⟶ A} -> f ↝ g -> f ≡ id -> C
 idDoesntStep (βl f g) ()
 idDoesntStep (βr f g) ()
-idDoesntStep (!init {B} f y) q = {!q!} -- ???
+idDoesntStep (!init .id y _) refl with y refl
+... | ()
 idDoesntStep (!zero f y) x with y x
 ... | ()
-idDoesntStep η ()
+idDoesntStep (η f) ()
 
-idDoesntStep' : ∀ {A B} {C : Set} {f g : A ⟶ B} -> f ⇾ g -> f ≡ (id {B}) -> C
-idDoesntStep' {C = C} (context i f g h y) eq with idDoesntStep {C = C} y
-... | w = {!!} -}
+idDoesntStep' : ∀ {A} {C : Set} {f g : A ⟶ A} -> f ⇾ g -> f ≡ id -> C
+idDoesntStep' {C = C} (context y) eq = {!!} -}
 
-allSn : ∀ {A B} (f : A ⟶ B) -> sn f
-allSn {A} {B} f = sni foo
- where foo : {f g : A ⟶ B}  -> f ⇾ g -> sn g
-       foo (context i h (βl f g)) = {!!}
-       foo (context i h (βr f g)) = {!!}
-       foo (context i h (!init f y)) = {!!}
-       foo (context i h (!zero f y)) = {!!}
-       foo (context i h η) = {!!}
---allSn id = sni (λ g → idDoesntStep' g refl)
---allSn (f ∘ g) = {!!}  
+
+-- Oh, use an eq_dep, not a heterogeneous equality. Specific to ⟶.
+
+-- Need some sort of contextual recursion pattern
+-- Maybe weak normalization is easier?
+{-allSn : ∀ {A B} {f g : A ⟶ B} -> (f ⇾ g) -> sn g
+allSn (context (βl g g')) = {!!}
+allSn (context (βr f g)) = {!!}
+allSn (context (!init f y q)) = {!!}
+allSn (context (!zero f y)) = {!!}
+allSn (context (η f)) = {!!} -}
  
   
 
