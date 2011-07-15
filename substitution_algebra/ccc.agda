@@ -1,4 +1,4 @@
-module blah where
+module ccc where
 
 postulate
  atype : Set
@@ -26,55 +26,47 @@ mutual
   _∘πr : ∀ {τ σ ρ} -> (S : spine τ ρ) -> spine (σ × τ) ρ
   -- Why here? Why not in nf? 3rd category?
   _∘v[_]∘_ : ∀ {τ σ ρ α} -> (S : spine σ ρ) -> var τ σ -> nf α τ -> spine α ρ
-  _∘app_ : ∀ {τ σ ρ} -> (S : spine σ ρ) -> (N : nf ⊤ τ) -> spine (τ ⇒ σ) ρ
+  _∘eval[_,_] : ∀ {C τ σ ρ} -> (S1 : spine σ ρ) -> (S : spine C (τ ⇒ σ)) -> (N : nf C τ) -> spine C ρ
 
 _∘₁_ : ∀ {Γ σ τ} -> spine Γ τ -> spine σ Γ -> spine σ τ
 t ∘₁ id = t
 t ∘₁ (S ∘πl) = (t ∘₁ S) ∘πl
 t ∘₁ (S ∘πr) = (t ∘₁ S) ∘πr
 t ∘₁ (S ∘v[ y ]∘ y') = (t ∘₁ S) ∘v[ y ]∘ y'
-t ∘₁ (S ∘app N) = (t ∘₁ S) ∘app N
+t ∘₁ (S ∘eval[ N , M ]) = (t ∘₁ S) ∘eval[ N , M ]
 
-ap : ∀ {τ σ ρ} -> spine σ (τ ⇒ ρ) -> nf ⊤ τ -> spine σ ρ
-ap id N = id ∘app N
-ap (S ∘πl) N = ap {!!} {!!}
-ap (S ∘πr) N = {!!}
-ap (S ∘v[ y ]∘ y') N = {!!}
-ap (S ∘app N) N' = (ap S N') ∘app N
+wknsl : ∀ {Γ σ τ} -> spine Γ τ -> spine (Γ × σ) τ
+wknsl t = {!!}
+
+wknsr : ∀ {Γ σ τ} -> spine Γ τ -> spine (σ × Γ) τ
+wknsr t = {!!}
+
+wknl : ∀ {Γ σ τ} -> nf Γ τ -> nf (Γ × σ) τ
+wknl t = {!!}
+
+wknr : ∀ {Γ σ τ} -> nf Γ τ -> nf (σ × Γ) τ
+wknr t = {!!} 
 
 η-exp : ∀ {τ σ} -> spine σ τ -> nf σ τ
 η-exp {▹ B} S = ▹ S
 η-exp {τ × σ} S = < (η-exp ((id ∘πl) ∘₁ S)) , (η-exp ((id ∘πr) ∘₁ S)) >
 η-exp {⊤} S = !
-η-exp {τ ⇒ σ} S = ƛ (η-exp {!!})
-
-{- Would my life be easier with linear logic? -}
-wkns : ∀ {Γ σ τ} -> spine Γ τ -> spine (Γ × σ) τ
-wkns id = id ∘πl
-wkns (S ∘πl) = {!!}
-wkns (S ∘πr) = {!!}
-wkns (S ∘v[ y ]∘ y') = {!!}
-wkns (S ∘app N) = {!!}
-
-wkn : ∀ {Γ σ τ} -> nf Γ τ -> nf (Γ × σ) τ
-wkn (▹ S) = ▹ {!!}
-wkn < N , M > = < (wkn N) , (wkn M) >
-wkn ! = !
-wkn (ƛ N) = ƛ {!!}
+η-exp {τ ⇒ σ} S = ƛ (η-exp (id ∘eval[ wknsl S , η-exp (wknsr id) ]))
 
 mutual
  _∘_ : ∀ {Γ σ τ} -> nf Γ τ -> nf σ Γ -> nf σ τ
  (▹ S) ∘ N = S ◇ N
  < M , N > ∘ N' = < (M ∘ N') , (N ∘ N') >
  ! ∘ N = !
- (ƛ N) ∘ N' = ƛ (N ∘ < {!!} , {!!} >)
+ (ƛ N) ∘ N' = ƛ (N ∘ < wknl N' , wknr (η-exp id) >)
 
  _◇_ : ∀ {Γ τ σ} -> spine σ τ -> nf Γ σ -> nf Γ τ
  id ◇ N  = N
  (S ∘πl) ◇ < N , M > = S ◇ N
  (S ∘πr) ◇ < N , M > = S ◇ M
  (S ∘v[ y ]∘ f) ◇ N = η-exp (S ∘v[ y ]∘ (f ∘ N))
- (S ∘app M) ◇ N = {!!}
+ (S ∘eval[ R , M ]) ◇ N with R ◇ N
+ (S ∘eval[ R , M ]) ◇ N | ƛ N' = S ◇ (N' ∘ < (η-exp id) , (M ∘ N) >)
 
 mutual
  data _⟹_ : type -> type -> Set where
