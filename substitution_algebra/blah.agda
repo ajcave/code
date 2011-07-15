@@ -17,10 +17,12 @@ mutual
   ▹ : ∀ {τ} -> (S : spine Γ (▹ τ)) -> nf Γ (▹ τ)
   <_,_> : ∀ {σ τ} -> (N : nf Γ τ) -> (M : nf Γ σ) -> nf Γ (τ × σ)
   ! : nf Γ ⊤
+ -- Why not restrict the second to atype?
  data spine : type -> type -> Set where
   id : ∀ {ρ} -> spine ρ ρ
   _∘πl : ∀ {τ σ ρ} -> (S : spine σ ρ) -> spine (σ × τ) ρ
   _∘πr : ∀ {τ σ ρ} -> (S : spine τ ρ) -> spine (σ × τ) ρ
+  -- Why here? Why not in nf? 3rd category?
   _∘v[_]∘_ : ∀ {τ σ ρ α } -> (S : spine σ ρ) -> var τ σ -> nf α τ -> spine α ρ
 
 
