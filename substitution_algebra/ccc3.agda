@@ -143,16 +143,5 @@ ev (ƛ y · fs) s = λ s' x → ev y ((ev fs (appSubst s s')) , x)
 ev (eval · fs) s with ev fs s
 ... | f , m = f id m
 
-{-
-ev : ∀ {A B C} -> B ⟶ C -> nf A B -> nf A C
-ev id s = s
-ev (v y · fs) s = η-exp (id ∘v[ y ]∘ (ev fs s))
-ev (< y , y' > · fs) s = < ev y (ev fs s) , ev y' (ev fs s) >
-ev (πl · fs) s with ev fs s
-... | < N , M > = N
-ev (πr · fs) s with ev fs s
-... | < N , M > = M
-ev (! · fs) s = !
-
 nbe : ∀ {A B} -> A ⟶ B -> nf A B
-nbe t = ev t (η-exp id) -}
+nbe t = reify (ev t (reflect id))
