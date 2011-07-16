@@ -26,6 +26,7 @@ mutual
   _∘πr : ∀ {τ σ ρ} -> (S : spine τ ρ) -> spine (σ × τ) ρ
   -- Why here? Why not in nf? 3rd category?
   _∘v[_]∘_ : ∀ {τ σ ρ α} -> (S : spine σ ρ) -> var τ σ -> nf α τ -> spine α ρ
+  {- I don't think this is a true normal form yet... -}
   _∘eval[_,_] : ∀ {C τ σ ρ} -> (S1 : spine σ ρ) -> (S : spine C (τ ⇒ σ)) -> (N : nf C τ) -> spine C ρ
 
 record Unit : Set where
