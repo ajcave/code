@@ -76,13 +76,6 @@ mutual
   id : ∀ {A} -> A ⟶ A
   _·_ : ∀ {A B C} -> (f : B ⟹ C) -> (fs : A ⟶ B) -> (A ⟶ C)
 
-[_] : ∀ {A B} -> A ⟹ B -> A ⟶ B
-[ t ] = t · id
-
-_◆_ : ∀ {A B C} -> (B ⟶ C) -> (A ⟶ B) -> (A ⟶ C)
-id ◆ f = f
-(g · gs) ◆ f = g · (gs ◆ f) 
-
 appSubst : ∀ {C A B} -> sem B C -> spine A B -> sem A C
 appSubst {▹ α} s t = s ∘₁ t
 appSubst {τ ⇒ σ} s t = λ s' x → s (t ∘₁ s') x
