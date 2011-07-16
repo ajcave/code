@@ -36,8 +36,7 @@ t ∘₁ (S ∘v[ y ]∘ y') = (t ∘₁ S) ∘v[ y ]∘ y'
 η-exp {τ × σ} S = < (η-exp ((id ∘πl) ∘₁ S)) , (η-exp ((id ∘πr) ∘₁ S)) >
 η-exp {⊤} S = !
 
--- Oh... This is hereditary substitution, but I'm not even using it..
--- Try the hereditary substitition based evaluator..
+-- This is hereditary substitution
 mutual
  _∘_ : ∀ {Γ σ τ} -> nf Γ τ -> nf σ Γ -> nf σ τ
  (▹ S) ∘ N = S ◇ N
