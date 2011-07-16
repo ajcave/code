@@ -1,4 +1,4 @@
-module ccc where
+module ccc2 where
 
 postulate
  atype : Set
@@ -18,7 +18,7 @@ mutual
   ▹ : ∀ {τ} -> (S : spine Γ (▹ τ)) -> nf Γ (▹ τ)
   <_,_> : ∀ {σ τ} -> (N : nf Γ τ) -> (M : nf Γ σ) -> nf Γ (τ × σ)
   ! : nf Γ ⊤
-  ƛ : ∀ {σ τ} -> (N : nf (Γ × τ) σ) -> nf Γ (τ ⇒ σ)
+  ƛ : ∀ {σ τ} -> (N : nf τ σ) -> nf Γ (τ ⇒ σ)
  -- Why not restrict the second to atype?
  data spine : type -> type -> Set where
   id : ∀ {ρ} -> spine ρ ρ
@@ -34,7 +34,7 @@ t ∘₁ (S ∘πl) = (t ∘₁ S) ∘πl
 t ∘₁ (S ∘πr) = (t ∘₁ S) ∘πr
 t ∘₁ (S ∘v[ y ]∘ y') = (t ∘₁ S) ∘v[ y ]∘ y'
 t ∘₁ (S ∘eval[ N , M ]) = (t ∘₁ S) ∘eval[ N , M ]
-
+{-
 data ctx : Set where
  [_]×_ : (C : ctx) -> (τ : type) -> ctx
  _×[_] : (τ : type) -> (C : ctx) -> ctx
@@ -70,20 +70,20 @@ wknl : ∀ {Γ σ τ} -> nf Γ τ -> nf (Γ × σ) τ
 wknl t = wkn ● ([ ● ]× _) t
 
 wknr : ∀ {Γ σ τ} -> nf Γ τ -> nf (σ × Γ) τ
-wknr t = wkn ● (_ ×[ ● ]) t 
+wknr t = wkn ● (_ ×[ ● ]) t  -}
 
 η-exp : ∀ {τ σ} -> spine σ τ -> nf σ τ
 η-exp {▹ B} S = ▹ S
 η-exp {τ × σ} S = < (η-exp ((id ∘πl) ∘₁ S)) , (η-exp ((id ∘πr) ∘₁ S)) >
 η-exp {⊤} S = !
-η-exp {τ ⇒ σ} S = ƛ (η-exp (id ∘eval[ S ∘πl , η-exp (id ∘πr) ]))
+η-exp {τ ⇒ σ} S = {!!} --ƛ (η-exp (id ∘eval[ S ∘πl , η-exp (id ∘πr) ]))
 
 mutual
  _∘_ : ∀ {Γ σ τ} -> nf Γ τ -> nf σ Γ -> nf σ τ
  (▹ S) ∘ N = S ◇ N
  < M , N > ∘ N' = < (M ∘ N') , (N ∘ N') >
  ! ∘ N = !
- (ƛ N) ∘ N' = ƛ (N ∘ < wknl N' , wknr (η-exp id) >)
+ (ƛ N) ∘ N' = ƛ (N ∘ {!!})
 
  _◇_ : ∀ {Γ τ σ} -> spine σ τ -> nf Γ σ -> nf Γ τ
  id ◇ N  = N
@@ -91,7 +91,7 @@ mutual
  (S ∘πr) ◇ < N , M > = S ◇ M
  (S ∘v[ y ]∘ f) ◇ N = η-exp (S ∘v[ y ]∘ (f ∘ N))
  (S ∘eval[ R , M ]) ◇ N with R ◇ N
- (S ∘eval[ R , M ]) ◇ N | ƛ N' = S ◇ (N' ∘ < (η-exp id) , (M ∘ N) >)
+ (S ∘eval[ R , M ]) ◇ N | ƛ N' = S ◇ (N' ∘ {!!}) --< (η-exp id) , (M ∘ N) >)
 
 mutual
  data _⟹_ : type -> type -> Set where
@@ -123,5 +123,3 @@ ev (! · fs) s = !
 
 nbe : ∀ {A B} -> A ⟶ B -> nf A B
 nbe t = ev t (η-exp id)
-
--- Probably I should just see if the calculus of structures is the right setting?
