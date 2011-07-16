@@ -36,6 +36,8 @@ t ∘₁ (S ∘v[ y ]∘ y') = (t ∘₁ S) ∘v[ y ]∘ y'
 η-exp {τ × σ} S = < (η-exp ((id ∘πl) ∘₁ S)) , (η-exp ((id ∘πr) ∘₁ S)) >
 η-exp {⊤} S = !
 
+-- Oh... This is hereditary substitution, but I'm not even using it..
+-- Try the hereditary substitition based evaluator..
 mutual
  _∘_ : ∀ {Γ σ τ} -> nf Γ τ -> nf σ Γ -> nf σ τ
  (▹ S) ∘ N = S ◇ N
@@ -66,6 +68,7 @@ _◆_ : ∀ {A B C} -> (B ⟶ C) -> (A ⟶ B) -> (A ⟶ C)
 id ◆ f = f
 (g · gs) ◆ f = g · (gs ◆ f) 
 
+-- NbE evaluator
 ev : ∀ {A B C} -> B ⟶ C -> nf A B -> nf A C
 ev id s = s
 ev (v y · fs) s = η-exp (id ∘v[ y ]∘ (ev fs s))
@@ -78,3 +81,16 @@ ev (! · fs) s = !
 
 nbe : ∀ {A B} -> A ⟶ B -> nf A B
 nbe t = ev t (η-exp id)
+
+-- Hereditary substitition based evaluator
+mutual
+ he : ∀ {A B} -> A ⟹ B -> nf A B
+ he (v y) = η-exp (id ∘v[ y ]∘ η-exp id)
+ he < y , y' > = < hseval y , hseval y' >
+ he πl = η-exp (id ∘πl)
+ he πr = η-exp (id ∘πr)
+ he ! = !
+
+ hseval : ∀ {A B} -> A ⟶ B -> nf A B
+ hseval id = η-exp id
+ hseval (f · fs) = he f ∘ (hseval fs)

@@ -35,6 +35,7 @@ t ∘₁ (S ∘πr) = (t ∘₁ S) ∘πr
 t ∘₁ (S ∘v[ y ]∘ y') = (t ∘₁ S) ∘v[ y ]∘ y'
 t ∘₁ (S ∘eval[ N , M ]) = (t ∘₁ S) ∘eval[ N , M ]
 
+{- 
 data ctx : Set where
  [_]×_ : (C : ctx) -> (τ : type) -> ctx
  _×[_] : (τ : type) -> (C : ctx) -> ctx
@@ -70,7 +71,7 @@ wknl : ∀ {Γ σ τ} -> nf Γ τ -> nf (Γ × σ) τ
 wknl t = wkn ● ([ ● ]× _) t
 
 wknr : ∀ {Γ σ τ} -> nf Γ τ -> nf (σ × Γ) τ
-wknr t = wkn ● (_ ×[ ● ]) t 
+wknr t = wkn ● (_ ×[ ● ]) t -}
 
 η-exp : ∀ {τ σ} -> spine σ τ -> nf σ τ
 η-exp {▹ B} S = ▹ S
@@ -78,6 +79,7 @@ wknr t = wkn ● (_ ×[ ● ]) t
 η-exp {⊤} S = !
 η-exp {τ ⇒ σ} S = ƛ (η-exp (id ∘eval[ S ∘πl , η-exp (id ∘πr) ]))
 
+{-
 mutual
  _∘_ : ∀ {Γ σ τ} -> nf Γ τ -> nf σ Γ -> nf σ τ
  (▹ S) ∘ N = S ◇ N
@@ -91,7 +93,7 @@ mutual
  (S ∘πr) ◇ < N , M > = S ◇ M
  (S ∘v[ y ]∘ f) ◇ N = η-exp (S ∘v[ y ]∘ (f ∘ N))
  (S ∘eval[ R , M ]) ◇ N with R ◇ N
- (S ∘eval[ R , M ]) ◇ N | ƛ N' = S ◇ (N' ∘ < (η-exp id) , (M ∘ N) >)
+ (S ∘eval[ R , M ]) ◇ N | ƛ N' = S ◇ (N' ∘ < (η-exp id) , (M ∘ N) >) -}
 
 mutual
  data _⟹_ : type -> type -> Set where
@@ -100,6 +102,7 @@ mutual
   πl : ∀ {T S} -> (T × S) ⟹ T
   πr : ∀ {T S} -> (T × S) ⟹ S
   ! : ∀ {T} -> T ⟹ ⊤
+--  ƛ : ∀ {Γ T S} -> (Γ × T) ⟶ S -> Γ ⟹ (T ⇒ S)
  data _⟶_ : type -> type -> Set where
   id : ∀ {A} -> A ⟶ A
   _·_ : ∀ {A B C} -> (f : B ⟹ C) -> (fs : A ⟶ B) -> (A ⟶ C)
@@ -120,6 +123,7 @@ ev (πl · fs) s with ev fs s
 ev (πr · fs) s with ev fs s
 ... | < N , M > = M
 ev (! · fs) s = !
+--ev (ƛ N · fs) s = ƛ {!!}
 
 nbe : ∀ {A B} -> A ⟶ B -> nf A B
 nbe t = ev t (η-exp id)
