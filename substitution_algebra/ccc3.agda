@@ -49,49 +49,6 @@ t ∘₁ (S ∘πl) = (t ∘₁ S) ∘πl
 t ∘₁ (S ∘πr) = (t ∘₁ S) ∘πr
 t ∘₁ (S ∘v[ y ]∘ y') = (t ∘₁ S) ∘v[ y ]∘ y'
 t ∘₁ (S ∘eval[ N , M ]) = (t ∘₁ S) ∘eval[ N , M ]
-{-
-data ctx : Set where
- [_]×_ : (C : ctx) -> (τ : type) -> ctx
- _×[_] : (τ : type) -> (C : ctx) -> ctx
- ● : ctx
-
-plug : ctx -> type -> type
-plug ([ C ]× τ) τ' = (plug C τ') × τ
-plug (τ ×[ C ]) τ' = τ × (plug C τ')
-plug ● τ = τ 
-
-plugc : ctx -> ctx -> ctx
-plugc ([ C ]× τ) c = [ plugc C c ]× τ
-plugc (τ ×[ C ]) c = τ ×[ plugc C c ]
-plugc ● c = c
-
-wkns : ∀ C {σ τ} -> spine σ τ -> spine (plug C σ) τ
-wkns ([ C ]× τ) t = (wkns C t) ∘πl
-wkns (τ ×[ C ]) t = wkns C t ∘πr
-wkns ● t = t
-
-wkns2 : ∀ C D {σ τ} -> spine (plug C σ) τ -> spine (plug C (plug D σ)) τ
-wkns2 ([ C ]× τ) D t = {!!}
-wkns2 (τ ×[ C ]) D t = {!!}
-wkns2 ● D t = wkns D t
-
-wkn : ∀ C D {σ τ} -> nf (plug C σ) τ -> nf (plug C (plug D σ)) τ
-wkn C D (▹ S) = ▹ (wkns2 C D S)
-wkn C D < N , M > = < (wkn C D N) , (wkn C D M) >
-wkn C D ! = !
-wkn C D {σ} (ƛ {ρ} {τ} N) = ƛ (wkn ([ C ]× τ) D N)
-
-wknl : ∀ {Γ σ τ} -> nf Γ τ -> nf (Γ × σ) τ
-wknl t = wkn ● ([ ● ]× _) t
-
-wknr : ∀ {Γ σ τ} -> nf Γ τ -> nf (σ × Γ) τ
-wknr t = wkn ● (_ ×[ ● ]) t  -}
-
-η-exp : ∀ {τ σ} -> spine σ τ -> nf σ τ
-η-exp {▹ B} S = ▹ S
-η-exp {τ × σ} S = < (η-exp ((id ∘πl) ∘₁ S)) , (η-exp ((id ∘πr) ∘₁ S)) >
-η-exp {⊤} S = !
-η-exp {τ ⇒ σ} S = ƛ (η-exp (id ∘eval[ (S ∘πl) , (η-exp (id ∘πr)) ]))
 
 mutual
  reflect : ∀ {τ σ} -> spine σ τ -> sem σ τ
@@ -132,6 +89,7 @@ appSubst {τ ⇒ σ} s t = λ s' x → s (t ∘₁ s') x
 appSubst {τ × σ} (s1 , s2) t = (appSubst s1 t) , (appSubst s2 t)
 appSubst {⊤} s t = !
 
+{- Can sell this as "NbE for explicit substitutions" -}
 ev : ∀ {A B C} -> B ⟶ C -> sem A B -> sem A C
 ev id s = s
 ev (v y · fs) s = reflect (id ∘v[ y ]∘ reify (ev fs s))
