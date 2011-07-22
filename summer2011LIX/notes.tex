@@ -9,6 +9,17 @@
 \maketitle
 Explain in context of church rosser?
 
+Problems:
+\begin{enumerate}
+\item {\tt member (of (app M N) T) G} should be discarded
+\item Freshness: {\tt member (of x (T x)) (G x)} - we know that  {\tt x}
+  does not occur in {\tt T}. Example? How do we handle this?
+\item Pruning: {\tt member (E x) G} entails {\tt E}'s dependency on
+  {\tt x} is vacuous. How to handle?
+\item Know one ({\tt pr x x}) get others ({\tt cd x x} and {\tt notlam x}).
+\item Functional relationships (only one type per variable)
+\end{enumerate}
+
 Block declarations:
 
 n-ary worlds and blocks are defined: 
@@ -24,7 +35,10 @@ t(\vec{x}, \vec{T}) &:= \text{term with variables drawn from } \vec{x} \text{
 - Nabla may not be the right binder
 - Note that the $T$s are outside the scope of the $\nabla$ and hence
 any dependency must be explicitly mentioned.
-- Why? Because this jives better with translation into context relations? 
+- Why? Because this jives better with translation into context
+relations? 
+
+Elaboration into relations:
 
 Block b := nabla x, (pr x x; cd x x, notlam x)
 World w := b1 | b2 | ... | bn
