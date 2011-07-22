@@ -80,4 +80,35 @@ One would like to enforce the property that {\tt {G |- f t1 ... tn}} is
 only ``well-typed'' if {\tt G} is a world of the type associated to
 the family {\tt f}. 
 
+(Look at how much work eq\_typing.thm does just for this)
+
+In particular, this generates the need for theorems of this form:
+
+\begin{verbatim}
+Theorem typing_wf_ctx_is_wf_ctx : forall G D, typing_wf_ctx G D -> wf_ctx D.
+\end{verbatim}
+
+Concrete example: 
+\begin{verbatim}
+Theorem eq_for_inv : forall W U V T1 T2,
+   wf_ctx W
+-> {W |- wf (for U T1)}
+-> {W |- wf (for V T2)}
+-> {W |- eq (for U T1) (for V T2)}
+-> {W |- eq U V} /\ nabla x, {W, wf x |- eq (T1 x) (T2 x)}.
+\end{verbatim}
+
+In order to apply this inside:
+
+\begin{verbatim}
+Theorem subj_red : forall G M M' T,
+   ctx G
+-> {G |- of M T}
+-> {G |- step M M'}
+-> {G |- of M' T}.
+\end{verbatim}
+
+in which we will have assumptions
+{\tt {G |- eq (for U T1) (for V T1)}}, we have to strengthen.
+
 \end{document}
