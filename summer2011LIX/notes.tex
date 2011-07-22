@@ -1,0 +1,34 @@
+\documentclass{article}
+\usepackage{alltt}
+\usepackage{amsmath, amsthm, amssymb}
+
+\title{Contexts in Abella}
+\author{Andrew Cave}
+
+\begin{document}
+\maketitle
+Explain in context of church rosser?
+
+Block declarations:
+
+n-ary worlds and blocks are defined: 
+\begin{align*}
+W_n &:= B_n | ... | B_n \\
+B_n &:= \exists \vec{T}, \nabla \vec{x}, \underbrace{tl(\vec{x}, \vec{T}); ...;
+tl(\vec{x}, \vec{T})}_{n} \\
+tl(\vec{x}, \vec{T}) &:= t(\vec{x}, \vec{T}), ..., t(\vec{x}, \vec{T}) \\
+t(\vec{x}, \vec{T}) &:= \text{term with variables drawn from } \vec{x} \text{
+  and } \vec{T}
+\end{align*}
+
+- Nabla may not be the right binder
+- Note that the $T$s are outside the scope of the $\nabla$ and hence
+any dependency must be explicitly mentioned.
+- Why? Because this jives better with translation into context relations? 
+
+Block b := nabla x, (pr x x; cd x x, notlam x)
+World w := b1 | b2 | ... | bn
+
+pr x x :- var x
+wf x :- var x
+\end{document}
