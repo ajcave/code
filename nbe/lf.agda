@@ -1,15 +1,6 @@
 {-# OPTIONS --no-positivity-check #-}
 module lf where
 
-postulate
- atomic_tp : Set
-
-data μ (F : Set -> Set) : Set where
- inj : F (μ F) -> μ F
-
-data μ' {I : Set} (F : (I -> Set) -> (I -> Set)) : I -> Set where
- inj : ∀ {i} -> F (μ' F) i -> (μ' F) i 
-
 record unit : Set where
  constructor tt
 
@@ -23,6 +14,49 @@ record Σ {A : Set} (B : A -> Set) : Set where
   fst : A
   snd : B fst
 
+data var : Set where
+ z : var
+ s : var -> var
+
+mutual
+ data atomic_tp : Set where
+  vec : (n : ntm) -> atomic_tp
+  nat : atomic_tp
+ data tp : Set where
+  ▹ : (A : atomic_tp) -> tp
+  Π : (T : tp) -> (S : tp) -> tp
+ data rtm : Set where
+  ▹ : (x : var) -> rtm
+  _·_ : (R : rtm) -> (N : ntm) -> rtm
+  z : rtm
+ data ntm : Set where
+  ▹ : (R : rtm) -> ntm
+  ƛ : (N : ntm) -> ntm
+
+mutual
+ data ctx : Set where
+  ⊡ : ctx
+  _,_ : (Γ : ctx) -> {T : tp} -> type Γ T -> ctx
+ data Var : (Γ : ctx) (x : var) (T : tp) -> Set where
+  z : ∀ {Γ t T} -> Var (_,_ Γ {t} T) z t
+  s : ∀ {Γ t u U n} -> Var Γ n t -> Var (_,_ Γ {u} U) (s n) t
+ data atomic_type : (Γ : ctx) (T : atomic_tp) -> Set where
+  vec : ∀ {Γ} {N : ntm} -> nterm Γ N (▹ nat) -> atomic_type Γ (vec N)
+  nat : ∀ {Γ} -> atomic_type Γ nat 
+ data type : (Γ : ctx) (T : tp) -> Set where
+  ▹ : ∀ {Γ} {A : atomic_tp} -> atomic_type Γ A -> type Γ (▹ A)
+  Π : ∀ {Γ t s} -> (T : type Γ t) -> type (Γ , T) s -> type Γ (Π t s)
+ data rterm : (Γ : ctx) (R : rtm) (T : tp) -> Set where
+  ▹ : ∀ {Γ T} {x : var} (X : Var Γ x T) -> rterm Γ (▹ x) T
+  _·_ : ∀ {Γ r n s t} (R : rterm Γ r (Π s t)) (N : nterm Γ n s) -> rterm Γ (r · n) (sub t N)
+  z : ∀ {Γ} -> rterm Γ z (▹ nat)
+ data nterm : (Γ : ctx) (M : ntm) (T : tp) -> Set where
+  ▹ : ∀ {Γ a r} {A : atomic_type Γ a} -> rterm Γ r (▹ a) -> nterm Γ (▹ r) (▹ a)
+  ƛ : ∀ {Γ t} (T : type Γ t) {n u U} (N : nterm (Γ , T) n U) -> nterm Γ n (Π t u)
+ 
+ sub : ∀ {Γ n s} (t : tp) -> nterm Γ n s -> tp
+ sub t n = {!!}
+{-
 mutual
  data ctx : Set where
   ⊡ : ctx
@@ -33,7 +67,7 @@ mutual
   wkn : ∀ {Γ S} -> (T : tp Γ) -> tp (Γ , S) 
  data var : (Γ : ctx) -> (T : tp Γ) -> Set where
   z : ∀ {Γ T} -> var (Γ , T) (wkn T)
-  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) (wkn T)
+  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) (wkn T) -}
  
 {- data rtm (Γ : ctx) : (T : tp Γ) -> Set where
   v : ∀ {T} -> var Γ T -> rtm Γ T
