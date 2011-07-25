@@ -111,4 +111,7 @@ Theorem subj_red : forall G M M' T,
 in which we will have assumptions
 {\tt {G |- eq (for U T1) (for V T1)}}, we have to strengthen.
 
+Comment that we can handle ``side conditions'' like ``of U K'' in PTS
+by adding (forall X U, member (of X U) G -> {G |- of U K}) 
+
 \end{document}
