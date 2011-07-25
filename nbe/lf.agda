@@ -14,60 +14,97 @@ record Σ {A : Set} (B : A -> Set) : Set where
   fst : A
   snd : B fst
 
-data var : Set where
- z : var
- s : var -> var
+data nat : Set where
+ z : nat
+ s : nat -> nat
+
+data var : nat -> Set where
+ z : ∀ {n} -> var (s n)
+ s : ∀ {n} -> var n -> var (s n)
 
 mutual
- data atomic_tp : Set where
-  vec : (n : ntm) -> atomic_tp
-  nat : atomic_tp
- data tp : Set where
-  ▹ : (A : atomic_tp) -> tp
-  Π : (T : tp) -> (S : tp) -> tp
- data rtm : Set where
-  ▹ : (x : var) -> rtm
-  _·_ : (R : rtm) -> (N : ntm) -> rtm
-  z : rtm
- data ntm : Set where
-  ▹ : (R : rtm) -> ntm
-  ƛ : (N : ntm) -> ntm
+ data atomic_tp (n : nat) : Set where
+  vec : (N : ntm n) -> atomic_tp n
+  Nat : atomic_tp n
+ data tp (n : nat) : Set where
+  ▹ : (A : atomic_tp n) -> tp n
+  Π : (T : tp n) -> (S : tp (s n)) -> tp n
+ data rtm (n : nat) : Set where
+  ▹ : (x : var n) -> rtm n
+  _·_ : (R : rtm n) -> (N : ntm n) -> rtm n
+  z : rtm n
+ data ntm (n : nat) : Set where
+  ▹ : (R : rtm n) -> ntm n
+  ƛ : (N : ntm (s n)) -> ntm n
+
+vsub : ∀ (n m : nat) -> Set
+vsub n m = var n → var m 
+
+vext : ∀ {n m} -> vsub n m -> vsub (s n) (s m)
+vext σ z = z
+vext σ (s y) = s (σ y)
+
+mutual 
+ tvsub : ∀ {n m} -> vsub n m -> tp n -> tp m
+ tvsub σ (▹ A) = ▹ (atvsub σ A)
+ tvsub σ (Π T S) = Π (tvsub σ T) (tvsub (vext σ) S)
+
+ atvsub : ∀ {n m} -> vsub n m -> atomic_tp n -> atomic_tp m
+ atvsub σ (vec N) = vec (nvsub σ N)
+ atvsub σ Nat = Nat
+
+ nvsub : ∀ {n m} -> vsub n m -> ntm n -> ntm m
+ nvsub σ (▹ R) = ▹ (rvsub σ R)
+ nvsub σ (ƛ N) = ƛ (nvsub (vext σ) N)
+
+ rvsub : ∀ {n m} -> vsub n m -> rtm n -> rtm m
+ rvsub σ (▹ x) = ▹ (σ x)
+ rvsub σ (R · N) = (rvsub σ R) · (nvsub σ N)
+ rvsub σ z = z
+
+twkn : ∀ {n} -> tp n -> tp (s n)
+twkn t = tvsub s t
 
 mutual
- data ctx : Set where
-  ⊡ : ctx
-  _,_ : (Γ : ctx) -> {T : tp} -> type Γ T -> ctx
- data Var : (Γ : ctx) (x : var) (T : tp) -> Set where
-  z : ∀ {Γ t T} -> Var (_,_ Γ {t} T) z t
-  s : ∀ {Γ t u U n} -> Var Γ n t -> Var (_,_ Γ {u} U) (s n) t
- data atomic_type : (Γ : ctx) (T : atomic_tp) -> Set where
-  vec : ∀ {Γ} {N : ntm} -> nterm Γ N (▹ nat) -> atomic_type Γ (vec N)
-  nat : ∀ {Γ} -> atomic_type Γ nat 
- data type : (Γ : ctx) (T : tp) -> Set where
-  ▹ : ∀ {Γ} {A : atomic_tp} -> atomic_type Γ A -> type Γ (▹ A)
-  Π : ∀ {Γ t s} -> (T : type Γ t) -> type (Γ , T) s -> type Γ (Π t s)
- data rterm : (Γ : ctx) (R : rtm) (T : tp) -> Set where
-  ▹ : ∀ {Γ T} {x : var} (X : Var Γ x T) -> rterm Γ (▹ x) T
-  _·_ : ∀ {Γ r n s t} (R : rterm Γ r (Π s t)) (N : nterm Γ n s) -> rterm Γ (r · n) (sub t N)
-  z : ∀ {Γ} -> rterm Γ z (▹ nat)
- data nterm : (Γ : ctx) (M : ntm) (T : tp) -> Set where
-  ▹ : ∀ {Γ a r} {A : atomic_type Γ a} -> rterm Γ r (▹ a) -> nterm Γ (▹ r) (▹ a)
-  ƛ : ∀ {Γ t} (T : type Γ t) {n u U} (N : nterm (Γ , T) n U) -> nterm Γ n (Π t u)
- 
- sub : ∀ {Γ n s} (t : tp) -> nterm Γ n s -> tp
- sub t n = {!!}
+ data ctx : nat -> Set where
+  ⊡ : ctx z
+  _,_ : ∀ {n} (Γ : ctx n) -> {T : tp n} -> type Γ T -> ctx (s n)
+ data Var : ∀ {n} (Γ : ctx n) (x : var n) (T : tp n) -> Set where
+  z : ∀ {n Γ t T} -> Var (_,_ {n} Γ {t} T) z (twkn t) 
+  s : ∀ {n Γ t u U n'} -> Var Γ n' t -> Var (_,_ {n} Γ {u} U) (s n') (twkn t)
+ data atomic_type {n : nat } (Γ : ctx n) : (T : atomic_tp n) -> Set where
+  vec : ∀ {N : ntm n} -> nterm Γ N (▹ Nat) -> atomic_type Γ (vec N)
+  Nat : atomic_type Γ Nat 
+ data type {n} (Γ : ctx n) : (T : tp n) -> Set where
+  ▹ : ∀ {A : atomic_tp n} -> atomic_type Γ A -> type Γ (▹ A)
+  Π : ∀ {t s} -> (T : type Γ t) -> type (Γ , T) s -> type Γ (Π t s)
+ data rterm {n} (Γ : ctx n) : (R : rtm n) (T : tp n) -> Set where
+  ▹ : ∀ {T} {x : var n} (X : Var Γ x T) -> rterm Γ (▹ x) T
+  _·_ : ∀ {r n s t} (R : rterm Γ r (Π s t)) (N : nterm Γ n s) -> rterm Γ (r · n) {!!} -- (tsub t N)
+  z : rterm Γ z (▹ Nat)
+ data nterm {n} (Γ : ctx n) : (M : ntm n) (T : tp n) -> Set where
+  ▹ : ∀ {a r} {A : atomic_type Γ a} -> rterm Γ r (▹ a) -> nterm Γ (▹ r) (▹ a)
+  ƛ : ∀ {t} (T : type Γ t) {n' u U} (N : nterm (Γ , T) n' U) -> nterm Γ (ƛ n') (Π t u)
+
+
+ tsub : ∀ {n Γ N s} (t : tp n) -> nterm Γ N s -> tp n
+ tsub (▹ (vec n')) n0 = ▹ (vec {!!})
+ tsub (▹ nat) n' = ▹ nat
+ tsub (Π T S) n' = Π (tsub T n') {!sub!}
+
 {-
 mutual
  data ctx : Set where
   ⊡ : ctx
   _,_ : (Γ : ctx) -> (T : tp Γ) -> ctx
  data tp : (Γ : ctx) -> Set where
-  atom : ∀ {Γ} (A : atomic_tp) -> tp Γ
   _⇝_ : ∀ {Γ} (T : tp Γ) -> (S : tp (Γ , T)) -> tp Γ
-  wkn : ∀ {Γ S} -> (T : tp Γ) -> tp (Γ , S) 
- data var : (Γ : ctx) -> (T : tp Γ) -> Set where
-  z : ∀ {Γ T} -> var (Γ , T) (wkn T)
-  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) (wkn T) -}
+ data var2 : (Γ : ctx) -> (T : tp Γ) -> Set where
+  z : ∀ {Γ T} -> var2 (Γ , T) (wkn T)
+  s : ∀ {Γ T S} -> var2 Γ T -> var2 (Γ , S) (wkn T) 
+
+ wkn : ∀ {Γ S} -> (T : tp Γ) -> tp (Γ , S) -- this _,_ use is apparently not allowed
+ wkn t = ? -}
  
 {- data rtm (Γ : ctx) : (T : tp Γ) -> Set where
   v : ∀ {T} -> var Γ T -> rtm Γ T
