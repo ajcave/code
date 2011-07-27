@@ -102,6 +102,12 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
 
+nbe2 : ∀ {Γ T} -> tm Γ T -> ntm Γ T
+nbe2 (v y) = nv y
+nbe2 (M · N) = napp (nbe2 M) (nbe2 N)
+nbe2 (ƛ M) = ƛ (nbe2 M)
+
+-- Or, if you insist,
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
@@ -109,9 +115,3 @@ eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) 
-
--- Alternativity,
-nbe2 : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe2 (v y) = nv y
-nbe2 (M · N) = napp (nbe2 M) (nbe2 N)
-nbe2 (ƛ M) = ƛ (nbe2 M)
