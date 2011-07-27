@@ -27,10 +27,6 @@ mutual
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
   neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
 
-data tm (Γ : ctx) : (T : tp) -> Set where
- v : ∀ {T} -> var Γ T -> tm Γ T
- _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
- ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
 
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = rtm Γ (atom A)
@@ -77,10 +73,28 @@ extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
+mutual
+ srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
+ srSubst θ (v y) = θ y
+ srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
+
+ sSubst : ∀ {Γ Δ T} -> subst Γ Δ -> ntm Γ T -> sem Δ T
+ sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (λ x → appSubst _ σ (θ x)) s) M
+ sSubst θ (neut y) = srSubst θ y
+
+nSubst : ctx -> ctx -> Set
+nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
+cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
+cut θ t = reify (sSubst (λ x → sSubst (λ x' → reflect (v x')) (θ x)) t)
+
+data tm (Γ : ctx) : (T : tp) -> Set where
+ v : ∀ {T} -> var Γ T -> tm Γ T
+ _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
+ ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
+
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
-eval θ (M · N) with eval θ M
-eval θ (M · N) | f = f _ id (eval θ N)
+eval θ (M · N) = eval θ M _ id (eval θ N)
 eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
 
 nbe : ∀ {T} -> tm ⊡ T -> ntm ⊡ T

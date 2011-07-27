@@ -72,7 +72,7 @@ mutual
  data Var : ∀ {n} (Γ : ctx n) (x : var n) (T : tp n) -> Set where
   z : ∀ {n Γ t T} -> Var (_,_ {n} Γ {t} T) z (twkn t) 
   s : ∀ {n Γ t u U n'} -> Var Γ n' t -> Var (_,_ {n} Γ {u} U) (s n') (twkn t)
- data atomic_type {n : nat } (Γ : ctx n) : (T : atomic_tp n) -> Set where
+ data atomic_type {n : nat} (Γ : ctx n) : (T : atomic_tp n) -> Set where
   vec : ∀ {N : ntm n} -> nterm Γ N (▹ Nat) -> atomic_type Γ (vec N)
   Nat : atomic_type Γ Nat 
  data type {n} (Γ : ctx n) : (T : tp n) -> Set where
@@ -87,10 +87,8 @@ mutual
   ƛ : ∀ {t} (T : type Γ t) {n' u U} (N : nterm (Γ , T) n' U) -> nterm Γ (ƛ n') (Π t u)
 
 
- tsub : ∀ {n Γ N s} (t : tp n) -> nterm Γ N s -> tp n
- tsub (▹ (vec n')) n0 = ▹ (vec {!!})
- tsub (▹ nat) n' = ▹ nat
- tsub (Π T S) n' = Π (tsub T n') {!sub!}
+-- tsub : ∀ {n} {Γ : ctx n} {N s} (t : tp n) -> nterm Γ N s -> tp n
+ 
 
 {-
 mutual
