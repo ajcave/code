@@ -110,7 +110,7 @@ tuple n = Fin n -> Set
 ⇔_ : ∀ {n} (A : Fin n -> Set) -> Set
 ⇔_ A = ∧ A -> Set
 
-data Rel (n : nat) : Set where
+data Rel (n : nat) : Set₁ where
  rel : ∀ {A : Fin n -> Set} -> ⇔ A -> Rel n
 
 S : ∀ {A : Set} {B : A -> Set} {C : (x : A) -> B x -> Set}
@@ -127,11 +127,11 @@ _⇒·_ : ∀ {n} {A : tuple n} {B : tuple n} -> ⇔ A -> ⇔ B -> ⇔ (λ i -> 
 (Π· FF) g = ∀ {A} (AA : ⇔ A) → FF AA (S g A)
 
 -- TODO: Dammit! This is just (tvar Δ -> Set). Same below.
-〚_〛 : (Δ : lctx) -> nat -> Set
+〚_〛 : (Δ : lctx) -> nat -> Set₁
 〚 ⊡ 〛 n = unit
 〚 Δ , l 〛 n = (〚 Δ 〛 n) * (Rel n)
 
-〚_〛₁ : (Δ : lctx) -> nat -> Set
+〚_〛₁ : (Δ : lctx) -> nat -> Set₁
 〚 ⊡ 〛₁ n = unit
 〚 Δ , l 〛₁ n = (〚 Δ 〛₁ n) * Set
 
