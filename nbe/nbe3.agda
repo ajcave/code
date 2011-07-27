@@ -92,12 +92,15 @@ cut θ t = reify (sSubst (λ x → sSubst (λ x' → reflect (v x')) (θ x)) t)
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
 
-sing : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
-sing N z = N
-sing N (s y) = nv y
+nExtend : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Δ T -> nSubst (Γ , T) Δ
+nExtend θ N z = N
+nExtend θ N (s y) = θ y
+
+nId : ∀ {Γ} -> nSubst Γ Γ
+nId x = nv x
 
 napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
-napp (ƛ N) M = cut (sing M) N
+napp (ƛ N) M = cut (nExtend nId M) N
 
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
