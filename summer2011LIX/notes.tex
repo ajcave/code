@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage{alltt}
+\usepackage{amsmath, amsthm, amssymb}
+
+\title{Contexts in Abella}
+\author{Andrew Cave}
+
+\begin{document}
+\maketitle
+Explain in context of church rosser?
+
+Problems:
+\begin{enumerate}
+\item {\tt member (of (app M N) T) G} should be discarded
+\item Freshness: {\tt member (of x (T x)) (G x)} - we know that  {\tt x}
+  does not occur in {\tt T}. Example? How do we handle this? 
+\item Pruning: {\tt member (E x) G} entails {\tt E}'s dependency on
+  {\tt x} is vacuous. How to handle?
+\item Know one ({\tt pr x x}) get others ({\tt cd x x} and {\tt notlam x}).
+\item Functional relationships (only one type per variable). We
+  certainly know that each variable can map to exactly one block by
+  freshness.
+\item Strengthening. We would like to consider {\tt wf} in only
+  contexts containing well-formedness. We would like to associate to
+  each family a world.
+\end{enumerate}
+
+Block declarations:
+
+n-ary worlds and blocks are defined: 
+\begin{align*}
+W_n &:= B_n | ... | B_n \\
+B_n &:= \exists \vec{T}, \nabla \vec{x}, \underbrace{tl(\vec{x}, \vec{T}); ...;
+tl(\vec{x}, \vec{T})}_{n} \\
+tl(\vec{x}, \vec{T}) &:= t(\vec{x}, \vec{T}), ..., t(\vec{x}, \vec{T}) \\
+t(\vec{x}, \vec{T}) &:= \text{term with variables drawn from } \vec{x} \text{
+  and } \vec{T}
+\end{align*}
+
+- Nabla may not be the right binder
+- Note that the $T$s are outside the scope of the $\nabla$ and hence
+any dependency must be explicitly mentioned.
+- Why? Because this jives better with translation into context
+relations? 
+
+Elaboration into relations:
+
+Block b := nabla x, (pr x x; cd x x, notlam x)
+World w := b1 | b2 | ... | bn
+
+pr x x :- var x
+wf x :- var x
+
+\section{Strengthening}
+We would like to consider {\tt wf} in only
+contexts containing well-formedness assumptions.
+
+We would like to associate to each ``family'' a world.
+Do I have a better (simpler) example than PTS?
+When we do case analysis on {\tt {G |- of M T}} one of the cases yields
+{\tt {G |- of M U}} and {\tt {G |- eq T U}}. But we would like {\tt eq}
+  to be immediately stated in its world: {\tt {W |- eq T U}} where
+  {\tt ctxRel G W}. So does case analysis yield a new world? If it
+  yields a new {\tt W} every time, that's bad. So case analysis should
+  work with respect to a ``world'' such as {\tt ctxRel G W}.
+
+Conversely, when we have {\tt ctxRel G W}, {\tt {G |- of M U}}, {\tt
+  {W |- eq U T}}, we want to be able to immediately prove (via search)
+{\tt {G |- of M T}}. Key appears to be {\tt ctxRel} is
+\emph{functional} from G to W. Not just existence, but uniqueness.
+
+Motivate this: We want to state theorems of the form {\tt thm : wfctx W ->
+  {W |- eq T U} -> ...}. So when we case analyze a {\tt {G |- of M T}}
+and obtain a {\tt {G |- eq T U}}, that's bad. We have to do work to
+connect it to {\tt thm}.
+
+Explain how I imagine this working better in, say, Coq.
+
+One would like to enforce the property that {\tt {G |- f t1 ... tn}} is
+only ``well-typed'' if {\tt G} is a world of the type associated to
+the family {\tt f}. 
+
+(Look at how much work eq\_typing.thm does just for this)
+
+In particular, this generates the need for theorems of this form:
+
+\begin{verbatim}
+Theorem typing_wf_ctx_is_wf_ctx : forall G D, typing_wf_ctx G D -> wf_ctx D.
+\end{verbatim}
+
+Concrete example: 
+\begin{verbatim}
+Theorem eq_for_inv : forall W U V T1 T2,
+   wf_ctx W
+-> {W |- wf (for U T1)}
+-> {W |- wf (for V T2)}
+-> {W |- eq (for U T1) (for V T2)}
+-> {W |- eq U V} /\ nabla x, {W, wf x |- eq (T1 x) (T2 x)}.
+\end{verbatim}
+
+In order to apply this inside:
+
+\begin{verbatim}
+Theorem subj_red : forall G M M' T,
+   ctx G
+-> {G |- of M T}
+-> {G |- step M M'}
+-> {G |- of M' T}.
+\end{verbatim}
+
+in which we will have assumptions
+{\tt {G |- eq (for U T1) (for V T1)}}, we have to strengthen.
+
+Comment that we can handle ``side conditions'' like ``of U K'' in PTS
+by adding (forall X U, member (of X U) G -> {G |- of U K}) 
+
+\end{document}
