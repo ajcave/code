@@ -107,8 +107,8 @@ eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
 eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
 
-nbe : ∀ {T} -> tm ⊡ T -> ntm ⊡ T
-nbe M = reify (eval (λ ()) M) 
+nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
+nbe M = reify (eval (λ x → reflect (v x)) M) 
 
 -- Alternativity,
 nbe2 : ∀ {Γ T} -> tm Γ T -> ntm Γ T
