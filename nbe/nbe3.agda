@@ -87,6 +87,16 @@ nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
 cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
 cut θ t = reify (sSubst (λ x → sSubst (λ x' → reflect (v x')) (θ x)) t)
 
+nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
+nv x = reify (reflect (v x))
+
+sing : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
+sing N z = N
+sing N (s y) = nv y
+
+napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
+napp (ƛ N) M = cut (sing M) N
+
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
@@ -99,3 +109,9 @@ eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
 
 nbe : ∀ {T} -> tm ⊡ T -> ntm ⊡ T
 nbe M = reify (eval (λ ()) M) 
+
+-- Alternativity,
+nbe2 : ∀ {Γ T} -> tm Γ T -> ntm Γ T
+nbe2 (v y) = nv y
+nbe2 (M · N) = napp (nbe2 M) (nbe2 N)
+nbe2 (ƛ M) = ƛ (nbe2 M)
