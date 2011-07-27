@@ -153,7 +153,7 @@ wkn x = s x
 
 mutual
  reify : ∀ {Δ Γ T} -> (∀ (Δ' : 〚 Δ 〛) -> sem Δ' Γ T) -> ntm Δ Γ T
- reify t = {!!}
+ reify t = {!t!}
 
 {-mutual
  reflect : ∀ {Δ} {T} {Γ : tctx Δ} -> rtm Δ Γ T -> sem Δ Γ T

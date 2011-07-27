@@ -73,6 +73,8 @@ extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
+-- Here we have admissibility of cut for ntm. Not necessary for nbe,
+-- but nice to state.
 mutual
  srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
  srSubst θ (v y) = θ y
@@ -102,12 +104,12 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
 
-nbe2 : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe2 (v y) = nv y
-nbe2 (M · N) = napp (nbe2 M) (nbe2 N)
-nbe2 (ƛ M) = ƛ (nbe2 M)
+complete : ∀ {Γ T} -> tm Γ T -> ntm Γ T
+complete (v y) = nv y
+complete (M · N) = napp (complete M) (complete N)
+complete (ƛ M) = ƛ (complete M)
 
--- Or, if you insist,
+-- Traditional nbe
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
