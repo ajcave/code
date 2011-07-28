@@ -25,6 +25,7 @@
  \DeclareUnicodeCharacter{8803}{\ensuremath{\overline{\equiv}}}
  \DeclareUnicodeCharacter{9657}{\ensuremath{\smalltriangleright}}
  \DeclareUnicodeCharacter{411}{\ensuremath{\lambdaslash}}
+ \DeclareUnicodeCharacter{9656}{\ensuremath{\blacktriangleright}} 
  % Add more as you need them (shouldn’t happen often).
 
  % Using “\newenvironment” to redefine verbatim to
@@ -68,15 +69,15 @@ vsubst : (n m : nat) -> Set
 vsubst n m = var n -> var m
 
 vext : ∀ {n m} -> vsubst n m -> vsubst (s n) (s m)
-vext θ z = z
-vext θ (s x) = s (θ x)
+vext vs  z = z
+vext vs (s x) = s (vs x)
 
 vsub : ∀ {n m} -> vsubst n m -> tm n -> tm m
-vsub θ (▹ x) = ▹ (θ x)
-vsub θ (ƛ U M) = ƛ (vsub θ U) (vsub (vext θ) M)
-vsub θ (M · N) = (vsub θ M) · (vsub θ N)
-vsub θ (∀· U T) = ∀· (vsub θ U) (vsub (vext θ) T)
-vsub θ (▸ S) = ▸ S
+vsub vs (▹ x) = ▹ (vs x)
+vsub vs (ƛ U M) = ƛ (vsub vs U) (vsub (vext vs) M)
+vsub vs (M · N) = (vsub vs M) · (vsub vs N)
+vsub vs (∀· U T) = ∀· (vsub vs U) (vsub (vext vs) T)
+vsub vs (▸ S) = ▸ S
 
 -- A substitution from the domain with n variables to the domain with
 -- m variables is a mapping from variables "from n" to terms in m variables
@@ -84,15 +85,15 @@ subst : (n m : nat) -> Set
 subst n m = var n -> tm m
 
 ext : ∀ {n m} -> subst n m -> tm m -> subst (s n) m
-ext θ t z = t
-ext θ t (s x) = θ x
+ext vs t z = t
+ext vs t (s x) = vs x
 
 sub : ∀ {n m} -> subst n m -> tm n -> tm m
-sub θ (▹ x) = θ x
-sub θ (ƛ U M) = ƛ (sub θ U) (sub (ext (λ x → vsub s (θ x)) (▹ z)) M)
-sub θ (M · N) = (sub θ M) · (sub θ N)
-sub θ (∀· U T) = ∀· (sub θ U) (sub (ext (λ x → vsub s (θ x)) (▹ z)) T)
-sub θ (▸ S) = ▸ S
+sub vs (▹ x) = vs x
+sub vs (ƛ U M) = ƛ (sub vs U) (sub (ext (λ x -> vsub s (vs x)) (▹ z)) M)
+sub vs (M · N) = (sub vs M) · (sub vs N)
+sub vs (∀· U T) = ∀· (sub vs U) (sub (ext (λ x -> vsub s (vs x)) (▹ z)) T)
+sub vs (▸ S) = ▸ S
 
 id : ∀ {n} -> subst n n
 id x = ▹ x
