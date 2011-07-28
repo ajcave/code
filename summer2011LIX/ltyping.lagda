@@ -1,4 +1,5 @@
-module typing where
+\begin{code} 
+module ltyping where
 
 data nat : Set where 
  z : nat
@@ -124,6 +125,7 @@ data of {n : nat} (Γ : ctx n) : (M : tm n) -> (T : tm n) -> Set where
      -> of Γ T (▸ S)
      -> 〚 Γ 〛 ⊢ U ≡β T -- Forget all the types when we go to the ≡β judgement
      -> of Γ M T
- 
+
+\end{code}
  
 
