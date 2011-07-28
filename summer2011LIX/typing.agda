@@ -66,5 +66,41 @@ id x = ▹ x
 
 -- Single substitution as a special case of simultaneous
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
-single M N = sub (ext id N) M 
+single M N = sub (ext id N) M
+
+wkn : ∀ {n} -> tm n -> tm (s n)
+wkn t = vsub s t
+
+{- Typing -}
+data axiom : sort -> sort -> Set where
+ ⋆∶□ : axiom ⋆ □
+
+data rule : sort -> sort -> sort -> Set where
+ ⋆ : rule ⋆ ⋆ ⋆
+
+data ctx : (n : nat) -> Set where
+ ⊡ : ctx z
+ _,_ : ∀ {n} (Γ : ctx n) -> (T : tm n) -> ctx (s n)
+
+data vof : ∀ {n} (Γ : ctx n) -> var n -> tm n -> Set where
+ z : ∀ {n} {Γ : ctx n} {T} -> vof (Γ , T) z (wkn T)
+ s : ∀ {n} {Γ : ctx n} {T S x} -> vof Γ x T -> vof (Γ , S) (s x) (wkn T)
+
+data of {n : nat} (Γ : ctx n) : (M : tm n) -> (T : tm n) -> Set where
+ ▹ : ∀ {x T} (X : vof Γ x T) -> of Γ (▹ x) T
+ ax : ∀ {S1 S2} -> axiom S1 S2 -> of Γ (▸ S1) (▸ S2)
+ ƛ : ∀ {U T M S1 S2 S3}
+     -> rule S1 S2 S3
+     -> of Γ U (▸ S1)
+     -> of (Γ , U) T (▸ S2)
+     -> of (Γ , U) T M
+     -> of Γ (ƛ U M) (Π U T) 
+ Π : ∀ {U T S1 S2 S3}
+     -> rule S1 S2 S3
+     -> of Γ U (▸ S1)
+     -> of (Γ , U) T (▸ S2)
+     -> of Γ (Π U T) (▸ S3)
+ 
+ 
+ 
 
