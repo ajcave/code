@@ -86,8 +86,16 @@ data vof : ∀ {n} (Γ : ctx n) -> var n -> tm n -> Set where
  z : ∀ {n} {Γ : ctx n} {T} -> vof (Γ , T) z (wkn T)
  s : ∀ {n} {Γ : ctx n} {T S x} -> vof Γ x T -> vof (Γ , S) (s x) (wkn T)
 
-data _⊢_≡β_ (n : nat) : (M N : tm n) -> Set where
- ▹ : ∀ {x} -> n ⊢ (▹ x) ≡β (▹ x)
+_,* : nat -> nat
+Γ ,* = s Γ
+data _⊢_≡β_ : (Γ : nat) -> (M N : tm Γ) -> Set where
+ ▹ : ∀ {Γ x}
+   -> Γ     ⊢ (▹ x) ≡β (▹ x)
+ ƛ : ∀ {Γ U1 U2 M N}
+   -> Γ     ⊢ U1 ≡β U2 
+   -> Γ ,*  ⊢ M  ≡β N
+   -> Γ     ⊢ (ƛ U1 M) ≡β (ƛ U2 N)
+ -- etc
 
 -- The length of a context
 〚_〛 : ∀ {n} -> ctx n -> nat
