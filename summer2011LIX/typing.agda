@@ -97,7 +97,7 @@ data _⊢_≡β_ : (Γ : nat) -> (M N : tm Γ) -> Set where
    -> Γ     ⊢ (ƛ U1 M) ≡β (ƛ U2 N)
  -- etc
 
--- The length of a context
+-- Forget all the types from a context
 〚_〛 : ∀ {n} -> ctx n -> nat
 〚_〛 {n} Γ = n
 
@@ -122,7 +122,7 @@ data of {n : nat} (Γ : ctx n) : (M : tm n) -> (T : tm n) -> Set where
  ≡-conv : ∀ {M T U S}
      -> of Γ M U
      -> of Γ T (▸ S)
-     -> 〚 Γ 〛 ⊢ U ≡β T
+     -> 〚 Γ 〛 ⊢ U ≡β T -- Forget all the types when we go to the ≡β judgement
      -> of Γ M T
  
  
