@@ -44,15 +44,6 @@ data nat : Set where
  z : nat
  s : (n : nat) -> nat
 
-record Σ {A : Set} (B : A -> Set) : Set where
- constructor _,_
- field
-  fst : A
-  snd : B fst
-
-_*_ : (A B : Set) -> Set
-A * B = Σ {A} (λ _ -> B)
-
 data var : nat -> Set where
  z : ∀ {n} -> var (s n)
  s : ∀ {n} -> (x : var n) -> var (s n)
