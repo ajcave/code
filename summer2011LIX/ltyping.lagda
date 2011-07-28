@@ -8,7 +8,8 @@
  \usepackage{amssymb}
  \usepackage{bbm}
  \usepackage[greek,english]{babel}
-
+ \usepackage{MnSymbol}
+ \usepackage{txfonts}
  % This handles the translation of unicode to latex:
 
  \usepackage{ucs}
@@ -23,7 +24,7 @@
  \DeclareUnicodeCharacter{8989}{\ensuremath{\urcorner}}
  \DeclareUnicodeCharacter{8803}{\ensuremath{\overline{\equiv}}}
  \DeclareUnicodeCharacter{9657}{\ensuremath{\smalltriangleright}}
-
+ \DeclareUnicodeCharacter{411}{\ensuremath{\lambdaslash}}
  % Add more as you need them (shouldn’t happen often).
 
  % Using “\newenvironment” to redefine verbatim to
