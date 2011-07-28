@@ -56,7 +56,7 @@ id x = ▹ x
 
 -- Single substitution as a special case of simultaneous
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
-single M N = sub (ext id N) M -- Just extend the identity substitution with N
+single M N = sub (ext id N) M 
 
 data pr {n : nat} : tm n -> tm n -> Set where
  ▹ : (x : var n) -> pr (▹ x) (▹ x) 
