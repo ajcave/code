@@ -10,6 +10,9 @@ record Σ {A : Set} (B : A -> Set) : Set where
   fst : A
   snd : B fst
 
+_*_ : (A B : Set) -> Set
+A * B = Σ {A} (λ _ -> B)
+
 data var : nat -> Set where
  z : ∀ {n} -> var (s n)
  s : ∀ {n} -> (x : var n) -> var (s n)
@@ -78,3 +81,17 @@ triangle (m · n') (m' ·₁ n0) = triangle m m' · triangle n' n0
 triangle (m · n') (m' ·₂ n0) = triangle m m' · triangle n' n0
 triangle (ƛ m · n') (β m' n0) = β (triangle m m') (triangle n' n0)
 triangle (β m n') (β m' n0) = prsub (triangle m m') (triangle n' n0)
+
+cdTotal : ∀ {n} (M : tm n) -> Σ (cd M)
+cdTotal (▹ x) = ▹ x , ▹ x
+cdTotal (ƛ M) with cdTotal M
+cdTotal (ƛ M) | _ , M' = _ , ƛ M'
+cdTotal (▹ x · N) with cdTotal N
+cdTotal (▹ x · N) | _ , M' = _ , (▹ x ·₁ M')
+cdTotal (ƛ M · N) with cdTotal M | cdTotal N
+cdTotal (ƛ M · N) | _ , M' | _ , N' = _ , β M' N'
+cdTotal ((M · N) · N') = {!!}
+
+diamond : ∀ {n} M {N1 N2 : tm n} -> pr M N1 -> pr M N2 -> Σ (λ N -> pr N1 N * pr N2 N)
+diamond M p1 p2 with cdTotal M
+diamond M p1 p2 | N , n        = N , ((triangle p1 n) , (triangle p2 n))
