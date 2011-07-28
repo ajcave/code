@@ -90,9 +90,9 @@ ext vs t (s x) = vs x
 
 sub : ∀ {n m} -> subst n m -> tm n -> tm m
 sub vs (▹ x) = vs x
-sub vs (ƛ U M) = ƛ (sub vs U) (sub (ext (λ x -> vsub s (vs x)) (▹ z)) M)
+sub vs (ƛ U M) = ƛ (sub vs U) (sub (ext (\ x -> vsub s (vs x)) (▹ z)) M)
 sub vs (M · N) = (sub vs M) · (sub vs N)
-sub vs (∀· U T) = ∀· (sub vs U) (sub (ext (λ x -> vsub s (vs x)) (▹ z)) T)
+sub vs (∀· U T) = ∀· (sub vs U) (sub (ext (\ x -> vsub s (vs x)) (▹ z)) T)
 sub vs (▸ S) = ▸ S
 
 id : ∀ {n} -> subst n n
