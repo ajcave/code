@@ -22,6 +22,7 @@
  \DeclareUnicodeCharacter{8988}{\ensuremath{\ulcorner}}
  \DeclareUnicodeCharacter{8989}{\ensuremath{\urcorner}}
  \DeclareUnicodeCharacter{8803}{\ensuremath{\overline{\equiv}}}
+ \DeclareUnicodeCharacter{9657}{\ensuremath{\smalltriangleright}}
 
  % Add more as you need them (shouldn’t happen often).
 
