@@ -58,7 +58,7 @@ data tm (n : nat) : Set where
  ▹ : (x : var n) -> tm n
  ƛ : (U : tm n) -> (M : tm (s n)) -> tm n
  _·_ : (M : tm n) -> (N : tm n) -> tm n
- Π : (U : tm n) -> (T : tm (s n)) -> tm n
+ ∀· : (U : tm n) -> (T : tm (s n)) -> tm n
  ▸ : (S : sort) -> tm n
 
 -- A variable for variable substitution is a mapping from variables
@@ -75,7 +75,7 @@ vsub : ∀ {n m} -> vsubst n m -> tm n -> tm m
 vsub θ (▹ x) = ▹ (θ x)
 vsub θ (ƛ U M) = ƛ (vsub θ U) (vsub (vext θ) M)
 vsub θ (M · N) = (vsub θ M) · (vsub θ N)
-vsub θ (Π U T) = Π (vsub θ U) (vsub (vext θ) T)
+vsub θ (∀· U T) = ∀· (vsub θ U) (vsub (vext θ) T)
 vsub θ (▸ S) = ▸ S
 
 -- A substitution from the domain with n variables to the domain with
@@ -91,7 +91,7 @@ sub : ∀ {n m} -> subst n m -> tm n -> tm m
 sub θ (▹ x) = θ x
 sub θ (ƛ U M) = ƛ (sub θ U) (sub (ext (λ x → vsub s (θ x)) (▹ z)) M)
 sub θ (M · N) = (sub θ M) · (sub θ N)
-sub θ (Π U T) = Π (sub θ U) (sub (ext (λ x → vsub s (θ x)) (▹ z)) T)
+sub θ (∀· U T) = ∀· (sub θ U) (sub (ext (λ x → vsub s (θ x)) (▹ z)) T)
 sub θ (▸ S) = ▸ S
 
 id : ∀ {n} -> subst n n
@@ -142,14 +142,14 @@ data of {n : nat} (Γ : ctx n) : (M : tm n) -> (T : tm n) -> Set where
      -> of Γ U (▸ S1)
      -> of (Γ , U) T (▸ S2)
      -> of (Γ , U) T M
-     -> of Γ (ƛ U M) (Π U T) 
+     -> of Γ (ƛ U M) (∀· U T) 
  Π : ∀ {U T S1 S2 S3}
      -> rule S1 S2 S3
      -> of Γ U (▸ S1)
      -> of (Γ , U) T (▸ S2)
-     -> of Γ (Π U T) (▸ S3)
+     -> of Γ (∀· U T) (▸ S3)
  _·_ : ∀ {M N U T}
-     -> of Γ M (Π U T)
+     -> of Γ M (∀· U T)
      -> of Γ N U
      -> of Γ (M · N) (single T N)
  ≡-conv : ∀ {M T U S}
