@@ -120,4 +120,15 @@ bad for modularity.
 Comment that we can handle ``side conditions'' like ``of U K'' in PTS
 by adding (forall X U, member (of X U) G -> {G |- of U K})
 
+Explain separate typing context for worlds.
+
+Describe eq\_ctx proof that went away.
+
+Notion of computation: { (G, of x T, wf x) :> wf\_ctx |- ...} reduces
+to { G :> wf\_ctx, wf x |- ...}.
+
+Point out that Agda NbE proof preserves types for no extra effort
+
+Can use same kind of context for tm and norm in Agda. Can in Abella,
+but we lose substitution for free.
 \end{document}
