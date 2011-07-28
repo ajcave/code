@@ -1,0 +1,70 @@
+module typing where
+
+data nat : Set where 
+ z : nat
+ s : (n : nat) -> nat
+
+record Σ {A : Set} (B : A -> Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B fst
+
+_*_ : (A B : Set) -> Set
+A * B = Σ {A} (λ _ -> B)
+
+data var : nat -> Set where
+ z : ∀ {n} -> var (s n)
+ s : ∀ {n} -> (x : var n) -> var (s n)
+
+data sort : Set where
+ ⋆ : sort
+ □ : sort
+
+data tm (n : nat) : Set where
+ ▹ : (x : var n) -> tm n
+ ƛ : (U : tm n) -> (M : tm (s n)) -> tm n
+ _·_ : (M : tm n) -> (N : tm n) -> tm n
+ Π : (U : tm n) -> (T : tm (s n)) -> tm n
+ ▸ : (S : sort) -> tm n
+
+-- A variable for variable substitution is a mapping from variables
+-- "in n" to variables "in m". This includes all combinations of
+-- exchange, weakening, and contraction
+vsubst : (n m : nat) -> Set
+vsubst n m = var n -> var m
+
+vext : ∀ {n m} -> vsubst n m -> vsubst (s n) (s m)
+vext θ z = z
+vext θ (s x) = s (θ x)
+
+vsub : ∀ {n m} -> vsubst n m -> tm n -> tm m
+vsub θ (▹ x) = ▹ (θ x)
+vsub θ (ƛ U M) = ƛ (vsub θ U) (vsub (vext θ) M)
+vsub θ (M · N) = (vsub θ M) · (vsub θ N)
+vsub θ (Π U T) = Π (vsub θ U) (vsub (vext θ) T)
+vsub θ (▸ S) = ▸ S
+
+-- A substitution from the domain with n variables to the domain with
+-- m variables is a mapping from variables "from n" to terms in m variables
+subst : (n m : nat) -> Set
+subst n m = var n -> tm m
+
+ext : ∀ {n m} -> subst n m -> tm m -> subst (s n) m
+ext θ t z = t
+ext θ t (s x) = θ x
+
+sub : ∀ {n m} -> subst n m -> tm n -> tm m
+sub θ (▹ x) = θ x
+sub θ (ƛ U M) = ƛ (sub θ U) (sub (ext (λ x → vsub s (θ x)) (▹ z)) M)
+sub θ (M · N) = (sub θ M) · (sub θ N)
+sub θ (Π U T) = Π (sub θ U) (sub (ext (λ x → vsub s (θ x)) (▹ z)) T)
+sub θ (▸ S) = ▸ S
+
+id : ∀ {n} -> subst n n
+id x = ▹ x
+
+-- Single substitution as a special case of simultaneous
+single : ∀ {n} -> tm (s n) -> tm n -> tm n
+single M N = sub (ext id N) M 
+
