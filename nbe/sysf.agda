@@ -97,6 +97,7 @@ _××_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp (Δ2 , _) -> tsubst (Δ1 , _) (Δ
 
 id : ∀ {A : Set} -> A -> A
 id x = x
+… : ∀ {A : Set} -> A -> A
 … = id
 
 id-tsubst : ∀ {Δ1} -> tsubst Δ1 Δ1
@@ -159,14 +160,14 @@ wkn x = s x
 twkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> rtm Δ Γ T -> rtm (Δ , tt) (tctxM [ s ] Γ) ([ s ] T)
 twkn r = {!!}
 
-
+{-
 lem : ∀ {Δ1 Δ2 Δ3} (θ1 : tsubst Δ1 Δ2) (θ2 : tsubst Δ2 Δ3) T -> [[ θ2 ]] ([[ θ1 ]] T) ≡ [[ tsubstMap [[ θ2 ]] θ1 ]] T
 lem θ1 θ2 T = {!!}
 
 lem2 : ∀ {Δ1 Δ2 Δ3 Δ4} (f : tp Δ1 -> tp Δ2) (g : tp Δ2 -> tp Δ3) (θ : tsubst Δ4 Δ1)
   -> tsubstMap g (tsubstMap f θ) ≡ tsubstMap (λ x -> g (f x)) θ
 lem2 f g ⊡ = refl
-lem2 f g (θ , T) rewrite lem2 f g θ = refl
+lem2 f g (θ , T) rewrite lem2 f g θ = refl -}
 
 neut-candidate : ∀ {Δ} -> candidate (Δ , tt) (v z)
 neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = id; reify = ▹ }
