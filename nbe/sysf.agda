@@ -182,3 +182,43 @@ mutual
  reify Δ' (v α) M = candidate.reify (vari Δ' α) M
  reify Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , T) wkn (reflect Δ' T (v z))))
  reify Δ' (Π T) M = Λ (reify (Δ' , neut-candidate) T (M neut-candidate))
+
+id-cands : ∀ {Δ} -> 〚 Δ 〛
+id-cands {⊡} = tt
+id-cands {Δ , tt} = id-cands , neut-candidate
+
+subst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) -> Set
+subst Γ1 Γ2 = ∀ {T} -> var Γ1 T -> sem id-cands T Γ2
+
+extend : ∀ {Δ} {Γ1 Γ2 : tctx Δ} {T} -> subst Γ1 Γ2 -> sem id-cands T Γ2 -> subst (Γ1 , T) Γ2
+extend θ M z = M
+extend θ M (s y) = θ y
+
+appSubst : ∀ {Δ} {Γ1 Γ2 : tctx Δ} {Δ'} S -> vsubst Γ1 Γ2 -> sem Δ' S Γ1 -> sem Δ' S Γ2
+appSubst (v α) θ M = {!!}
+appSubst (T ⇒ S) θ M = λ Γ' σ x → M Γ' (σ ∘ θ) x
+appSubst (Π T) θ M = λ R → appSubst T {!!} (M R)
+
+-- Here we have admissibility of cut for ntm. Not necessary for nbe,
+-- but nice to state.
+mutual
+ srSubst : ∀ {Δ Γ1 Γ2 T} -> subst Γ1 Γ2 -> rtm Δ Γ1 T -> sem id-cands T Γ2
+ srSubst θ (v x) = θ x
+ srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
+ srSubst θ (R $ S) with srSubst θ R neut-candidate
+ ... | w = {!!}
+
+ sSubst : ∀ {Δ Γ1 Γ2 T} -> subst Γ1 Γ2 -> ntm Δ Γ1 T -> sem id-cands T Γ2
+ sSubst θ (ƛ N) = λ Γ' σ x' → sSubst (extend (λ {T0} x0 → appSubst T0 σ (θ x0)) x') N
+ sSubst θ (Λ N) = λ R → sSubst {!!} {!!}
+ sSubst θ (▹ R) = {!!}
+
+nsubst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) -> Set
+nsubst Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm _ Γ2 T
+cut : ∀ {Δ Γ1 Γ2 T} -> nsubst Γ1 Γ2 -> ntm Δ Γ1 T -> ntm Δ Γ2 T 
+cut θ N = reify id-cands _ (sSubst (λ x → sSubst (λ x' → reflect _ _ (v x')) (θ x)) N)
+
+
+
+
+
