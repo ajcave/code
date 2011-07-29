@@ -167,7 +167,7 @@ mutual
  reflect : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> rtm ⊡ Γ ([[ θ ]] T) -> sem Δ' T Γ
  reflect Δ' (v α) r = candidate.reflect (vari Δ' α) r
  reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
- reflect Δ' (Π T) r = λ U R' → reflect (Δ' , R') T ({!!} $ {!!})
+ reflect Δ' (Π T) r = λ U R' → reflect (Δ' , R') T ({!!} $ U)
 
  reify : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm ⊡ Γ ([[ θ ]] T)
  reify Δ' (v α) M = candidate.reify (vari Δ' α) M
