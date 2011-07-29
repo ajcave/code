@@ -95,8 +95,9 @@ _××_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp (Δ2 , _) -> tsubst (Δ1 , _) (Δ
 [[ θ ]] (T ⇒ S) = [[ θ ]] T ⇒ [[ θ ]] S
 [[ θ ]] (Π T) = Π ([[ θ ×× v z ]] T)
 
-… : ∀ {A : Set} -> A -> A
-… x = x
+id : ∀ {A : Set} -> A -> A
+id x = x
+… = id
 
 id-tsubst : ∀ {Δ1} -> tsubst Δ1 Δ1
 id-tsubst {⊡} = ⊡
@@ -155,6 +156,10 @@ mutual
 wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
+twkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> rtm Δ Γ T -> rtm (Δ , tt) (tctxM [ s ] Γ) ([ s ] T)
+twkn r = {!!}
+
+
 lem : ∀ {Δ1 Δ2 Δ3} (θ1 : tsubst Δ1 Δ2) (θ2 : tsubst Δ2 Δ3) T -> [[ θ2 ]] ([[ θ1 ]] T) ≡ [[ tsubstMap [[ θ2 ]] θ1 ]] T
 lem θ1 θ2 T = {!!}
 
@@ -164,13 +169,13 @@ lem2 f g ⊡ = refl
 lem2 f g (θ , T) rewrite lem2 f g θ = refl
 
 neut-candidate : ∀ {Δ} -> candidate (Δ , tt) (v z)
-neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = λ x → x; reify = ▹ }
+neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = id; reify = ▹ }
 
 mutual
  reflect : ∀ {Δ} (Δ' : 〚 Δ 〛) T {Γ} -> rtm Δ Γ T -> sem Δ' T Γ
  reflect Δ' (v α) r = candidate.reflect (vari Δ' α) r
  reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
- reflect Δ' (Π T) {Γ} r = λ R → reflect (Δ' , R) T ({!!} $ (v z)) 
+ reflect Δ' (Π T) {Γ} r = λ R → reflect (Δ' , R) T (twkn {!!} $ (v z)) 
 
  reify : ∀ {Δ} (Δ' : 〚 Δ 〛) T {Γ} -> sem Δ' T Γ -> ntm Δ Γ T
  reify Δ' (v α) M = candidate.reify (vari Δ' α) M
