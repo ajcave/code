@@ -78,9 +78,9 @@ _×_ : ∀ {Δ1 Δ2 l m} -> tvsubst Δ1 Δ2 -> tvar (Δ2 , l) m -> tvsubst (Δ1 
 [ σ ] (T ⇒ S) = [ σ ] T ⇒ [ σ ] S
 [ σ ] (Π T) = Π ([ σ × z ] T)
 
-tsubstMap : ∀ {Δ1 Δ2 Δ3} -> tsubst Δ1 Δ2 -> (tp Δ2 -> tp Δ3) -> tsubst Δ1 Δ3
-tsubstMap ⊡ f = ⊡
-tsubstMap (θ , T) f = (tsubstMap θ f) , (f T)
+tsubstMap : ∀ {Δ1 Δ2 Δ3} -> (tp Δ2 -> tp Δ3) -> tsubst Δ1 Δ2 -> tsubst Δ1 Δ3
+tsubstMap f ⊡ = ⊡
+tsubstMap f (θ , T) = (tsubstMap f θ) , (f T)
 
 tsubstLookup : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tvar Δ1 tt -> tp Δ2
 tsubstLookup ⊡ ()
@@ -88,7 +88,7 @@ tsubstLookup (Θ , T) z = T
 tsubstLookup (θ , T) (s x) = tsubstLookup θ x
 
 _××_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp (Δ2 , _) -> tsubst (Δ1 , _) (Δ2 , _)
-(θ ×× T) = (tsubstMap θ [ s ]) , T
+(θ ×× T) = (tsubstMap [ s ] θ) , T
 
 [[_]] : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp Δ1 -> tp Δ2
 [[ θ ]] (v y) = tsubstLookup θ y
@@ -100,7 +100,7 @@ _××_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp (Δ2 , _) -> tsubst (Δ1 , _) (Δ
 
 id-tsubst : ∀ {Δ1} -> tsubst Δ1 Δ1
 id-tsubst {⊡} = ⊡
-id-tsubst {Δ , T} = (tsubstMap (id-tsubst {Δ}) [ s ]) , v z
+id-tsubst {Δ , T} = (tsubstMap [ s ] (id-tsubst {Δ})) , v z
 
 mutual
  data rtm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where
@@ -113,28 +113,27 @@ mutual
   Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (tctxM [ s ] Γ) T -> ntm Δ Γ (Π T)
   ▹ : ∀ {A} -> rtm Δ Γ (v A) -> ntm Δ Γ (v A)
 
-record candidate T : Set₁ where
+record candidate Δ T : Set₁ where
  field
-  sem : (Γ : tctx ⊡) -> Set
-  reflect : ∀ {Γ} -> rtm ⊡ Γ T -> sem Γ
-  reify : ∀ {Γ} -> sem Γ -> ntm ⊡ Γ T
+  sem : (Γ : tctx Δ) -> Set
+  reflect : ∀ {Γ} -> rtm Δ Γ T -> sem Γ
+  reify : ∀ {Γ} -> sem Γ -> ntm Δ Γ T
 
-〚_〛 : (Δ : lctx) (θ : tsubst Δ ⊡) -> Set
-〚 ⊡ 〛 θ = unit
-〚 Δ , l 〛 (θ , U) = (〚 Δ 〛 θ) * (candidate U)
+〚_〛 : (Δ1 : lctx) -> Set
+〚 ⊡ 〛 = unit
+〚 Δ , l 〛 = 〚 Δ 〛 * (candidate (Δ , l) (v z))
 
-vari : ∀ {Δ : lctx} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) (α : tvar Δ _) -> candidate (tsubstLookup θ α)
-vari {θ = ⊡} _ ()
-vari {θ = θ , T} (Δ' , α) z = α
-vari {θ = θ , T} (Δ' , α) (s y) = vari Δ' y
+vari : ∀ {Δ : lctx} (Δ' : 〚 Δ 〛) (α : tvar Δ _) -> candidate Δ (v α)
+vari (Δ' , α) z = α
+vari (Δ' , α) (s y) = {!!} --vari Δ' y
 
 vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
 vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
 
-sem : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) (T : tp Δ) -> (Γ : tctx ⊡) -> Set
+sem : ∀ {Δ} (Δ' : 〚 Δ 〛) (T : tp Δ) -> (Γ : tctx Δ) -> Set
 sem Δ' (v y) Γ = candidate.sem (vari Δ' y) Γ
 sem Δ' (T ⇒ S) Γ = ∀ Γ' -> vsubst Γ Γ' -> sem Δ' T Γ' → sem Δ' S Γ'
-sem Δ' (Π T) Γ = ∀ U R  → sem {θ = _ , U} (Δ' , R) T Γ
+sem Δ' (Π T) Γ = ∀ R  → sem (Δ' , R) T (tctxM [ s ] Γ)
 
 _∘₁_ : ∀ {Δ : lctx} {Γ Γ' ψ : tctx Δ} -> vsubst Γ' Γ -> vsubst ψ Γ' -> vsubst ψ Γ
 (σ1 ∘₁ σ2) x = σ1 (σ2 x)
@@ -156,13 +155,24 @@ mutual
 wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
+lem : ∀ {Δ1 Δ2 Δ3} (θ1 : tsubst Δ1 Δ2) (θ2 : tsubst Δ2 Δ3) T -> [[ θ2 ]] ([[ θ1 ]] T) ≡ [[ tsubstMap [[ θ2 ]] θ1 ]] T
+lem θ1 θ2 T = {!!}
+
+lem2 : ∀ {Δ1 Δ2 Δ3 Δ4} (f : tp Δ1 -> tp Δ2) (g : tp Δ2 -> tp Δ3) (θ : tsubst Δ4 Δ1)
+  -> tsubstMap g (tsubstMap f θ) ≡ tsubstMap (λ x -> g (f x)) θ
+lem2 f g ⊡ = refl
+lem2 f g (θ , T) rewrite lem2 f g θ = refl
+
+neut-candidate : ∀ {Δ} -> candidate (Δ , tt) (v z)
+neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = λ x → x; reify = ▹ }
+
 mutual
- reflect : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> rtm ⊡ Γ ([[ θ ]] T) -> sem Δ' T Γ
+ reflect : ∀ {Δ} (Δ' : 〚 Δ 〛) T {Γ} -> rtm Δ Γ T -> sem Δ' T Γ
  reflect Δ' (v α) r = candidate.reflect (vari Δ' α) r
  reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
- reflect Δ' (Π T) r = λ U R' → reflect (Δ' , R') T ({!!} $ U)
+ reflect Δ' (Π T) {Γ} r = λ R → reflect (Δ' , R) T ({!!} $ (v z)) 
 
- reify : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm ⊡ Γ ([[ θ ]] T)
+ reify : ∀ {Δ} (Δ' : 〚 Δ 〛) T {Γ} -> sem Δ' T Γ -> ntm Δ Γ T
  reify Δ' (v α) M = candidate.reify (vari Δ' α) M
- reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) wkn (reflect Δ' T (v z))))
- reify Δ' (Π T) M = Λ {!!}
+ reify Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , T) wkn (reflect Δ' T (v z))))
+ reify Δ' (Π T) M = Λ (reify (Δ' , neut-candidate) T (M neut-candidate))
