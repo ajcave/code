@@ -14,7 +14,7 @@ data _≡_ {A : Set} (x : A) : A -> Set where
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
 
-record Σ_ {A : Set}(B : A -> Set) : Set where
+record Σ {A : Set}(B : A -> Set) : Set where
   constructor _,_ 
   field
     fst : A
@@ -59,8 +59,9 @@ tctxM f (Γ , x) = tctxM f Γ , f x
 tvsubst : ∀ Δ1 Δ2 -> Set
 tvsubst Δ1 Δ2 = ∀ {x : _ } (T : tvar Δ1 x) -> tvar Δ2 x
 
-tsubst : ∀ Δ1 Δ2 -> Set
-tsubst Δ1 Δ2 = ∀ {l} -> (T : tvar Δ1 l) -> tp Δ2
+data tsubst : ∀ Δ1 Δ2 -> Set where
+ ⊡ : ∀ {Δ2} -> tsubst ⊡ Δ2
+ _,_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp Δ2 -> tsubst (Δ1 , tt) Δ2
 
 _∘_ : ∀ {A : Set} {B : Set} {C : Set} (g : B -> C) (f : A -> B) -> A -> C
 (g ∘ f) x = g (f x)
@@ -68,10 +69,6 @@ _∘_ : ∀ {A : Set} {B : Set} {C : Set} (g : B -> C) (f : A -> B) -> A -> C
 _,,_ : ∀ {Δ1 Δ2 l} -> tvsubst Δ1 Δ2 -> tvar Δ2 l -> tvsubst (Δ1 , l) Δ2
 _,,_ σ x z = x
 _,,_ σ x (s y) = σ y
-
-_,,,_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp Δ2 -> tsubst (Δ1 , _) Δ2
-(θ ,,, T) z = T
-(θ ,,, T) (s y) = θ y
 
 _×_ : ∀ {Δ1 Δ2 l m} -> tvsubst Δ1 Δ2 -> tvar (Δ2 , l) m -> tvsubst (Δ1 , m) (Δ2 , l)
 (σ × y) = (s ∘ σ) ,, y
@@ -81,23 +78,36 @@ _×_ : ∀ {Δ1 Δ2 l m} -> tvsubst Δ1 Δ2 -> tvar (Δ2 , l) m -> tvsubst (Δ1 
 [ σ ] (T ⇒ S) = [ σ ] T ⇒ [ σ ] S
 [ σ ] (Π T) = Π ([ σ × z ] T)
 
+tsubstMap : ∀ {Δ1 Δ2 Δ3} -> tsubst Δ1 Δ2 -> (tp Δ2 -> tp Δ3) -> tsubst Δ1 Δ3
+tsubstMap ⊡ f = ⊡
+tsubstMap (θ , T) f = (tsubstMap θ f) , (f T)
+
+tsubstLookup : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tvar Δ1 tt -> tp Δ2
+tsubstLookup ⊡ ()
+tsubstLookup (Θ , T) z = T
+tsubstLookup (θ , T) (s x) = tsubstLookup θ x
+
 _××_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp (Δ2 , _) -> tsubst (Δ1 , _) (Δ2 , _)
-(θ ×× y) = ([ s ] ∘ θ) ,,, y
+(θ ×× T) = (tsubstMap θ [ s ]) , T
 
 [[_]] : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp Δ1 -> tp Δ2
-[[ θ ]] (v y) = θ y
+[[ θ ]] (v y) = tsubstLookup θ y
 [[ θ ]] (T ⇒ S) = [[ θ ]] T ⇒ [[ θ ]] S
 [[ θ ]] (Π T) = Π ([[ θ ×× v z ]] T)
 
 … : ∀ {A : Set} -> A -> A
 … x = x
 
+id-tsubst : ∀ {Δ1} -> tsubst Δ1 Δ1
+id-tsubst {⊡} = ⊡
+id-tsubst {Δ , T} = (tsubstMap (id-tsubst {Δ}) [ s ]) , v z
+
 mutual
  data rtm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where
   v : ∀ {T : tp Δ} -> var Γ T -> rtm Δ Γ T
   _·_ : ∀ {T : tp Δ} {S : tp Δ} -> rtm Δ Γ (T ⇒ S) -> ntm Δ Γ T -> rtm Δ Γ S
   _$_ : ∀ {T : tp (Δ , _)} -> rtm Δ Γ (Π T) -> (S : tp Δ)
-         -> rtm Δ Γ ([[ (v ∘ …) ,,, S ]] T)
+         -> rtm Δ Γ ([[ id-tsubst , S ]] T)
  data ntm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where 
   ƛ : ∀ {T S : tp Δ} -> ntm Δ (Γ , T) S -> ntm Δ Γ (T ⇒ S)
   Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (tctxM [ s ] Γ) T -> ntm Δ Γ (Π T)
@@ -109,21 +119,28 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S) -}
 
-〚_〛 : (Δ : lctx) -> Set
-〚 ⊡ 〛 = unit
-〚 Δ , l 〛 = 〚 Δ 〛 * ((Γ : tctx Δ) -> Set)
+record candidate T : Set₁ where
+ field
+  sem : (Γ : tctx ⊡) -> Set
+  reflect : ∀ {Γ} -> rtm ⊡ Γ T -> sem Γ
+  reify : ∀ {Γ} -> sem Γ -> ntm ⊡ Γ T
 
-vari : ∀ {Δ : lctx} (Δ' : 〚 Δ 〛) (α : tvar Δ _) -> (Γ : tctx Δ) -> Set
-vari (Δ' , α) z r = {!!}
-vari (Δ' , α) (s y) r = {!!} -- vari Δ' y
+〚_〛 : (Δ : lctx) (θ : tsubst Δ ⊡) -> Set
+〚 ⊡ 〛 θ = unit
+〚 Δ , l 〛 (θ , U) = (〚 Δ 〛 θ) * (candidate U)
+
+vari : ∀ {Δ : lctx} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) (α : tvar Δ _) -> candidate (tsubstLookup θ α)
+vari {θ = ⊡} _ ()
+vari {θ = θ , T} (Δ' , α) z = α
+vari {θ = θ , T} (Δ' , α) (s y) = vari Δ' y
 
 vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
 vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
 
-sem : ∀ {Δ : lctx} (Δ' : 〚 Δ 〛) (Γ : tctx Δ) (T : tp Δ) -> Set
-sem Δ Γ (v A) = vari Δ A Γ
-sem Δ Γ (T ⇒ S) = ∀ Γ' -> vsubst Γ Γ' -> sem Δ Γ' T → sem Δ Γ' S
-sem {δ} Δ Γ (Π T) = ∀ (A : tctx δ -> Set) -> sem (Δ , A) (tctxM [ s ] Γ) T
+sem : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) (T : tp Δ) -> (Γ : tctx ⊡) -> Set
+sem Δ' (v y) Γ = candidate.sem (vari Δ' y) Γ
+sem Δ' (T ⇒ S) Γ = ∀ Γ' -> vsubst Γ Γ' -> sem Δ' T Γ' → sem Δ' S Γ'
+sem Δ' (Π T) Γ = ∀ U R  → sem {θ = _ , U} (Δ' , R) T Γ
 
 _∘₁_ : ∀ {Δ : lctx} {Γ Γ' ψ : tctx Δ} -> vsubst Γ' Γ -> vsubst ψ Γ' -> vsubst ψ Γ
 (σ1 ∘₁ σ2) x = σ1 (σ2 x)
@@ -132,57 +149,27 @@ ext : ∀ {Δ : lctx} {Γ Γ' : tctx Δ} {T} -> vsubst Γ Γ' -> vsubst (Γ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
 
-{-
+
 mutual
- rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
+ rappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> rtm Δ Γ S -> rtm Δ Γ' S
  rappSubst σ (v y) = v (σ y)
- rappSubst σ (M · N) = rappSubst σ M · nappSubst σ N
- nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
- nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
- nappSubst σ (neut R) = neut (rappSubst σ R)
+ rappSubst σ (R · N) = (rappSubst σ R) · nappSubst σ N
+ rappSubst σ (R $ S) = (rappSubst σ R) $ S
+ nappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> ntm Δ Γ S -> ntm Δ Γ' S 
+ nappSubst σ (ƛ N) = ƛ (nappSubst {!_,,_!} N)
+ nappSubst σ (Λ N) = Λ (nappSubst {!!} N)
+ nappSubst σ (▹ R) = ▹ (rappSubst σ R)
 
-id : ∀ {Γ} -> vsubst Γ Γ
-id x = x
-
-appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
-appSubst (atom A) σ M = rappSubst σ M
-appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
--}
 wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
 mutual
- reify : ∀ {Δ Γ T} -> (∀ (Δ' : 〚 Δ 〛) -> sem Δ' Γ T) -> ntm Δ Γ T
- reify t = {!t!}
+ reflect : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> rtm ⊡ Γ ([[ θ ]] T) -> sem Δ' T Γ
+ reflect Δ' (v α) r = candidate.reflect (vari Δ' α) r
+ reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
+ reflect Δ' (Π T) r = λ U R' → reflect (Δ' , R') T ({!!} $ {!!})
 
-{-mutual
- reflect : ∀ {Δ} {T} {Γ : tctx Δ} -> rtm Δ Γ T -> sem Δ Γ T
- reflect {Δ} {v y} N = N
- reflect {Δ} {T ⇒ S} N = λ Γ' σ s → reflect {!!}
- reflect {Δ} {Π T} N = {!!} -}
-
-{-
-mutual
- reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
- reflect {atom A} N = N
- reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
-
- reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
- reify {atom A} M = neut M
- reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
-
-subst : ctx -> ctx -> Set
-subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
-
-extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
-extend θ M z = M
-extend θ M (s y) = θ y
-
-eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
-eval θ (v y) = θ y
-eval θ (M · N) with eval θ M
-eval θ (M · N) | f = f _ id (eval θ N)
-eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
-
-nbe : ∀ {T} -> tm ⊡ T -> ntm ⊡ T
-nbe M = reify (eval (λ ()) M) -}
+ reify : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm ⊡ Γ ([[ θ ]] T)
+ reify Δ' (v α) M = candidate.reify (vari Δ' α) M
+ reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) wkn (reflect Δ' T (v z))))
+ reify Δ' (Π T) M = Λ {!!}
