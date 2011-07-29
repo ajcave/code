@@ -125,9 +125,13 @@ record candidate Δ T : Set₁ where
 〚 ⊡ 〛 = unit
 〚 Δ , l 〛 = 〚 Δ 〛 * (candidate (Δ , l) (v z))
 
+-- Crap I'm gonna have to Kripke this thing
+wknc : ∀ {Δ T S} -> candidate Δ T -> candidate (Δ , S) ([ s ] T)
+wknc C = record { sem = λ Γ → {!!}; reflect = {!!}; reify = {!!} }
+
 vari : ∀ {Δ : lctx} (Δ' : 〚 Δ 〛) (α : tvar Δ _) -> candidate Δ (v α)
 vari (Δ' , α) z = α
-vari (Δ' , α) (s y) = {!!} --vari Δ' y
+vari (Δ' , α) (s y) = wknc (vari Δ' y)
 
 vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
 vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
@@ -157,8 +161,11 @@ mutual
 wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
-twkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> rtm Δ Γ T -> rtm (Δ , tt) (tctxM [ s ] Γ) ([ s ] T)
-twkn r = {!!}
+mutual
+ twkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> rtm Δ Γ T -> rtm (Δ , tt) (tctxM [ s ] Γ) ([ s ] T)
+ twkn (v y) = {!!}
+ twkn (R · N) = (twkn R) · {!!}
+ twkn (R $ S) = {!!} $ ([ s ] S)
 
 {-
 lem : ∀ {Δ1 Δ2 Δ3} (θ1 : tsubst Δ1 Δ2) (θ2 : tsubst Δ2 Δ3) T -> [[ θ2 ]] ([[ θ1 ]] T) ≡ [[ tsubstMap [[ θ2 ]] θ1 ]] T
@@ -211,7 +218,7 @@ mutual
  sSubst : ∀ {Δ Γ1 Γ2 T} -> subst Γ1 Γ2 -> ntm Δ Γ1 T -> sem id-cands T Γ2
  sSubst θ (ƛ N) = λ Γ' σ x' → sSubst (extend (λ {T0} x0 → appSubst T0 σ (θ x0)) x') N
  sSubst θ (Λ N) = λ R → sSubst {!!} {!!}
- sSubst θ (▹ R) = {!!}
+ sSubst θ (▹ R) = srSubst θ R
 
 nsubst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) -> Set
 nsubst Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm _ Γ2 T
