@@ -156,7 +156,7 @@ mutual
  rappSubst σ (R · N) = (rappSubst σ R) · nappSubst σ N
  rappSubst σ (R $ S) = (rappSubst σ R) $ S
  nappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> ntm Δ Γ S -> ntm Δ Γ' S 
- nappSubst σ (ƛ N) = ƛ (nappSubst {!_,,_!} N)
+ nappSubst σ (ƛ N) = ƛ (nappSubst (ext σ) N)
  nappSubst σ (Λ N) = Λ (nappSubst {!!} N)
  nappSubst σ (▹ R) = ▹ (rappSubst σ R)
 
