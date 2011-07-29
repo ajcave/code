@@ -113,12 +113,6 @@ mutual
   Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (tctxM [ s ] Γ) T -> ntm Δ Γ (Π T)
   ▹ : ∀ {A} -> rtm Δ Γ (v A) -> ntm Δ Γ (v A)
 
-{-
-data tm (Γ : ctx) : (T : tp) -> Set where
- v : ∀ {T} -> var Γ T -> tm Γ T
- _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
- ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S) -}
-
 record candidate T : Set₁ where
  field
   sem : (Γ : tctx ⊡) -> Set
@@ -148,7 +142,6 @@ _∘₁_ : ∀ {Δ : lctx} {Γ Γ' ψ : tctx Δ} -> vsubst Γ' Γ -> vsubst ψ �
 ext : ∀ {Δ : lctx} {Γ Γ' : tctx Δ} {T} -> vsubst Γ Γ' -> vsubst (Γ , T) (Γ' , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
-
 
 mutual
  rappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> rtm Δ Γ S -> rtm Δ Γ' S
