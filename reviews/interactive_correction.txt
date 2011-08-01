@@ -1,0 +1,18 @@
+The authors 
+
+Significance and Originality
+I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise. It is an original adaptation of techniques from Aspect(?) stuff to the theorem proving setting.
+
+Quality of Presentation
+
+The paper has many grammatical errors (some listed below) and desperately requires more careful proof reading.
+
+OAAO might be interesting to the authors?
+
+- Difficult problem. (Semantics preserving transformations are easier)
+- Seems limited in applicability: Many such changes can drastically alter proof and program structure. Maybe there is still a niche for this tool?
+Suitability?
+- Paper should make an effort to justify that this is a reasonable problem. It's stated, but not explained
+(Identify good things in paper. It's not to comfort the authors, it's so they know what to keep).
+Can't this drastically change the structure of proof terms? e.g. what if we have to change the format from a destruct to an inversion?
+More advanced example? Dependent types?
