@@ -48,7 +48,14 @@
 
 \begin{frame}[fragile]{Beluga$^\mu$}
 \begin{lstlisting}
-test
+nat : type.
+z : nat.
+s : nat -> nat.
+
+datatype vec : nat[] -> ctype =
+ nil : vec ([]. z)
+ cons : {N:nat[]} -> bool[] -> vec ([]. N) -> vec ([]. s N)
+ 
 \end{lstlisting}
 \end{frame}
 
@@ -59,8 +66,7 @@ app: tm -> tm -> tm.
 schema ctx = tm;
 
 datatype clos :  ctype =
- cl : {\psi:ctx} -> tm[\psi,x:tm]
-      -> (#tm[\psi] -> clos) -> clos
+ cl : {\psi:ctx} -> tm[\psi,x:tm] -> (#tm[\psi] -> clos) -> clos
 
 type envr \psi = #tm[\psi] -> clos
 \end{lstlisting}
