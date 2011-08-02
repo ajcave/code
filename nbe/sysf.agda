@@ -204,7 +204,7 @@ extend θ M (s y) = θ y
 appSubst : ∀ {Δ} {Γ1 Γ2 : tctx Δ} {Δ'} S -> vsubst Γ1 Γ2 -> sem Δ' S Γ1 -> sem Δ' S Γ2
 appSubst (v α) θ M = {!!}
 appSubst (T ⇒ S) θ M = λ Γ' σ x → M Γ' (σ ∘ θ) x
-appSubst (Π T) θ M = λ R → appSubst T {!!} (M R)
+appSubst (Π T) θ M = λ R → appSubst T ? (M R)
 
 -- Here we have admissibility of cut for ntm. Not necessary for nbe,
 -- but nice to state.
