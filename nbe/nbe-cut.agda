@@ -114,10 +114,20 @@ mutual
  sSubst θ < M , N > = sSubst θ M , sSubst θ N
  sSubst θ tt = tt
 
+sId : ∀ {Γ} -> subst Γ Γ
+sId x = reflect (v x)
+
 nSubst : ctx -> ctx -> Set
 nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
+
+embed : ∀ {Γ T} -> ntm Γ T -> sem Γ T
+embed N = sSubst sId N
+
+embed* : ∀ {Γ Δ} -> nSubst Γ Δ -> subst Γ Δ
+embed* θ x = embed (θ x)
+
 cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut θ t = reify (sSubst (λ x → sSubst (λ x' → reflect (v x')) (θ x)) t)
+cut θ t = reify (sSubst (embed* θ) t)
 
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
