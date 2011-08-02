@@ -116,8 +116,8 @@ Becomes:
 let x = 5
     y = 2
     f' =
- clos (\(\lambda\)(z,env). (\(\pi\) 1 env) + (\(\pi\) 2 env) + z) < x , y > in
- open f' (\(\lambda\)(f,env). f (1,env))
+ clos (\(\lambda\)(env,z). (\(\pi\) 1 env) + (\(\pi\) 2 env) + z) < x , y > in
+ open f' (\(\lambda\)(f,env). f (env,1))
 \end{alltt}
 
 The source language and the target language are substantially different.
