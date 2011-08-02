@@ -1,6 +1,14 @@
 \documentclass{beamer}
 \usepackage[latin1]{inputenc}
 \usepackage{listings}
+\newdimen\zzlistingsize
+\newdimen\zzlistingsizedefault
+\zzlistingsizedefault=9pt
+\zzlistingsize=\zzlistingsizedefault
+\global\def\InsideComment{0}
+\newcommand{\keywordFmt}{\fontsize{0.9\zzlistingsize}{1.0\zzlistingsize}\bf}
+\newcommand{\smartkeywordFmt}{\if0\InsideComment\keywordFmt\fi}
+
 \lstloadlanguages{ContextualML}
 \lstset{language=ContextualML}
 
@@ -242,6 +250,23 @@ mlam \psi => mlam T => fn s => case []. T of
 \end{frame}
 
 \begin{frame}[fragile]{Normalization by Evaluation}
+Aside: We can now write these with relative ease:
+\begin{lstlisting}
+type nsub (\psi:ctx) (\phi:ctx) = {T:tp[]} #(neut T)[\psi] -> (neut T)[\phi]
+
+rec cut : {\psi \phi:ctx} {T} (norm T)[\psi] -> nsub \psi$\,$\phi -> (norm T)[\phi]
+= ...
+
+rec single : {\psi T} (norm T)[\psi] -> sub \psi$\,$(\psi, x:neut T)
+= ...
+
+rec napp : {\psi:ctx} {T S} (norm (arr T S))[\psi] -> (norm T)[\psi] -> (norm S)[\psi]
+fn n => fn m => case n of
+| \psi. nlam (\x. N .. x) => cut (single m) (\psi,x:neut _. N .. x)
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
 \begin{lstlisting}
 tm : tp -> type.
 app : tm (arr T S) -> tm T -> tm S.
@@ -251,6 +276,33 @@ proj2 : tm (prod T S) -> tm S
 pair : tm T -> tm S -> tm (prod T S).
 tt : tm unit.
 schema tctx = some [T:tp] tm T;
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
+\begin{lstlisting}
+rec eval : {\psi \phi$\;\;$S} ->
+  -> ({T} #(tm T)[\psi] -> sem \phi$\;$T)
+  -> (tm S)[\psi] -> sem \phi S =
+fn r => fn \sigma => fn e => case e of 
+| \psi. #p ..  => \sigma ($\psi$ . #p .. )
+| \psi. lam (\x. E .. x) => slam (fn \sigma' => fn s =>
+    eval (extend ((subst \sigma') $\circ$ \sigma) s) (\psi,x. E .. x)
+| \psi. app (E1 ..) (E2 ..) => 
+   let slam f = eval \sigma (\psi. E1 ..) in
+   f id (eval \sigma (\psi. E2 ..))
+\end{lstlisting}
+
+\begin{lstlisting}
+rec extend : {\psi:tctx} {\phi:ctx} {S}
+  -> ({T} -> #(tm T)[\psi] -> sem \phi$\,$T) -> sem \phi$\,$S
+  -> ({T} -> #(tm T)[\psi,x:tm S] -> sem \phi$\,$T) =
+fn \sigma => fn s => fn y => case y of
+| \psi,x:tm S. => s
+| \psi,x:tm S. #p .. =>  \sigma (\psi. #p ..)
+
+rec nbe : {T} -> (tm T)[\psi] -> (norm T)[\psi] = 
+fn e => reify [] T (eval (fn x => reflect _ _ x) e)
 \end{lstlisting}
 \end{frame}
 
