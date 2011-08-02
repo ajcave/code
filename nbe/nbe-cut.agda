@@ -1,4 +1,4 @@
-module nbe3 where
+module nbe-cut where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -90,7 +90,7 @@ mutual
  reify {atom A} M = neut M
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
- reify {unit} tt = tt
+ reify {unit} N = tt
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
@@ -114,10 +114,20 @@ mutual
  sSubst θ < M , N > = sSubst θ M , sSubst θ N
  sSubst θ tt = tt
 
+sId : ∀ {Γ} -> subst Γ Γ
+sId x = reflect (v x)
+
 nSubst : ctx -> ctx -> Set
 nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
+
+embed : ∀ {Γ T} -> ntm Γ T -> sem Γ T
+embed N = sSubst sId N
+
+embed* : ∀ {Γ Δ} -> nSubst Γ Δ -> subst Γ Δ
+embed* θ x = embed (θ x)
+
 cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut θ t = reify (sSubst (λ x → sSubst (λ x' → reflect (v x')) (θ x)) t)
+cut θ t = reify (sSubst (embed* θ) t)
 
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
@@ -155,16 +165,3 @@ complete (π₁ M) = nfst (complete M)
 complete (π₂ N) = nsnd (complete N)
 complete < M , N > = < complete M , complete N >
 complete tt = tt
-
--- Traditional nbe
-eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
-eval θ (v y) = θ y
-eval θ (M · N) = eval θ M _ id (eval θ N)
-eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
-eval θ (π₁ M) = _*_.fst (eval θ M)
-eval θ (π₂ N) = _*_.snd (eval θ N)
-eval θ < M , N > = eval θ M , eval θ N
-eval θ tt = tt
-
-nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe M = reify (eval (λ x → reflect (v x)) M) 

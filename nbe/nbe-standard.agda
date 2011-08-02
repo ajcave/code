@@ -1,4 +1,4 @@
-module nbe3 where
+module nbe-standard where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -99,45 +99,6 @@ extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
--- Here we have admissibility of cut for ntm. Not necessary for nbe,
--- but nice to state.
-mutual
- srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
- srSubst θ (v y) = θ y
- srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
- srSubst θ (π₁ R) = _*_.fst (srSubst θ R)
- srSubst θ (π₂ R) = _*_.snd (srSubst θ R)
-
- sSubst : ∀ {Γ Δ T} -> subst Γ Δ -> ntm Γ T -> sem Δ T
- sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (λ x → appSubst _ σ (θ x)) s) M
- sSubst θ (neut y) = srSubst θ y
- sSubst θ < M , N > = sSubst θ M , sSubst θ N
- sSubst θ tt = tt
-
-nSubst : ctx -> ctx -> Set
-nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
-cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut θ t = reify (sSubst (λ x → sSubst (λ x' → reflect (v x')) (θ x)) t)
-
-nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
-nv x = reify (reflect (v x))
-
-nExtend : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Δ T -> nSubst (Γ , T) Δ
-nExtend θ N z = N
-nExtend θ N (s y) = θ y
-
-nId : ∀ {Γ} -> nSubst Γ Γ
-nId x = nv x
-
-napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
-napp (ƛ N) M = cut (nExtend nId M) N
-
-nfst : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ T
-nfst < M , N > = M
-
-nsnd : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ S
-nsnd < M , N > = N
-
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
@@ -147,16 +108,6 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  <_,_> : ∀ {T S} -> tm Γ T -> tm Γ S -> tm Γ (T × S)
  tt : tm Γ unit
 
-complete : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-complete (v y) = nv y
-complete (M · N) = napp (complete M) (complete N)
-complete (ƛ M) = ƛ (complete M)
-complete (π₁ M) = nfst (complete M)
-complete (π₂ N) = nsnd (complete N)
-complete < M , N > = < complete M , complete N >
-complete tt = tt
-
--- Traditional nbe
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
