@@ -86,7 +86,7 @@ type envr \psi = #tm[\psi] -> clos
 type envr \psi = #tm[\psi] -> clos
 
 rec extend : {\psi:ctx} envr \psi -> clos -> envr (\psi, x:tm) =
-fn env => fn c => fn X => case X of
+fn env => fn c => fn x => case x of
 | \psi,x:tm . x => c
 | \psi,x:tm . #p .. => env (\psi. #p ..)
 
@@ -105,8 +105,8 @@ Let's make closures explicit so that we can hoist them to the top level and comp
 
 \begin{alltt}
 let x = 5
-let y = 2
-let f = \(\lambda\) z. x + y + z
+    y = 2
+    f = \(\lambda\)z. x + y + z in
   f 1
 \end{alltt}
 
@@ -114,9 +114,10 @@ Becomes:
 
 \begin{alltt}
 let x = 5
-let y = 2
-let f = \(\lambda\) (z,env). (\(\pi\) 1 env) + (\(\pi\) 2 env) + z
-  f (1, < x, y >)
+    y = 2
+    f' =
+ clos (\(\lambda\)(z,env). (\(\pi\) 1 env) + (\(\pi\) 2 env) + z) < x , y > in
+ open f' (\(\lambda\)(f,env). f (1,env))
 \end{alltt}
 
 The source language and the target language are substantially different.
@@ -206,11 +207,11 @@ M : T \times S &\equiv_{\eta_{prod}} (\pi_1 M, \pi_2 M)\\
 M : unit &\equiv_{\eta_{unit}} tt
 \end{align*}
 
-A closed term of type {\tt unit} will always evaluate to {\tt tt} using only $\beta$, but we'd like to work with terms in non-empty contexts.
+A closed term of type {\tt unit} will always be equal to {\tt tt} using only $\beta$, but we'd like to work with terms in non-empty contexts.
 
 That is, we'd like to identify $\lambda x:\text{unit} \lambda y:\text{unit}. x$ and $\lambda x:\text{unit} \lambda y:\text{unit}. y$.
 
-With $\eta_{unit}$, these both evaluate to $\lambda x:\text{unit} \lambda y:\text{unit}. tt$.
+With $\eta_{unit}$, these are both equal to $\lambda x:\text{unit} \lambda y:\text{unit}. tt$.
 
 Normalization by evaluation reuses the evaluation of the meta-language and gets us $\beta$ \emph{and} $\eta$.
 \end{frame}
