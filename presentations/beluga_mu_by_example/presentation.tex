@@ -141,8 +141,7 @@ mlam \phi => case \phi of
 
 datatype ctx_rel : ctx -> cctx -> ctype
 | rnil : ctx_rel [] []
-| rsnoc : {\psi \phi} -> ctx_rel \psi$\;$\phi
-  -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
+| rsnoc : {\psi \phi} -> ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
 \end{lstlisting}
 \end{frame}
 
@@ -168,7 +167,6 @@ mlam \phi => fn cr => fn m => case m of
 
 \begin{frame}[fragile]{Normalization by Evaluation}
 \begin{lstlisting}
-atomic_tp : type.
 tp : type.
 atomic : atomic_tp -> tp.
 arr : tp -> tp -> tp.
