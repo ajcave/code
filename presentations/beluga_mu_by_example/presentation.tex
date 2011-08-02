@@ -196,6 +196,24 @@ mlam \phi => fn cr => fn m => case m of
 \end{lstlisting}
 \end{frame}
 
+\begin{frame}[fragile]{Closure conversion}
+How about type preserving closure conversion?
+
+\begin{lstlisting}
+tp_rel : tp -> ctp -> type.
+i_rel : tp_rel i i'
+arr_rel : tp_rel T T' -> tp_rel S S'
+  -> tp_rel (arr T S) (clos T' S')
+
+type ctx_rel : ctx -> cctx -> ctype =
+| rnil : ctx_rel [] []
+| rsnoc : {\psi \phi} {T:tp[]} {S:ctp[]} -> ctx_rel \psi$\,$ \phi
+  -> tp_rel T S -> ctx_rel (\psi, x:tm T) (\phi, x:ctm S)
+\end{lstlisting}
+
+(Unfortunately) now we have to prove lemmas which say that \lstinline!ctx_rel! is total and deterministic.
+\end{frame}
+
 \begin{frame}[fragile]{Normalization by Evaluation}
 We want to normalize lambda terms. (e.g. we are type-checking a PTS with dependent types) 
 \begin{align*}
