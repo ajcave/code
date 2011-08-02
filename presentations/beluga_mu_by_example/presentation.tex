@@ -1,6 +1,7 @@
 \documentclass{beamer}
 \usepackage[latin1]{inputenc}
 \usepackage{listings}
+\usepackage{alltt}
 \newdimen\zzlistingsize
 \newdimen\zzlistingsizedefault
 \zzlistingsizedefault=9pt
@@ -97,6 +98,28 @@ fn e => fn env => case e of
  let cl (\phi,x:tm . E .. x) env' = eval (\psi. E1 ..) env
  in eval (\phi,x:tm . E .. x) (extend env' (eval (\psi. E2 ..)))
 \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Closure conversion}
+Let's make closures explicit so that we can hoist them to the top level and compile them.
+
+\begin{alltt}
+let x = 5
+let y = 2
+let f = \(\lambda\) z. x + y + z
+  f 1
+\end{alltt}
+
+Becomes:
+
+\begin{alltt}
+let x = 5
+let y = 2
+let f = \(\lambda\) (z,env). (\(\pi1\) env) + (\(\pi2\) env) + y
+  f (1, < x, y >)
+\end{alltt}
+
+The source language and the target language are substantially different.
 \end{frame}
 
 \begin{frame}[fragile]{Closure conversion}
@@ -199,6 +222,7 @@ unit : tp.
 
 neut : tp -> type.
 norm : tp -> type.
+embed : neut (atomic P) -> norm (atomic P).
 nlam : (neut T -> norm S) -> norm (arr T S).
 npair : norm T -> norm S -> norm (prod T S).
 ntt : norm unit.
@@ -206,7 +230,6 @@ ntt : norm unit.
 rapp : neut (arr T S) -> norm T -> neut S.
 rproj1 : neut (prod T S) -> neut T.
 rproj2 : neut (prod T S) -> neut S.
-embed : neut (atomic P) -> norm (atomic P).
 schema ctx = some [T:tp] neut T;
 \end{lstlisting}
 \end{frame}
