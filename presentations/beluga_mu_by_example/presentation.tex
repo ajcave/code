@@ -173,6 +173,23 @@ mlam \phi => fn cr => fn m => case m of
 \end{frame}
 
 \begin{frame}[fragile]{Normalization by Evaluation}
+\begin{align*}
+(\lambda x. M) N &\longrightarrow_{\beta_{arrow}}& [N/x]M\\
+M : T \rightarrow S &\longrightarrow_{\eta_{arrow}}& \lambda x. M x\\
+\pi_1 (M , N) &\longrightarrow_{\beta_{prod_1}}& M\\
+\pi_2 (M , N) &\longrightarrow_{\beta_{prod_2}}& N\\
+M : T \times S &\longrightarrow_{\eta_{prod}}& (\pi_1 M, \pi_2 M)\\
+M : unit &\longrightarrow_{\eta_{unit}}& tt
+\end{align*}
+
+A closed term of type {\tt unit} will always evaluate to {\tt tt} using only $\beta$, but we'd like to work with terms in non-empty contexts.
+
+That is, we'd like to identify $\lambda x:\text{unit} \lambda y:\text{unit}. x$ and $\lambda x:\text{unit} \lambda y:\text{unit}. y$.
+
+With $\eta_{unit}$, these both evaluate to $\lambda x:\text{unit} \lambda y:\text{unit}. tt$.
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
 \begin{lstlisting}
 tp : type.
 atomic : atomic_tp -> tp.
