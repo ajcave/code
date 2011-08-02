@@ -257,12 +257,13 @@ mlam \psi => mlam T => fn s => case []. T of
 \begin{frame}[fragile]{Normalization by Evaluation}
 Aside: We can now write these with relative ease:
 \begin{lstlisting}
-type nsub (\psi:ctx) (\phi:ctx) = {T:tp[]} #(neut T)[\psi] -> (neut T)[\phi]
+type nsub (\psi:ctx) (\phi:ctx) =
+  {T:tp[]} #(neut T)[\psi] -> (neut T)[\phi]
 
-rec cut : {\psi \phi:ctx} {T} (norm T)[\psi] -> nsub \psi$\,$\phi -> (norm T)[\phi]
+rec cut :{\psi \phi:ctx} {T} (norm T)[\psi] -> nsub \psi$\,$\phi -> (norm T)[\phi]
 = ...
 
-rec single : {\psi T} (norm T)[\psi] -> sub \psi$\,$(\psi, x:neut T)
+rec single : {\psi T} (norm T)[\psi] -> sub (\psi, x:neut T)$\,$\psi
 = ...
 
 rec napp : {\psi:ctx} {T S} (norm (arr T S))[\psi] -> (norm T)[\psi] -> (norm S)[\psi]
