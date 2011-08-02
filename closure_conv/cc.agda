@@ -38,7 +38,7 @@ mutual
   v : ∀ {T} -> var Γ T -> cexp Γ T
   _·_ : ∀ {T S} -> cexp Γ (T ⇝ S) -> cexp Γ T -> cexp Γ S
   ƛ : ∀ {T S} -> cexp (⊡ , T) S -> cexp Γ (T ⇝ S)
-  letx : ∀ {Δ S} -> subst Δ Γ -> cexp Δ S -> cexp Γ S -- aka explicit substitution
+  let* : ∀ {Δ S} -> subst Δ Γ -> cexp Δ S -> cexp Γ S -- aka explicit substitution
   let1 : ∀ {T S} -> cexp Γ T -> cexp (Γ , T) S -> cexp Γ S -- Can be defined in terms of letx
   clos : ∀ {T Env S} -> cexp Γ (∧ (Env , T) ⇝ S) -> cexp Γ (∧ Env) -> cexp Γ (clos T S) 
   copen : ∀ {T S U} -> cexp Γ (clos T S) -> (∀ {Env} -> cexp (Γ , (∧ (Env , T) ⇝ S), (∧ Env)) U) -> cexp Γ U
@@ -59,7 +59,7 @@ mutual
 < Γ , T > = < Γ > , 〚 T 〛
 
 wkn : ∀ {Γ T S} -> cexp Γ S -> cexp (Γ , T) S
-wkn M = letx (λ x → v (s x)) M
+wkn M = let* (λ x → v (s x)) M
 
 _,,_ : ∀ {Γ Env T} -> cexp Γ (∧ Env) -> cexp Γ T -> labelAssignment (Env , T) Γ
 (recrd ,, M) z = M
@@ -72,7 +72,7 @@ vconv (s y) = s (vconv y)
 conv : ∀ {Γ T} -> exp Γ T -> cexp < Γ > 〚 T 〛
 conv (v x) = v (vconv x)
 conv (M · N) = copen (conv M) ((v (s z)) · create ((v z) ,, (wkn (wkn (conv N)))))
-conv (ƛ M) = clos (ƛ (letx (proj (v z)) (conv M))) (create v)
+conv (ƛ M) = clos (ƛ (let* (proj (v z)) (conv M))) (create v)
 conv (let1 M N) = let1 (conv M) (conv N) 
 
 -- If you're concerned about the efficiency of building up complex record access functions
