@@ -281,22 +281,19 @@ schema tctx = some [T:tp] tm T;
 
 \begin{frame}[fragile]{Normalization by Evaluation}
 \begin{lstlisting}
-rec eval : {\psi \phi$\;\;$S} ->
-  -> ({T} #(tm T)[\psi] -> sem \phi$\;$T)
-  -> (tm S)[\psi] -> sem \phi S =
+type sSub (\psi:tctx) \phi = {T} #(tm T)[\psi] -> sem \phi$\,$ T
+rec eval : {\psi \phi$\;\;$S} -> sSub \psi$\,$\phi -> (tm S)[\psi] -> sem \phi$\,$S =
 fn r => fn \sigma => fn e => case e of 
 | \psi. #p ..  => \sigma ($\psi$ . #p .. )
 | \psi. lam (\x. E .. x) => slam (fn \sigma' => fn s =>
     eval (extend ((subst \sigma') $\circ$ \sigma) s) (\psi,x. E .. x)
-| \psi. app (E1 ..) (E2 ..) => 
-   let slam f = eval \sigma (\psi. E1 ..) in
+| \psi. app (E1 ..) (E2 ..) =>  let slam f = eval \sigma (\psi. E1 ..) in
    f id (eval \sigma (\psi. E2 ..))
 \end{lstlisting}
 
 \begin{lstlisting}
-rec extend : {\psi:tctx} {\phi:ctx} {S}
-  -> ({T} -> #(tm T)[\psi] -> sem \phi$\,$T) -> sem \phi$\,$S
-  -> ({T} -> #(tm T)[\psi,x:tm S] -> sem \phi$\,$T) =
+rec extend : {\psi:tctx} {\phi:ctx} {T}
+  -> sSub \psi \phi -> sem \phi$\,$T -> sSub (\psi,x:tm T) \phi
 fn \sigma => fn s => fn y => case y of
 | \psi,x:tm S. => s
 | \psi,x:tm S. #p .. =>  \sigma (\psi. #p ..)
