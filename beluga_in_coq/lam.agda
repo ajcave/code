@@ -106,7 +106,7 @@ cnt (var .(⇑ y))   x | diff y = z
 cnt (ƛ y M) x = cnt (M (exch x y)) y
 cnt (M · N) x = (cnt (M …) x) + (cnt (N …) x) 
 
--- Now we just need some crazy bananas for things like exchange
+-- Now we just need nice ways to build substitutions
 
 all_preims : ∀ {ψ} -> (∀ {ψ} -> Exp ψ -> Set) -> (M : Exp ψ) -> Set
 all_preims {ψ} view M = {χ : world } -> (σ : vsub χ ψ)
