@@ -3,6 +3,39 @@
 \usepackage{listings}
 \lstloadlanguages{ContextualML}
 \lstset{language=ContextualML}
+
+\lstset{literate={->}{{$\rightarrow~$}}2 %
+                 {=>}{{$\Rightarrow~$}}2 %
+                 {id}{{{\smartkeywordFmt id}}}1 % 3 $~$
+                 {\\}{{$\lambda$}}1 %
+                 {\\Pi}{{$\Pi$}}1 %
+                 {\\Sigma}{{$\Sigma$}}1 %
+                 {\\Pibox}{{$\Pibox$}}1 %
+                 {\\psi}{{$\psi$}}1 %
+                 {\\phi}{{$\phi$}}1 %
+                 {\\sigma}{{$\sigma$}}1 %
+                 {\\gamma}{{$\gamma$}}1 %
+%                 {mlam}{{$\lambda^{\scriptscriptstyle\Box}$}}1 %
+                 {mlam}{{$\lambda$}}1 %
+                 {FN}{{$\Lambda$}}1 %
+                 {<<}{\color{dGreen}}1 %
+                 {>>}{\color{black}}1 %
+               ,
+               columns=[l]fullflexible,
+%               basewidth=\zzlstwidth,
+%               basicstyle=\Lstbasicstyle,
+%               keywordstyle=\keywordFmt,
+%               identifierstyle=\relax,
+%               stringstyle=\relax,
+%               commentstyle=\commentFmt,
+               breaklines=true,
+               breakatwhitespace=true,   % doesn't do anything (?!)
+               mathescape=true,   % interprets $...$ in listing as math mode
+%               tabsize=8,
+    %           texcl=false
+    }
+
+
 \usetheme{Warsaw}
 \title[]{Beluga$^\mu$ by example}
 \author{Andrew Cave}
@@ -20,6 +53,98 @@ test
 \end{frame}
 
 \begin{frame}[fragile]{Closure based evaluator}
+\begin{lstlisting}
+lam: (tm -> tm) -> tm.              
+app: tm -> tm -> tm.
+schema ctx = tm;
+
+datatype clos :  ctype =
+ cl : {\psi:ctx} -> tm[\psi,x:tm]
+      -> (#tm[\psi] -> clos) -> clos
+
+type envr \psi = #tm[\psi] -> clos
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Closure based evaluator}
+\begin{lstlisting}
+rec extend : {\psi:ctx} envr \psi -> clos -> envr (\psi, x:tm) =
+fn env => fn c => fn X => case X of
+| \psi,x:tm . x => c
+| \psi,x:tm . #p .. => env (\psi. #p ..)
+
+rec eval : {\psi:ctx} tm[\psi] -> envr \psi -> clos  =
+fn e => fn env => case e of
+| \psi. #p .. => env (\psi. #p ..)
+| \psi. lam (\x. E .. x)  => cl (\psi,x:exp . E .. x) env
+| \psi. app (E1 ..) (E2 ..) =>
+ let cl (\phi,x:tm . E .. x) env' = eval (\psi. E1 ..) env
+ in eval (\phi,x:tm . E .. x) (extend env' (eval (\psi. E2 ..)))
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Closure conversion}
+
+\begin{lstlisting}
+tm : type.
+lam: (tm -> tm) -> tm.              
+app: tm -> tm -> tm.
+
+schema ctx = tm;
+\end{lstlisting}
+
+\begin{lstlisting}
+envr : type.
+ctm : type.
+clam : (envr -> ctm) -> ctm.
+proj : envr -> nat -> ctm.
+close : ctm -> envr -> ctm.
+open : ctm -> (env -> ctm -> ctm) -> ctm
+nil : envr.
+create : envr -> ctm.
+snoc : envr -> ctm -> envr.
+
+schema cctx = ctm;
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Closure conversion}
+
+\begin{lstlisting}
+rec addProjs : (\phi:cctx) (N:nat[]) (M:cexp[\phi,e:envr])
+  -> cexp[e:envr] =
+mlam \phi => mlam N => mlam M => case \phi of
+| [] => [e:envr]. M e
+| \phi,x:ctm => addProjs \phi (s N) (\phi,e. M .. (proj e N) e)
+
+rec ctxToEnv : (\phi:cctx) envr[\phi] =
+mlam \phi => case \phi of
+| [] => []. nil
+| \phi,x:ctm => let \phi. env .. = ctxToEnv \phi in
+  \phi,x:ctm. snoc (env ..) x
+
+datatype ctx_rel : ctx -> cctx -> ctype
+| rnil : ctx_rel [] []
+| rsnoc : {\psi \phi} -> ctx_rel \psi$\;$\phi
+  -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
+
+rec conv : {\psi:ctx} (\phi:cctx) -> ctx_rel \psi$\;$\phi$\;$-> tm[\psi]
+  -> ctm[\phi] =
+mlam \phi => fn cr => fn m => case m of
+| \psi',x. x     => let rsnoc {\phi = \phi',x} _ = cr in \phi',x. x
+| \psi',x. #p .. => let rsnoc {\phi = \phi',x} cr' = cr in 
+ let \phi'. M .. = conv _ cr' (\psi'. #p ..) in \phi',x. M ..
+| \psi. lam (\x. M .. x) =>
+ let \phi, x. M' .. x = conv _ (rsnoc cr) (\psi,x. M .. x) in
+ let [ev:envr]. M'' ev = addProjs (\phi,x) z (\phi, x:ctm, ev:envr. M' .. x) in
+ let \phi. Env .. = ctxToEnv \phi in 
+ \phi.  close (clam (\ev. M'' ev)) (Env ..)
+| \psi. app (M ..) (N ..) =>
+ let \phi. M' .. = conv _ cr (\psi. M ..) in
+ let \phi. N' .. = conv _ cr (\psi. N ..) in
+ \phi. open (M' ..)
+         (\env. \f. capp f (create (snoc env (N' ..))))
+\end{lstlisting}
 \begin{itemize}
 \item blah
 \end{itemize}
