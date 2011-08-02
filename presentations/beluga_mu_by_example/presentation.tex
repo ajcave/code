@@ -115,7 +115,7 @@ Becomes:
 \begin{alltt}
 let x = 5
 let y = 2
-let f = \(\lambda\) (z,env). (\(\pi1\) env) + (\(\pi2\) env) + y
+let f = \(\lambda\) (z,env). (\(\pi\) 1 env) + (\(\pi\) 2 env) + y
   f (1, < x, y >)
 \end{alltt}
 
@@ -196,6 +196,7 @@ mlam \phi => fn cr => fn m => case m of
 \end{frame}
 
 \begin{frame}[fragile]{Normalization by Evaluation}
+We want to normalize lambda terms. (e.g. we are type-checking a PTS with dependent types) 
 \begin{align*}
 (\lambda x. M) N &\equiv_{\beta_{arrow}} [N/x]M\\
 M : T \rightarrow S &\equiv_{\eta_{arrow}} \lambda x. M x\\
@@ -210,6 +211,8 @@ A closed term of type {\tt unit} will always evaluate to {\tt tt} using only $\b
 That is, we'd like to identify $\lambda x:\text{unit} \lambda y:\text{unit}. x$ and $\lambda x:\text{unit} \lambda y:\text{unit}. y$.
 
 With $\eta_{unit}$, these both evaluate to $\lambda x:\text{unit} \lambda y:\text{unit}. tt$.
+
+Normalization by evaluation reuses the evaluation of the meta-language and gets us $\beta$ \emph{and} $\eta$.
 \end{frame}
 
 \begin{frame}[fragile]{Normalization by Evaluation}
@@ -298,7 +301,7 @@ mlam \psi => mlam T => fn s => case []. T of
 Aside: We can now write these with relative ease:
 \begin{lstlisting}
 type nsub (\psi:ctx) (\phi:ctx) =
-  {T:tp[]} #(neut T)[\psi] -> (neut T)[\phi]
+  {T:tp[]} #(neut T)[\psi] -> (norm T)[\phi]
 
 rec nembed : {\psi T} (norm T)[\psi] -> sem \psi$\,$T = ...
 
