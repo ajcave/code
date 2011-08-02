@@ -108,7 +108,6 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  <_,_> : ∀ {T S} -> tm Γ T -> tm Γ S -> tm Γ (T × S)
  tt : tm Γ unit
 
--- Traditional nbe
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
