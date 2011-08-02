@@ -260,8 +260,11 @@ Aside: We can now write these with relative ease:
 type nsub (\psi:ctx) (\phi:ctx) =
   {T:tp[]} #(neut T)[\psi] -> (neut T)[\phi]
 
+rec nembed : {\psi T} (norm T)[\psi] -> sem \psi$\,$T = ...
+
 rec cut :{\psi \phi:ctx} {T} (norm T)[\psi] -> nsub \psi$\,$\phi -> (norm T)[\phi]
 = ...
+-- This is a different algorithm for hereditary substitution
 
 rec single : {\psi T} (norm T)[\psi] -> sub (\psi, x:neut T)$\,$\psi
 = ...
@@ -295,17 +298,24 @@ fn r => fn \sigma => fn e => case e of
     eval (extend ((subst \sigma') $\circ$ \sigma) s) (\psi,x. E .. x)
 | \psi. app (E1 ..) (E2 ..) =>  let slam f = eval \sigma (\psi. E1 ..) in
    f id (eval \sigma (\psi. E2 ..))
-\end{lstlisting}
 
+rec nbe : {T} -> (tm T)[\psi] -> (norm T)[\psi] = 
+fn e => reify [] T (eval (fn x => reflect _ _ x) e)
+
+\sigma  : sSub \psi$\,$\phi
+\sigma' : sSub \phi$\,\chi$
+-----------------------
+(subst \sigma') $\circ$ \sigma$\quad$:$\quad$sSub \psi$\,\,\chi$
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
 \begin{lstlisting}
 rec extend : {\psi:tctx} {\phi:ctx} {T}
   -> sSub \psi \phi -> sem \phi$\,$T -> sSub (\psi,x:tm T) \phi
 fn \sigma => fn s => fn y => case y of
 | \psi,x:tm S. => s
 | \psi,x:tm S. #p .. =>  \sigma (\psi. #p ..)
-
-rec nbe : {T} -> (tm T)[\psi] -> (norm T)[\psi] = 
-fn e => reify [] T (eval (fn x => reflect _ _ x) e)
 \end{lstlisting}
 \end{frame}
 
