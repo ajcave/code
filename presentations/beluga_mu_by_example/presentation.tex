@@ -1,5 +1,8 @@
 \documentclass{beamer}
 \usepackage[latin1]{inputenc}
+\usepackage{listings}
+\lstloadlanguages{ContextualML}
+\lstset{language=ContextualML}
 \usetheme{Warsaw}
 \title[]{Beluga$^\mu$ by example}
 \author{Andrew Cave}
@@ -8,6 +11,12 @@
 
 \begin{frame}
 \titlepage
+\end{frame}
+
+\begin{frame}[fragile]{Beluga$^\mu$}
+\begin{lstlisting}
+test
+\end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]{Closure based evaluator}
