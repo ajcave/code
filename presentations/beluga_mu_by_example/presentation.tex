@@ -132,23 +132,30 @@ rec addProjs : (\phi:cctx) (N:nat[]) (M:cexp[\phi,e:envr])
 mlam \phi => mlam N => mlam M => case \phi of
 | [] => [e:envr]. M e
 | \phi,x:ctm => addProjs \phi (s N) (\phi,e. M .. (proj e N) e)
+e.g. addProjs _ z ([x:ctm,y:ctm,e:envr]. app x y)
+ yields [e:envr]. app (proj e (s z)) (proj e z)
 
 rec ctxToEnv : (\phi:cctx) envr[\phi] =
 mlam \phi => case \phi of
 | [] => []. nil
 | \phi,x:ctm => let \phi. env .. = ctxToEnv \phi in
   \phi,x:ctm. snoc (env ..) x
+e.g. ctxToEnv (x:ctm,y:ctm,z:ctm)
+ yields [x:ctm,y:ctm,z:ctm]. snoc (snoc (snoc nil x) y) z
 
-datatype ctx_rel : ctx -> cctx -> ctype
-| rnil : ctx_rel [] []
-| rsnoc : {\psi \phi} -> ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
 \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]{Closure conversion}
 \begin{lstlisting}
-rec conv : {\psi:ctx} (\phi:cctx) -> ctx_rel \psi$\;$\phi$\;$-> tm[\psi]
-  -> ctm[\phi] =
+datatype ctx_rel : ctx -> cctx -> ctype
+| rnil : ctx_rel [] []
+| rsnoc : {\psi \phi} -> ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]{Closure conversion}
+\begin{lstlisting}
+rec conv : {\psi:ctx} (\phi:cctx) -> ctx_rel \psi$\;$\phi$\;$-> tm[\psi] -> ctm[\phi] =
 mlam \phi => fn cr => fn m => case m of
 | \psi',x. x     => let rsnoc {\phi = \phi',x} _ = cr in \phi',x. x
 | \psi',x. #p .. => let rsnoc {\phi = \phi',x} cr' = cr in 
