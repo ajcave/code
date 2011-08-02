@@ -74,6 +74,8 @@ type envr \psi = #tm[\psi] -> clos
 
 \begin{frame}[fragile]{Closure based evaluator}
 \begin{lstlisting}
+type envr \psi = #tm[\psi] -> clos
+
 rec extend : {\psi:ctx} envr \psi -> clos -> envr (\psi, x:tm) =
 fn env => fn c => fn X => case X of
 | \psi,x:tm . x => c
@@ -133,7 +135,11 @@ datatype ctx_rel : ctx -> cctx -> ctype
 | rnil : ctx_rel [] []
 | rsnoc : {\psi \phi} -> ctx_rel \psi$\;$\phi
   -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
+\end{lstlisting}
+\end{frame}
 
+\begin{frame}[fragile]{Closure conversion}
+\begin{lstlisting}
 rec conv : {\psi:ctx} (\phi:cctx) -> ctx_rel \psi$\;$\phi$\;$-> tm[\psi]
   -> ctm[\phi] =
 mlam \phi => fn cr => fn m => case m of
@@ -148,20 +154,104 @@ mlam \phi => fn cr => fn m => case m of
 | \psi. app (M ..) (N ..) =>
  let \phi. M' .. = conv _ cr (\psi. M ..) in
  let \phi. N' .. = conv _ cr (\psi. N ..) in
- \phi. open (M' ..)
-         (\env. \f. capp f (create (snoc env (N' ..))))
+ \phi. open (M' ..) (\ev. \f. capp f (create (snoc ev (N' ..))))
 \end{lstlisting}
-\begin{itemize}
-\item blah
-\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Closure conversion}
-ugh
 \end{frame}
 
 \begin{frame}[fragile]{Normalization by Evaluation}
-blah
+\begin{lstlisting}
+atomic_tp : type.
+tp : type.
+atomic : atomic_tp -> tp.
+arr : tp -> tp -> tp.
+prod : tp -> tp -> tp.
+unit : tp.
+
+neut : tp -> type.
+norm : tp -> type.
+nlam : (neut T -> norm S) -> norm (arr T S).
+npair : norm T -> norm S -> norm (prod T S).
+ntt : norm unit.
+
+rapp : neut (arr T S) -> norm T -> neut S.
+rproj1 : neut (prod T S) -> neut T.
+rproj2 : neut (prod T S) -> neut S.
+embed : neut (atomic P) -> norm (atomic P).
+schema ctx = some [T:tp] neut T;
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
+
+\begin{lstlisting}
+type sub \psi \phi = {T:tp[]} -> #(neut T)[\psi] -> #(neut T)[\phi]
+
+datatype sem : ctx -> tp[] -> ctype =
+| syn : {\psi} {P:atomic_tp[]}
+   -> (neut (atomic P))[\psi] -> sem \psi$\,$ (atomic P)
+| slam : {\psi$\;$T S} ({\phi} -> sub \psi$\,$\phi -> sem \phi$\,$ T -> sem \phi$\,$ S)
+   -> sem \psi$\,$ (arr T S)
+| spair : {\psi T S} sem \psi$\,$T -> sem \psi$\,$S -> sem \psi$\,$(prod T S)
+| stt : {\psi} sem \psi$\,$unit
+
+rec subst:{\psi \phi$\,$ S} -> sub \psi$\;$\phi -> sem \psi$\,$ S -> sem \phi$\,$ S =
+fn \sigma => fn e => case e of
+| syn (\psi. R ..) => nsubst \sigma (\psi. R ..)
+| slam f => slam (fn \sigma' => fn s => f (\sigma' $\circ$ \sigma) s)
+| spair M N => spair (subst \sigma M) (subst \sigma N)
+| stt => stt
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
+\begin{lstlisting}
+rec reflect : (\psi T) (R:(neut T)[\psi]) -> sem \psi$\,$T =
+mlam \psi => mlam T => mlam R => case []. T of
+| []. atomic P => syn (\psi. R ..) 
+| []. arr T S => slam (mlam {\phi} => fn \sigma => fn s =>
+ let \phi. R' .. = nsubst \sigma (\psi. R ..) in
+ let \phi. N .. = reify _ T s in
+ reflect _ S (\phi. rapp (R' ..) (N ..)))
+| []. prod T S =>
+  spair (reflect _ T (\psi. nproj1 (R ..)))
+        (reflect _ S (\psi. nproj2 (R ..)))
+| []. unit => stt
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
+\begin{lstlisting}
+rec weaken : {\psi:ctx} {S:tp[]} -> sub \psi (\psi,x:tm S) =
+fn y => case y of
+| \psi. #p .. => \psi,x:neut _. #p ..
+
+rec reify : (\psi T) -> sem \psi$\,$ T -> (norm T)[\psi] = 
+mlam \psi => mlam T => fn s => case []. T of 
+| []. atomic P => let syn (\psi. R ..) = s
+ in \psi. embed (R ..)
+| []. arr T S => let slam f = s in
+ let \psi,x:tm T. E .. x =  
+   reify (f weaken (reflect _ T (\psi,x:neut T. x)))
+ in \psi. nlam (\x. E .. x)
+| []. prod T S => let spair m n = s in
+ let \psi. M .. = reify _ T m in
+ let \psi. N .. = reify _ S n in
+ \psi. npair (M ..) (N ..)
+| []. unit => \psi. ntt
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Normalization by Evaluation}
+\begin{lstlisting}
+tm : tp -> type.
+app : tm (arr T S) -> tm T -> tm S.
+lam : (tm T -> tm S) -> tm (arr T S).
+proj1 : tm (prod T S) -> tm T
+proj2 : tm (prod T S) -> tm S
+pair : tm T -> tm S -> tm (prod T S).
+tt : tm unit.
+schema tctx = some [T:tp] tm T;
+\end{lstlisting}
 \end{frame}
 
 \end{document}
