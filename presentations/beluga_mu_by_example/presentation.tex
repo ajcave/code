@@ -211,7 +211,7 @@ type ctx_rel : ctx -> cctx -> ctype =
   -> tp_rel T S -> ctx_rel (\psi, x:tm T) (\phi, x:ctm S)
 \end{lstlisting}
 
-(Unfortunately) now we have to prove lemmas which say that \lstinline!ctx_rel! is total and deterministic.
+(Unfortunately) now we have to prove lemmas which say that \lstinline!tp_rel! and \lstinline!ctx_rel! are total and deterministic.
 \end{frame}
 
 \begin{frame}[fragile]{Normalization by Evaluation}
