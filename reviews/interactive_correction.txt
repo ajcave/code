@@ -1,8 +1,16 @@
+Summary
 The authors 
 
 Significance and Originality
-I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise. It is an original adaptation of techniques from Aspect(?) stuff to the theorem proving setting.
+This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. List limitations: only lets me fill in terms; no extra function parameters or simultaneous extensions, often these kinds of changes cause cascades. If the authors anticipate that these will not be concerns, I would like to see justification why.
 
+The restrictions are obvious and severe. The examples they give are toy examples. Considering toy examples are trivial to extend manually, the primary benefit of tools such as these is in large developments. I need to see evidence that this tool is applicable and useful in larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
+
+
+I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise. It is an original adaptation of techniques from Aspect(?) stuff to the theorem proving setting.
+Insufficiently convincing about its significance.
+What does this offer beyond the typechecker which points out these errors for you?
+e.g. "Definition invalid := exp_rec"...
 Quality of Presentation
 
 
@@ -18,3 +26,5 @@ Suitability?
 (Identify good things in paper. It's not to comfort the authors, it's so they know what to keep).
 Can't this drastically change the structure of proof terms? e.g. what if we have to change the format from a destruct to an inversion?
 More advanced example? Dependent types?
+- Limitation to proof terms? Eh, I'm okay with it.. Suggest Agda
+- Prop hierarchy is not standard terminology.. careful
