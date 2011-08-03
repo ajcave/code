@@ -2,7 +2,7 @@ Summary
 The authors 
 
 Significance and Originality
-This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could result in a significant improvements to the human process of interactive program and proof development. Could it? It seems that using such a tool requires an "up front" view of how to modify the program? (Refactoring works; the process is to incrementally change your program with semantic-preserving stuff until it's easy to make a non-semantic preserving change). Is it really something we care about a solution to though? Are we happy just accepting that extensions require significant reconsidering? Their example would be handled with no additional effort just by making the modifications and letting the typechecker tell you what to fix. Tools to aid program modification are a worthwhile pursuit, but I think this paper fails to present any significant or intriguing advances in this direction.
+This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could potentially result in a significant improvements to the human process of interactive program and proof development. Is it really something we care about a solution to though? Are we happy just accepting that extensions require significant reconsidering? Their example would be handled with no additional effort just by making the modifications and letting the typechecker tell you what to fix. Tools to aid program modification are a worthwhile pursuit, but I think this paper fails to present any significant or intriguing advances in this direction.
 
 - Paper should make an effort to justify that this is a reasonable problem. It's stated, but not explained
 For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
@@ -29,6 +29,8 @@ They have an implementation, which is nice, but I think it is premature and that
 More advanced example? Dependent types?
 
 Their work is limited to operate on proof terms? Eh, I'm okay with it.. Suggest Agda
+
+The authors' remark that
 
 Quality of Presentation
 
@@ -74,8 +76,8 @@ pg 13. "ECoq explore" should be "ECoq explores"
 pg 13. "view point" should be "viewpoint" (everywhere)
 pg 14. "recursions for polymorphic variants unusual ways"
 
-Suitability?
+Suitability
+The paper introduces a tool to support the maintenance of Coq proofs, and hence falls within the domain of CPP. However, I think it would be a better fit with more emphasis on using the tool to modify proofs. 
 
-OAAO might be interesting to the authors?
+Overall
 
-(Identify good things in paper. It's not to comfort the authors, it's so they know what to keep).
