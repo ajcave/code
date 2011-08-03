@@ -20,7 +20,7 @@ I am not convinced of the tool's utility and applicability. I consider it limite
 What does this offer beyond the typechecker which points out these errors for you?
 e.g. "Definition invalid := exp_rec"...
 
-There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters.
+There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters into the new.
 
 Can't this drastically change the structure of proof terms? e.g. what if we have to change the format from a destruct to an inversion?
 
@@ -38,9 +38,41 @@ Section 3.3: It is not clear what "ECoq tries to minimize inconsistent parts" me
 
 Section 3.3: the choice of example for "Extend Constructor" is poor: it results in "No inconsistent parts are detected". The reader would like to see an example of what constitutes an "inconsistent part" and what happens in this case. 
 
-The paper has many grammatical errors (some listed below) and desperately requires more careful proof reading.
+Section 5.3 is poorly written and it is not clear why these citations are made. This section could be removed or shorted to a sentence.
 
 - Prop hierarchy is not standard terminology.. careful
+
+The paper has many grammatical errors and poorly worded sentences (partial list follows) and requires more careful proof reading.
+
+pg 1. "What we have to do here is to..." is awkward in the abstract
+pg 1. "it is so hard" -- maybe "it is very hard"
+pg 2. "This will be serious flaws"
+pg 2. "commands that extends" should be "commands that extend"
+pg 2. "Message shown here" should be "Messages shown here"
+pg 2. "ECoq shows where should be modified"
+pg 3. "One more" is awkward
+pg 6. "In Coq, many comfortable" perhaps "In Coq, many convenient"
+pg 6. "pros" should be "pro" and "cons" should be "con"
+pg 6. "too much parts" should be "too many parts"
+pg 7. "expressions who destructs" maybe "expressions which destruct"
+pg 7. "source codes" should be "source code"
+pg 7. "For example, execute function" should be "For example, the execute function"
+pg 7. "an constructor" should be "a constructor"
+pg 8. "roof-editing"
+pg 9. "massage"
+pg 10. "The rest output is similar..." is unclear and awkward
+pg 11. "will get troubles" is awkward
+pg 11. "to ensure extractions"?
+pg 12. "enough loose" maybe "loose enough"
+pg 12. "that sort as a result sort of the type" is unclear
+pg 12. "the type whose type is one of sorts or sort with parameters is said an arity" is unclear
+pg 12. "sort polymorphism is to replace" is awkward
+pg 13. "enable to insert any types' elements"
+pg 13. "arities of Type make complex dependent types" is unclear
+pg 13. "corresponding inconsistent" maybe "corresponding to inconsistent parts"
+pg 13. "ECoq explore" should be "ECoq explores"
+pg 13. "view point" should be "viewpoint" (everywhere)
+pg 14. "recursions for polymorphic variants unusual ways"
 
 Suitability?
 
