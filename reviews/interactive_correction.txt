@@ -15,16 +15,21 @@ Limitations: only lets me fill in terms; no extra function parameters or simulta
 The restrictions are severe and . The examples they give are toy examples. Considering toy examples are trivial to extend manually, the primary benefit of tools such as these is in large developments. I need to see evidence that this tool is applicable and useful in larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
 
 
-I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise. It is an original adaptation of techniques from Aspect(?) stuff to the theorem proving setting.
-Insufficiently convincing about its significance.
+I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise.
 What does this offer beyond the typechecker which points out these errors for you?
 e.g. "Definition invalid := exp_rec"...
+
+There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters.
 
 They have an implementation, which is nice, but I think it is premature and that there is still much to be worked out in the design of such a tool.
 
 Quality of Presentation
 
 For work such as this, whose primary concern is usability, I would appreciate a demonstration of the workflow in developing an extended (non-toy) example with this tool.
+
+Section 3.3: It is not clear what "ECoq tries to minimize inconsistent parts" means.
+
+Section 3.3: the choice of example for "Extend Constructor" is poor: it results in "No inconsistent parts are detected". The reader would like to see what happens in typical examples in which there are inconsistent parts.
 
 The paper has many grammatical errors (some listed below) and desperately requires more careful proof reading.
 
