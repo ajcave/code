@@ -30,8 +30,6 @@ More advanced example? Dependent types?
 
 Their work is limited to operate on proof terms? Eh, I'm okay with it.. Suggest Agda
 
-The authors' remark that
-
 Quality of Presentation
 
 For work such as this, whose primary concern is usability, I would appreciate a demonstration of the workflow of developing an extended (non-toy) example with this tool.
