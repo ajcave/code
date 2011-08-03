@@ -2,9 +2,9 @@ Summary
 The authors 
 
 Significance and Originality
-This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could result in a significant improvements to the human process of interactive program and proof development. Could it? It seems that using such a tool requires an "up front" view of how to modify the program?
+This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could result in a significant improvements to the human process of interactive program and proof development. Could it? It seems that using such a tool requires an "up front" view of how to modify the program? (Refactoring works; the process is to incrementally change your program with semantic-preserving stuff until it's easy to make a non-semantic preserving change)
 
-For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a huge barrier to this tool being practically useful. The authors fail to even mention that these might be concerns.
+For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a huge barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
 
 My understanding is that if the user runs into a limitation (e.g. must add parameters), the extension process will simply fail and the user must resort to 
 
