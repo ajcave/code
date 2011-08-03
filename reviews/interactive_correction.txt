@@ -45,7 +45,7 @@ Section 5.3 is poorly written and it is not clear why these citations are made. 
 The paper has many grammatical errors and poorly worded sentences (partial list follows) and requires more careful proof reading.
 
 pg 1. "What we have to do here is to..." is awkward in the abstract
-pg 1. "it is so hard" -- maybe "it is very hard"
+pg 1. "it is so hard" maybe "it is very hard"
 pg 2. "This will be serious flaws"
 pg 2. "commands that extends" should be "commands that extend"
 pg 2. "Message shown here" should be "Messages shown here"
