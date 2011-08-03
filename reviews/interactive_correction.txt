@@ -2,11 +2,13 @@ Summary
 The authors 
 
 Significance and Originality
-This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could result in a significant improvements to the human process of interactive program and proof development. Could it? It seems that using such a tool requires an "up front" view of how to modify the program? (Refactoring works; the process is to incrementally change your program with semantic-preserving stuff until it's easy to make a non-semantic preserving change)
+This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could result in a significant improvements to the human process of interactive program and proof development. Could it? It seems that using such a tool requires an "up front" view of how to modify the program? (Refactoring works; the process is to incrementally change your program with semantic-preserving stuff until it's easy to make a non-semantic preserving change). Is it really something we care about a solution to though? Are we happy just accepting that extensions require significant reconsidering?
 
-For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a huge barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
+For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
 
-My understanding is that if the user runs into a limitation (e.g. must add parameters), the extension process will simply fail and the user must resort to 
+The ideas in their solution are quite obvious: they can be summed up as "When adding a constructor, extend occurrences of pattern matching. When adding constructor parameters, extend applications of the constructor". I would expect 
+
+My understanding is that if the user runs into a limitation (e.g. must add parameters), the extension process will simply fail and the user must resort to manual edits.
 
 Limitations: only lets me fill in terms; no extra function parameters or simultaneous extensions, often these kinds of changes cause cascades (okay dependencies can be handled backwards maybe, but mutual dependency is a real concern). If the authors anticipate that these will not be cause for concern, I would like to see justification why.
 
@@ -24,6 +26,8 @@ Quality of Presentation
 For work such as this, whose primary concern is usability, I would appreciate a demonstration of the workflow in developing an extended (non-toy) example with this tool.
 
 The paper has many grammatical errors (some listed below) and desperately requires more careful proof reading.
+
+Suitability?
 
 OAAO might be interesting to the authors?
 
