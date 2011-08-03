@@ -2,9 +2,13 @@ Summary
 The authors 
 
 Significance and Originality
-This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it would result in a significant improvements to the process of interactive program and proof development.
+This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could result in a significant improvements to the human process of interactive program and proof development. Could it? It seems that using such a tool requires an "up front" view of how to modify the program?
 
-limitations: only lets me fill in terms; no extra function parameters or simultaneous extensions, often these kinds of changes cause cascades (okay dependencies can be handled backwards maybe, but mutual dependency is a real concern). If the authors anticipate that these will not be cause for concern, I would like to see justification why.
+For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a huge barrier to this tool being practically useful. The authors fail to even mention that these might be concerns.
+
+My understanding is that if the user runs into a limitation (e.g. must add parameters), the extension process will simply fail and the user must resort to 
+
+Limitations: only lets me fill in terms; no extra function parameters or simultaneous extensions, often these kinds of changes cause cascades (okay dependencies can be handled backwards maybe, but mutual dependency is a real concern). If the authors anticipate that these will not be cause for concern, I would like to see justification why.
 
 The restrictions are severe and . The examples they give are toy examples. Considering toy examples are trivial to extend manually, the primary benefit of tools such as these is in large developments. I need to see evidence that this tool is applicable and useful in larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
 
