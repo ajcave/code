@@ -4,6 +4,7 @@ The authors
 Significance and Originality
 This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could result in a significant improvements to the human process of interactive program and proof development. Could it? It seems that using such a tool requires an "up front" view of how to modify the program? (Refactoring works; the process is to incrementally change your program with semantic-preserving stuff until it's easy to make a non-semantic preserving change). Is it really something we care about a solution to though? Are we happy just accepting that extensions require significant reconsidering? Their example would be handled with no additional effort just by making the modifications and letting the typechecker tell you what to fix. Tools to aid program modification are a worthwhile pursuit, but I think this paper fails to present any significant or intriguing advances in this direction.
 
+- Paper should make an effort to justify that this is a reasonable problem. It's stated, but not explained
 For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
 
 The ideas in their solution are quite obvious: they can be summed up as "When adding a constructor, extend occurrences of pattern matching. When adding constructor parameters, extend applications of the constructor". I would expect 
@@ -21,28 +22,28 @@ e.g. "Definition invalid := exp_rec"...
 
 There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters.
 
+Can't this drastically change the structure of proof terms? e.g. what if we have to change the format from a destruct to an inversion?
+
 They have an implementation, which is nice, but I think it is premature and that there is still much to be worked out in the design of such a tool.
+
+More advanced example? Dependent types?
+
+Their work is limited to operate on proof terms? Eh, I'm okay with it.. Suggest Agda
 
 Quality of Presentation
 
-For work such as this, whose primary concern is usability, I would appreciate a demonstration of the workflow in developing an extended (non-toy) example with this tool.
+For work such as this, whose primary concern is usability, I would appreciate a demonstration of the workflow of developing an extended (non-toy) example with this tool.
 
 Section 3.3: It is not clear what "ECoq tries to minimize inconsistent parts" means.
 
-Section 3.3: the choice of example for "Extend Constructor" is poor: it results in "No inconsistent parts are detected". The reader would like to see what happens in typical examples in which there are inconsistent parts.
+Section 3.3: the choice of example for "Extend Constructor" is poor: it results in "No inconsistent parts are detected". The reader would like to see an example of what constitutes an "inconsistent part" and what happens in this case. 
 
 The paper has many grammatical errors (some listed below) and desperately requires more careful proof reading.
+
+- Prop hierarchy is not standard terminology.. careful
 
 Suitability?
 
 OAAO might be interesting to the authors?
 
-- Difficult problem. (Semantics preserving transformations are easier)
-- Seems limited in applicability: Many such changes can drastically alter proof and program structure. Maybe there is still a niche for this tool?
-Suitability?
-- Paper should make an effort to justify that this is a reasonable problem. It's stated, but not explained
 (Identify good things in paper. It's not to comfort the authors, it's so they know what to keep).
-Can't this drastically change the structure of proof terms? e.g. what if we have to change the format from a destruct to an inversion?
-More advanced example? Dependent types?
-- Limitation to proof terms? Eh, I'm okay with it.. Suggest Agda
-- Prop hierarchy is not standard terminology.. careful
