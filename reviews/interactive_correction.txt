@@ -17,7 +17,7 @@ The restrictions are severe and . The examples they give are toy examples. Consi
 
 
 I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise.
-What does this offer beyond the typechecker which points out these errors for you?
+
 e.g. "Definition invalid := exp_rec"...
 
 There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters into the new.
