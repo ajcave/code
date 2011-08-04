@@ -1,44 +1,44 @@
 Summary
-The authors 
-They illustrate this with the expression problem.
+The authors present a tool for interactively extending inductive datatypes and fixing the corresponding pattern matches and constructor applications in Coq scripts. They illustrate the usage of this tool by extending a small arithmetic expression language, which then directs the user to extend the definitions of the evaluator, stack compiler, and a proof of correctness.
 
 Significance and Originality
-This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could potentially result in significant improvements to the human process of interactive program and proof development. Is it really something we care about a solution to though? Are we happy just accepting that extensions require significant reconsidering? Their example would be handled with no additional effort just by making the modifications and letting the typechecker tell you what to fix. Tools to aid program modification are a worthwhile pursuit, but I think this paper fails to present any significant or intriguing advances in this direction.
+This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Tools to streamline the program and proof development process are welcome. Unfortunately, I think this paper fails to present any significant or intriguing advances in this direction.
 
-- Paper should make an effort to justify that this is a reasonable problem. It's stated, but not explained
-For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
+In the example they present (extending an arithmetic language with multiplication), it is just as easy to perform this extension manually: Add the appropriate constructor, and let the typechecker tell you where the resultant missing cases are. I need to be convinced that the tool makes this process easier, and this example fails to do so.
 
-The ideas in their solution are quite obvious: they can be summed up as "When adding a constructor, extend occurrences of pattern matching. When adding constructor parameters, extend applications of the constructor". I would expect 
+The ideas in their solution are quite obvious: they can be summed up as "When adding a constructor, add a branch to each pattern match. When adding constructor parameters, extend applications of the constructor".
 
-Limitations: only lets me fill in terms; no extra function parameters or simultaneous extensions, often these kinds of changes cause cascades (okay dependencies can be handled backwards maybe, but mutual dependency is a real concern). If the authors anticipate that these will not be cause for concern, I would like to see justification why.
+The limitations of the tool appear severe. For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
 
-The restrictions are severe and . The examples they give are toy examples. Considering toy examples are trivial to extend manually, the primary benefit of tools such as these is in large developments. I need to see evidence that this tool is applicable and useful in larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
+The restriction that applications of induction functions must be fully applied is particularly severe. They simply disallow definitions such as "Definition invalid := exp_rec". Even if this is expanded to "Definition invalid P c a e = exp_rec P c a e", if one extends exp with a new constructor, one likely simultaneously wants to extend "invalid" with an extra parameter. But the tool does not permit this because they wish to avoid cascading extensions. 
 
-e.g. "Definition invalid := exp_rec"...
+My understanding is that if an extension requires anything but the most trivial of changes (adding branches to pattern matches), the extension process fails entirely and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps our function needs another parameter or we need a modified induction invariant). If the authors believe that this will not be an issue, they should explain why.
 
 There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters to the new.
 
-They have an implementation, which is nice, but I think it is premature and that there is still much to be worked out in the design of such a tool.
-
-Their work is limited to operate on proof terms? Eh, I'm okay with it.. Suggest Agda
-
-In the example they present (extending an arithmetic language with multiplication), it is just as easy to perform this extension manually: Add the appropriate constructor, and let the typechecker tell you where the resultant missing cases are. I need to be convinced that the tool can improve this process, and this example fails to do so.
-
-My understanding is that if an extension requires anything but the most trivial of changes (adding a branch to a pattern match), the extension process fails and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps our function needs another parameter or we need a modified induction invariant). If the authors believe that this will not be an issue, they must explain why.
+The example given is a toy. Clearly small examples are trivial to extend manually; tools such as these shine only in larger developments. I need to see a direct illustration of how this tool eases extending larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
 
 The authors make the point that the extensions exist separately from the original code, which permits them to coexist and they relate it to work in aspect-oriented programming. This is intriguing, but the paper fails to convince me that this is desirable for certified programs, and again there is no evidence that their tool will permit this for any but the most trivial of examples.
 
+The authors have an implementation, which is nice, but for the reasons outlined above, I think it is premature and that there is still much to be worked out in the design of such a tool.
+
 Quality of Presentation
 
-I think that a demonstration of the workflow in developing an extended (non-toy) example would benefit this paper. The reader would like to see how this tool improves their process of writing more realistic examples for the reasons outlined above. 
+I think that a demonstration of the workflow in developing an extended (non-toy) example would benefit this paper. The reader would like to see how this tool improves their process of writing more realistic examples for the reasons outlined above. If I am to be convinced that a tool is significant, I want to be convinced that it will make my development process easier. Too much space is spent on details like Prop types and sort polymorphism and not enough is spent convincing the reader that they want to use the tool.
 
 Section 1: Claims that a point will be addressed in Section 4.2, but it appears to be addressed in the conclusion, not 4.2. 
+
+Section 2.2 is a discussion on programming with typeclasses. I think it is well understood that typeclasses don't provide exhaustiveness checking, and this section could be reduced to a passing remark.
 
 Section 3.3: It is not clear what "ECoq tries to minimize inconsistent parts" means.
 
 Section 3.3: the choice of example for "Extend Constructor" is poor: it results in "No inconsistent parts are detected". The reader would like to see an example of what constitutes an "inconsistent part" and what happens in this case. 
 
+Sections 4.2 and 4.3 are in depth discussions on how Prop types and sort polymorphism affect the tool. These are edge cases; I think too much space is spent on them.
+
 Section 5.3 is poorly written and it is not clear why these citations are made. This section could be removed or shorted to a sentence.
+
+It is explained that the tool operates on proof terms rather than proof scripts. I think this is fine, although the authors may have a hard time convincing Coq users of this compared to, say, Agda users. 
 
 The paper has many grammatical errors and poorly worded sentences (partial list follows) and requires more careful proof reading.
 
@@ -49,6 +49,7 @@ pg 2. "commands that extends" should be "commands that extend"
 pg 2. "Message shown here" should be "Messages shown here"
 pg 2. "ECoq shows where should be modified"
 pg 3. "One more" is awkward
+pg 6. "guarantee the exhaustiveness must by ourselves"
 pg 6. "In Coq, many comfortable" perhaps "In Coq, many convenient"
 pg 6. "pros" should be "pro" and "cons" should be "con"
 pg 6. "too much parts" should be "too many parts"
