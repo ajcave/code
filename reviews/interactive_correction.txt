@@ -16,9 +16,6 @@ Limitations: only lets me fill in terms; no extra function parameters or simulta
 
 The restrictions are severe and . The examples they give are toy examples. Considering toy examples are trivial to extend manually, the primary benefit of tools such as these is in large developments. I need to see evidence that this tool is applicable and useful in larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
 
-
-I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise.
-
 e.g. "Definition invalid := exp_rec"...
 
 There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters to the new.
@@ -31,17 +28,19 @@ In the example they present (extending an arithmetic language with multiplicatio
 
 My understanding is that if an extension requires anything but the most trivial of changes (adding a branch to a pattern match), the extension process fails and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps we need a modified induction invariant). If the authors believe that this will not be an issue, they must explain why.
 
+The authors make the point that the extensions exist separately from the original code, which permits them to coexist and they relate it to work in aspect-oriented programming. This is intriguing, but the paper fails to convince me that this is desirable for certified programs, and again there is no evidence that their tool will permit this for any but the most trivial of examples.
+
 Quality of Presentation
 
 I think that a demonstration of the workflow in developing an extended (non-toy) example would benefit this paper. The reader would like to see how this tool improves their process of writing more realistic examples for the reasons outlined above. 
+
+Section 1: Claims that a point will be addressed in Section 4.2, but it appears to be addressed in the conclusion, not 4.2. 
 
 Section 3.3: It is not clear what "ECoq tries to minimize inconsistent parts" means.
 
 Section 3.3: the choice of example for "Extend Constructor" is poor: it results in "No inconsistent parts are detected". The reader would like to see an example of what constitutes an "inconsistent part" and what happens in this case. 
 
 Section 5.3 is poorly written and it is not clear why these citations are made. This section could be removed or shorted to a sentence.
-
-- Prop hierarchy is not standard terminology.. careful
 
 The paper has many grammatical errors and poorly worded sentences (partial list follows) and requires more careful proof reading.
 
