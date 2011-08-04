@@ -18,7 +18,7 @@ There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the too
 
 The example given is a toy. Clearly small examples are trivial to extend manually; tools such as these shine only in larger developments. I need to see a direct illustration of how this tool eases extending larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
 
-The authors make the point that the extensions exist separately from the original code, which permits them to coexist and they relate it to work in aspect-oriented programming. This is intriguing, but the paper fails to convince me that this is desirable for certified programs, and again there is no evidence that their tool will permit this for any but the most trivial of examples.
+The authors make the point that the extensions exist separately from the original code (which permits them to coexist) and they relate it to work in aspect-oriented programming. This is intriguing, but the paper fails to convince me that this is desirable for certified programs, and again there is no evidence that their tool will permit this for any but the most trivial of examples.
 
 The authors have an implementation, which is nice, but for the reasons outlined above, I think it is premature and that there is still much to be worked out in the design of such a tool.
 
@@ -36,7 +36,7 @@ Section 3.3: the choice of example for "Extend Constructor" is poor: it results 
 
 Sections 4.2 and 4.3 are in depth discussions on how Prop types and sort polymorphism affect the tool. These are edge cases; I think too much space is spent on them.
 
-Section 5.3 is poorly written and it is not clear why these citations are made. This section could be removed or shorted to a sentence.
+Section 5.3 is poorly written and it is not clear why these citations are made. This section could be removed or shorted to a brief remark.
 
 It is explained that the tool operates on proof terms rather than proof scripts. I think this is fine, although the authors may have a hard time convincing Coq users of this compared to, say, Agda users. 
 
