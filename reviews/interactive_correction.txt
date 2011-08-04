@@ -10,8 +10,6 @@ For example: when extending a term language like they do in their example, one m
 
 The ideas in their solution are quite obvious: they can be summed up as "When adding a constructor, extend occurrences of pattern matching. When adding constructor parameters, extend applications of the constructor". I would expect 
 
-My understanding is that if the user runs into a limitation (e.g. must add parameters), the extension process will simply fail and the user must resort to manual edits.
-
 Limitations: only lets me fill in terms; no extra function parameters or simultaneous extensions, often these kinds of changes cause cascades (okay dependencies can be handled backwards maybe, but mutual dependency is a real concern). If the authors anticipate that these will not be cause for concern, I would like to see justification why.
 
 The restrictions are severe and . The examples they give are toy examples. Considering toy examples are trivial to extend manually, the primary benefit of tools such as these is in large developments. I need to see evidence that this tool is applicable and useful in larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
@@ -26,7 +24,7 @@ Their work is limited to operate on proof terms? Eh, I'm okay with it.. Suggest 
 
 In the example they present (extending an arithmetic language with multiplication), it is just as easy to perform this extension manually: Add the appropriate constructor, and let the typechecker tell you where the resultant missing cases are. I need to be convinced that the tool can improve this process, and this example fails to do so.
 
-My understanding is that if an extension requires anything but the most trivial of changes (adding a branch to a pattern match), the extension process fails and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps we need a modified induction invariant). If the authors believe that this will not be an issue, they must explain why.
+My understanding is that if an extension requires anything but the most trivial of changes (adding a branch to a pattern match), the extension process fails and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps our function needs another parameter or we need a modified induction invariant). If the authors believe that this will not be an issue, they must explain why.
 
 The authors make the point that the extensions exist separately from the original code, which permits them to coexist and they relate it to work in aspect-oriented programming. This is intriguing, but the paper fails to convince me that this is desirable for certified programs, and again there is no evidence that their tool will permit this for any but the most trivial of examples.
 
