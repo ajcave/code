@@ -1,5 +1,6 @@
 Summary
 The authors 
+They illustrate this with the expression problem.
 
 Significance and Originality
 This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Successfully tackling it could potentially result in significant improvements to the human process of interactive program and proof development. Is it really something we care about a solution to though? Are we happy just accepting that extensions require significant reconsidering? Their example would be handled with no additional effort just by making the modifications and letting the typechecker tell you what to fix. Tools to aid program modification are a worthwhile pursuit, but I think this paper fails to present any significant or intriguing advances in this direction.
@@ -20,19 +21,19 @@ I am not convinced of the tool's utility and applicability. I consider it limite
 
 e.g. "Definition invalid := exp_rec"...
 
-There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters into the new.
-
-Can't this drastically change the structure of proof terms? e.g. what if we have to change the format from a destruct to an inversion?
+There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters to the new.
 
 They have an implementation, which is nice, but I think it is premature and that there is still much to be worked out in the design of such a tool.
 
-More advanced example? Dependent types?
-
 Their work is limited to operate on proof terms? Eh, I'm okay with it.. Suggest Agda
+
+In the example they present (extending an arithmetic language with multiplication), it is just as easy to perform this extension manually: Add the appropriate constructor, and let the typechecker tell you where the resultant missing cases are. I need to be convinced that the tool can improve this process, and this example fails to do so.
+
+My understanding is that if an extension requires anything but the most trivial of changes (adding a branch to a pattern match), the extension process fails and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps we need a modified induction invariant). If the authors believe that this will not be an issue, they must explain why.
 
 Quality of Presentation
 
-For work such as this, whose primary concern is usability, I would appreciate a demonstration of the workflow of developing an extended (non-toy) example with this tool.
+I think that a demonstration of the workflow in developing an extended (non-toy) example would benefit this paper. The reader would like to see how this tool improves their process of writing more realistic examples for the reasons outlined above. 
 
 Section 3.3: It is not clear what "ECoq tries to minimize inconsistent parts" means.
 
@@ -75,7 +76,7 @@ pg 13. "view point" should be "viewpoint" (everywhere)
 pg 14. "recursions for polymorphic variants unusual ways"
 
 Suitability
-The paper introduces a tool to support the maintenance of Coq proofs, and hence falls within the domain of CPP. However, I think it would be a better fit with more emphasis on using the tool to modify proofs. 
+The paper introduces a tool to support the maintenance of Coq proofs, and hence loosely falls within the domain of CPP. However, I think it lacks emphasis on the tool's application to proofs. All but one of the examples given are directly applicable to ML programs. There is very little discussion of the interaction of the tool with dependent types and proofs.
 
 Overall
-
+This paper fails to convince me that it is significant. The examples usages are just as easily done (and more flexibly done) by extending datatypes manually and allowing the typechecker to identify what needs to be fixed. Furthermore, the limitations of the tool suggest to me that it will not scale to non-trivial examples. If the authors believe that it will scale and provide tangible benefit, then they must directly address this in the paper. The relationship to proofs is not adequately illustrated for CPP and there are many errors in the authors' use of English. For these reasons, I recommend the paper be rejected. 
