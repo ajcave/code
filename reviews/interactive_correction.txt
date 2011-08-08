@@ -1,18 +1,80 @@
-The authors 
+Summary
+The authors present a tool for interactively extending inductive datatypes and fixing the corresponding pattern matches and constructor applications in Coq scripts. They illustrate the usage of this tool by extending a small arithmetic expression language, which then directs the user to extend the definitions of the evaluator, stack compiler, and a proof of correctness.
 
 Significance and Originality
-I am not convinced of the tool's utility and applicability. I consider it limited in application until proven otherwise. It is an original adaptation of techniques from Aspect(?) stuff to the theorem proving setting.
+This is an exceedingly difficult problem to tackle well, and I commend the authors for having the ambition to take it on. Tools to streamline the program and proof development process are welcome. Unfortunately, I think this paper fails to present any significant or intriguing advances in this direction.
+
+In the example they present (extending an arithmetic language with multiplication), it is just as easy to perform this extension manually: Add the appropriate constructor, and let the typechecker tell you where the resultant missing cases are. I need to be convinced that the tool makes this process easier, and this example fails to do so.
+
+The ideas in their solution are quite obvious: they can be summed up as "When adding a constructor, add a branch to each pattern match. When adding constructor parameters, extend applications of the constructor".
+
+The limitations of the tool appear severe. For example: when extending a term language like they do in their example, one must often also extend typing rules for that language simultaneously; it is unlikely that one extension can be carried out completely before the other. I think this is a barrier to this tool being practically useful. Such mutually dependent extensions are very common, and the authors fail to even mention that this might be a concern, let alone address it.
+
+The restriction that applications of induction functions must be fully applied is particularly severe. They simply disallow definitions such as "Definition invalid := exp_rec". Even if this is expanded to "Definition invalid P c a e = exp_rec P c a e", if one extends exp with a new constructor, one likely simultaneously wants to extend "invalid" with an extra parameter. But the tool does not permit this because they wish to avoid cascading extensions. 
+
+My understanding is that if an extension requires anything but the most trivial of changes (adding branches to pattern matches), the extension process fails entirely and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps our function needs another parameter or we need a modified induction invariant). If the authors believe that this will not be an issue, they should explain why.
+
+There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters to the new.
+
+The example given is a toy. Clearly small examples are trivial to extend manually; tools such as these shine only in larger developments. I need to see a direct illustration of how this tool eases extending larger developments before I'm convinced. I expect that many of these restrictions will have to be relaxed.
+
+The authors make the point that the extensions exist separately from the original code (which permits them to coexist) and they relate it to work in aspect-oriented programming. This is intriguing, but the paper fails to convince me that this is desirable for certified programs, and again there is no evidence that their tool will permit this for any but the most trivial of examples.
+
+The authors have an implementation, which is nice, but for the reasons outlined above, I think it is premature and that there is still much to be worked out in the design of such a tool.
 
 Quality of Presentation
 
-The paper has many grammatical errors (some listed below) and desperately requires more careful proof reading.
+I think that a demonstration of the workflow in developing an extended (non-toy) example would benefit this paper. The reader would like to see how this tool improves their process of writing more realistic examples for the reasons outlined above. If I am to be convinced that a tool is significant, I want to be convinced that it will make my development process easier. Too much space is spent on details like Prop types and sort polymorphism and not enough is spent convincing the reader that they want to use the tool.
 
-OAAO might be interesting to the authors?
+Section 1: Claims that a point will be addressed in Section 4.2, but it appears to be addressed in the conclusion, not 4.2. 
 
-- Difficult problem. (Semantics preserving transformations are easier)
-- Seems limited in applicability: Many such changes can drastically alter proof and program structure. Maybe there is still a niche for this tool?
-Suitability?
-- Paper should make an effort to justify that this is a reasonable problem. It's stated, but not explained
-(Identify good things in paper. It's not to comfort the authors, it's so they know what to keep).
-Can't this drastically change the structure of proof terms? e.g. what if we have to change the format from a destruct to an inversion?
-More advanced example? Dependent types?
+Section 2.2 is a discussion on programming with typeclasses. I think it is well understood that typeclasses don't provide exhaustiveness checking, and this section could be reduced to a passing remark.
+
+Section 3.3: It is not clear what "ECoq tries to minimize inconsistent parts" means.
+
+Section 3.3: the choice of example for "Extend Constructor" is poor: it results in "No inconsistent parts are detected". The reader would like to see an example of what constitutes an "inconsistent part" and what happens in this case. 
+
+Sections 4.2 and 4.3 are in depth discussions on how Prop types and sort polymorphism affect the tool. These are edge cases; I think too much space is spent on them.
+
+Section 5.3 is poorly written and it is not clear why these citations are made. This section could be removed or shorted to a brief remark.
+
+It is explained that the tool operates on proof terms rather than proof scripts. I think this is fine, although the authors may have a hard time convincing Coq users of this compared to, say, Agda users. 
+
+The paper has many grammatical errors and poorly worded sentences (partial list follows) and requires more careful proof reading.
+
+pg 1. "What we have to do here is to..." is awkward in the abstract
+pg 1. "it is so hard" maybe "it is very hard"
+pg 2. "This will be serious flaws"
+pg 2. "commands that extends" should be "commands that extend"
+pg 2. "Message shown here" should be "Messages shown here"
+pg 2. "ECoq shows where should be modified"
+pg 3. "One more" is awkward
+pg 6. "guarantee the exhaustiveness must by ourselves"
+pg 6. "In Coq, many comfortable" perhaps "In Coq, many convenient"
+pg 6. "pros" should be "pro" and "cons" should be "con"
+pg 6. "too much parts" should be "too many parts"
+pg 7. "expressions who destructs" maybe "expressions which destruct"
+pg 7. "source codes" should be "source code"
+pg 7. "For example, execute function" should be "For example, the execute function"
+pg 7. "an constructor" should be "a constructor"
+pg 8. "roof-editing"
+pg 9. "massage"
+pg 10. "The rest output is similar..." is unclear and awkward
+pg 11. "will get troubles" is awkward
+pg 11. "to ensure extractions"?
+pg 12. "enough loose" maybe "loose enough"
+pg 12. "that sort as a result sort of the type" is unclear
+pg 12. "the type whose type is one of sorts or sort with parameters is said an arity" is unclear
+pg 12. "sort polymorphism is to replace" is awkward
+pg 13. "enable to insert any types' elements"
+pg 13. "arities of Type make complex dependent types" is unclear
+pg 13. "corresponding inconsistent" maybe "corresponding to inconsistent parts"
+pg 13. "ECoq explore" should be "ECoq explores"
+pg 13. "view point" should be "viewpoint" (everywhere)
+pg 14. "recursions for polymorphic variants unusual ways"
+
+Suitability
+The paper introduces a tool to support the maintenance of Coq proofs, and hence loosely falls within the domain of CPP. However, I think it lacks emphasis on the tool's application to proofs. All but one of the examples given are directly applicable to ML programs. There is very little discussion of the interaction of the tool with dependent types and proofs.
+
+Overall
+This paper fails to convince me that it is significant. The examples usages are just as easily done (and more flexibly done) by extending datatypes manually and allowing the typechecker to identify what needs to be fixed. Furthermore, the limitations of the tool suggest to me that it will not scale to non-trivial examples. If the authors believe that it will scale and provide tangible benefit beyond what the typechecker already provides, then they must directly address this in the paper. The relationship to proofs is not adequately illustrated for CPP and there are many errors in the authors' use of English. For these reasons, I recommend the paper be rejected. 
