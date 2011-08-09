@@ -269,6 +269,33 @@ mutual
 lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
 
+data _≡_ {A : Set} (x : A) : (y : A) -> Set where
+ refl : x ≡ x
+
+{-# BUILTIN EQUALITY _≡_ #-}
+{-# BUILTIN REFL refl #-}
+
+ext-functorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) (t : tp) -> ((ext σ1) ∘ (ext σ2)) ≡ ext {T = t} (σ1 ∘ σ2)
+ext-functorality σ1 ⊡ t = refl
+ext-functorality σ1 (σ , x) t rewrite ext-functorality σ1 σ t = {!!}
+
+mutual
+ rfunctorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) {t} (r : rtm ψ t) -> rappSubst σ1 (rappSubst σ2 r) ≡ rappSubst (σ1 ∘ σ2) r
+ rfunctorality σ1 σ2 (v y) = {!!}
+ rfunctorality σ1 σ2 (R · N) rewrite rfunctorality σ1 σ2 R | nfunctorality σ1 σ2 N = refl
+ rfunctorality σ1 σ2 (π₁ R) rewrite rfunctorality σ1 σ2 R = refl
+ rfunctorality σ1 σ2 (π₂ R) rewrite rfunctorality σ1 σ2 R = refl
+ 
+ nfunctorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) {t} (n : ntm ψ t) -> nappSubst σ1 (nappSubst σ2 n) ≡ nappSubst (σ1 ∘ σ2) n
+ nfunctorality σ1 σ2 (ƛ {t} R) rewrite nfunctorality (ext σ1) (ext σ2) R | ext-functorality σ1 σ2 t = refl
+ nfunctorality σ1 σ2 (neut R) rewrite rfunctorality σ1 σ2 R = refl
+ nfunctorality σ1 σ2 < M , N > rewrite nfunctorality σ1 σ2 M | nfunctorality σ1 σ2 N = refl
+ nfunctorality σ1 σ2 tt = refl
+ nfunctorality σ1 σ2 z = refl
+ nfunctorality σ1 σ2 (s N) rewrite nfunctorality σ1 σ2 N = refl
+ nfunctorality σ1 σ2 nil = refl
+ nfunctorality σ1 σ2 (cons N L) rewrite nfunctorality σ1 σ2 N | nfunctorality σ1 σ2 L = refl
+
 lf-vsubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-vsubst {γ} {δ} Γ σ Δ) -> lf-vsubst (Γ , T) (ext σ) (Δ , (lf-tp-vsubst σ T))
 lf-vsubst-ext θ z = {!!}
 lf-vsubst-ext θ (s y) = {!!}
