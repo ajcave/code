@@ -30,8 +30,9 @@ data var {A : Set} : (Γ : ctx' A) -> (T : A) -> Set where
  z : ∀ {Γ T} -> var (Γ , T) T
  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
 
-vsubst : ctx -> ctx -> Set 
-vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
+data vsubst : ∀ (Γ : ctx) (Δ : ctx) -> Set where 
+ ⊡ : ∀ {Δ} -> vsubst ⊡ Δ
+ _,_ : ∀ {Γ Δ U} -> (σ : vsubst Γ Δ) -> (x : var Δ U) -> vsubst (Γ , U) Δ
 
 mutual 
  data rtm (Γ : ctx) : (T : tp) -> Set where
@@ -49,23 +50,37 @@ mutual
   nil : ntm Γ (atom list)
   cons : (N : ntm Γ (atom nat)) -> (L : ntm Γ (atom list)) -> ntm Γ (atom list)
 
-
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
 sem Γ (T × S) = sem Γ T * sem Γ S
 sem Γ unit = Unit
 
+vsubst-app : ∀ {Γ Δ U} -> vsubst Γ Δ -> var Γ U -> var Δ U
+vsubst-app ⊡ ()
+vsubst-app (σ , x) z = x
+vsubst-app (σ , x) (s y) = vsubst-app σ y
+
+vsubst-map : ∀ {Δ Γ ψ} -> (∀ {U} -> var Δ U -> var Γ U) -> vsubst ψ Δ -> vsubst ψ Γ
+vsubst-map σ1 ⊡ = ⊡
+vsubst-map σ1 (σ , x) = (vsubst-map σ1 σ) , (σ1 x)
+
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
-(σ1 ∘ σ2) x = σ1 (σ2 x)
+σ1 ∘ σ2 = vsubst-map (vsubst-app σ1) σ2
+
+id : ∀ {Γ} -> vsubst Γ Γ
+id {⊡} = ⊡
+id {Γ , T} = vsubst-map s id , z
+
+wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
+wkn = vsubst-map s id
 
 ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
-ext σ z = z
-ext σ (s y) = s (σ y)
+ext σ = (wkn ∘ σ) , z
 
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
- rappSubst σ (v y) = v (σ y)
+ rappSubst σ (v y) = v (vsubst-app σ y)
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
  rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
@@ -79,17 +94,11 @@ mutual
  nappSubst σ nil = nil
  nappSubst σ (cons N L) = cons (nappSubst σ N) (nappSubst σ L)
 
-id : ∀ {Γ} -> vsubst Γ Γ
-id x = x
-
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
 appSubst unit σ tt = tt
-
-wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn x = s x
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
@@ -111,8 +120,6 @@ extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
--- Here we have admissibility of cut for ntm. Not necessary for nbe,
--- but nice to state.
 mutual
  srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
  srSubst θ (v y) = θ y
