@@ -238,8 +238,8 @@ mutual
        ->     Γ ⊢ (π₂ r) ⇒ S
  data _⊢_⇐_ {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
   ƛ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {n} ->
-         (N : (Γ , T) ⊢ n ⇐ S)
-      -> Γ ⊢ (ƛ n) ⇐ (T ⇝ S)
+         (N : (Γ , T) ⊢    n  ⇐ S)
+      ->       Γ      ⊢ (ƛ n) ⇐ (T ⇝ S)
   neut : ∀ {a} {A : lf-atomic-tp γ a} {r} ->
          (R : Γ ⊢ r ⇒ (atom A))
        ->     Γ ⊢ (neut r) ⇐ (atom A)
