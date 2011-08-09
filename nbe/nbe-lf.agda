@@ -1,4 +1,4 @@
-module nbe-cut where
+module nbe-lf where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -20,11 +20,13 @@ data tp : Set where
  _×_ : (T S : tp) -> tp
  unit : tp
 
-data ctx : Set where
- ⊡ : ctx
- _,_ : (Γ : ctx) -> (T : tp) -> ctx
+data ctx' (A : Set) : Set where
+ ⊡ : ctx' A
+ _,_ : (Γ : ctx' A) -> (T : A) -> ctx' A
 
-data var : (Γ : ctx) -> (T : tp) -> Set where
+ctx = ctx' tp
+
+data var {A : Set} : (Γ : ctx' A) -> (T : A) -> Set where
  z : ∀ {Γ T} -> var (Γ , T) T
  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
 
@@ -150,11 +152,21 @@ nExtend : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Δ T -> nSubst (Γ , T) Δ
 nExtend θ N z = N
 nExtend θ N (s y) = θ y
 
+n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
+n-ext θ z = nv z
+n-ext θ (s y) = nappSubst wkn (θ y)
+
 nId : ∀ {Γ} -> nSubst Γ Γ
 nId x = nv x
 
+n-single : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
+n-single N = nExtend nId N
+
+n-single-subst : ∀ {Γ T S} -> ntm (Γ , S) T -> ntm Γ S -> ntm Γ T
+n-single-subst M N = cut (n-single N) M
+
 napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
-napp (ƛ N) M = cut (nExtend nId M) N
+napp (ƛ M) N = n-single-subst M N
 
 nfst : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ T
 nfst < M , N > = M
@@ -162,6 +174,7 @@ nfst < M , N > = M
 nsnd : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ S
 nsnd < M , N > = N
 
+{-
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
@@ -186,4 +199,75 @@ complete tt = tt
 complete z = z
 complete (s N) = s (complete N)
 complete nil = nil
-complete (cons N L) = cons (complete N) (complete L)
+complete (cons N L) = cons (complete N) (complete L) -}
+
+data lf-atomic-tp (Γ : ctx) : atomic_tp -> Set where
+ lf-nat : lf-atomic-tp Γ nat
+ lf-vec : (N : ntm Γ (atom nat)) -> lf-atomic-tp Γ list
+
+data lf-tp (Γ : ctx) : (t : tp) -> Set where
+ atom : ∀ {a} (A : lf-atomic-tp Γ a) -> lf-tp Γ (atom a)
+ _⇝_ : ∀ {s t} (S : lf-tp Γ s) -> (T : lf-tp (Γ , s) t) -> lf-tp Γ (s ⇝ t)
+ _×_ : ∀ {s t} (S : lf-tp Γ s) -> (T : lf-tp Γ t) -> lf-tp Γ (s × t)
+ unit : lf-tp Γ unit
+
+lf-tp-vsubst : ∀ {γ δ : ctx} (σ : vsubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
+lf-tp-vsubst σ (atom lf-nat) = atom lf-nat
+lf-tp-vsubst σ (atom (lf-vec N)) = atom (lf-vec (nappSubst σ N))
+lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) T)
+lf-tp-vsubst σ (S × T) = (lf-tp-vsubst σ S) × (lf-tp-vsubst σ T)
+lf-tp-vsubst σ unit = unit
+
+lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
+lf-tp-subst θ (atom lf-nat) = atom lf-nat
+lf-tp-subst θ (atom (lf-vec N)) = atom (lf-vec (cut θ N))
+lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
+lf-tp-subst θ (S × T) = (lf-tp-subst θ S) × (lf-tp-subst θ T)
+lf-tp-subst θ unit = unit
+
+lf-tp-wkn : ∀ {Γ : ctx} (t : tp) {s} (S : lf-tp Γ s) -> lf-tp (Γ , t) s
+lf-tp-wkn t S = lf-tp-vsubst wkn S
+
+data lf-ctx : ctx -> Set where
+ ⊡ : lf-ctx ⊡
+ _,_ : ∀ {γ} (Γ : lf-ctx γ) -> {t : tp} -> (T : lf-tp γ t) -> lf-ctx (γ , t)
+
+data lf-var : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (x : var γ t) -> Set where
+ z : ∀ {γ Γ t T} -> lf-var {γ , t} (Γ , T) (lf-tp-wkn t T) z
+ s : ∀ {γ Γ t T u U x} -> lf-var {γ} Γ {t} T x -> lf-var (Γ , U) (lf-tp-wkn u T) (s x)
+
+mutual
+ data lf-rtm {γ} (Γ : lf-ctx γ) : ∀ {t}  (r : rtm γ t) (T : lf-tp γ t) -> Set where
+  v : ∀ {t T x} -> lf-var Γ {t} T x -> lf-rtm Γ (v x) T
+  _·_ : ∀ {t T s S r n} -> (R : lf-rtm Γ {t ⇝ s} r (T ⇝ S)) -> (N : lf-ntm Γ n T) -> lf-rtm Γ (r · n) (lf-tp-subst (n-single n) S)
+  π₁ : ∀ {t T s S r} -> lf-rtm Γ {t × s} r (T × S) -> lf-rtm Γ (π₁ r) T
+  π₂ : ∀ {t T s S r} -> lf-rtm Γ {t × s} r (T × S) -> lf-rtm Γ (π₂ r) S
+ data lf-ntm {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
+  ƛ : ∀ {t T s S n} -> lf-ntm {γ , t} (Γ , T) {s} n S -> lf-ntm Γ (ƛ n) (T ⇝ S)
+  neut : ∀ {a A r} -> lf-rtm Γ r (atom {γ} {a} A) -> lf-ntm Γ (neut r) (atom A)
+  <_,_> : ∀ {t T s S m n} -> (M : lf-ntm Γ {t} m T) -> (N : lf-ntm Γ {s} n S) -> lf-ntm Γ < m , n > (T × S)
+  tt : lf-ntm Γ tt unit
+  z : lf-ntm Γ z (atom lf-nat)
+  s : ∀ {n} (N : lf-ntm Γ n (atom lf-nat)) -> lf-ntm Γ (s n) (atom lf-nat)
+  nil : lf-ntm Γ nil (atom (lf-vec z))
+  cons : ∀ {m n l} (N : lf-ntm Γ n (atom lf-nat)) -> (L : lf-ntm Γ l (atom (lf-vec m))) -> lf-ntm Γ (cons n l) (atom (lf-vec (s m)))
+
+{-
+data wf-ctx : (γ : lf-ctx) -> Set where
+ ⊡ : wf-ctx ⊡
+ _,_ : {γ : lf-ctx} -> (Γ : wf-ctx γ) -> {t : lf-tp γ} -> (T : wf-tp γ t) -> wf-ctx (γ , t)
+
+data wf-type (γ : lf-ctx) : (t : lf-tp γ) -> Set where
+ 
+
+
+data lf-atomic-tp2 (Γ : lf-ctx) : Set where
+ lf-nat : lf-atomic-tp2 Γ
+ lf-vec : (N : lf-ntm Γ (atom lf-nat)) -> lf-atomic-tp2 Γ
+
+mutual
+ data lf-tp2 (Γ : lf-ctx) : Set where
+  atom : (A : lf-atomic-tp2 Γ) -> lf-tp2 Γ
+  _⇝_ : (T : lf-tp2 Γ) -> (S : lf-tp2 (Γ , T)) -> lf-tp2 Γ
+  _×_ : (T S : lf-tp2 Γ) -> lf-tp2 Γ
+  unit : lf-tp2 Γ -}
