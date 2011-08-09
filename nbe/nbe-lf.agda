@@ -196,16 +196,22 @@ lf-nat = atom lf-nat'
 lf-vec : ∀ {Γ} (N : ntm Γ (atom nat)) -> lf-tp Γ (atom list)
 lf-vec N = atom (lf-vec' N)
 
+lf-tp-vsubst-atomic : ∀ {γ δ : ctx} (σ : vsubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
+lf-tp-vsubst-atomic σ lf-nat' = lf-nat'
+lf-tp-vsubst-atomic σ (lf-vec' N) = lf-vec' (nappSubst σ N)
+
 lf-tp-vsubst : ∀ {γ δ : ctx} (σ : vsubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
-lf-tp-vsubst σ (atom lf-nat') = lf-nat 
-lf-tp-vsubst σ (atom (lf-vec' N)) = lf-vec (nappSubst σ N)
+lf-tp-vsubst σ (atom A) = atom (lf-tp-vsubst-atomic σ A)
 lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) T)
 lf-tp-vsubst σ (S × T) = (lf-tp-vsubst σ S) × (lf-tp-vsubst σ T)
 lf-tp-vsubst σ unit = unit
 
+lf-tp-subst-atomic : ∀ {γ δ : ctx} (θ : nSubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
+lf-tp-subst-atomic θ lf-nat' = lf-nat'
+lf-tp-subst-atomic θ (lf-vec' N) = lf-vec' (cut θ N)
+
 lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
-lf-tp-subst θ (atom lf-nat') = lf-nat
-lf-tp-subst θ (atom (lf-vec' N)) = lf-vec (cut θ N)
+lf-tp-subst θ (atom A) = atom (lf-tp-subst-atomic θ A)
 lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
 lf-tp-subst θ (S × T) = (lf-tp-subst θ S) × (lf-tp-subst θ T)
 lf-tp-subst θ unit = unit
@@ -213,6 +219,8 @@ lf-tp-subst θ unit = unit
 lf-tp-wkn : ∀ {Γ : ctx} (t : tp) {s} (S : lf-tp Γ s) -> lf-tp (Γ , t) s
 lf-tp-wkn t S = lf-tp-vsubst wkn S
 
+{- Compare this style with not indexing by everything. Involves induction-recursion everywhere?
+   I suspect there may be more preservation lemmas? -}
 data lf-ctx : ctx -> Set where
  ⊡ : lf-ctx ⊡
  _,_ : ∀ {γ} (Γ : lf-ctx γ) -> {t : tp} -> (T : lf-tp γ t) -> lf-ctx (γ , t)
@@ -257,3 +265,30 @@ mutual
          (N : Γ ⊢ n ⇐ lf-nat)
       -> (L : Γ ⊢ l ⇐ (lf-vec m))
       ->      Γ ⊢ (cons n l) ⇐ (lf-vec (s m))
+
+subst-lemma-var : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
+   (θ : ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x))
+   {t x} {T : lf-tp γ t} (X : lf-var Γ T x) -> lf-var Δ (lf-tp-vsubst σ T) (vsubst-app σ x)
+subst-lemma-var θ z = θ z
+subst-lemma-var {σ = σ , x} θ (s y) = subst-lemma-var {!!} {!!} -- θ should reflect the structure of σ
+
+mutual
+ rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
+   (θ : ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x))
+   {t r} {T : lf-tp γ t} (R : Γ ⊢ r ⇒ T) -> Δ ⊢ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
+ rsubst-lemma θ (v y) = v (subst-lemma-var θ y)
+ rsubst-lemma θ (R · N) = {!!} · nsubst-lemma θ N
+ rsubst-lemma θ (π₁ R) = π₁ (rsubst-lemma θ R)
+ rsubst-lemma θ (π₂ R) = π₂ (rsubst-lemma θ R)
+
+ nsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
+   (θ : ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x))
+   {t n} {T : lf-tp γ t} (N : Γ ⊢ n ⇐ T) -> Δ ⊢ (nappSubst σ n) ⇐ (lf-tp-vsubst σ T)
+ nsubst-lemma θ (ƛ N) = ƛ {!!}
+ nsubst-lemma θ (neut R) = neut (rsubst-lemma θ R)
+ nsubst-lemma θ < M , N > = < (nsubst-lemma θ M) , (nsubst-lemma θ N) >
+ nsubst-lemma θ tt = tt
+ nsubst-lemma θ z = z
+ nsubst-lemma θ (s N) = s (nsubst-lemma θ N)
+ nsubst-lemma θ nil = nil
+ nsubst-lemma θ (cons N L) = cons (nsubst-lemma θ N) (nsubst-lemma θ L)
