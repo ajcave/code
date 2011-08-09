@@ -174,33 +174,6 @@ nfst < M , N > = M
 nsnd : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ S
 nsnd < M , N > = N
 
-{-
-data tm (Γ : ctx) : (T : tp) -> Set where
- v : ∀ {T} -> var Γ T -> tm Γ T
- _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
- ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
- π₁ : ∀ {T S} -> tm Γ (T × S) -> tm Γ T
- π₂ : ∀ {T S} -> tm Γ (T × S) -> tm Γ S
- <_,_> : ∀ {T S} -> tm Γ T -> tm Γ S -> tm Γ (T × S)
- tt : tm Γ unit
- z : tm Γ (atom nat)
- s : (M : tm Γ (atom nat)) -> tm Γ (atom nat)
- nil : tm Γ (atom list)
- cons : (N : tm Γ (atom nat)) -> (L : tm Γ (atom list)) -> tm Γ (atom list) 
-
-complete : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-complete (v y) = nv y
-complete (M · N) = napp (complete M) (complete N)
-complete (ƛ M) = ƛ (complete M)
-complete (π₁ M) = nfst (complete M)
-complete (π₂ N) = nsnd (complete N)
-complete < M , N > = < complete M , complete N >
-complete tt = tt
-complete z = z
-complete (s N) = s (complete N)
-complete nil = nil
-complete (cons N L) = cons (complete N) (complete L) -}
-
 data lf-atomic-tp (Γ : ctx) : atomic_tp -> Set where
  lf-nat : lf-atomic-tp Γ nat
  lf-vec : (N : ntm Γ (atom nat)) -> lf-atomic-tp Γ list
@@ -251,23 +224,3 @@ mutual
   s : ∀ {n} (N : lf-ntm Γ n (atom lf-nat)) -> lf-ntm Γ (s n) (atom lf-nat)
   nil : lf-ntm Γ nil (atom (lf-vec z))
   cons : ∀ {m n l} (N : lf-ntm Γ n (atom lf-nat)) -> (L : lf-ntm Γ l (atom (lf-vec m))) -> lf-ntm Γ (cons n l) (atom (lf-vec (s m)))
-
-{-
-data wf-ctx : (γ : lf-ctx) -> Set where
- ⊡ : wf-ctx ⊡
- _,_ : {γ : lf-ctx} -> (Γ : wf-ctx γ) -> {t : lf-tp γ} -> (T : wf-tp γ t) -> wf-ctx (γ , t)
-
-data wf-type (γ : lf-ctx) : (t : lf-tp γ) -> Set where
- 
-
-
-data lf-atomic-tp2 (Γ : lf-ctx) : Set where
- lf-nat : lf-atomic-tp2 Γ
- lf-vec : (N : lf-ntm Γ (atom lf-nat)) -> lf-atomic-tp2 Γ
-
-mutual
- data lf-tp2 (Γ : lf-ctx) : Set where
-  atom : (A : lf-atomic-tp2 Γ) -> lf-tp2 Γ
-  _⇝_ : (T : lf-tp2 Γ) -> (S : lf-tp2 (Γ , T)) -> lf-tp2 Γ
-  _×_ : (T S : lf-tp2 Γ) -> lf-tp2 Γ
-  unit : lf-tp2 Γ -}
