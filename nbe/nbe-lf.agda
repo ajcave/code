@@ -266,25 +266,19 @@ mutual
       -> (L : Γ ⊢ l ⇐ (lf-vec m))
       ->      Γ ⊢ (cons n l) ⇐ (lf-vec (s m))
 
-subst-lemma-var : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
-   (θ : ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x))
-   {t x} {T : lf-tp γ t} (X : lf-var Γ T x) -> lf-var Δ (lf-tp-vsubst σ T) (vsubst-app σ x)
-subst-lemma-var θ z = θ z
-subst-lemma-var {σ = σ , x} θ (s y) = subst-lemma-var {!!} {!!} -- θ should reflect the structure of σ
-
 mutual
  rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
    (θ : ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x))
    {t r} {T : lf-tp γ t} (R : Γ ⊢ r ⇒ T) -> Δ ⊢ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
- rsubst-lemma θ (v y) = v (subst-lemma-var θ y)
- rsubst-lemma θ (R · N) = {!!} · nsubst-lemma θ N
+ rsubst-lemma θ (v y) = v (θ y)
+ rsubst-lemma θ (R · N) = {!!}
  rsubst-lemma θ (π₁ R) = π₁ (rsubst-lemma θ R)
  rsubst-lemma θ (π₂ R) = π₂ (rsubst-lemma θ R)
 
  nsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
    (θ : ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x))
    {t n} {T : lf-tp γ t} (N : Γ ⊢ n ⇐ T) -> Δ ⊢ (nappSubst σ n) ⇐ (lf-tp-vsubst σ T)
- nsubst-lemma θ (ƛ N) = ƛ {!!}
+ nsubst-lemma θ (ƛ N) = ƛ (nsubst-lemma {!!} N)
  nsubst-lemma θ (neut R) = neut (rsubst-lemma θ R)
  nsubst-lemma θ < M , N > = < (nsubst-lemma θ M) , (nsubst-lemma θ N) >
  nsubst-lemma θ tt = tt
