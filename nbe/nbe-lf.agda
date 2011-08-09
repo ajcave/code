@@ -182,8 +182,8 @@ nsnd : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ S
 nsnd < M , N > = N
 
 data lf-atomic-tp (Γ : ctx) : atomic_tp -> Set where
- lf-nat : lf-atomic-tp Γ nat
- lf-vec : (N : ntm Γ (atom nat)) -> lf-atomic-tp Γ list
+ lf-nat' : lf-atomic-tp Γ nat
+ lf-vec' : (N : ntm Γ (atom nat)) -> lf-atomic-tp Γ list
 
 data lf-tp (Γ : ctx) : (t : tp) -> Set where
  atom : ∀ {a} (A : lf-atomic-tp Γ a) -> lf-tp Γ (atom a)
@@ -191,16 +191,21 @@ data lf-tp (Γ : ctx) : (t : tp) -> Set where
  _×_ : ∀ {s t} (S : lf-tp Γ s) -> (T : lf-tp Γ t) -> lf-tp Γ (s × t)
  unit : lf-tp Γ unit
 
+lf-nat : ∀ {Γ} -> lf-tp Γ (atom nat)
+lf-nat = atom lf-nat'
+lf-vec : ∀ {Γ} (N : ntm Γ (atom nat)) -> lf-tp Γ (atom list)
+lf-vec N = atom (lf-vec' N)
+
 lf-tp-vsubst : ∀ {γ δ : ctx} (σ : vsubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
-lf-tp-vsubst σ (atom lf-nat) = atom lf-nat
-lf-tp-vsubst σ (atom (lf-vec N)) = atom (lf-vec (nappSubst σ N))
+lf-tp-vsubst σ (atom lf-nat') = lf-nat 
+lf-tp-vsubst σ (atom (lf-vec' N)) = lf-vec (nappSubst σ N)
 lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) T)
 lf-tp-vsubst σ (S × T) = (lf-tp-vsubst σ S) × (lf-tp-vsubst σ T)
 lf-tp-vsubst σ unit = unit
 
 lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
-lf-tp-subst θ (atom lf-nat) = atom lf-nat
-lf-tp-subst θ (atom (lf-vec N)) = atom (lf-vec (cut θ N))
+lf-tp-subst θ (atom lf-nat') = lf-nat
+lf-tp-subst θ (atom (lf-vec' N)) = lf-vec (cut θ N)
 lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
 lf-tp-subst θ (S × T) = (lf-tp-subst θ S) × (lf-tp-subst θ T)
 lf-tp-subst θ unit = unit
@@ -217,17 +222,38 @@ data lf-var : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (x : var γ t) -> S
  s : ∀ {γ Γ t T u U x} -> lf-var {γ} Γ {t} T x -> lf-var (Γ , U) (lf-tp-wkn u T) (s x)
 
 mutual
- data lf-rtm {γ} (Γ : lf-ctx γ) : ∀ {t}  (r : rtm γ t) (T : lf-tp γ t) -> Set where
-  v : ∀ {t T x} -> lf-var Γ {t} T x -> lf-rtm Γ (v x) T
-  _·_ : ∀ {t T s S r n} -> (R : lf-rtm Γ {t ⇝ s} r (T ⇝ S)) -> (N : lf-ntm Γ n T) -> lf-rtm Γ (r · n) (lf-tp-subst (n-single n) S)
-  π₁ : ∀ {t T s S r} -> lf-rtm Γ {t × s} r (T × S) -> lf-rtm Γ (π₁ r) T
-  π₂ : ∀ {t T s S r} -> lf-rtm Γ {t × s} r (T × S) -> lf-rtm Γ (π₂ r) S
- data lf-ntm {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
-  ƛ : ∀ {t T s S n} -> lf-ntm {γ , t} (Γ , T) {s} n S -> lf-ntm Γ (ƛ n) (T ⇝ S)
-  neut : ∀ {a A r} -> lf-rtm Γ r (atom {γ} {a} A) -> lf-ntm Γ (neut r) (atom A)
-  <_,_> : ∀ {t T s S m n} -> (M : lf-ntm Γ {t} m T) -> (N : lf-ntm Γ {s} n S) -> lf-ntm Γ < m , n > (T × S)
-  tt : lf-ntm Γ tt unit
-  z : lf-ntm Γ z (atom lf-nat)
-  s : ∀ {n} (N : lf-ntm Γ n (atom lf-nat)) -> lf-ntm Γ (s n) (atom lf-nat)
-  nil : lf-ntm Γ nil (atom (lf-vec z))
-  cons : ∀ {m n l} (N : lf-ntm Γ n (atom lf-nat)) -> (L : lf-ntm Γ l (atom (lf-vec m))) -> lf-ntm Γ (cons n l) (atom (lf-vec (s m)))
+ data _⊢_⇒_ {γ} (Γ : lf-ctx γ) : ∀ {t}  (r : rtm γ t) (T : lf-tp γ t) -> Set where
+  v : ∀ {t T x} ->
+         lf-var Γ {t} T x
+      -> Γ ⊢ (v x) ⇒ T
+  _·_ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {r n} ->
+         (R : Γ ⊢ r ⇒ (T ⇝ S))
+      -> (N : Γ ⊢ n ⇐ T)
+      ->      Γ ⊢ (r · n) ⇒ (lf-tp-subst (n-single n) S)
+  π₁ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
+         (R : Γ ⊢ r ⇒ (T × S))
+       ->     Γ ⊢ (π₁ r) ⇒ T
+  π₂ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
+         (R : Γ ⊢ r ⇒ (T × S))
+       ->     Γ ⊢ (π₂ r) ⇒ S
+ data _⊢_⇐_ {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
+  ƛ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {n} ->
+         (N : (Γ , T) ⊢ n ⇐ S)
+      -> Γ ⊢ (ƛ n) ⇐ (T ⇝ S)
+  neut : ∀ {a} {A : lf-atomic-tp γ a} {r} ->
+         (R : Γ ⊢ r ⇒ (atom A))
+       ->     Γ ⊢ (neut r) ⇐ (atom A)
+  <_,_> : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {m n} ->
+         (M : Γ ⊢ m ⇐ T)
+      -> (N : Γ ⊢ n ⇐ S)
+      ->      Γ ⊢ < m , n > ⇐ (T × S)
+  tt : Γ ⊢ tt ⇐ unit
+  z : Γ ⊢ z ⇐ lf-nat
+  s : ∀ {n}
+         (N : Γ ⊢ n ⇐ lf-nat)
+      ->      Γ ⊢ (s n) ⇐ lf-nat
+  nil : Γ ⊢ nil ⇐ (lf-vec z)
+  cons : ∀ {m n l}
+         (N : Γ ⊢ n ⇐ lf-nat)
+      -> (L : Γ ⊢ l ⇐ (lf-vec m))
+      ->      Γ ⊢ (cons n l) ⇐ (lf-vec (s m))
