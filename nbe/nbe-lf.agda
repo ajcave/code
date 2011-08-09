@@ -76,7 +76,7 @@ wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn = vsubst-map s id
 
 ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
-ext σ = (wkn ∘ σ) , z
+ext σ = (vsubst-map s σ) , z
 
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
@@ -275,9 +275,36 @@ data _≡_ {A : Set} (x : A) : (y : A) -> Set where
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
 
+vsubst' : ctx -> ctx -> Set
+vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
+
+_∘₁_ : ∀ {A B C} (f : vsubst' B C) (g : vsubst' A B) -> (vsubst' A C)
+(f ∘₁ g) x = f (g x)
+
+vsubst-map-functorality : ∀ {γ δ ψ φ} (σ1 : vsubst' γ δ) (σ2 : vsubst' ψ γ) (σ3 : vsubst φ ψ)
+  -> vsubst-map σ1 (vsubst-map σ2 σ3) ≡ vsubst-map (λ x -> σ1 (σ2 x)) σ3
+vsubst-map-functorality σ1 σ2 ⊡ = refl
+vsubst-map-functorality σ1 σ2 (σ , x) rewrite vsubst-map-functorality σ1 σ2 σ = refl
+
+vsubst-app-map : ∀ {γ δ ψ} (σ1 : vsubst' γ δ) (σ2 : vsubst ψ γ) {t} (x : var ψ t)
+  -> vsubst-app (vsubst-map σ1 σ2) x ≡ σ1 (vsubst-app σ2 x)
+vsubst-app-map σ1 ⊡ ()
+vsubst-app-map σ1 (σ , x) z = refl
+vsubst-app-map σ1 (σ , x) (s y) rewrite vsubst-app-map σ1 σ y = refl
+
+vsubst-map-extensional : ∀ {γ δ ψ} {σ1 σ2 : vsubst' γ δ} (eq : ∀ {u} (x : var γ u) -> σ1 x ≡ σ2 x) (σ3 : vsubst ψ γ)
+  -> vsubst-map σ1 σ3 ≡ vsubst-map σ2 σ3
+vsubst-map-extensional eq ⊡ = refl
+vsubst-map-extensional eq (σ , x) rewrite vsubst-map-extensional eq σ | eq x = refl
+
 ext-functorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) (t : tp) -> ((ext σ1) ∘ (ext σ2)) ≡ ext {T = t} (σ1 ∘ σ2)
 ext-functorality σ1 ⊡ t = refl
-ext-functorality σ1 (σ , x) t rewrite ext-functorality σ1 σ t = {!!}
+ext-functorality σ1 (σ , x) t rewrite ext-functorality σ1 σ t | vsubst-app-map (s {S = t}) σ1 x 
+     | vsubst-map-functorality (vsubst-app (ext {T = t} σ1)) s σ
+     | vsubst-map-functorality (s {S = t}) (vsubst-app σ1) σ
+     | vsubst-map-extensional (vsubst-app-map (s {S = t}) σ1) σ = refl
+
+-- | vsubst-map-functorality (s {S = t}) (vsubst-app σ1) σ = {!!}
 
 mutual
  rfunctorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) {t} (r : rtm ψ t) -> rappSubst σ1 (rappSubst σ2 r) ≡ rappSubst (σ1 ∘ σ2) r
@@ -305,7 +332,8 @@ mutual
    (θ : lf-vsubst Γ σ Δ)
    {t r} {T : lf-tp γ t} (R : Γ ⊢ r ⇒ T) -> Δ ⊢ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
  rsubst-lemma θ (v y) = v (θ y)
- rsubst-lemma θ (R · N) = {!!}
+ rsubst-lemma θ (R · N) with rsubst-lemma θ R | nsubst-lemma θ N
+ ... | w1 | w2 = {!!}
  rsubst-lemma θ (π₁ R) = π₁ (rsubst-lemma θ R)
  rsubst-lemma θ (π₂ R) = π₂ (rsubst-lemma θ R)
 
