@@ -306,7 +306,7 @@ ext-functorality σ1 (σ , x) t rewrite ext-functorality σ1 σ t | vsubst-app-m
 
 mutual
  rfunctorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) {t} (r : rtm ψ t) -> rappSubst σ1 (rappSubst σ2 r) ≡ rappSubst (σ1 ∘ σ2) r
- rfunctorality σ1 σ2 (v y) = {!!}
+ rfunctorality σ1 σ2 (v y) rewrite vsubst-app-map (vsubst-app σ1) σ2 y = refl
  rfunctorality σ1 σ2 (R · N) rewrite rfunctorality σ1 σ2 R | nfunctorality σ1 σ2 N = refl
  rfunctorality σ1 σ2 (π₁ R) rewrite rfunctorality σ1 σ2 R = refl
  rfunctorality σ1 σ2 (π₂ R) rewrite rfunctorality σ1 σ2 R = refl
