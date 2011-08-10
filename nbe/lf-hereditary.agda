@@ -55,13 +55,6 @@ mutual
   nil : ntm Γ (atom list)
   cons : (N : ntm Γ (atom nat)) -> (L : ntm Γ (atom list)) -> ntm Γ (atom list)
 
-{-
-sem : (Γ : ctx) -> (T : tp) -> Set
-sem Γ (atom A) = ntm Γ (atom A)
-sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
-sem Γ (T × S) = sem Γ T * sem Γ S
-sem Γ unit = Unit -}
-
 vsubst-app : ∀ {Γ Δ U} -> vsubst Γ Δ -> var Γ U -> var Δ U
 vsubst-app ⊡ ()
 vsubst-app (σ , x) z = x
@@ -74,15 +67,15 @@ vsubst-map σ1 (σ , x) = (vsubst-map σ1 σ) , (σ1 x)
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 σ1 ∘ σ2 = vsubst-map (vsubst-app σ1) σ2
 
+ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
+ext σ = (vsubst-map s σ) , z
+
 id : ∀ {Γ} -> vsubst Γ Γ
 id {⊡} = ⊡
-id {Γ , T} = vsubst-map s id , z
+id {Γ , T} = ext id
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn = vsubst-map s id
-
-ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
-ext σ = (vsubst-map s σ) , z
 
 mutual
  rappSubst : ∀ {Γ Δ S U} -> vsubst Δ Γ -> spine Δ S U -> spine Γ S U
@@ -100,37 +93,101 @@ mutual
  nappSubst σ nil = nil
  nappSubst σ (cons N L) = cons (nappSubst σ N) (nappSubst σ L)
 
-nSubst : ctx -> ctx -> Set
-nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
+_-_ : ∀ {τ} -> (Γ : ctx) -> var Γ τ -> ctx
+⊡ - ()
+(Γ , τ) - z = Γ
+(Γ , τ) - (s x) = (Γ - x) , τ
 
-{- embed : ∀ {Γ T} -> ntm Γ T -> sem Γ T
-embed N = sSubst sId N
+wkv : ∀ {Γ σ τ} (x : var Γ σ) -> var (Γ - x) τ -> var Γ τ
+wkv z y = s y
+wkv (s y) z = z
+wkv (s y) (s y') = s (wkv y y')
 
-embed* : ∀ {Γ Δ} -> nSubst Γ Δ -> subst Γ Δ
-embed* θ x = embed (θ x) -}
+data eqV {Γ} : ∀ {τ σ} -> var Γ τ -> var Γ σ -> Set where
+ same : ∀ {τ} {x : var Γ τ} -> eqV x x
+ diff : ∀ {τ σ} (x : var Γ τ) (y : var (Γ - x) σ) -> eqV x (wkv x y)
 
-cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut θ t = {!!} -- reify (sSubst (embed* θ) t)
+eq : ∀ {Γ τ σ} -> (x : var Γ τ) -> (y : var Γ σ) -> eqV x y
+eq z z = same
+eq z (s y) = diff z y
+eq (s y) z = diff (s y) z
+eq (s y) (s y') with eq y y'
+eq (s .y) (s .y) | same {τ} {y} = same
+eq (s y) (s .(wkv y y')) | diff .y y' = diff (s y) (wkv z y')
+
+mutual
+ _[[_:=_]] : ∀ {Γ τ σ} -> ntm Γ τ -> (x : var Γ σ) -> ntm (Γ - x) σ -> ntm (Γ - x) τ
+ ƛ N [[ x := M ]] = ƛ (N [[ s x := nappSubst wkn M ]])
+ ▹ x S [[ x' := M ]] with eq x' x
+ ▹ .x S [[ .x := N' ]] | same {τ} {x} = N' ◇ (S << x := N' >>)
+ ▹ .(wkv x y) S [[ .x := N' ]] | diff x y = ▹ y (S << x := N' >>)
+ < M , N > [[ x := M' ]] = < M [[ x := M' ]] , N [[ x := M' ]] >
+ tt [[ x := M ]] = tt
+ z [[ x := M ]] = z
+ s N [[ x := M ]] = s (N [[ x := M ]])
+ nil [[ x := M ]] = nil
+ cons N L [[ x := M ]] = cons (N [[ x := M ]]) (L [[ x := M ]])
+
+ _<<_:=_>> : ∀ {Γ τ σ ρ} -> spine Γ τ ρ -> (x : var Γ σ) -> ntm (Γ - x) σ -> spine (Γ - x) τ ρ
+ ε << x := M >> = ε
+ (S , N) << x := M >> = (S << x := M >>) , (N [[ x := M ]])
+ π₁ S << x := M >> = π₁ (S << x := M >>)
+ π₂ S << x := M >> = π₂ (S << x := M >>)
+
+ _◇_ : ∀ {Γ τ σ} -> ntm Γ σ -> spine Γ σ τ -> ntm Γ τ
+ N ◇ ε = N
+ ƛ N ◇ (S , N') = (N [[ z := N' ]]) ◇ S
+ < M , N > ◇ π₁ S = M ◇ S
+ < M , N > ◇ π₂ S = N ◇ S
+
+data nSubst : ∀ (Γ : ctx) (Δ : ctx) -> Set where 
+ ⊡ : ∀ {Δ} -> nSubst ⊡ Δ
+ _,_ : ∀ {Γ Δ U} -> (σ : nSubst Γ Δ) -> (N : ntm Δ U) -> nSubst (Γ , U) Δ
+
+nSubst-map : ∀ {Δ Γ ψ} -> (∀ {U} -> ntm Δ U -> ntm Γ U) -> nSubst ψ Δ -> nSubst ψ Γ
+nSubst-map σ1 ⊡ = ⊡
+nSubst-map σ1 (σ , x) = (nSubst-map σ1 σ) , (σ1 x)
+
+concatSp : ∀ {ρ Γ τ σ} -> spine Γ ρ σ -> spine Γ σ τ -> spine Γ ρ τ
+concatSp ε S2 = S2
+concatSp (S , N) S2 = concatSp S S2 , N
+concatSp (π₁ y) S2 = π₁ (concatSp y S2)
+concatSp (π₂ y) S2 = π₂ (concatSp y S2)
+
+appSp : ∀ {ρ Γ τ σ} -> spine Γ ρ (σ ⇝ τ) -> ntm Γ σ -> spine Γ ρ τ
+appSp S N = concatSp S (ε , N)
+
+π₁Sp : ∀ {ρ Γ τ σ} -> spine Γ ρ (σ × τ) -> spine Γ ρ σ
+π₁Sp S = concatSp S (π₁ ε)
+
+π₂Sp : ∀ {ρ Γ τ σ} -> spine Γ ρ (σ × τ) -> spine Γ ρ τ
+π₂Sp S = concatSp S (π₂ ε)
+
+η-expand : ∀ {T Γ U} -> var Γ U -> spine Γ U T -> ntm Γ T
+η-expand {atom A} x S = ▹ x S
+η-expand {T ⇝ S} x S' = ƛ (η-expand (s x) (appSp (rappSubst wkn S') (η-expand z ε)))
+η-expand {T × S} x S' = < η-expand x (π₁Sp S') , η-expand x (π₂Sp S') >
+η-expand {unit} x S = tt
 
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
-nv x = {!!} --reify (reflect (v x))
-
-nExtend : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Δ T -> nSubst (Γ , T) Δ
-nExtend θ N z = N
-nExtend θ N (s y) = θ y
+nv x = η-expand x ε
 
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
-n-ext θ z = nv z
-n-ext θ (s y) = nappSubst wkn (θ y)
+n-ext θ = (nSubst-map (nappSubst wkn) θ) , nv z
+
+cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
+cut ⊡ t = {!!}
+cut (σ , N) t = cut σ (t [[ z := {!!} ]])  --(cut (n-ext σ) t) [[ z := N ]]
 
 nId : ∀ {Γ} -> nSubst Γ Γ
-nId x = nv x
+nId {⊡} = ⊡
+nId {Γ , T} = n-ext nId
 
 n-single : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
-n-single N = nExtend nId N
+n-single N = nId , N
 
 n-single-subst : ∀ {Γ T S} -> ntm (Γ , S) T -> ntm Γ S -> ntm Γ T
-n-single-subst M N = cut (n-single N) M
+n-single-subst M N = M [[ z := N ]]
 
 napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
 napp (ƛ M) N = n-single-subst M N
@@ -289,7 +346,7 @@ mutual
  rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
    (θ : lf-vsubst Γ σ Δ) {t} {T : lf-tp γ t} {u} {U : lf-tp γ u} {r}
    (R : Γ ⊢ U ◂ r ⇒ T) -> Δ ⊢ (lf-tp-vsubst σ U) ◂ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
- rsubst-lemma θ ε = ε -- v (θ y)
+ rsubst-lemma θ ε = ε
  rsubst-lemma θ (R , N) with rsubst-lemma θ R | nsubst-lemma θ N
  ... | w1 | w2 = {!!}
  rsubst-lemma θ (π₁ R) = π₁ (rsubst-lemma θ R)
