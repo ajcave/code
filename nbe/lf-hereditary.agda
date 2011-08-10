@@ -363,6 +363,9 @@ mutual
 lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
 
+lf-nSubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : nSubst γ δ) (Δ : lf-ctx δ) -> Set
+lf-nSubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> Δ ⊢ (nSubst-app σ x) ⇐ (lf-tp-subst σ U)
+
 vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
 
@@ -413,6 +416,9 @@ mutual
 lf-vsubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-vsubst {γ} {δ} Γ σ Δ) -> lf-vsubst (Γ , T) (ext σ) (Δ , (lf-tp-vsubst σ T))
 lf-vsubst-ext θ z = {!!}
 lf-vsubst-ext θ (s y) = {!!}
+
+lf-nSubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-nSubst {γ} {δ} Γ σ Δ) -> lf-nSubst (Γ , T) (n-ext σ) (Δ , (lf-tp-subst σ T))
+lf-nSubst-ext θ x = {!!}
 
 mutual
  rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
@@ -468,3 +474,31 @@ mutual
  nfunctor σ1 σ2 (s N) rewrite nfunctor σ1 σ2 N = refl
  nfunctor σ1 σ2 nil = refl
  nfunctor σ1 σ2 (cons N L) rewrite nfunctor σ1 σ2 N | nfunctor σ1 σ2 L = refl
+
+ rsubst-lemma2 : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : nSubst γ δ}
+   (θ : lf-nSubst Γ σ Δ) {t} {T : lf-tp γ t} {u} {U : lf-tp γ u} {r}
+   (R : Γ ⊢ U ◂ r ⇒ T) -> Δ ⊢ (lf-tp-subst σ U) ◂ (<< σ >> r) ⇒ (lf-tp-subst σ T)
+ rsubst-lemma2 θ ε = ε
+ rsubst-lemma2 θ (R , N) with rsubst-lemma2 θ R | nsubst-lemma2 θ N
+ ... | w1 | w2 = {!!}
+ rsubst-lemma2 θ (π₁ R) = π₁ (rsubst-lemma2 θ R)
+ rsubst-lemma2 θ (π₂ R) = π₂ (rsubst-lemma2 θ R)
+
+ nsubst-lemma2 : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : nSubst γ δ}
+   (θ : lf-nSubst Γ σ Δ)
+   {t n} {T : lf-tp γ t} (N : Γ ⊢ n ⇐ T) -> Δ ⊢ ([ σ ] n) ⇐ (lf-tp-subst σ T)
+ nsubst-lemma2 θ (ƛ N) = ƛ (nsubst-lemma2 (lf-nSubst-ext θ) N)
+ nsubst-lemma2 θ (▹ X R) = dia-lemma (θ X) (rsubst-lemma2 θ R)
+ nsubst-lemma2 θ < M , N > = < nsubst-lemma2 θ M , nsubst-lemma2 θ N >
+ nsubst-lemma2 θ tt = tt
+ nsubst-lemma2 θ z = z
+ nsubst-lemma2 θ (s N) = s (nsubst-lemma2 θ N)
+ nsubst-lemma2 θ nil = nil
+ nsubst-lemma2 θ (cons N L) = cons (nsubst-lemma2 θ N) (nsubst-lemma2 θ L)
+
+ dia-lemma : ∀ {γ} {Γ : lf-ctx γ} {t u} {T : lf-tp γ t} {U : lf-tp γ u} {n r}
+   -> Γ ⊢ n ⇐ T -> Γ ⊢ U ◂ r ⇒ T -> Γ ⊢ n ◆ r ⇐ U
+ dia-lemma N ε = N
+ dia-lemma (ƛ N) (R , N') = {!!} -- Hmm maybe if I proved that single substitution is equal to to the corresponding simultaneous substituion, everything would be OK, since this might still be structural on the simple type.
+ dia-lemma < M , N > (π₁ R) = dia-lemma M R
+ dia-lemma < M , N > (π₂ R) = dia-lemma N R
