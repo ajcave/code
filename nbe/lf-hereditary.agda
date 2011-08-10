@@ -360,13 +360,13 @@ mutual
       -> (L : Γ ⊢ l ⇐ (lf-vec m))
       ->      Γ ⊢ (cons n l) ⇐ (lf-vec (s m))
 
-lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
-lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
+{-lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
+lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x) -}
 
 lf-nSubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : nSubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-nSubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> Δ ⊢ (nSubst-app σ x) ⇐ (lf-tp-subst σ U)
 
-vsubst' : ctx -> ctx -> Set
+{-vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
 
 _∘₁_ : ∀ {A B C} (f : vsubst' B C) (g : vsubst' A B) -> (vsubst' A C)
@@ -415,12 +415,12 @@ mutual
 
 lf-vsubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-vsubst {γ} {δ} Γ σ Δ) -> lf-vsubst (Γ , T) (ext σ) (Δ , (lf-tp-vsubst σ T))
 lf-vsubst-ext θ z = {!!}
-lf-vsubst-ext θ (s y) = {!!}
+lf-vsubst-ext θ (s y) = {!!} -}
 
 lf-nSubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-nSubst {γ} {δ} Γ σ Δ) -> lf-nSubst (Γ , T) (n-ext σ) (Δ , (lf-tp-subst σ T))
 lf-nSubst-ext θ x = {!!}
 
-mutual
+{-mutual
  rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
    (θ : lf-vsubst Γ σ Δ) {t} {T : lf-tp γ t} {u} {U : lf-tp γ u} {r}
    (R : Γ ⊢ U ◂ r ⇒ T) -> Δ ⊢ (lf-tp-vsubst σ U) ◂ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
@@ -440,7 +440,7 @@ mutual
  nsubst-lemma θ z = z
  nsubst-lemma θ (s N) = s (nsubst-lemma θ N)
  nsubst-lemma θ nil = nil
- nsubst-lemma θ (cons N L) = cons (nsubst-lemma θ N) (nsubst-lemma θ L)
+ nsubst-lemma θ (cons N L) = cons (nsubst-lemma θ N) (nsubst-lemma θ L) -}
 
 n-ext-functorality : ∀ {γ δ ψ} (σ1 : nSubst γ δ) (σ2 : nSubst ψ γ) (t : tp) -> ((n-ext σ1) ∘₂ (n-ext σ2)) ≡ n-ext {T = t} (σ1 ∘₂ σ2)
 n-ext-functorality σ1 ⊡ t = {!!}
