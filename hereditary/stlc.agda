@@ -48,38 +48,7 @@ mutual
  〚_〛s σ ε = ε
  〚_〛s σ (N , S) = (〚 σ 〛n N) , (〚 σ 〛s S)
 
--- Should spines go the other way?
-{- appSp : ∀ {ρ Γ τ σ} -> spine Γ ρ (σ ⇒ τ) -> nf Γ σ -> spine Γ ρ τ
-appSp ε N = N , ε
-appSp (N , S) N' = N , appSp S N'
 
-
-mutual 
- nvar : ∀ {Γ τ} -> var Γ τ -> nf Γ τ
- nvar x = η-exp x ε
-
- η-exp : ∀ {ρ Γ τ} -> var Γ τ -> spine Γ τ ρ -> nf Γ ρ
- η-exp {▹ α} x S = ▹ x S
- η-exp {τ ⇒ σ} x S = ƛ (η-exp (s x) (appSp (〚 s 〛s S) (nvar z)))
-
-… : ∀ {Γ} -> subst Γ Γ
-… x = nvar x
-
-_×_ : ∀ {Γ1 Γ2 τ ρ} -> subst Γ1 Γ2 -> nf (Γ2 , τ) ρ -> subst (Γ1 , ρ) (Γ2 , τ)
-σ × N = (〚 s 〛n ∘ σ) ,, N
-
-mutual
- [_] : ∀ {Γ1 Γ2 τ} -> subst Γ1 Γ2 -> nf Γ1 τ -> nf Γ2 τ
- [ σ ] (▹ x S) = σ x ◆ < σ > S
- [ σ ] (ƛ N) = ƛ ([ σ × (nvar z) ] N)
-
- <_> : ∀ {Γ1 Γ2 τ σ} -> subst Γ1 Γ2 -> spine Γ1 τ σ -> spine Γ2 τ σ
- < σ > ε = ε
- < σ > (N , S) = ([ σ ] N) , (< σ > S) 
-
- _◆_ : ∀ {Γ σ τ} -> nf Γ σ -> spine Γ σ τ -> nf Γ τ
- N ◆ ε = N
- ƛ N ◆ (N' , S) = ([ … ,, N' ] N) ◆ S -}
 
 -- What follows is the implementation straight out of Keller's paper
 
@@ -119,3 +88,35 @@ mutual
  _◇_ : ∀ {Γ τ σ} -> nf Γ σ -> spine Γ σ τ -> nf Γ τ
  N ◇ ε = N
  ƛ N ◇ (N' , S) = (N [[ z := N' ]]) ◇ S
+
+
+-- Simultaneous substitutions which rely on single substitutions...
+
+-- Should spines go the other way?
+appSp : ∀ {ρ Γ τ σ} -> spine Γ ρ (σ ⇒ τ) -> nf Γ σ -> spine Γ ρ τ
+appSp ε N = N , ε
+appSp (N , S) N' = N , appSp S N'
+
+mutual 
+ nvar : ∀ {Γ τ} -> var Γ τ -> nf Γ τ
+ nvar x = η-exp x ε
+
+ η-exp : ∀ {ρ Γ τ} -> var Γ τ -> spine Γ τ ρ -> nf Γ ρ
+ η-exp {▹ α} x S = ▹ x S
+ η-exp {τ ⇒ σ} x S = ƛ (η-exp (s x) (appSp (〚 s 〛s S) (nvar z)))
+
+_×_ : ∀ {Γ1 Γ2 τ ρ} -> subst Γ1 Γ2 -> nf (Γ2 , τ) ρ -> subst (Γ1 , ρ) (Γ2 , τ)
+σ × N = (〚 s 〛n ∘ σ) ,, N
+
+mutual
+ [_] : ∀ {Γ1 Γ2 τ} -> subst Γ1 Γ2 -> nf Γ1 τ -> nf Γ2 τ
+ [ σ ] (▹ x S) = σ x ◆ < σ > S
+ [ σ ] (ƛ N) = ƛ ([ σ × (nvar z) ] N)
+
+ <_> : ∀ {Γ1 Γ2 τ σ} -> subst Γ1 Γ2 -> spine Γ1 τ σ -> spine Γ2 τ σ
+ < σ > ε = ε
+ < σ > (N , S) = ([ σ ] N) , (< σ > S) 
+
+ _◆_ : ∀ {Γ σ τ} -> nf Γ σ -> spine Γ σ τ -> nf Γ τ
+ N ◆ ε = N
+ ƛ N ◆ (N' , S) = (N [[ z := N' ]]) ◆ S

@@ -150,6 +150,11 @@ data nSubst : ∀ (Γ : ctx) (Δ : ctx) -> Set where
  ⊡ : ∀ {Δ} -> nSubst ⊡ Δ
  _,_ : ∀ {Γ Δ U} -> (σ : nSubst Γ Δ) -> (N : ntm Δ U) -> nSubst (Γ , U) Δ
 
+nSubst-app : ∀ {Γ Δ U} -> nSubst Γ Δ -> var Γ U -> ntm Δ U
+nSubst-app ⊡ ()
+nSubst-app (σ , N) z = N
+nSubst-app (σ , N) (s y) = nSubst-app σ y
+
 nSubst-map : ∀ {Δ Γ ψ} -> (∀ {U} -> ntm Δ U -> ntm Γ U) -> nSubst ψ Δ -> nSubst ψ Γ
 nSubst-map σ1 ⊡ = ⊡
 nSubst-map σ1 (σ , x) = (nSubst-map σ1 σ) , (σ1 x)
@@ -181,7 +186,7 @@ nv x = η-expand x ε
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
 n-ext θ = (nSubst-map (nappSubst wkn) θ) , nv z
 
-lcons : tp -> ctx -> ctx
+{-lcons : tp -> ctx -> ctx
 lcons T ⊡ = ⊡ , T
 lcons T (Γ , U) = (lcons T Γ) , U
 
@@ -189,7 +194,7 @@ _++_ : ctx -> ctx -> ctx
 Γ1 ++ ⊡ = Γ1
 Γ1 ++ (Γ2 , T) = (Γ1 ++ Γ2) , T
 
-bar2 : ∀ Γ Δ U -> var (Δ ++ lcons U  Γ) U
+bar2 : ∀ Γ Δ U -> var (Δ ++ lcons U Γ) U
 bar2 ⊡ Δ U = z
 bar2 (Γ , T) Δ U = s (bar2 Γ Δ U)
 
@@ -213,13 +218,38 @@ wkn*l : ∀ Δ Γ -> vsubst Γ (Δ ++ Γ)
 wkn*l Δ ⊡ = ⊡
 wkn*l Δ (Γ , T) = (vsubst-map s (wkn*l Δ Γ)) , z
 
+-- It might be feasible to define hereditary substitution in this form directly?
 cut' : ∀ {Γ1 Γ2 Δ T} -> nSubst Γ1 Δ -> ntm (Γ1 ++ Γ2) T -> ntm (Δ ++ Γ2) T
 cut' {⊡} {Γ2} {Δ} ⊡ N rewrite quux Γ2 = nappSubst (wkn*l Δ Γ2) N
 cut' {Γ1 , U} {Γ2} {Δ} (σ , N) N' rewrite baz Γ2 Γ1 U with cut' {Γ1} {lcons U Γ2} {Δ} σ N' | nappSubst (wkn* Δ Γ2) N
 ... | w1 | w rewrite foo2 Γ2 Δ U = w1 [[ (bar2 Γ2 Δ U) := w ]]
 
 cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut {Γ} σ t = cut' {Γ} {⊡} σ t
+cut {Γ} σ t = cut' {Γ} {⊡} σ t -}
+
+-- Simultaneous, more directly.
+mutual
+ [_] : ∀ {Γ1 Γ2 τ} -> nSubst Γ1 Γ2 -> ntm Γ1 τ -> ntm Γ2 τ
+ [ σ ] (ƛ N) = ƛ ([ n-ext σ ] N)
+ [ σ ] (▹ x S) = nSubst-app σ x ◆ << σ >> S
+ [ σ ] < M , N > = < [ σ ] M , [ σ ] N >
+ [ σ ] tt = tt
+ [ σ ] z = z
+ [ σ ] (s N) = s ([ σ ] N)
+ [ σ ] nil = nil
+ [ σ ] (cons N L) = cons ([ σ ] N) ([ σ ] L)
+
+ <<_>> : ∀ {Γ1 Γ2 τ σ} -> nSubst Γ1 Γ2 -> spine Γ1 τ σ -> spine Γ2 τ σ
+ << σ >> ε = ε
+ << σ >> (S , N) = << σ >> S , [ σ ] N
+ << σ >> (π₁ y) = π₁ (<< σ >> y)
+ << σ >> (π₂ y) = π₂ (<< σ >> y)
+
+ _◆_ : ∀ {Γ σ τ} -> ntm Γ σ -> spine Γ σ τ -> ntm Γ τ
+ N ◆ ε = N
+ ƛ N ◆ (S , N') = (N [[ z := N' ]]) ◆ S
+ < M , N > ◆ π₁ N' = M ◆ N'
+ < M , N > ◆ π₂ N' = N ◆ N'
 
 nId : ∀ {Γ} -> nSubst Γ Γ
 nId {⊡} = ⊡
@@ -267,7 +297,7 @@ lf-tp-vsubst σ unit = unit
 
 lf-tp-subst-atomic : ∀ {γ δ : ctx} (θ : nSubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
 lf-tp-subst-atomic θ lf-nat' = lf-nat'
-lf-tp-subst-atomic θ (lf-vec' N) = lf-vec' (cut θ N)
+lf-tp-subst-atomic θ (lf-vec' N) = lf-vec' ([ θ ] N)
 
 lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
 lf-tp-subst θ (atom A) = atom (lf-tp-subst-atomic θ A)
@@ -326,8 +356,6 @@ mutual
 
 lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
-
-
 
 vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
