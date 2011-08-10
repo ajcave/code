@@ -1,5 +1,11 @@
 module lf-hereditary where
 
+data _≡_ {A : Set} (x : A) : (y : A) -> Set where
+ refl : x ≡ x
+
+{-# BUILTIN EQUALITY _≡_ #-}
+{-# BUILTIN REFL refl #-}
+
 record _*_ (A B : Set) : Set where
  constructor _,_
  field
@@ -175,9 +181,45 @@ nv x = η-expand x ε
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
 n-ext θ = (nSubst-map (nappSubst wkn) θ) , nv z
 
+lcons : tp -> ctx -> ctx
+lcons T ⊡ = ⊡ , T
+lcons T (Γ , U) = (lcons T Γ) , U
+
+_++_ : ctx -> ctx -> ctx
+Γ1 ++ ⊡ = Γ1
+Γ1 ++ (Γ2 , T) = (Γ1 ++ Γ2) , T
+
+bar2 : ∀ Γ Δ U -> var (Δ ++ lcons U  Γ) U
+bar2 ⊡ Δ U = z
+bar2 (Γ , T) Δ U = s (bar2 Γ Δ U)
+
+foo2 : ∀ Γ Δ U -> (Δ ++ Γ) ≡ ((Δ ++ lcons U Γ) - bar2 Γ Δ U)
+foo2 ⊡ Δ U = refl
+foo2 (Γ , T) Δ U rewrite foo2 Γ Δ U = refl
+
+baz : ∀ Γ Δ U -> ((Δ , U) ++ Γ) ≡ (Δ ++ lcons U Γ)
+baz ⊡ Δ U = refl
+baz (Γ , T) Δ U rewrite baz Γ Δ U = refl
+
+quux : ∀ Γ -> (⊡ ++ Γ) ≡ Γ
+quux ⊡ = refl
+quux (Γ , T) rewrite quux Γ = refl
+
+wkn* : ∀ Δ Γ -> vsubst Δ (Δ ++ Γ)
+wkn* Δ ⊡ = id
+wkn* Δ (Γ , T) = vsubst-map s (wkn* Δ Γ)
+
+wkn*l : ∀ Δ Γ -> vsubst Γ (Δ ++ Γ)
+wkn*l Δ ⊡ = ⊡
+wkn*l Δ (Γ , T) = (vsubst-map s (wkn*l Δ Γ)) , z
+
+cut' : ∀ {Γ1 Γ2 Δ T} -> nSubst Γ1 Δ -> ntm (Γ1 ++ Γ2) T -> ntm (Δ ++ Γ2) T
+cut' {⊡} {Γ2} {Δ} ⊡ N rewrite quux Γ2 = nappSubst (wkn*l Δ Γ2) N
+cut' {Γ1 , U} {Γ2} {Δ} (σ , N) N' rewrite baz Γ2 Γ1 U with cut' {Γ1} {lcons U Γ2} {Δ} σ N' | nappSubst (wkn* Δ Γ2) N
+... | w1 | w rewrite foo2 Γ2 Δ U = w1 [[ (bar2 Γ2 Δ U) := w ]]
+
 cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut ⊡ t = {!!}
-cut (σ , N) t = cut σ (t [[ z := {!!} ]])  --(cut (n-ext σ) t) [[ z := N ]]
+cut {Γ} σ t = cut' {Γ} {⊡} σ t
 
 nId : ∀ {Γ} -> nSubst Γ Γ
 nId {⊡} = ⊡
@@ -285,11 +327,7 @@ mutual
 lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
 
-data _≡_ {A : Set} (x : A) : (y : A) -> Set where
- refl : x ≡ x
 
-{-# BUILTIN EQUALITY _≡_ #-}
-{-# BUILTIN REFL refl #-}
 
 vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
