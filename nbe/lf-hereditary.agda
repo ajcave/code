@@ -150,6 +150,7 @@ data nSubst : ∀ (Γ : ctx) (Δ : ctx) -> Set where
  ⊡ : ∀ {Δ} -> nSubst ⊡ Δ
  _,_ : ∀ {Γ Δ U} -> (σ : nSubst Γ Δ) -> (N : ntm Δ U) -> nSubst (Γ , U) Δ
 
+
 nSubst-app : ∀ {Γ Δ U} -> nSubst Γ Δ -> var Γ U -> ntm Δ U
 nSubst-app ⊡ ()
 nSubst-app (σ , N) z = N
@@ -250,6 +251,11 @@ mutual
  ƛ N ◆ (S , N') = (N [[ z := N' ]]) ◆ S
  < M , N > ◆ π₁ N' = M ◆ N'
  < M , N > ◆ π₂ N' = N ◆ N'
+
+
+_∘₂_ : ∀ {Γ Δ ψ} -> nSubst Γ Δ -> nSubst ψ Γ -> nSubst ψ Δ
+θ1 ∘₂ ⊡ = ⊡
+θ1 ∘₂ (σ , N) = (θ1 ∘₂ σ) , [ θ1 ] N
 
 nId : ∀ {Γ} -> nSubst Γ Γ
 nId {⊡} = ⊡
@@ -414,7 +420,7 @@ mutual
    (R : Γ ⊢ U ◂ r ⇒ T) -> Δ ⊢ (lf-tp-vsubst σ U) ◂ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
  rsubst-lemma θ ε = ε
  rsubst-lemma θ (R , N) with rsubst-lemma θ R | nsubst-lemma θ N
- ... | w1 | w2 = {!!}
+ ... | w1 | w2 = {!!} , {!!}
  rsubst-lemma θ (π₁ R) = π₁ (rsubst-lemma θ R)
  rsubst-lemma θ (π₂ R) = π₂ (rsubst-lemma θ R)
 
@@ -429,3 +435,36 @@ mutual
  nsubst-lemma θ (s N) = s (nsubst-lemma θ N)
  nsubst-lemma θ nil = nil
  nsubst-lemma θ (cons N L) = cons (nsubst-lemma θ N) (nsubst-lemma θ L)
+
+n-ext-functorality : ∀ {γ δ ψ} (σ1 : nSubst γ δ) (σ2 : nSubst ψ γ) (t : tp) -> ((n-ext σ1) ∘₂ (n-ext σ2)) ≡ n-ext {T = t} (σ1 ∘₂ σ2)
+n-ext-functorality σ1 ⊡ t = {!!}
+n-ext-functorality σ1 (σ , N) t = {!!}
+
+nsubst-dia-distrib : ∀ {γ δ} (σ : nSubst γ δ) {t s} (N : ntm γ t) (S : spine γ t s) -> ([ σ ] (N ◆ S)) ≡ (([ σ ] N) ◆ (<< σ >> S))
+nsubst-dia-distrib σ N ε = refl
+nsubst-dia-distrib σ (ƛ y) (S , N') rewrite nsubst-dia-distrib σ (y [[ z := N' ]]) S = {!!}
+nsubst-dia-distrib σ < M , N > (π₁ y) = nsubst-dia-distrib σ M y
+nsubst-dia-distrib σ < M , N > (π₂ y) = nsubst-dia-distrib σ N y  
+
+nsubst-app-distrib : ∀ {γ δ ψ} (σ1 : nSubst γ δ) (σ2 : nSubst ψ γ) {t} (x : var ψ t) -> [ σ1 ] (nSubst-app σ2 x) ≡ nSubst-app (σ1 ∘₂ σ2) x
+nsubst-app-distrib σ1 ⊡ ()
+nsubst-app-distrib σ1 (σ2 , N) z = refl
+nsubst-app-distrib σ1 (σ2 , N) (s y) = nsubst-app-distrib σ1 σ2 y
+
+mutual
+ rfunctor : ∀ {γ δ ψ} (σ1 : nSubst γ δ) (σ2 : nSubst ψ γ) {t} {u} (r : spine ψ t u)
+   -> << σ1 >> (<< σ2 >> r) ≡ << σ1 ∘₂ σ2 >> r
+ rfunctor σ1 σ2 ε = refl
+ rfunctor σ1 σ2 (S , N) rewrite rfunctor σ1 σ2 S | nfunctor σ1 σ2 N = refl
+ rfunctor σ1 σ2 (π₁ y) rewrite rfunctor σ1 σ2 y = refl
+ rfunctor σ1 σ2 (π₂ y) rewrite rfunctor σ1 σ2 y = refl
+ 
+ nfunctor : ∀ {γ δ ψ} (σ1 : nSubst γ δ) (σ2 : nSubst ψ γ) {t} (n : ntm ψ t) -> [ σ1 ] ([ σ2 ] n) ≡ [ σ1 ∘₂ σ2 ] n
+ nfunctor σ1 σ2 (ƛ {t} y) rewrite nfunctor (n-ext σ1) (n-ext σ2) y | n-ext-functorality σ1 σ2 t = refl
+ nfunctor σ1 σ2 (▹ x S) rewrite nsubst-dia-distrib σ1 (nSubst-app σ2 x) (<< σ2 >> S) | nsubst-app-distrib σ1 σ2 x | rfunctor σ1 σ2 S = refl
+ nfunctor σ1 σ2 < M , N > rewrite nfunctor σ1 σ2 M | nfunctor σ1 σ2 N = refl
+ nfunctor σ1 σ2 tt = refl
+ nfunctor σ1 σ2 z = refl
+ nfunctor σ1 σ2 (s N) rewrite nfunctor σ1 σ2 N = refl
+ nfunctor σ1 σ2 nil = refl
+ nfunctor σ1 σ2 (cons N L) rewrite nfunctor σ1 σ2 N | nfunctor σ1 σ2 L = refl
