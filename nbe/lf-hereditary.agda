@@ -86,7 +86,6 @@ ext σ = (vsubst-map s σ) , z
 
 mutual
  rappSubst : ∀ {Γ Δ S U} -> vsubst Δ Γ -> spine Δ S U -> spine Γ S U
- --rappSubst σ (v y) = v (vsubst-app σ y)
  rappSubst σ ε = ε
  rappSubst σ (R , N) = rappSubst σ R , nappSubst σ N
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
@@ -100,52 +99,6 @@ mutual
  nappSubst σ (s N) = s (nappSubst σ N)
  nappSubst σ nil = nil
  nappSubst σ (cons N L) = cons (nappSubst σ N) (nappSubst σ L)
-
-{-appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
-appSubst (atom A) σ M = nappSubst σ M
-appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
-appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
-appSubst unit σ tt = tt
-
-mutual
- reflect : ∀ {T Γ} -> spine Γ T -> sem Γ T
- reflect {atom A} N = neut N
- reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
- reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
- reflect {unit} N = tt
-
- reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
- reify {atom A} M = M
- reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
- reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
- reify {unit} N = tt
-
-subst : ctx -> ctx -> Set
-subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
-
-extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
-extend θ M z = M
-extend θ M (s y) = θ y
-
-mutual
- srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
- srSubst θ (v y) = θ y
- srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
- srSubst θ (π₁ R) = _*_.fst (srSubst θ R)
- srSubst θ (π₂ R) = _*_.snd (srSubst θ R)
-
- sSubst : ∀ {Γ Δ T} -> subst Γ Δ -> ntm Γ T -> sem Δ T
- sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (λ x → appSubst _ σ (θ x)) s) M
- sSubst θ (neut y) = srSubst θ y
- sSubst θ < M , N > = sSubst θ M , sSubst θ N
- sSubst θ tt = tt
- sSubst θ z = z
- sSubst θ (s N) = s (sSubst θ N)
- sSubst θ nil = nil
- sSubst θ (cons N L) = cons (sSubst θ N) (sSubst θ L) 
-
-sId : ∀ {Γ} -> subst Γ Γ
-sId x = reflect (v x) -}
 
 nSubst : ctx -> ctx -> Set
 nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
@@ -333,20 +286,20 @@ lf-vsubst-ext θ z = {!!}
 lf-vsubst-ext θ (s y) = {!!}
 
 mutual
- {-rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
-   (θ : lf-vsubst Γ σ Δ)
-   {t r} {T : lf-tp γ t} (R : Γ ⊢ r ⇒ T) -> Δ ⊢ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
- rsubst-lemma θ (v y) = v (θ y)
- rsubst-lemma θ (R · N) with rsubst-lemma θ R | nsubst-lemma θ N
+ rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
+   (θ : lf-vsubst Γ σ Δ) {t} {T : lf-tp γ t} {u} {U : lf-tp γ u} {r}
+   (R : Γ ⊢ U ◂ r ⇒ T) -> Δ ⊢ (lf-tp-vsubst σ U) ◂ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
+ rsubst-lemma θ ε = ε -- v (θ y)
+ rsubst-lemma θ (R , N) with rsubst-lemma θ R | nsubst-lemma θ N
  ... | w1 | w2 = {!!}
  rsubst-lemma θ (π₁ R) = π₁ (rsubst-lemma θ R)
- rsubst-lemma θ (π₂ R) = π₂ (rsubst-lemma θ R) -}
+ rsubst-lemma θ (π₂ R) = π₂ (rsubst-lemma θ R)
 
  nsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
    (θ : lf-vsubst Γ σ Δ)
    {t n} {T : lf-tp γ t} (N : Γ ⊢ n ⇐ T) -> Δ ⊢ (nappSubst σ n) ⇐ (lf-tp-vsubst σ T)
  nsubst-lemma θ (ƛ N) = ƛ (nsubst-lemma (lf-vsubst-ext θ) N)
- nsubst-lemma θ (▹ x R) = {!!} -- (rsubst-lemma θ R)
+ nsubst-lemma θ (▹ x R) = ▹ (θ x) (rsubst-lemma θ R)
  nsubst-lemma θ < M , N > = < (nsubst-lemma θ M) , (nsubst-lemma θ N) >
  nsubst-lemma θ tt = tt
  nsubst-lemma θ z = z
