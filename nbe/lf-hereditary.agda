@@ -499,6 +499,6 @@ mutual
  dia-lemma : ∀ {γ} {Γ : lf-ctx γ} {t u} {T : lf-tp γ t} {U : lf-tp γ u} {n r}
    -> Γ ⊢ n ⇐ T -> Γ ⊢ U ◂ r ⇒ T -> Γ ⊢ n ◆ r ⇐ U
  dia-lemma N ε = N
- dia-lemma (ƛ N) (R , N') = {!!} -- Hmm maybe if I proved that single substitution is equal to to the corresponding simultaneous substituion, everything would be OK, since this might still be structural on the simple type.
+ dia-lemma (ƛ N) (R , N') = {!!} -- Hmm maybe if I proved that single substitution is equal to to the corresponding simultaneous substituion, everything would be OK, since this might still be structural on the simple type. Nope.
  dia-lemma < M , N > (π₁ R) = dia-lemma M R
  dia-lemma < M , N > (π₂ R) = dia-lemma N R
