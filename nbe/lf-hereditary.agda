@@ -187,7 +187,7 @@ nv x = η-expand x ε
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
 n-ext θ = (nSubst-map (nappSubst wkn) θ) , nv z
 
-{-lcons : tp -> ctx -> ctx
+lcons : tp -> ctx -> ctx
 lcons T ⊡ = ⊡ , T
 lcons T (Γ , U) = (lcons T Γ) , U
 
@@ -195,13 +195,13 @@ _++_ : ctx -> ctx -> ctx
 Γ1 ++ ⊡ = Γ1
 Γ1 ++ (Γ2 , T) = (Γ1 ++ Γ2) , T
 
-bar2 : ∀ Γ Δ U -> var (Δ ++ lcons U Γ) U
+{-bar2 : ∀ Γ Δ U -> var (Δ ++ lcons U Γ) U
 bar2 ⊡ Δ U = z
 bar2 (Γ , T) Δ U = s (bar2 Γ Δ U)
 
 foo2 : ∀ Γ Δ U -> (Δ ++ Γ) ≡ ((Δ ++ lcons U Γ) - bar2 Γ Δ U)
 foo2 ⊡ Δ U = refl
-foo2 (Γ , T) Δ U rewrite foo2 Γ Δ U = refl
+foo2 (Γ , T) Δ U rewrite foo2 Γ Δ U = refl -}
 
 baz : ∀ Γ Δ U -> ((Δ , U) ++ Γ) ≡ (Δ ++ lcons U Γ)
 baz ⊡ Δ U = refl
@@ -218,7 +218,7 @@ wkn* Δ (Γ , T) = vsubst-map s (wkn* Δ Γ)
 wkn*l : ∀ Δ Γ -> vsubst Γ (Δ ++ Γ)
 wkn*l Δ ⊡ = ⊡
 wkn*l Δ (Γ , T) = (vsubst-map s (wkn*l Δ Γ)) , z
-
+{-
 -- It might be feasible to define hereditary substitution in this form directly?
 cut' : ∀ {Γ1 Γ2 Δ T} -> nSubst Γ1 Δ -> ntm (Γ1 ++ Γ2) T -> ntm (Δ ++ Γ2) T
 cut' {⊡} {Γ2} {Δ} ⊡ N rewrite quux Γ2 = nappSubst (wkn*l Δ Γ2) N
@@ -502,3 +502,90 @@ mutual
  dia-lemma (ƛ N) (R , N') = {!!} -- Hmm maybe if I proved that single substitution is equal to to the corresponding simultaneous substituion, everything would be OK, since this might still be structural on the simple type. Nope.
  dia-lemma < M , N > (π₁ R) = dia-lemma M R
  dia-lemma < M , N > (π₂ R) = dia-lemma N R
+
+prec : ∀ γ {t : tp} (x : var γ t) -> ctx
+prec ⊡ ()
+prec (Γ , .t) {t} z = Γ
+prec (Γ , T) (s y) = (prec Γ y)
+
+Prec : ∀ {γ t} (Γ : lf-ctx γ) (x : var γ t) -> lf-ctx (prec γ x)
+Prec ⊡ ()
+Prec (Γ' , T) z = Γ'
+Prec (Γ' , T) (s y) = Prec Γ' y
+
+prec-wkn : ∀ {γ t} (x : var γ t) -> vsubst (prec γ x) (γ - x)
+prec-wkn z = id
+prec-wkn (s y) = vsubst-map s (prec-wkn y)
+
+prec-wkn2 : ∀ {γ t} (x : var γ t) -> vsubst (prec γ x) γ
+prec-wkn2 z = wkn
+prec-wkn2 (s y) = vsubst-map s (prec-wkn2 y)
+
+lf-atp-sing-sub : ∀ {Γ t s} -> lf-atomic-tp Γ t -> (x : var Γ s) -> ntm (Γ - x) s -> lf-atomic-tp (Γ - x) t
+lf-atp-sing-sub lf-nat' x N = lf-nat'
+lf-atp-sing-sub (lf-vec' N) x N' = lf-vec' (N [[ x := N' ]])
+
+lf-tp-sing-sub : ∀ {Γ t σ} -> lf-tp Γ t -> (x : var Γ σ) -> ntm (Γ - x) σ -> lf-tp (Γ - x) t
+lf-tp-sing-sub (atom A) x N = atom (lf-atp-sing-sub A x N)
+lf-tp-sing-sub (S ⇝ T) x N = (lf-tp-sing-sub S x N) ⇝ (lf-tp-sing-sub T (s x) (nappSubst wkn N))
+lf-tp-sing-sub (S × T) x N = lf-tp-sing-sub S x N × lf-tp-sing-sub T x N
+lf-tp-sing-sub unit x N = unit
+
+_-₁_ : ∀ {γ} {t} -> (Γ : lf-ctx γ) -> (x : var γ t) -> (N : ntm (prec γ x) t) -> lf-ctx (γ - x)
+_-₁_ ⊡ () N
+_-₁_ (Γ , T') z N = Γ
+_-₁_ (Γ , T') (s y) N = ((Γ -₁ y) N) , lf-tp-sing-sub T' y (nappSubst (prec-wkn y) N)
+
+mutual
+ n-sub-lem : ∀ {γ t s} {T : lf-tp γ t} {x} {S : lf-tp (prec γ x) s} {Γ : lf-ctx γ} {n} (X : lf-var Γ (lf-tp-vsubst (prec-wkn2 x) S) x) {m : ntm (prec γ x) s}
+   -> Γ ⊢ n ⇐ T  
+   -> (Prec Γ x) ⊢ m ⇐ S
+   -> ((Γ -₁ x) m) ⊢ (n [[ x := (nappSubst (prec-wkn x) m) ]]) ⇐ (lf-tp-sing-sub T x (nappSubst (prec-wkn x) m))
+ n-sub-lem X (ƛ N) M = ƛ (n-sub-lem {!!} N {!!})
+ n-sub-lem {x = x} X (▹ {x = x'} X' R) M with eq x x'
+ n-sub-lem {x = .x} X (▹ X' R) M | same {τ} {x} = {!!}
+ n-sub-lem {x = .x} X (▹ X' R) M | diff x y = ▹ {!!} {!!}
+ n-sub-lem X < M , N > M' = < (n-sub-lem X M M') , (n-sub-lem X N M') >
+ n-sub-lem X tt M = {!!}
+ n-sub-lem X z M = {!!}
+ n-sub-lem X (s N) M = {!!}
+ n-sub-lem X nil M = {!!}
+ n-sub-lem X (cons N L) M = {!!}
+
+-- r-sub-lem : ∀ {γ τ σ ρ} -> spine Γ τ ρ -> (x : var Γ σ) -> ntm (Γ - x) σ -> spine (Γ - x) τ ρ
+
+-- dia-lem : ∀ {γ τ σ} -> ntm Γ σ -> spine Γ σ τ -> ntm Γ τ
+
+{-wkv : ∀ {Γ σ τ} (x : var Γ σ) -> var (Γ - x) τ -> var Γ τ
+wkv z y = s y
+wkv (s y) z = z
+wkv (s y) (s y') = s (wkv y y')
+
+data eqV {Γ} : ∀ {τ σ} -> var Γ τ -> var Γ σ -> Set where
+ same : ∀ {τ} {x : var Γ τ} -> eqV x x
+ diff : ∀ {τ σ} (x : var Γ τ) (y : var (Γ - x) σ) -> eqV x (wkv x y)
+
+eq : ∀ {Γ τ σ} -> (x : var Γ τ) -> (y : var Γ σ) -> eqV x y -}
+
+mutual
+ nsub : ∀ {Γ1} Γ2 {τ σ} -> ntm ((Γ1 , σ) ++ Γ2) τ -> ntm Γ1 σ -> ntm (Γ1 ++ Γ2) τ
+ nsub Γ (ƛ {T} y) M = ƛ (nsub (Γ , T) y M)
+ nsub Γ (▹ x S) M = {!!}
+ nsub Γ < M , N > M' = < nsub Γ M M' , nsub Γ N M' >
+ nsub Γ tt M = tt
+ nsub Γ z M = z
+ nsub Γ (s N) M = s (nsub Γ N M)
+ nsub Γ nil M = nil
+ nsub Γ (cons N L) M = cons (nsub Γ N M) (nsub Γ L M)
+
+ rsub  : ∀ {Γ1} Γ2 {τ σ ρ} -> spine ((Γ1 , σ) ++ Γ2) τ ρ -> ntm Γ1 σ -> spine (Γ1 ++ Γ2) τ ρ
+ rsub Γ ε N = ε
+ rsub Γ (S , N) N' = (rsub Γ S N') , (nsub Γ N N')
+ rsub Γ (π₁ y) N = π₁ (rsub Γ y N)
+ rsub Γ (π₂ y) N = π₂ (rsub Γ y N)
+
+ dia : ∀ {Γ τ σ} -> ntm Γ σ -> spine Γ σ τ -> ntm Γ τ
+ dia N ε = N
+ dia (ƛ y) (S , N') = dia (nsub ⊡ y N') S
+ dia < M , N > (π₁ y) = dia M y
+ dia < M , N > (π₂ y) = dia N y
