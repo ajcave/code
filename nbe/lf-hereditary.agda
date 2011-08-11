@@ -585,7 +585,7 @@ eq2 ⊡ z = same2
 eq2 ⊡ (s y) = diff2 y
 eq2 (Γ' , .τ) {σ} {τ} z = diff2 z
 eq2 (Γ' , T) (s y) with eq2 Γ' y
-eq2 {σ} (Γ , _) (s .(thatone Γ)) | same2 = same2
+eq2 (Γ , _) (s .(thatone Γ)) | same2 = same2
 eq2 (Γ , _) (s .(wkv2 Γ x)) | diff2 x = diff2 (s x)
 
 mutual
@@ -612,3 +612,36 @@ mutual
  dia (ƛ y) (S , N') = dia (nsub ⊡ y N') S
  dia < M , N > (π₁ y) = dia M y
  dia < M , N > (π₂ y) = dia N y
+
+data ctx-suffix (γ : ctx) : ctx -> Set where
+ ⊡ : ctx-suffix γ ⊡
+ _,_ : ∀ {δ} (Γ : ctx-suffix γ δ) -> {t : tp} -> (T : lf-tp (γ ++ δ) t) -> ctx-suffix γ (δ , t)
+
+-- It's more uniform if we append ctx-suffixes directly (category). Then should ntms be in a pair of contexts? Weird..
+_+++_ : ∀ {γ δ} (Γ : lf-ctx γ) -> (Δ : ctx-suffix γ δ) -> lf-ctx (γ ++ δ)
+Γ +++ ⊡ = Γ
+Γ +++ (Γ' , T) = (Γ +++ Γ') , T
+
+lf-atp-sing-sub2 : ∀ {Γ t s} Δ -> lf-atomic-tp ((Γ , s) ++ Δ) t -> ntm Γ s -> lf-atomic-tp (Γ ++ Δ) t
+lf-atp-sing-sub2 Δ lf-nat' N = lf-nat'
+lf-atp-sing-sub2 Δ (lf-vec' N) N' = lf-vec' (nsub Δ N N')
+
+lf-tp-sing-sub2 : ∀ {Γ t σ} Δ -> lf-tp ((Γ , σ) ++ Δ) t -> ntm Γ σ -> lf-tp (Γ ++ Δ) t
+lf-tp-sing-sub2 Δ (atom A) N = atom (lf-atp-sing-sub2 Δ A N)
+lf-tp-sing-sub2 Δ (S ⇝ T) N = (lf-tp-sing-sub2 Δ S N) ⇝ (lf-tp-sing-sub2 (Δ , _) T N)
+lf-tp-sing-sub2 Δ (S × T) N = (lf-tp-sing-sub2 Δ S N) × (lf-tp-sing-sub2 Δ T N)
+lf-tp-sing-sub2 Δ unit N = unit
+
+suffix-sub : ∀ {δ γ t} (N : ntm γ t) -> (Δ : ctx-suffix (γ , t) δ) -> ctx-suffix γ δ
+suffix-sub N ⊡ = ⊡
+suffix-sub {δ , t} N (Γ , T) = (suffix-sub N Γ) , (lf-tp-sing-sub2 δ T N)
+
+mutual
+ nsublem2 : ∀ {γ δ} {Γ : lf-ctx γ} {s} (Δ : ctx-suffix (γ , s) δ) {t} {S : lf-tp γ s} {T : lf-tp ((γ , s) ++ δ) t} {n m} ->
+     ((Γ , S) +++ Δ) ⊢ n ⇐ T
+  -> Γ ⊢ m ⇐ S
+  -> (Γ +++ (suffix-sub m Δ)) ⊢ nsub δ n m ⇐ (lf-tp-sing-sub2 δ T m)
+ nsublem2 Δ N M = {!!}
+
+
+ 
