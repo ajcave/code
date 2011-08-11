@@ -567,10 +567,33 @@ data eqV {Γ} : ∀ {τ σ} -> var Γ τ -> var Γ σ -> Set where
 
 eq : ∀ {Γ τ σ} -> (x : var Γ τ) -> (y : var Γ σ) -> eqV x y -}
 
+wkv2 : ∀ {Γ} Δ {σ τ} (x : var (Γ ++ Δ) τ) -> var ((Γ , σ) ++ Δ) τ
+wkv2 ⊡ x = s x
+wkv2 (Γ' , τ) z = z
+wkv2 (Γ' , T) (s y) = s (wkv2 Γ' y) 
+
+thatone : ∀ {Γ} Δ {σ} -> var ((Γ , σ) ++ Δ) σ
+thatone ⊡ = z
+thatone (Γ' , T) = s (thatone Γ')
+
+data eqV2 {Γ} : ∀ {τ} σ Δ -> var ((Γ , σ) ++ Δ) τ -> Set where
+ same2 : ∀ {σ Δ} -> eqV2 σ Δ (thatone Δ)
+ diff2 : ∀ {τ σ Δ} (x : var (Γ ++ Δ) τ) -> eqV2 σ Δ (wkv2 Δ x)
+
+eq2 : ∀ {Γ} Δ {σ τ} (x : var ((Γ , σ) ++ Δ) τ) -> eqV2 σ Δ x
+eq2 ⊡ z = same2
+eq2 ⊡ (s y) = diff2 y
+eq2 (Γ' , .τ) {σ} {τ} z = diff2 z
+eq2 (Γ' , T) (s y) with eq2 Γ' y
+eq2 {σ} (Γ , _) (s .(thatone Γ)) | same2 = same2
+eq2 (Γ , _) (s .(wkv2 Γ x)) | diff2 x = diff2 (s x)
+
 mutual
  nsub : ∀ {Γ1} Γ2 {τ σ} -> ntm ((Γ1 , σ) ++ Γ2) τ -> ntm Γ1 σ -> ntm (Γ1 ++ Γ2) τ
  nsub Γ (ƛ {T} y) M = ƛ (nsub (Γ , T) y M)
- nsub Γ (▹ x S) M = {!!}
+ nsub Γ (▹ x S) M with eq2 Γ x
+ nsub Γ (▹ .(thatone Γ) S) M | same2 = dia (nappSubst (wkn* _ Γ) M) (rsub Γ S M)
+ nsub Γ (▹ .(wkv2 Γ x) S) M | diff2 x = ▹ x (rsub Γ S M)
  nsub Γ < M , N > M' = < nsub Γ M M' , nsub Γ N M' >
  nsub Γ tt M = tt
  nsub Γ z M = z
