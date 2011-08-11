@@ -641,7 +641,14 @@ mutual
      ((Γ , S) +++ Δ) ⊢ n ⇐ T
   -> Γ ⊢ m ⇐ S
   -> (Γ +++ (suffix-sub m Δ)) ⊢ nsub δ n m ⇐ (lf-tp-sing-sub2 δ T m)
- nsublem2 Δ N M = {!!}
+ nsublem2 Δ (ƛ {t} {T} N) M = ƛ (nsublem2 (Δ , T) N M)
+ nsublem2 Δ (▹ X R) M = {!!}
+ nsublem2 Δ < M , N > M' = < nsublem2 Δ M M' , nsublem2 Δ N M' >
+ nsublem2 Δ tt M = tt
+ nsublem2 Δ z M = z
+ nsublem2 Δ (s N) M = s (nsublem2 Δ N M)
+ nsublem2 Δ nil M = nil
+ nsublem2 Δ (cons N L) M = cons (nsublem2 Δ N M) (nsublem2 Δ L M)
 
 
  
