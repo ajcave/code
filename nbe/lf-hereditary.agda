@@ -320,51 +320,13 @@ data lf-ctx : ctx -> Set where
  ⊡ : lf-ctx ⊡
  _,_ : ∀ {γ} (Γ : lf-ctx γ) -> {t : tp} -> (T : lf-tp γ t) -> lf-ctx (γ , t)
 
-data lf-var : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (x : var γ t) -> Set where
- z : ∀ {γ Γ t T} -> lf-var {γ , t} (Γ , T) (lf-tp-wkn t T) z
- s : ∀ {γ Γ t T u U x} -> lf-var {γ} Γ {t} T x -> lf-var (Γ , U) (lf-tp-wkn u T) (s x)
 
-mutual
- data _⊢_◂_⇒_ {γ} (Γ : lf-ctx γ) {u} (U : lf-tp γ u) : ∀ {t}  (r : spine γ t u) (T : lf-tp γ t) -> Set where
-  ε : Γ ⊢ U ◂ ε ⇒ U
-  _,_ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {r n} ->
-         (R : Γ ⊢ U ◂ r ⇒ (lf-tp-subst (n-single n) S))
-      -> (N : Γ ⊢ n ⇐ T)
-      ->      Γ ⊢ U ◂ (r , n) ⇒ (T ⇝ S)
-  π₁ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
-         (R : Γ ⊢ U ◂ r ⇒ T)
-       ->     Γ ⊢ U ◂ (π₁ r) ⇒ (T × S)
-  π₂ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
-         (R : Γ ⊢ U ◂ r ⇒ S)
-       ->     Γ ⊢ U ◂ (π₂ r) ⇒ (T × S)
- data _⊢_⇐_ {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
-  ƛ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {n} ->
-         (N : (Γ , T) ⊢    n  ⇐ S)
-      ->       Γ      ⊢ (ƛ n) ⇐ (T ⇝ S)
-  ▹ : ∀ {t} {a} {A : lf-atomic-tp γ a} {r} {x} {T} ->
-         (X : lf-var Γ {t} T x)
-         (R : Γ ⊢ (atom A) ◂ r ⇒ T)
-       ->     Γ ⊢ (▹ x r) ⇐ (atom A)
-  <_,_> : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {m n} ->
-         (M : Γ ⊢ m ⇐ T)
-      -> (N : Γ ⊢ n ⇐ S)
-      ->      Γ ⊢ < m , n > ⇐ (T × S)
-  tt : Γ ⊢ tt ⇐ unit
-  z : Γ ⊢ z ⇐ lf-nat
-  s : ∀ {n}
-         (N : Γ ⊢ n ⇐ lf-nat)
-      ->      Γ ⊢ (s n) ⇐ lf-nat
-  nil : Γ ⊢ nil ⇐ (lf-vec z)
-  cons : ∀ {m n l}
-         (N : Γ ⊢ n ⇐ lf-nat)
-      -> (L : Γ ⊢ l ⇐ (lf-vec m))
-      ->      Γ ⊢ (cons n l) ⇐ (lf-vec (s m))
 
 {-lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x) -}
 
-lf-nSubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : nSubst γ δ) (Δ : lf-ctx δ) -> Set
-lf-nSubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> Δ ⊢ (nSubst-app σ x) ⇐ (lf-tp-subst σ U)
+--lf-nSubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : nSubst γ δ) (Δ : lf-ctx δ) -> Set
+--lf-nSubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> Δ ⊢ (nSubst-app σ x) ⇐ (lf-tp-subst σ U)
 
 {-vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
@@ -417,8 +379,8 @@ lf-vsubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-vsubst {γ} {
 lf-vsubst-ext θ z = {!!}
 lf-vsubst-ext θ (s y) = {!!} -}
 
-lf-nSubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-nSubst {γ} {δ} Γ σ Δ) -> lf-nSubst (Γ , T) (n-ext σ) (Δ , (lf-tp-subst σ T))
-lf-nSubst-ext θ x = {!!}
+--lf-nSubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-nSubst {γ} {δ} Γ σ Δ) -> lf-nSubst (Γ , T) (n-ext σ) (Δ , (lf-tp-subst σ T))
+--lf-nSubst-ext θ x = {!!}
 
 {-mutual
  rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
@@ -441,7 +403,7 @@ lf-nSubst-ext θ x = {!!}
  nsubst-lemma θ (s N) = s (nsubst-lemma θ N)
  nsubst-lemma θ nil = nil
  nsubst-lemma θ (cons N L) = cons (nsubst-lemma θ N) (nsubst-lemma θ L) -}
-
+{-
 n-ext-functorality : ∀ {γ δ ψ} (σ1 : nSubst γ δ) (σ2 : nSubst ψ γ) (t : tp) -> ((n-ext σ1) ∘₂ (n-ext σ2)) ≡ n-ext {T = t} (σ1 ∘₂ σ2)
 n-ext-functorality σ1 ⊡ t = {!!}
 n-ext-functorality σ1 (σ , N) t = {!!}
@@ -473,99 +435,7 @@ mutual
  nfunctor σ1 σ2 z = refl
  nfunctor σ1 σ2 (s N) rewrite nfunctor σ1 σ2 N = refl
  nfunctor σ1 σ2 nil = refl
- nfunctor σ1 σ2 (cons N L) rewrite nfunctor σ1 σ2 N | nfunctor σ1 σ2 L = refl
-
- rsubst-lemma2 : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : nSubst γ δ}
-   (θ : lf-nSubst Γ σ Δ) {t} {T : lf-tp γ t} {u} {U : lf-tp γ u} {r}
-   (R : Γ ⊢ U ◂ r ⇒ T) -> Δ ⊢ (lf-tp-subst σ U) ◂ (<< σ >> r) ⇒ (lf-tp-subst σ T)
- rsubst-lemma2 θ ε = ε
- rsubst-lemma2 θ (R , N) with rsubst-lemma2 θ R | nsubst-lemma2 θ N
- ... | w1 | w2 = {!!}
- rsubst-lemma2 θ (π₁ R) = π₁ (rsubst-lemma2 θ R)
- rsubst-lemma2 θ (π₂ R) = π₂ (rsubst-lemma2 θ R)
-
- nsubst-lemma2 : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : nSubst γ δ}
-   (θ : lf-nSubst Γ σ Δ)
-   {t n} {T : lf-tp γ t} (N : Γ ⊢ n ⇐ T) -> Δ ⊢ ([ σ ] n) ⇐ (lf-tp-subst σ T)
- nsubst-lemma2 θ (ƛ N) = ƛ (nsubst-lemma2 (lf-nSubst-ext θ) N)
- nsubst-lemma2 θ (▹ X R) = dia-lemma (θ X) (rsubst-lemma2 θ R)
- nsubst-lemma2 θ < M , N > = < nsubst-lemma2 θ M , nsubst-lemma2 θ N >
- nsubst-lemma2 θ tt = tt
- nsubst-lemma2 θ z = z
- nsubst-lemma2 θ (s N) = s (nsubst-lemma2 θ N)
- nsubst-lemma2 θ nil = nil
- nsubst-lemma2 θ (cons N L) = cons (nsubst-lemma2 θ N) (nsubst-lemma2 θ L)
-
- dia-lemma : ∀ {γ} {Γ : lf-ctx γ} {t u} {T : lf-tp γ t} {U : lf-tp γ u} {n r}
-   -> Γ ⊢ n ⇐ T -> Γ ⊢ U ◂ r ⇒ T -> Γ ⊢ n ◆ r ⇐ U
- dia-lemma N ε = N
- dia-lemma (ƛ N) (R , N') = {!!} -- Hmm maybe if I proved that single substitution is equal to to the corresponding simultaneous substituion, everything would be OK, since this might still be structural on the simple type. Nope.
- dia-lemma < M , N > (π₁ R) = dia-lemma M R
- dia-lemma < M , N > (π₂ R) = dia-lemma N R
-
-prec : ∀ γ {t : tp} (x : var γ t) -> ctx
-prec ⊡ ()
-prec (Γ , .t) {t} z = Γ
-prec (Γ , T) (s y) = (prec Γ y)
-
-Prec : ∀ {γ t} (Γ : lf-ctx γ) (x : var γ t) -> lf-ctx (prec γ x)
-Prec ⊡ ()
-Prec (Γ' , T) z = Γ'
-Prec (Γ' , T) (s y) = Prec Γ' y
-
-prec-wkn : ∀ {γ t} (x : var γ t) -> vsubst (prec γ x) (γ - x)
-prec-wkn z = id
-prec-wkn (s y) = vsubst-map s (prec-wkn y)
-
-prec-wkn2 : ∀ {γ t} (x : var γ t) -> vsubst (prec γ x) γ
-prec-wkn2 z = wkn
-prec-wkn2 (s y) = vsubst-map s (prec-wkn2 y)
-
-lf-atp-sing-sub : ∀ {Γ t s} -> lf-atomic-tp Γ t -> (x : var Γ s) -> ntm (Γ - x) s -> lf-atomic-tp (Γ - x) t
-lf-atp-sing-sub lf-nat' x N = lf-nat'
-lf-atp-sing-sub (lf-vec' N) x N' = lf-vec' (N [[ x := N' ]])
-
-lf-tp-sing-sub : ∀ {Γ t σ} -> lf-tp Γ t -> (x : var Γ σ) -> ntm (Γ - x) σ -> lf-tp (Γ - x) t
-lf-tp-sing-sub (atom A) x N = atom (lf-atp-sing-sub A x N)
-lf-tp-sing-sub (S ⇝ T) x N = (lf-tp-sing-sub S x N) ⇝ (lf-tp-sing-sub T (s x) (nappSubst wkn N))
-lf-tp-sing-sub (S × T) x N = lf-tp-sing-sub S x N × lf-tp-sing-sub T x N
-lf-tp-sing-sub unit x N = unit
-
-_-₁_ : ∀ {γ} {t} -> (Γ : lf-ctx γ) -> (x : var γ t) -> (N : ntm (prec γ x) t) -> lf-ctx (γ - x)
-_-₁_ ⊡ () N
-_-₁_ (Γ , T') z N = Γ
-_-₁_ (Γ , T') (s y) N = ((Γ -₁ y) N) , lf-tp-sing-sub T' y (nappSubst (prec-wkn y) N)
-
-mutual
- n-sub-lem : ∀ {γ t s} {T : lf-tp γ t} {x} {S : lf-tp (prec γ x) s} {Γ : lf-ctx γ} {n} (X : lf-var Γ (lf-tp-vsubst (prec-wkn2 x) S) x) {m : ntm (prec γ x) s}
-   -> Γ ⊢ n ⇐ T  
-   -> (Prec Γ x) ⊢ m ⇐ S
-   -> ((Γ -₁ x) m) ⊢ (n [[ x := (nappSubst (prec-wkn x) m) ]]) ⇐ (lf-tp-sing-sub T x (nappSubst (prec-wkn x) m))
- n-sub-lem X (ƛ N) M = ƛ (n-sub-lem {!!} N {!!})
- n-sub-lem {x = x} X (▹ {x = x'} X' R) M with eq x x'
- n-sub-lem {x = .x} X (▹ X' R) M | same {τ} {x} = {!!}
- n-sub-lem {x = .x} X (▹ X' R) M | diff x y = ▹ {!!} {!!}
- n-sub-lem X < M , N > M' = < (n-sub-lem X M M') , (n-sub-lem X N M') >
- n-sub-lem X tt M = {!!}
- n-sub-lem X z M = {!!}
- n-sub-lem X (s N) M = {!!}
- n-sub-lem X nil M = {!!}
- n-sub-lem X (cons N L) M = {!!}
-
--- r-sub-lem : ∀ {γ τ σ ρ} -> spine Γ τ ρ -> (x : var Γ σ) -> ntm (Γ - x) σ -> spine (Γ - x) τ ρ
-
--- dia-lem : ∀ {γ τ σ} -> ntm Γ σ -> spine Γ σ τ -> ntm Γ τ
-
-{-wkv : ∀ {Γ σ τ} (x : var Γ σ) -> var (Γ - x) τ -> var Γ τ
-wkv z y = s y
-wkv (s y) z = z
-wkv (s y) (s y') = s (wkv y y')
-
-data eqV {Γ} : ∀ {τ σ} -> var Γ τ -> var Γ σ -> Set where
- same : ∀ {τ} {x : var Γ τ} -> eqV x x
- diff : ∀ {τ σ} (x : var Γ τ) (y : var (Γ - x) σ) -> eqV x (wkv x y)
-
-eq : ∀ {Γ τ σ} -> (x : var Γ τ) -> (y : var Γ σ) -> eqV x y -}
+ nfunctor σ1 σ2 (cons N L) rewrite nfunctor σ1 σ2 N | nfunctor σ1 σ2 L = refl -}
 
 wkv2 : ∀ {Γ} Δ {σ τ} (x : var (Γ ++ Δ) τ) -> var ((Γ , σ) ++ Δ) τ
 wkv2 ⊡ x = s x
@@ -617,6 +487,17 @@ data ctx-suffix (γ : ctx) : ctx -> Set where
  ⊡ : ctx-suffix γ ⊡
  _,_ : ∀ {δ} (Γ : ctx-suffix γ δ) -> {t : tp} -> (T : lf-tp (γ ++ δ) t) -> ctx-suffix γ (δ , t)
 
+lf-tp-wkn2 : ∀ δ {γ} t {s} (S : lf-tp (γ ++ δ) s) -> lf-tp ((γ , t) ++ δ) s
+lf-tp-wkn2 δ t (atom A) = {!!}
+lf-tp-wkn2 δ t (S ⇝ T) = (lf-tp-wkn2 δ t S) ⇝ (lf-tp-wkn2 (δ , _) t T)
+lf-tp-wkn2 δ t (S × T) = lf-tp-wkn2 δ t S × lf-tp-wkn2 δ t T
+lf-tp-wkn2 δ t unit = unit
+
+data lf-var : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (x : var γ t) -> Set where
+ z : ∀ {γ Γ t T} -> lf-var {γ , t} (Γ , T) (lf-tp-wkn2 ⊡ t T) z
+ s : ∀ {γ Γ t T u U x} -> lf-var {γ} Γ {t} T x -> lf-var (Γ , U) (lf-tp-wkn2 ⊡ u T) (s x)
+
+
 -- It's more uniform if we append ctx-suffixes directly (category). Then should ntms be in a pair of contexts? Weird..
 _+++_ : ∀ {γ δ} (Γ : lf-ctx γ) -> (Δ : ctx-suffix γ δ) -> lf-ctx (γ ++ δ)
 Γ +++ ⊡ = Γ
@@ -632,6 +513,62 @@ lf-tp-sing-sub2 Δ (S ⇝ T) N = (lf-tp-sing-sub2 Δ S N) ⇝ (lf-tp-sing-sub2 (
 lf-tp-sing-sub2 Δ (S × T) N = (lf-tp-sing-sub2 Δ S N) × (lf-tp-sing-sub2 Δ T N)
 lf-tp-sing-sub2 Δ unit N = unit
 
+mutual
+ data _⊢_◂_⇒_ {γ} (Γ : lf-ctx γ) {u} (U : lf-tp γ u) : ∀ {t}  (r : spine γ t u) (T : lf-tp γ t) -> Set where
+  ε : Γ ⊢ U ◂ ε ⇒ U
+  _,_ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {r n} ->
+         (R : Γ ⊢ U ◂ r ⇒ (lf-tp-sing-sub2 ⊡ S n))
+      -> (N : Γ ⊢ n ⇐ T)
+      ->      Γ ⊢ U ◂ (r , n) ⇒ (T ⇝ S)
+  π₁ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
+         (R : Γ ⊢ U ◂ r ⇒ T)
+       ->     Γ ⊢ U ◂ (π₁ r) ⇒ (T × S)
+  π₂ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
+         (R : Γ ⊢ U ◂ r ⇒ S)
+       ->     Γ ⊢ U ◂ (π₂ r) ⇒ (T × S)
+ data _⊢_⇐_ {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
+  ƛ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {n} ->
+         (N : (Γ , T) ⊢    n  ⇐ S)
+      ->       Γ      ⊢ (ƛ n) ⇐ (T ⇝ S)
+  ▹ : ∀ {t} {a} {A : lf-atomic-tp γ a} {r} {x} {T} ->
+         (X : lf-var Γ {t} T x)
+         (R : Γ ⊢ (atom A) ◂ r ⇒ T)
+       ->     Γ ⊢ (▹ x r) ⇐ (atom A)
+  <_,_> : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {m n} ->
+         (M : Γ ⊢ m ⇐ T)
+      -> (N : Γ ⊢ n ⇐ S)
+      ->      Γ ⊢ < m , n > ⇐ (T × S)
+  tt : Γ ⊢ tt ⇐ unit
+  z : Γ ⊢ z ⇐ lf-nat
+  s : ∀ {n}
+         (N : Γ ⊢ n ⇐ lf-nat)
+      ->      Γ ⊢ (s n) ⇐ lf-nat
+  nil : Γ ⊢ nil ⇐ (lf-vec z)
+  cons : ∀ {m n l}
+         (N : Γ ⊢ n ⇐ lf-nat)
+      -> (L : Γ ⊢ l ⇐ (lf-vec m))
+      ->      Γ ⊢ (cons n l) ⇐ (lf-vec (s m))
+
+
+suffix-wkn : ∀ δ {γ} s (Δ : ctx-suffix γ δ) -> ctx-suffix (γ , s) δ
+suffix-wkn ⊡ S ⊡ = ⊡
+suffix-wkn (δ , t) S (Γ , T) = (suffix-wkn δ S Γ) , lf-tp-wkn2 δ S T
+
+lf-wkv : ∀ {γ} {Γ : lf-ctx γ} {δ} (Δ : ctx-suffix γ δ) {s} {S : lf-tp γ s} {t} {T : lf-tp (γ ++ δ) t} {x} (X : lf-var (Γ +++ Δ) T x)
+ -> lf-var ((Γ , S) +++ (suffix-wkn δ s Δ)) (lf-tp-wkn2 δ s T) (wkv2 δ x)
+lf-wkv ⊡ x = s x
+lf-wkv (Γ' , τ) z = {!!} -- z
+lf-wkv (Γ' , T) (s y) = {!!} --s (lf-wkv Γ' y) 
+
+lf-thatone : ∀ {γ} {Γ : lf-ctx γ} {s} {δ} (Δ : ctx-suffix (γ , s) δ) {S : lf-tp γ s} -> lf-var ((Γ , S) +++ Δ) {!!} (thatone δ)
+lf-thatone ⊡ = z
+lf-thatone (Γ' , T) = s (lf-thatone Γ')
+
+data lf-eqV {γ} {Γ : lf-ctx γ} : ∀ {s} (S : lf-tp γ s) {δ} (Δ : ctx-suffix (γ , s) δ) {t} {T : lf-tp ((γ , s) ++ δ) t}
+ {x : var ((γ , s) ++ δ) t} -> lf-var ((Γ , S) +++ Δ) T x -> Set where
+ same : ∀ {σ Δ} -> lf-eqV σ Δ (lf-thatone Δ)
+ before : ∀ {σ Δ T} {x} (X : lf-var Γ T x) -> lf-eqV σ Δ (lf-wkv Δ X)
+
 suffix-sub : ∀ {δ γ t} (N : ntm γ t) -> (Δ : ctx-suffix (γ , t) δ) -> ctx-suffix γ δ
 suffix-sub N ⊡ = ⊡
 suffix-sub {δ , t} N (Γ , T) = (suffix-sub N Γ) , (lf-tp-sing-sub2 δ T N)
@@ -642,13 +579,25 @@ mutual
   -> Γ ⊢ m ⇐ S
   -> (Γ +++ (suffix-sub m Δ)) ⊢ nsub δ n m ⇐ (lf-tp-sing-sub2 δ T m)
  nsublem2 Δ (ƛ {t} {T} N) M = ƛ (nsublem2 (Δ , T) N M)
- nsublem2 Δ (▹ X R) M = {!!}
+ nsublem2 {δ = δ} Δ {n = ▹ x r} (▹ X R) M with eq2 δ x
+ nsublem2 {δ = δ} Δ {n = ▹ .(thatone δ) r} (▹ X R) M | same2 = {!!}
+ nsublem2 {δ = δ} Δ {n = ▹ .(wkv2 δ x) r} (▹ X R) M | diff2 x = ▹ {!!} {!!}
  nsublem2 Δ < M , N > M' = < nsublem2 Δ M M' , nsublem2 Δ N M' >
  nsublem2 Δ tt M = tt
  nsublem2 Δ z M = z
  nsublem2 Δ (s N) M = s (nsublem2 Δ N M)
  nsublem2 Δ nil M = nil
  nsublem2 Δ (cons N L) M = cons (nsublem2 Δ N M) (nsublem2 Δ L M)
+
+ rsublem2 : ∀ {γ δ} {Γ : lf-ctx γ} {s} (Δ : ctx-suffix (γ , s) δ) {t} {S : lf-tp γ s} {T : lf-tp ((γ , s) ++ δ) t}
+     {u} {U : lf-tp ((γ , s) ++ δ) u} {r m} ->
+     ((Γ , S) +++ Δ) ⊢ U ◂ r ⇒ T
+  -> Γ ⊢ m ⇐ S
+  -> (Γ +++ (suffix-sub m Δ)) ⊢ (lf-tp-sing-sub2 δ U m) ◂ (rsub δ r m) ⇒ (lf-tp-sing-sub2 δ T m)
+ rsublem2 Δ ε M = ε
+ rsublem2 Δ (R , N) M = {!!} , (nsublem2 Δ N M)
+ rsublem2 Δ (π₁ R) M = π₁ (rsublem2 Δ R M)
+ rsublem2 Δ (π₂ R) M = π₂ (rsublem2 Δ R M)
 
 
  
