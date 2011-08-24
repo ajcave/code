@@ -176,4 +176,5 @@ mutual
  reify : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm ⊡ Γ ([[ θ ]] T)
  reify Δ' (v α) M = candidate.reify (vari Δ' α) M
  reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) wkn (reflect Δ' T (v z))))
- reify Δ' (Π T) M = Λ {!!}
+ reify {θ = θ} Δ' (Π T) M with reify {θ = θ , Π (v z)} (Δ' , {!!}) T (M (Π (v z)) {!!})
+ ... | w = Λ {!!}

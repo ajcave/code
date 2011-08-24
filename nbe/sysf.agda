@@ -115,27 +115,31 @@ mutual
   Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (tctxM [ s ] Γ) T -> ntm Δ Γ (Π T)
   ▹ : ∀ {A} -> rtm Δ Γ (v A) -> ntm Δ Γ (v A)
 
+vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
+vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
+
 record candidate Δ T : Set₁ where
  field
   sem : (Γ : tctx Δ) -> Set
+  funct : ∀ {Γ1 Γ2} -> vsubst Γ1 Γ2 -> sem Γ1 -> sem Γ2
   reflect : ∀ {Γ} -> rtm Δ Γ T -> sem Γ
   reify : ∀ {Γ} -> sem Γ -> ntm Δ Γ T
 
 〚_〛 : (Δ1 : lctx) -> Set
 〚 ⊡ 〛 = unit
-〚 Δ , l 〛 = 〚 Δ 〛 * (candidate (Δ , l) (v z))
+〚 Δ , l 〛 = 〚 Δ 〛 * (candidate (Δ , l) (v z)) -- THIS
 
 -- Crap I'm gonna have to Kripke this thing
 wknc : ∀ {Δ T S} -> candidate Δ T -> candidate (Δ , S) ([ s ] T)
-wknc C = record { sem = λ Γ → {!!}; reflect = {!!}; reify = {!!} }
+wknc C = record { sem = λ Γ → {!!}; reflect = {!!}; reify = {!!}; funct = {!!} }
 
 vari : ∀ {Δ : lctx} (Δ' : 〚 Δ 〛) (α : tvar Δ _) -> candidate Δ (v α)
 vari (Δ' , α) z = α
 vari (Δ' , α) (s y) = wknc (vari Δ' y)
 
-vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
-vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
 
+-- Now I'm thinking this is stratified in a sense. First, we can substitute into types (normalization for F_omega)
+-- Then, sem for terms is defined using type substitutions (Δ').
 sem : ∀ {Δ} (Δ' : 〚 Δ 〛) (T : tp Δ) -> (Γ : tctx Δ) -> Set
 sem Δ' (v y) Γ = candidate.sem (vari Δ' y) Γ
 sem Δ' (T ⇒ S) Γ = ∀ Γ' -> vsubst Γ Γ' -> sem Δ' T Γ' → sem Δ' S Γ'
@@ -155,13 +159,14 @@ mutual
  rappSubst σ (R $ S) = (rappSubst σ R) $ S
  nappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> ntm Δ Γ S -> ntm Δ Γ' S 
  nappSubst σ (ƛ N) = ƛ (nappSubst (ext σ) N)
- nappSubst σ (Λ N) = Λ (nappSubst {!!} N)
+ nappSubst σ (Λ N) = Λ (nappSubst {!!} N) -- easy
  nappSubst σ (▹ R) = ▹ (rappSubst σ R)
 
 wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
 mutual
+ -- Easy (purely syntactic)
  twkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> rtm Δ Γ T -> rtm (Δ , tt) (tctxM [ s ] Γ) ([ s ] T)
  twkn (v y) = {!!}
  twkn (R · N) = (twkn R) · {!!}
@@ -177,13 +182,14 @@ lem2 f g ⊡ = refl
 lem2 f g (θ , T) rewrite lem2 f g θ = refl -}
 
 neut-candidate : ∀ {Δ} -> candidate (Δ , tt) (v z)
-neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = id; reify = ▹ }
+neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = id; reify = ▹; funct = rappSubst }
 
 mutual
+ -- TODO: Huh. Maybe what I want to do is quantify over Δ2, and consider Δ' to be a (semantic) substitution from Δ to Δ2
  reflect : ∀ {Δ} (Δ' : 〚 Δ 〛) T {Γ} -> rtm Δ Γ T -> sem Δ' T Γ
  reflect Δ' (v α) r = candidate.reflect (vari Δ' α) r
  reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
- reflect Δ' (Π T) {Γ} r = λ R → reflect (Δ' , R) T (twkn {!!} $ (v z)) 
+ reflect Δ' (Π T) {Γ} r = λ R → reflect (Δ' , R) T (twkn {!!} $ (v z)) -- easy (Purely syntactic) (I think)
 
  reify : ∀ {Δ} (Δ' : 〚 Δ 〛) T {Γ} -> sem Δ' T Γ -> ntm Δ Γ T
  reify Δ' (v α) M = candidate.reify (vari Δ' α) M
@@ -194,36 +200,41 @@ id-cands : ∀ {Δ} -> 〚 Δ 〛
 id-cands {⊡} = tt
 id-cands {Δ , tt} = id-cands , neut-candidate
 
-subst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) -> Set
-subst Γ1 Γ2 = ∀ {T} -> var Γ1 T -> sem id-cands T Γ2
+subst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) (Δ' : 〚 Δ 〛) -> Set
+subst Γ1 Γ2 Δ' = ∀ {T} -> var Γ1 T -> sem Δ' T Γ2
 
-extend : ∀ {Δ} {Γ1 Γ2 : tctx Δ} {T} -> subst Γ1 Γ2 -> sem id-cands T Γ2 -> subst (Γ1 , T) Γ2
-extend θ M z = M
-extend θ M (s y) = θ y
+extend : ∀ {Δ} {Γ1 Γ2 : tctx Δ} (Δ' : 〚 Δ 〛) {T} -> subst Γ1 Γ2 Δ' -> sem Δ' T Γ2 -> subst (Γ1 , T) Γ2 Δ'
+extend Δ' θ M z = M
+extend Δ' θ M (s y) = θ y
 
 appSubst : ∀ {Δ} {Γ1 Γ2 : tctx Δ} {Δ'} S -> vsubst Γ1 Γ2 -> sem Δ' S Γ1 -> sem Δ' S Γ2
-appSubst (v α) θ M = {!!}
+appSubst (v α) θ M = candidate.funct (vari _ α) θ M
 appSubst (T ⇒ S) θ M = λ Γ' σ x → M Γ' (σ ∘ θ) x
-appSubst (Π T) θ M = λ R → appSubst T ? (M R)
+appSubst (Π T) θ M = λ R → appSubst T {!!} (M R) -- easy
 
 -- Here we have admissibility of cut for ntm. Not necessary for nbe,
 -- but nice to state.
 mutual
- srSubst : ∀ {Δ Γ1 Γ2 T} -> subst Γ1 Γ2 -> rtm Δ Γ1 T -> sem id-cands T Γ2
- srSubst θ (v x) = θ x
- srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
- srSubst θ (R $ S) with srSubst θ R neut-candidate
- ... | w = {!!}
+ srSubst : ∀ {Δ Γ1 Γ2 T} (Δ' : 〚 Δ 〛) -> subst Γ1 Γ2 Δ' -> rtm Δ Γ1 T -> sem Δ' T Γ2
+ srSubst Δ' θ (v y) = θ y
+ srSubst Δ' θ (R · N) = (srSubst Δ' θ R) _ id (sSubst Δ' θ N)
+ srSubst Δ' θ (R $ S) with srSubst Δ' θ R
+ ... | w = {!!} -- TODO. Yes. Here we need more quantification. A candidate for the top variable isn't enough. We need it for every type.
+                 -- So that we can instantiate it with S. R needs to be instantiated to "sem Δ' S"!!!
+                 -- Then a lemma: sem Δ' ([S / X] T) = sem (Δ' , sem-cand Δ' S) T
+                 -- Maybe I can perform type substitutions on sem. Then we could stick to using the top variable. I highly doubt it.
 
- sSubst : ∀ {Δ Γ1 Γ2 T} -> subst Γ1 Γ2 -> ntm Δ Γ1 T -> sem id-cands T Γ2
- sSubst θ (ƛ N) = λ Γ' σ x' → sSubst (extend (λ {T0} x0 → appSubst T0 σ (θ x0)) x') N
- sSubst θ (Λ N) = λ R → sSubst {!!} {!!}
- sSubst θ (▹ R) = srSubst θ R
+ -- Δ' acts as a kind of type substitution, analogous to the term substitution.
+ sSubst : ∀ {Δ Γ1 Γ2 T} (Δ' : 〚 Δ 〛) -> subst Γ1 Γ2 Δ' -> ntm Δ Γ1 T -> sem Δ' T Γ2
+ sSubst Δ' θ (ƛ {T} {S} N) = λ Γ' σ s → sSubst Δ' (extend Δ' (λ {T0} x → appSubst T0 σ (θ x)) s) N
+ sSubst Δ' θ (Λ N) = λ R → sSubst (Δ' , R) {!!} N -- Here is a kind of weakening... I think it's doable.
+                                                   -- T can't contain the top variable. Yep. It seems we can weaken substs by type vars
+ sSubst Δ' θ (▹ R) = srSubst Δ' θ R
 
 nsubst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) -> Set
-nsubst Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm _ Γ2 T
-cut : ∀ {Δ Γ1 Γ2 T} -> nsubst Γ1 Γ2 -> ntm Δ Γ1 T -> ntm Δ Γ2 T 
-cut θ N = reify id-cands _ (sSubst (λ x → sSubst (λ x' → reflect _ _ (v x')) (θ x)) N)
+nsubst {Δ} Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm Δ Γ2 T
+cut : ∀ {Δ Γ1 Γ2 T} -> nsubst Γ1 Γ2 -> ntm Δ Γ1 T -> ntm Δ Γ2 T -- TODO: I probably need to cut the types simultaneously.
+cut θ N = {!!} --reify id-cands _ (sSubst (λ x → sSubst (λ x' → reflect _ _ (v x')) (θ x)) N)
 
 
 
