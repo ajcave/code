@@ -125,7 +125,7 @@ record candidate Δ T : Set₁ where
   reflect : ∀ {Γ} -> rtm Δ Γ T -> sem Γ
   reify : ∀ {Γ} -> sem Γ -> ntm Δ Γ T
 
-〚_〛 : (Δ1 : lctx) -> Set
+〚_〛 : (Δ1 : lctx) -> Set₁
 〚 ⊡ 〛 = unit
 〚 Δ , l 〛 = 〚 Δ 〛 * (candidate (Δ , l) (v z)) -- THIS
 
@@ -181,6 +181,12 @@ lem2 : ∀ {Δ1 Δ2 Δ3 Δ4} (f : tp Δ1 -> tp Δ2) (g : tp Δ2 -> tp Δ3) (θ :
 lem2 f g ⊡ = refl
 lem2 f g (θ , T) rewrite lem2 f g θ = refl -}
 
+
+appSubst : ∀ {Δ} {Γ1 Γ2 : tctx Δ} {Δ'} S -> vsubst Γ1 Γ2 -> sem Δ' S Γ1 -> sem Δ' S Γ2
+appSubst (v α) θ M = candidate.funct (vari _ α) θ M
+appSubst (T ⇒ S) θ M = λ Γ' σ x → M Γ' (σ ∘ θ) x
+appSubst (Π T) θ M = λ R → appSubst T {!!} (M R) -- easy
+
 neut-candidate : ∀ {Δ} -> candidate (Δ , tt) (v z)
 neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = id; reify = ▹; funct = rappSubst }
 
@@ -196,6 +202,12 @@ mutual
  reify Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , T) wkn (reflect Δ' T (v z))))
  reify Δ' (Π T) M = Λ (reify (Δ' , neut-candidate) T (M neut-candidate))
 
+sem-candidate : ∀ {Δ} (Δ' : 〚 Δ 〛) (T : tp Δ) -> candidate Δ T
+sem-candidate {Δ} Δ' T = record { sem = sem Δ' T; funct = appSubst T; reflect = reflect Δ' T; reify = reify Δ' T }
+
+--lem : ∀ {Δ} (Δ' : 〚 Δ 〛) S (T : tp (Δ , _)) -> (sem (Δ' , (sem-candidate Δ' S)) T) ≡ (sem Δ' ?)
+--lem Δ' S T = ?
+
 id-cands : ∀ {Δ} -> 〚 Δ 〛
 id-cands {⊡} = tt
 id-cands {Δ , tt} = id-cands , neut-candidate
@@ -207,10 +219,6 @@ extend : ∀ {Δ} {Γ1 Γ2 : tctx Δ} (Δ' : 〚 Δ 〛) {T} -> subst Γ1 Γ2 Δ
 extend Δ' θ M z = M
 extend Δ' θ M (s y) = θ y
 
-appSubst : ∀ {Δ} {Γ1 Γ2 : tctx Δ} {Δ'} S -> vsubst Γ1 Γ2 -> sem Δ' S Γ1 -> sem Δ' S Γ2
-appSubst (v α) θ M = candidate.funct (vari _ α) θ M
-appSubst (T ⇒ S) θ M = λ Γ' σ x → M Γ' (σ ∘ θ) x
-appSubst (Π T) θ M = λ R → appSubst T {!!} (M R) -- easy
 
 -- Here we have admissibility of cut for ntm. Not necessary for nbe,
 -- but nice to state.
