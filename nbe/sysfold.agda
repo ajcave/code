@@ -113,25 +113,27 @@ mutual
   Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (tctxM [ s ] Γ) T -> ntm Δ Γ (Π T)
   ▹ : ∀ {A} -> rtm Δ Γ (v A) -> ntm Δ Γ (v A)
 
-record candidate T : Set₁ where
+vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
+vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
+
+record candidate Δ T : Set₁ where
  field
-  sem : (Γ : tctx ⊡) -> Set
-  reflect : ∀ {Γ} -> rtm ⊡ Γ T -> sem Γ
-  reify : ∀ {Γ} -> sem Γ -> ntm ⊡ Γ T
+  sem : (Γ : tctx Δ) -> Set
+  funct : ∀ {Γ1 Γ2} -> vsubst Γ1 Γ2 -> sem Γ1 -> sem Γ2
+  reflect : ∀ {Γ} -> rtm Δ Γ T -> sem Γ
+  reify : ∀ {Γ} -> sem Γ -> ntm Δ Γ T
 
-〚_〛 : (Δ : lctx) (θ : tsubst Δ ⊡) -> Set
+〚_〛 : (Δ1 : lctx) {Δ2 : lctx} (θ : tsubst Δ1 Δ2) -> Set
 〚 ⊡ 〛 θ = unit
-〚 Δ , l 〛 (θ , U) = (〚 Δ 〛 θ) * (candidate U)
+〚 Δ , l 〛 (θ , U) = (〚 Δ 〛 θ) * (candidate _ U)
 
-vari : ∀ {Δ : lctx} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) (α : tvar Δ _) -> candidate (tsubstLookup θ α)
+vari : ∀ {Δ1 Δ2 : lctx} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) (α : tvar Δ1 _) -> candidate Δ2 (tsubstLookup θ α)
 vari {θ = ⊡} _ ()
 vari {θ = θ , T} (Δ' , α) z = α
 vari {θ = θ , T} (Δ' , α) (s y) = vari Δ' y
 
-vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
-vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
 
-sem : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) (T : tp Δ) -> (Γ : tctx ⊡) -> Set
+sem : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) (T : tp Δ1) -> (Γ : tctx Δ2) -> Set
 sem Δ' (v y) Γ = candidate.sem (vari Δ' y) Γ
 sem Δ' (T ⇒ S) Γ = ∀ Γ' -> vsubst Γ Γ' -> sem Δ' T Γ' → sem Δ' S Γ'
 sem Δ' (Π T) Γ = ∀ U R  → sem {θ = _ , U} (Δ' , R) T Γ
@@ -153,6 +155,11 @@ mutual
  nappSubst σ (Λ N) = Λ (nappSubst {!!} N)
  nappSubst σ (▹ R) = ▹ (rappSubst σ R)
 
+appSubst : ∀ {Δ1 Δ2} {Γ1 Γ2 : tctx Δ2} {θ : tsubst Δ1 Δ2} {Δ' : 〚 Δ1 〛 θ} S -> vsubst Γ1 Γ2 -> sem Δ' S Γ1 -> sem Δ' S Γ2
+appSubst {Δ' = Δ'} (v α) θ M = candidate.funct (vari Δ' α) θ M
+appSubst (T ⇒ S) θ M = λ Γ' σ x → M Γ' (σ ∘ θ) x
+appSubst (Π T) θ M = λ U R → appSubst T θ (M U R)
+
 wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
@@ -164,17 +171,20 @@ lem2 : ∀ {Δ1 Δ2 Δ3 Δ4} (f : tp Δ1 -> tp Δ2) (g : tp Δ2 -> tp Δ3) (θ :
 lem2 f g ⊡ = refl
 lem2 f g (θ , T) rewrite lem2 f g θ = refl
 
+neut-candidate : ∀ {Δ} -> candidate (Δ , tt) (v z)
+neut-candidate {Δ} = record { sem = λ Γ → rtm _ Γ (v z); reflect = λ x → x; reify = ▹; funct = rappSubst}
+
 mutual
- reflect : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> rtm ⊡ Γ ([[ θ ]] T) -> sem Δ' T Γ
+ reflect : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) T {Γ} -> rtm Δ2 Γ ([[ θ ]] T) -> sem Δ' T Γ
  reflect Δ' (v α) r = candidate.reflect (vari Δ' α) r
  reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
- reflect {θ = θ} Δ' (Π T) {Γ} r = foo
-   where foo : (U : tp ⊡) (R : candidate U) -> sem (Δ' , R) T Γ
+ reflect {Δ2 = Δ2} {θ = θ} Δ' (Π T) {Γ} r = foo
+   where foo : (U : tp Δ2) (R : candidate Δ2 U) -> sem (Δ' , R) T Γ
          foo U R with r $ U
-         ... | w rewrite lem (tsubstMap [ s ] θ , v z) (⊡ , U) T | lem2 [ s ] [[ ⊡ , U ]] θ = reflect {θ = θ , U} (Δ' , R) T {Γ = Γ} {!!}
+         ... | w = reflect (Δ' , R) {!!} {!!}
+         --... | w rewrite lem (tsubstMap [ s ] θ , v z) (? , U) T | lem2 [ s ] [[ ⊡ , U ]] θ = reflect {θ = θ , U} (Δ' , R) T {Γ = Γ} {!!}
 
- reify : ∀ {Δ} {θ : tsubst Δ ⊡} (Δ' : 〚 Δ 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm ⊡ Γ ([[ θ ]] T)
+ reify : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm Δ2 Γ ([[ θ ]] T)
  reify Δ' (v α) M = candidate.reify (vari Δ' α) M
  reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) wkn (reflect Δ' T (v z))))
- reify {θ = θ} Δ' (Π T) M with reify {θ = θ , Π (v z)} (Δ' , {!!}) T (M (Π (v z)) {!!})
- ... | w = Λ {!!}
+ reify {θ = θ} Δ' (Π T) M = Λ (reify ({!!} , neut-candidate) T {!!}) -- Yep, M needs to allow all larger thingies
