@@ -233,18 +233,31 @@ sem-cand θ Δ' T Δ3 σ = record { sem = sem {θ = tsubstMap [ σ ] θ} (st-sub
 subst : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Γ1 : tctx Δ1) (Γ1 : tctx Δ2) (Δ' : 〚 Δ1 〛 θ) -> Set
 subst Γ1 Γ2 Δ' = ∀ {T} -> var Γ1 T -> sem Δ' T Γ2
 
+slift : ∀ {Δ1 Γ1 Δ2 Δ3 Γ2} {θ : tsubst Δ1 Δ2} {Δ' : 〚 Δ1 〛 θ} (ρ : tvsubst Δ2 Δ3) -> subst Γ1 Γ2 Δ' -> subst Γ1 (tctxM [ ρ ] Γ2) (st-subst-app ρ Δ')
+slift ρ σ z = {!!}
+slift ρ σ (s y) = {!!}
+
 extend : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} {Γ1 : tctx Δ1} {Γ2 : tctx Δ2} (Δ' : 〚 Δ1 〛 θ) {T} -> subst Γ1 Γ2 Δ' -> sem Δ' T Γ2 -> subst (Γ1 , T) Γ2 Δ'
 extend Δ' θ M z = M
 extend Δ' θ M (s y) = θ y
 
--- Here we have admissibility of cut for ntm. Not necessary for nbe,
--- but nice to state.
+_↔_ : Set -> Set -> Set
+A ↔ B = (A -> B) * (B -> A) 
+
+sem-subst : ∀ {Δ1 Δ2 Γ} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) S T -> sem {θ = θ , [[ θ ]] S} (Δ' , sem-cand θ Δ' S) T Γ ↔ sem Δ' ([[ id-tsubst , S ]] T) Γ
+sem-subst Δ' S (v y) = (λ M → {!!}) , (λ M → {!!})
+sem-subst Δ' S (T ⇒ S') = (λ M Γ' x' x0 → {!!}) , λ M Γ' x' x0 → {!!}
+sem-subst Δ' S (Π T) = (λ M Δ2' σ U R → {!!}) , (λ M Δ2' σ U R → {!!})
+
+--st-subst-app-id : ∀ {Δ1 Δ2} (θ : tsubst Δ1 Δ2) (Δ' : 〚 Δ1 〛 θ) -> (st-subst-app … Δ') ≡ Δ'
+--st-subst-app-id θ Δ' = ?
+
 mutual
  srSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> rtm Δ1 Γ1 T -> sem Δ' T Γ2
  srSubst Δ' σ (v y) = σ y
  srSubst Δ' σ (R · N) = (srSubst Δ' σ R) _ … (sSubst Δ' σ N)
  srSubst {θ = θ} Δ' σ (R $ S) with srSubst Δ' σ R _ … ([[ θ ]] S) (sem-cand θ Δ' S)
- ... | w = {!!}
+ ... | w = _*_.fst (sem-subst Δ' S {!!}) {!!}
 
  sSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> ntm Δ1 Γ1 T -> sem Δ' T Γ2
  sSubst Δ' σ (ƛ {T} {S} N) = λ Γ' σ' s → sSubst Δ' (extend Δ' (λ {T0} x → appSubst T0 σ' (σ x)) s) N
