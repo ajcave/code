@@ -204,3 +204,38 @@ mutual
  reify Δ' (v α) M = {!!} -- candidate.reify (vari Δ' α) M
  reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) wkn (reflect Δ' T (v z))))
  reify {θ = θ} Δ' (Π T) M = Λ (reify (st-subst-app s Δ' , neut-candidate) T (M _ s (v z) neut-candidate))
+
+sem-cand : ∀ {Δ1 Δ2} (θ : tsubst Δ1 Δ2) (Δ' : 〚 Δ1 〛 θ) (T : tp Δ1) -> candidate Δ2 ([[ θ ]] T)
+sem-cand θ Δ' T Δ3 σ = record { sem = sem {θ = tsubstMap [ σ ] θ} (st-subst-app σ Δ') T; funct = {!!}; reflect = λ x → {!!}; reify = reify {!!} {!!} }
+
+subst : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Γ1 : tctx Δ1) (Γ1 : tctx Δ2) (Δ' : 〚 Δ1 〛 θ) -> Set
+subst Γ1 Γ2 Δ' = ∀ {T} -> var Γ1 T -> sem Δ' T Γ2
+
+extend : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} {Γ1 : tctx Δ1} {Γ2 : tctx Δ2} (Δ' : 〚 Δ1 〛 θ) {T} -> subst Γ1 Γ2 Δ' -> sem Δ' T Γ2 -> subst (Γ1 , T) Γ2 Δ'
+extend Δ' θ M z = M
+extend Δ' θ M (s y) = θ y
+
+-- Here we have admissibility of cut for ntm. Not necessary for nbe,
+-- but nice to state.
+mutual
+ srSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> rtm Δ1 Γ1 T -> sem Δ' T Γ2
+ srSubst Δ' σ (v y) = σ y
+ srSubst Δ' σ (R · N) = (srSubst Δ' σ R) _ … (sSubst Δ' σ N)
+ srSubst {θ = θ} Δ' σ (R $ S) with srSubst Δ' σ R _ … ([[ θ ]] S) (sem-cand θ Δ' S)
+ ... | w = {!!} -- TODO. Yes. Here we need more quantification. A candidate for the top variable isn't enough. We need it for every type.
+                 -- So that we can instantiate it with S. R needs to be instantiated to "sem Δ' S"!!!
+                 -- Then a lemma: sem Δ' ([S / X] T) = sem (Δ' , sem-cand Δ' S) T
+                 -- Maybe I can perform type substitutions on sem. Then we could stick to using the top variable. I highly doubt it.
+
+ -- Δ' acts as a kind of type substitution, analogous to the term substitution.
+ sSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> ntm Δ1 Γ1 T -> sem Δ' T Γ2
+ sSubst Δ' θ (ƛ {T} {S} N) = λ Γ' σ s → sSubst Δ' (extend Δ' (λ {T0} x → appSubst T0 σ (θ x)) s) N
+ sSubst Δ' θ (Λ N) = λ Δ3 σ U R → {!!} --sSubst (Δ' , R) {!!} N -- Here is a kind of weakening... I think it's doable.
+                                                   -- T can't contain the top variable. Yep. It seems we can weaken substs by type vars
+ sSubst Δ' θ (▹ R) = srSubst Δ' θ R
+
+nsubst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) -> Set
+nsubst {Δ} Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm Δ Γ2 T
+cut : ∀ {Δ Γ1 Γ2 T} -> nsubst Γ1 Γ2 -> ntm Δ Γ1 T -> ntm Δ Γ2 T -- TODO: I probably need to cut the types simultaneously.
+cut θ N = {!!} --reify id-cands _ (sSubst (λ x → sSubst (λ x' → reflect _ _ (v x')) (θ x)) N)
+
