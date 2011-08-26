@@ -216,14 +216,14 @@ neut-candidate {Δ} = λ Δ2 σ → record { sem = λ Γ → rtm Δ2 Γ ([ σ ] 
 
 mutual
  reflect : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) T {Γ} -> rtm Δ2 Γ ([[ θ ]] T) -> sem Δ' T Γ
- reflect Δ' (v α) r = cand.reflect (vari Δ' α _ …) {!!} --candidate.reflect (vari Δ' α) r
+ reflect Δ' (v α) r = cand.reflect (vari Δ' α _ …) {!!} -- Easy
  reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
  reflect {Δ2 = Δ2} {θ = θ} Δ' (Π T) {Γ} r = foo --foo
    where foo : ∀ Δ2' (σ : tvsubst Δ2 Δ2') (U : tp Δ2') (R : candidate Δ2' U) -> sem {θ = tsubstMap [ σ ] θ , U} (st-subst-app σ Δ' , R) T (tctxM [ σ ] Γ)
          foo Δ2' σ U R with (rappTSubst σ r) $ U
          ... | w = reflect {θ = tsubstMap [ σ ] θ , U} (st-subst-app σ Δ' , R) T {!!}
  reify : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm Δ2 Γ ([[ θ ]] T)
- reify Δ' (v α) M = {!!} -- candidate.reify (vari Δ' α) M
+ reify Δ' (v α) M = {!!} -- Easy
  reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) wkn (reflect Δ' T (v z))))
  reify {θ = θ} Δ' (Π T) M = Λ (reify (st-subst-app s Δ' , neut-candidate) T (M _ s (v z) neut-candidate))
 
