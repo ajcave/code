@@ -159,6 +159,15 @@ ext : ∀ {Δ : lctx} {Γ Γ' : tctx Δ} {T} -> vsubst Γ Γ' -> vsubst (Γ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
 
+varTsubst : ∀ {Δ1 Δ2 Γ T} (σ : tvsubst Δ1 Δ2) -> var Γ T -> var (tctxM [ σ ] Γ) ([ σ ] T)
+varTsubst σ z = z
+varTsubst σ (s y) = s (varTsubst σ y)
+
+lift : ∀ {Δ1 Δ2 Γ1 Γ2} (σ : tvsubst Δ1 Δ2) -> vsubst Γ1 Γ2 -> vsubst (tctxM [ σ ] Γ1) (tctxM [ σ ] Γ2)
+lift {Δ1} {Δ2} {⊡} σ θ ()
+lift {Δ1} {Δ2} {Γ , T} σ θ z = varTsubst σ (θ z)
+lift {Δ1} {Δ2} {Γ , T} σ θ (s y) = lift σ (θ ∘ s) y
+
 mutual
  rappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> rtm Δ Γ S -> rtm Δ Γ' S
  rappSubst σ (v y) = v (σ y)
@@ -166,17 +175,30 @@ mutual
  rappSubst σ (R $ S) = (rappSubst σ R) $ S
  nappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> ntm Δ Γ S -> ntm Δ Γ' S 
  nappSubst σ (ƛ N) = ƛ (nappSubst (ext σ) N)
- nappSubst σ (Λ N) = Λ (nappSubst {!!} N)
+ nappSubst σ (Λ N) = Λ (nappSubst (lift s σ) N)
  nappSubst σ (▹ R) = ▹ (rappSubst σ R)
 
 mutual
- rappTSubst : ∀ {Δ Δ' Γ S} -> (σ : tvsubst Δ Δ') -> rtm Δ Γ S -> rtm Δ' (tctxM [ σ ] Γ) ([ σ ] S)
- rappTSubst σ R = {!!}
+ rappTSubst : ∀ {Δ Δ' Γ S} (σ : tvsubst Δ Δ') -> rtm Δ Γ S -> rtm Δ' (tctxM [ σ ] Γ) ([ σ ] S)
+ rappTSubst σ (v y) = v (varTsubst σ y)
+ rappTSubst σ (R · N) = (rappTSubst σ R) · nappTSubst σ N
+ rappTSubst σ (R $ S) with rappTSubst σ R
+ ... | w = {!!}
+ nappTSubst : ∀ {Δ Δ' Γ S} (σ : tvsubst Δ Δ') -> ntm Δ Γ S -> ntm Δ' (tctxM [ σ ] Γ) ([ σ ] S)
+ nappTSubst σ (ƛ N) = ƛ (nappTSubst σ N)
+ nappTSubst σ (Λ N) = Λ {!!}
+ nappTSubst σ (▹ R) = ▹ (rappTSubst σ R)
+
 
 appSubst : ∀ {Δ1 Δ2} {Γ1 Γ2 : tctx Δ2} {θ : tsubst Δ1 Δ2} {Δ' : 〚 Δ1 〛 θ} S -> vsubst Γ1 Γ2 -> sem Δ' S Γ1 -> sem Δ' S Γ2
-appSubst {Δ' = Δ'} (v α) θ M = cand.funct (vari Δ' α _ …) θ M --candidate.funct (vari Δ' α) θ M
+appSubst {Δ' = Δ'} (v α) θ M = cand.funct (vari Δ' α _ …) θ M
 appSubst (T ⇒ S) θ M = λ Γ' σ x → M Γ' (σ ∘ θ) x
-appSubst (Π T) θ M = λ Δ σ U R → appSubst T {!!} (M Δ σ U R) -- TODO: I think this is okay..
+appSubst (Π T) θ M = λ Δ σ U R → appSubst T (lift σ θ) (M Δ σ U R)
+
+appTSubst : ∀ {Δ1 Δ2 Δ3 Γ} {θ : tsubst Δ1 Δ2} {Δ' : 〚 Δ1 〛 θ} S -> (σ : tvsubst Δ2 Δ3) -> sem Δ' S Γ -> sem (st-subst-app σ Δ') S (tctxM [ σ ] Γ)
+appTSubst (v y) σ M = {!!} -- TODO: ???
+appTSubst (T ⇒ S) σ M = λ Γ' σ' x → {!!} -- Crap, this will have to quantify over extensions to Δ too.. Or.. ?
+appTSubst (Π T) σ M = λ Δ2' σ' U R → {!!} -- "Easy"
 
 wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -222,17 +244,12 @@ mutual
  srSubst Δ' σ (v y) = σ y
  srSubst Δ' σ (R · N) = (srSubst Δ' σ R) _ … (sSubst Δ' σ N)
  srSubst {θ = θ} Δ' σ (R $ S) with srSubst Δ' σ R _ … ([[ θ ]] S) (sem-cand θ Δ' S)
- ... | w = {!!} -- TODO. Yes. Here we need more quantification. A candidate for the top variable isn't enough. We need it for every type.
-                 -- So that we can instantiate it with S. R needs to be instantiated to "sem Δ' S"!!!
-                 -- Then a lemma: sem Δ' ([S / X] T) = sem (Δ' , sem-cand Δ' S) T
-                 -- Maybe I can perform type substitutions on sem. Then we could stick to using the top variable. I highly doubt it.
+ ... | w = {!!}
 
- -- Δ' acts as a kind of type substitution, analogous to the term substitution.
  sSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> ntm Δ1 Γ1 T -> sem Δ' T Γ2
- sSubst Δ' θ (ƛ {T} {S} N) = λ Γ' σ s → sSubst Δ' (extend Δ' (λ {T0} x → appSubst T0 σ (θ x)) s) N
- sSubst Δ' θ (Λ N) = λ Δ3 σ U R → {!!} --sSubst (Δ' , R) {!!} N -- Here is a kind of weakening... I think it's doable.
-                                                   -- T can't contain the top variable. Yep. It seems we can weaken substs by type vars
- sSubst Δ' θ (▹ R) = srSubst Δ' θ R
+ sSubst Δ' σ (ƛ {T} {S} N) = λ Γ' σ' s → sSubst Δ' (extend Δ' (λ {T0} x → appSubst T0 σ' (σ x)) s) N
+ sSubst {θ = θ} Δ' σ (Λ N) = λ Δ3 σt U R → sSubst {θ = tsubstMap [ σt ] θ , U} (st-subst-app σt Δ' , R) {!!} N
+ sSubst Δ' σ (▹ R) = srSubst Δ' σ R
 
 nsubst : ∀ {Δ} (Γ1 Γ2 : tctx Δ) -> Set
 nsubst {Δ} Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm Δ Γ2 T
