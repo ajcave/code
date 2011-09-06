@@ -147,6 +147,11 @@ lem1 σ1 σ2 (Π T) rewrite lem1 (vext σ1) (vext σ2) T | lem1' σ1 σ2 = refl
 cand-app' : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) {U : tp _} (R : candidate Δ1 U) {Δ3} (σ' : tvsubst Δ2 Δ3)  -> cand Δ3 ([ σ' ] ([ σ ] U))
 cand-app' σ {U} R σ' rewrite lem1 σ' σ U = candidate.candi R _ (σ' ∘ σ)
 
+cand-app-funct : ∀ {Δ1 Δ2 Δ3} (σ : tvsubst Δ1 Δ2) (σ' : tvsubst Δ2 Δ3) {U} (R : candidate Δ1 U) {Γ : tctx Δ2}
+ -> cand.sem (cand-app' σ R …) Γ -> cand.sem (cand-app' σ R σ') (tctxM [ σ' ] Γ)
+cand-app-funct σ σ' {U} R M with [ σ' ] ([ σ ] U) | lem1 σ' σ U
+cand-app-funct σ σ' {U} R M | .([ σ' ∘ σ ] U) | refl = {!!} -- Oops, Funct isn't general enough...
+ 
 cand-app : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) {U : tp _} (R : candidate Δ1 U) -> candidate Δ2 ([ σ ] U)
 cand-app {Δ1} {Δ2} σ {U} R = record { candi = λ Δ3 σ' → cand-app' σ R σ'; Funct = {!!} }
 
