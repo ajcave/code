@@ -10,6 +10,11 @@ record Σ {A : Set} (B : A -> Set) : Set where
   fst : A
   snd : B fst
 
+data _≡_ {A : Set} (x : A) : A -> Set where
+ refl : x ≡ x
+{-# BUILTIN EQUALITY _≡_ #-}
+{-# BUILTIN REFL refl #-}
+
 _*_ : (A B : Set) -> Set
 A * B = Σ {A} (λ _ -> B)
 
@@ -79,9 +84,27 @@ sub θ (▹ x) = subst-app θ x
 sub θ (ƛ M) = ƛ (sub (ext θ) M)
 sub θ (M · N) = (sub θ M) · (sub θ N)
 
+_∘_ : ∀ {n m k} (θ1 : subst m k) (θ2 : subst n m) -> subst n k
+θ1 ∘ ⊡ = ⊡
+θ1 ∘ (θ , M) = (θ1 ∘ θ) , sub θ1 M
+
 id : ∀ {n} -> subst n n
 id {z} = ⊡
-id {s n} = (subst-map (vsub wkn-vsub) id) , (▹ z)
+id {s n} = ext id
+
+wkn : ∀ {n} -> subst n (s n)
+wkn {n} = wkn-subst id
+
+extensionality : ∀ {n m} (θ1 θ2 : subst n m) (H : ∀ x -> subst-app θ1 x ≡ subst-app θ2 x) -> θ1 ≡ θ2
+extensionality ⊡ ⊡ H = refl
+extensionality (θ , x) (θ' , x') H rewrite extensionality θ θ' (λ x0 → H (s x0)) | H z = refl
+
+subst-map-funct : ∀ {n1 n m k} (f : tm m -> tm k) (g : tm n -> tm m) (θ : subst n1 n) -> subst-map f (subst-map g θ) ≡ subst-map (λ x -> f (g x)) θ
+subst-map-funct f g θ = {!!}
+
+prod-wkn : ∀ {n m} (θ1 : subst n m) (N : tm m) -> ((θ1 , N) ∘ wkn) ≡ θ1
+prod-wkn ⊡ N = refl
+prod-wkn (θ , x) N = {!!}
 
 -- Single substitution as a special case of simultaneous
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
