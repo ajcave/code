@@ -267,9 +267,6 @@ extend : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} {Γ1 : tctx Δ1} {Γ2 : tctx Δ2} (
 extend Δ' θ M z = M
 extend Δ' θ M (s y) = θ y
 
-_↔_ : Set -> Set -> Set
-A ↔ B = (A -> B) * (B -> A) 
-
 tsubstLookup-map : ∀ {Δ1 Δ2 Δ3} (f : tp Δ2 -> tp Δ3) (θ : tsubst Δ1 Δ2) (y : tvar Δ1 _) -> tsubstLookup (tsubstMap f θ) y ≡ f (tsubstLookup θ y)
 tsubstLookup-map f ⊡ ()
 tsubstLookup-map f (θ , T) z = refl
@@ -284,13 +281,18 @@ tsubstLookup-id (s y) = trans (tsubstLookup-map [ s ] id-tsubst y) foo
  where foo : [ s ] (tsubstLookup id-tsubst y) ≡ v (s y)
        foo rewrite tsubstLookup-id y = refl
 
-sem-subst : ∀ {Δ1 Δ2} Γ {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) S T -> sem {θ = θ , [[ θ ]] S} (Δ' , sem-cand θ Δ' S) T Γ ↔ sem Δ' ([[ id-tsubst , S ]] T) Γ
-sem-subst Γ Δ' S (v z) = (λ M → {!!}) , (λ M → {!!}) -- "Easy"
-sem-subst Γ Δ' S (v (s y)) rewrite tsubstLookup-id y = (λ M → M) , (λ M → M)
-sem-subst Γ Δ' S (T ⇒ S') = (λ M Γ' σ x → _*_.fst (sem-subst Γ' Δ' S S') (M Γ' σ (_*_.snd (sem-subst Γ' Δ' S T) x)))
-                          , (λ M Γ' σ x → _*_.snd (sem-subst Γ' Δ' S S') (M Γ' σ (_*_.fst (sem-subst Γ' Δ' S T) x)))
-sem-subst Γ Δ' S (Π T) = (λ M Δ2' σ U R → {!!}) -- Gonna have to generalize this somehow...
-                       , (λ M Δ2' σ U R → {!!})
+mutual
+ sem-subst1 :  ∀ {Δ1 Δ2} Γ {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) S T -> sem {θ = θ , [[ θ ]] S} (Δ' , sem-cand θ Δ' S) T Γ -> sem Δ' ([[ id-tsubst , S ]] T) Γ
+ sem-subst1 Γ Δ S (v z) = λ x → {!!} -- "Easy"
+ sem-subst1 Γ Δ S (v (s y)) rewrite tsubstLookup-id y = λ x → x
+ sem-subst1 Γ Δ S (T ⇒ S') = λ M Γ' σ x → sem-subst1 Γ' Δ S S' (M Γ' σ (sem-subst2 Γ' Δ S T x))
+ sem-subst1 Γ Δ S (Π T) = λ M Δ2' σ U R → {!!} -- Gonna have to generalize this...
+
+ sem-subst2 :  ∀ {Δ1 Δ2} Γ {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) S T -> sem Δ' ([[ id-tsubst , S ]] T) Γ -> sem {θ = θ , [[ θ ]] S} (Δ' , sem-cand θ Δ' S) T Γ
+ sem-subst2 Γ Δ S (v z) = λ x → {!!} -- "Easy"
+ sem-subst2 Γ Δ S (v (s y)) rewrite tsubstLookup-id y = λ x → x
+ sem-subst2 Γ Δ S (T ⇒ S') = λ M Γ' σ x → sem-subst2 Γ' Δ S S' (M Γ' σ (sem-subst1 Γ' Δ S T x))
+ sem-subst2 Γ Δ S (Π T) = λ x Δ2' σ U R → {!!} -- Generalize...
 
 --st-subst-app-id : ∀ {Δ1 Δ2} (θ : tsubst Δ1 Δ2) (Δ' : 〚 Δ1 〛 θ) -> (st-subst-app … Δ') ≡ Δ'
 --st-subst-app-id θ Δ' = ?
@@ -300,7 +302,7 @@ mutual
  srSubst Δ' σ (v y) = σ y
  srSubst Δ' σ (R · N) = (srSubst Δ' σ R) _ … (sSubst Δ' σ N)
  srSubst {Γ2 = Γ2} {θ = θ} Δ' σ (_$_ {T} R S) with srSubst Δ' σ R _ … ([[ θ ]] S) (sem-cand θ Δ' S)
- ... | w = _*_.fst (sem-subst Γ2 Δ' S T) {!!} -- "Easy"
+ ... | w = sem-subst1 Γ2 Δ' S T {!!} -- "Easy"
 
  sSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> ntm Δ1 Γ1 T -> sem Δ' T Γ2
  sSubst Δ' σ (ƛ {T} {S} N) = λ Γ' σ' s → sSubst Δ' (extend Δ' (λ {T0} x → appSubst T0 σ' (σ x)) s) N
