@@ -137,6 +137,9 @@ mutual
  sSubst θ nil = nil
  sSubst θ (cons N L) = cons (sSubst θ N) (sSubst θ L) 
 
+η-exp : ∀ {Γ S} -> rtm Γ S -> ntm Γ S
+η-exp r = reify (reflect r)
+
 sId : ∀ {Γ} -> subst Γ Γ
 sId x = reflect (v x)
 
@@ -346,3 +349,13 @@ mutual
  nsubst-lemma θ (s N) = s (nsubst-lemma θ N)
  nsubst-lemma θ nil = nil
  nsubst-lemma θ (cons N L) = cons (nsubst-lemma θ N) (nsubst-lemma θ L)
+
+lift : ∀ {Γ Δ} -> vsubst Γ Δ -> nSubst Γ Δ
+lift σ x = η-exp (v (vsubst-app σ x))
+
+lf-sem : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (n : ntm γ t) -> Set
+lf-sem Γ (atom A) n = Γ ⊢ n ⇐ atom A
+lf-sem Γ (S ⇝ T) n = ∀ {γ'} (Γ' : lf-ctx γ') (σ : vsubst _ γ') (θ : lf-vsubst Γ σ Γ') (m : ntm γ' _)
+  -> lf-sem Γ' (lf-tp-vsubst σ S) m → lf-sem Γ' (lf-tp-subst (nExtend (lift σ) m) T) (napp (nappSubst σ n) m)
+lf-sem Γ (S × T) n = (lf-sem Γ S (nfst n)) * (lf-sem Γ T (nsnd n))
+lf-sem Γ unit tt = Unit

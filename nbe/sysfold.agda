@@ -119,6 +119,9 @@ mutual
 vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
 vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
 
+-- Technically I can't use a record here. That's strange.
+-- It seems that (A : Set) -> P A -> B is not interchangible with Σ (A : Set). P A -> B,
+-- If I understand the "strong sums in impredicative type theory" issue correctly...
 record cand Δ T : Set₁ where
  field
   sem : (Γ : tctx Δ) -> Set
