@@ -11,14 +11,10 @@ record Unit : Set where
 
 postulate
  atomic_tp : Set
- nat : atomic_tp
- list : atomic_tp
 
 data tp : Set where
  atom : (A : atomic_tp) -> tp
  _⇝_ : (T : tp) -> (S : tp) -> tp
- _×_ : (T S : tp) -> tp
- unit : tp
 
 data ctx' (A : Set) : Set where
  ⊡ : ctx' A
@@ -38,23 +34,13 @@ mutual
  data rtm (Γ : ctx) : (T : tp) -> Set where
   v : ∀ {T} -> var Γ T -> rtm Γ T
   _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
-  π₁ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ T
-  π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S
  data ntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
   neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
-  <_,_> : ∀ {T S} -> (M : ntm Γ T) -> (N : ntm Γ S) -> ntm Γ (T × S)
-  tt : ntm Γ unit
-  z : ntm Γ (atom nat)
-  s : (N : ntm Γ (atom nat)) -> ntm Γ (atom nat)
-  nil : ntm Γ (atom list)
-  cons : (N : ntm Γ (atom nat)) -> (L : ntm Γ (atom list)) -> ntm Γ (atom list)
 
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
-sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
-sem Γ (T × S) = sem Γ T * sem Γ S
-sem Γ unit = Unit
+sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S
 
 vsubst-app : ∀ {Γ Δ U} -> vsubst Γ Δ -> var Γ U -> var Δ U
 vsubst-app ⊡ ()
@@ -82,36 +68,22 @@ mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
  rappSubst σ (v y) = v (vsubst-app σ y)
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
- rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
- rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
  nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
  nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
  nappSubst σ (neut R) = neut (rappSubst σ R)
- nappSubst σ < M , N > = < nappSubst σ M , nappSubst σ N >
- nappSubst σ tt = tt
- nappSubst σ z = z
- nappSubst σ (s N) = s (nappSubst σ N)
- nappSubst σ nil = nil
- nappSubst σ (cons N L) = cons (nappSubst σ N) (nappSubst σ L)
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
-appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
-appSubst unit σ tt = tt
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
  reflect {atom A} N = neut N
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
- reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
- reflect {unit} N = tt
 
  reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
  reify {atom A} M = M
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
- reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
- reify {unit} N = tt
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
@@ -124,18 +96,10 @@ mutual
  srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
  srSubst θ (v y) = θ y
  srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
- srSubst θ (π₁ R) = _*_.fst (srSubst θ R)
- srSubst θ (π₂ R) = _*_.snd (srSubst θ R)
 
  sSubst : ∀ {Γ Δ T} -> subst Γ Δ -> ntm Γ T -> sem Δ T
  sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (λ x → appSubst _ σ (θ x)) s) M
  sSubst θ (neut y) = srSubst θ y
- sSubst θ < M , N > = sSubst θ M , sSubst θ N
- sSubst θ tt = tt
- sSubst θ z = z
- sSubst θ (s N) = s (sSubst θ N)
- sSubst θ nil = nil
- sSubst θ (cons N L) = cons (sSubst θ N) (sSubst θ L) 
 
 η-exp : ∀ {Γ S} -> rtm Γ S -> ntm Γ S
 η-exp r = reify (reflect r)
@@ -178,46 +142,22 @@ n-single-subst M N = cut (n-single N) M
 napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
 napp (ƛ M) N = n-single-subst M N
 
-nfst : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ T
-nfst < M , N > = M
-
-nsnd : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ S
-nsnd < M , N > = N
-
-data lf-atomic-tp (Γ : ctx) : atomic_tp -> Set where
- lf-nat' : lf-atomic-tp Γ nat
- lf-vec' : (N : ntm Γ (atom nat)) -> lf-atomic-tp Γ list
+postulate
+ lf-atomic-tp : (Γ : ctx) -> atomic_tp -> Set
+ lf-tp-vsubst-atomic : ∀ {γ δ : ctx} (σ : vsubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
+ lf-tp-subst-atomic : ∀ {γ δ : ctx} (θ : nSubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
 
 data lf-tp (Γ : ctx) : (t : tp) -> Set where
  atom : ∀ {a} (A : lf-atomic-tp Γ a) -> lf-tp Γ (atom a)
  _⇝_ : ∀ {s t} (S : lf-tp Γ s) -> (T : lf-tp (Γ , s) t) -> lf-tp Γ (s ⇝ t)
- _×_ : ∀ {s t} (S : lf-tp Γ s) -> (T : lf-tp Γ t) -> lf-tp Γ (s × t)
- unit : lf-tp Γ unit
-
-lf-nat : ∀ {Γ} -> lf-tp Γ (atom nat)
-lf-nat = atom lf-nat'
-lf-vec : ∀ {Γ} (N : ntm Γ (atom nat)) -> lf-tp Γ (atom list)
-lf-vec N = atom (lf-vec' N)
-
-lf-tp-vsubst-atomic : ∀ {γ δ : ctx} (σ : vsubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
-lf-tp-vsubst-atomic σ lf-nat' = lf-nat'
-lf-tp-vsubst-atomic σ (lf-vec' N) = lf-vec' (nappSubst σ N)
 
 lf-tp-vsubst : ∀ {γ δ : ctx} (σ : vsubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
 lf-tp-vsubst σ (atom A) = atom (lf-tp-vsubst-atomic σ A)
 lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) T)
-lf-tp-vsubst σ (S × T) = (lf-tp-vsubst σ S) × (lf-tp-vsubst σ T)
-lf-tp-vsubst σ unit = unit
-
-lf-tp-subst-atomic : ∀ {γ δ : ctx} (θ : nSubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
-lf-tp-subst-atomic θ lf-nat' = lf-nat'
-lf-tp-subst-atomic θ (lf-vec' N) = lf-vec' (cut θ N)
 
 lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
 lf-tp-subst θ (atom A) = atom (lf-tp-subst-atomic θ A)
 lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
-lf-tp-subst θ (S × T) = (lf-tp-subst θ S) × (lf-tp-subst θ T)
-lf-tp-subst θ unit = unit
 
 lf-tp-wkn : ∀ {Γ : ctx} (t : tp) {s} (S : lf-tp Γ s) -> lf-tp (Γ , t) s
 lf-tp-wkn t S = lf-tp-vsubst wkn S
@@ -241,12 +181,6 @@ mutual
          (R : Γ ⊢ r ⇒ (T ⇝ S))
       -> (N : Γ ⊢ n ⇐ T)
       ->      Γ ⊢ (r · n) ⇒ (lf-tp-subst (n-single n) S)
-  π₁ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
-         (R : Γ ⊢ r ⇒ (T × S))
-       ->     Γ ⊢ (π₁ r) ⇒ T
-  π₂ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {r} ->
-         (R : Γ ⊢ r ⇒ (T × S))
-       ->     Γ ⊢ (π₂ r) ⇒ S
  data _⊢_⇐_ {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
   ƛ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {n} ->
          (N : (Γ , T) ⊢    n  ⇐ S)
@@ -254,20 +188,6 @@ mutual
   neut : ∀ {a} {A : lf-atomic-tp γ a} {r} ->
          (R : Γ ⊢ r ⇒ (atom A))
        ->     Γ ⊢ (neut r) ⇐ (atom A)
-  <_,_> : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp γ s} {m n} ->
-         (M : Γ ⊢ m ⇐ T)
-      -> (N : Γ ⊢ n ⇐ S)
-      ->      Γ ⊢ < m , n > ⇐ (T × S)
-  tt : Γ ⊢ tt ⇐ unit
-  z : Γ ⊢ z ⇐ lf-nat
-  s : ∀ {n}
-         (N : Γ ⊢ n ⇐ lf-nat)
-      ->      Γ ⊢ (s n) ⇐ lf-nat
-  nil : Γ ⊢ nil ⇐ (lf-vec z)
-  cons : ∀ {m n l}
-         (N : Γ ⊢ n ⇐ lf-nat)
-      -> (L : Γ ⊢ l ⇐ (lf-vec m))
-      ->      Γ ⊢ (cons n l) ⇐ (lf-vec (s m))
 
 lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
@@ -311,22 +231,17 @@ mutual
  rfunctorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) {t} (r : rtm ψ t) -> rappSubst σ1 (rappSubst σ2 r) ≡ rappSubst (σ1 ∘ σ2) r
  rfunctorality σ1 σ2 (v y) rewrite vsubst-app-map (vsubst-app σ1) σ2 y = refl
  rfunctorality σ1 σ2 (R · N) rewrite rfunctorality σ1 σ2 R | nfunctorality σ1 σ2 N = refl
- rfunctorality σ1 σ2 (π₁ R) rewrite rfunctorality σ1 σ2 R = refl
- rfunctorality σ1 σ2 (π₂ R) rewrite rfunctorality σ1 σ2 R = refl
  
  nfunctorality : ∀ {γ δ ψ} (σ1 : vsubst γ δ) (σ2 : vsubst ψ γ) {t} (n : ntm ψ t) -> nappSubst σ1 (nappSubst σ2 n) ≡ nappSubst (σ1 ∘ σ2) n
  nfunctorality σ1 σ2 (ƛ {t} R) rewrite nfunctorality (ext σ1) (ext σ2) R | ext-functorality σ1 σ2 t = refl
  nfunctorality σ1 σ2 (neut R) rewrite rfunctorality σ1 σ2 R = refl
- nfunctorality σ1 σ2 < M , N > rewrite nfunctorality σ1 σ2 M | nfunctorality σ1 σ2 N = refl
- nfunctorality σ1 σ2 tt = refl
- nfunctorality σ1 σ2 z = refl
- nfunctorality σ1 σ2 (s N) rewrite nfunctorality σ1 σ2 N = refl
- nfunctorality σ1 σ2 nil = refl
- nfunctorality σ1 σ2 (cons N L) rewrite nfunctorality σ1 σ2 N | nfunctorality σ1 σ2 L = refl
 
 lf-vsubst-ext : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-vsubst {γ} {δ} Γ σ Δ) -> lf-vsubst (Γ , T) (ext σ) (Δ , (lf-tp-vsubst σ T))
 lf-vsubst-ext θ z = {!!}
 lf-vsubst-ext θ (s y) = {!!}
+
+lf-vsubst-comma : ∀ {γ δ Γ Δ σ} {t} {T : lf-tp γ t} (θ : lf-vsubst {γ} {δ} Γ σ Δ) -> {m : var δ t} -> lf-var Δ (lf-tp-vsubst σ T) m -> lf-vsubst (Γ , T) (σ , m) Δ
+lf-vsubst-comma θ M = {!!}
 
 mutual
  rsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
@@ -335,27 +250,31 @@ mutual
  rsubst-lemma θ (v y) = v (θ y)
  rsubst-lemma θ (R · N) with rsubst-lemma θ R | nsubst-lemma θ N
  ... | w1 | w2 = {!!}
- rsubst-lemma θ (π₁ R) = π₁ (rsubst-lemma θ R)
- rsubst-lemma θ (π₂ R) = π₂ (rsubst-lemma θ R)
 
  nsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
    (θ : lf-vsubst Γ σ Δ)
    {t n} {T : lf-tp γ t} (N : Γ ⊢ n ⇐ T) -> Δ ⊢ (nappSubst σ n) ⇐ (lf-tp-vsubst σ T)
  nsubst-lemma θ (ƛ N) = ƛ (nsubst-lemma (lf-vsubst-ext θ) N)
  nsubst-lemma θ (neut R) = neut (rsubst-lemma θ R)
- nsubst-lemma θ < M , N > = < (nsubst-lemma θ M) , (nsubst-lemma θ N) >
- nsubst-lemma θ tt = tt
- nsubst-lemma θ z = z
- nsubst-lemma θ (s N) = s (nsubst-lemma θ N)
- nsubst-lemma θ nil = nil
- nsubst-lemma θ (cons N L) = cons (nsubst-lemma θ N) (nsubst-lemma θ L)
 
 lift : ∀ {Γ Δ} -> vsubst Γ Δ -> nSubst Γ Δ
 lift σ x = η-exp (v (vsubst-app σ x))
 
-lf-sem : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (n : ntm γ t) -> Set
-lf-sem Γ (atom A) n = Γ ⊢ n ⇐ atom A
-lf-sem Γ (S ⇝ T) n = ∀ {γ'} (Γ' : lf-ctx γ') (σ : vsubst _ γ') (θ : lf-vsubst Γ σ Γ') (m : ntm γ' _)
-  -> lf-sem Γ' (lf-tp-vsubst σ S) m → lf-sem Γ' (lf-tp-subst (nExtend (lift σ) m) T) (napp (nappSubst σ n) m)
-lf-sem Γ (S × T) n = (lf-sem Γ S (nfst n)) * (lf-sem Γ T (nsnd n))
-lf-sem Γ unit tt = Unit
+lf-sem2 : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (n : sem γ t) -> Set
+lf-sem2 Γ (atom A) n = Γ ⊢ n ⇐ atom A
+lf-sem2 Γ (S ⇝ T) n = {γ' : _} {Γ' : lf-ctx γ'} {σ : vsubst _ γ'} (θ : lf-vsubst Γ σ Γ') ->
+  {m : sem γ' _} → lf-sem2 Γ' (lf-tp-vsubst σ S) m -> lf-sem2 Γ' (lf-tp-subst  (nExtend nId (reify m)) (lf-tp-vsubst (ext σ) T)) (n γ' σ m)
+
+lf-wkn : ∀ {γ} {Γ : lf-ctx γ} {s} {S : lf-tp γ s} -> lf-vsubst Γ wkn (Γ , S)
+lf-wkn = {!!}
+
+mutual 
+ lf-reflect : ∀ {γ t} {T : lf-tp γ t} {Γ : lf-ctx γ} {r : rtm γ t} -> (Γ ⊢ r ⇒ T) -> lf-sem2 Γ T (reflect r)
+ lf-reflect {T = atom A} R = neut R
+ lf-reflect {T = S ⇝ T} R = λ θ x → lf-reflect ((rsubst-lemma θ R) · lf-reify x)
+
+ lf-reify : ∀ {γ t} {T : lf-tp γ t} {Γ : lf-ctx γ} {n : sem γ t} -> lf-sem2 Γ T n -> (Γ ⊢ (reify n) ⇐ T)
+ lf-reify {T = atom A} N = N
+ lf-reify {T = S ⇝ T} N with lf-reify (N lf-wkn (lf-reflect (v z)))
+ ... | w = ƛ {!!}
+
