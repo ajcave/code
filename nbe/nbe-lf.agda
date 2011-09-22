@@ -276,5 +276,5 @@ mutual
  lf-reify : ∀ {γ t} {T : lf-tp γ t} {Γ : lf-ctx γ} {n : sem γ t} -> lf-sem2 Γ T n -> (Γ ⊢ (reify n) ⇐ T)
  lf-reify {T = atom A} N = N
  lf-reify {T = S ⇝ T} N with lf-reify (N lf-wkn (lf-reflect (v z)))
- ... | w = ƛ {!!}
+ ... | w = ƛ {!!} -- Okay I'm gonna have to write a solver for these problems or something
 
