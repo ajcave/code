@@ -1,5 +1,11 @@
 module nbe-lf where
 
+data _≡_ {A : Set} (x : A) : (y : A) -> Set where
+ refl : x ≡ x
+
+{-# BUILTIN EQUALITY _≡_ #-}
+{-# BUILTIN REFL refl #-}
+
 record _*_ (A B : Set) : Set where
  constructor _,_
  field
@@ -142,6 +148,9 @@ n-single-subst M N = cut (n-single N) M
 napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
 napp (ƛ M) N = n-single-subst M N
 
+unEmbed : ∀ {Γ Δ} -> subst Γ Δ -> nSubst Γ Δ
+unEmbed θ x = reify (θ x)
+
 postulate
  lf-atomic-tp : (Γ : ctx) -> atomic_tp -> Set
  lf-tp-vsubst-atomic : ∀ {γ δ : ctx} (σ : vsubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
@@ -154,6 +163,9 @@ data lf-tp (Γ : ctx) : (t : tp) -> Set where
 lf-tp-vsubst : ∀ {γ δ : ctx} (σ : vsubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
 lf-tp-vsubst σ (atom A) = atom (lf-tp-vsubst-atomic σ A)
 lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) T)
+
+lf-tp-vsubst-id :  ∀ {γ : ctx} {s} (S : lf-tp γ s) -> S ≡ lf-tp-vsubst id S
+lf-tp-vsubst-id S = {!!}
 
 lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
 lf-tp-subst θ (atom A) = atom (lf-tp-subst-atomic θ A)
@@ -192,11 +204,6 @@ mutual
 lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
 lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
 
-data _≡_ {A : Set} (x : A) : (y : A) -> Set where
- refl : x ≡ x
-
-{-# BUILTIN EQUALITY _≡_ #-}
-{-# BUILTIN REFL refl #-}
 
 vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
@@ -260,21 +267,38 @@ mutual
 lift : ∀ {Γ Δ} -> vsubst Γ Δ -> nSubst Γ Δ
 lift σ x = η-exp (v (vsubst-app σ x))
 
-lf-sem2 : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (n : sem γ t) -> Set
-lf-sem2 Γ (atom A) n = Γ ⊢ n ⇐ atom A
-lf-sem2 Γ (S ⇝ T) n = {γ' : _} {Γ' : lf-ctx γ'} {σ : vsubst _ γ'} (θ : lf-vsubst Γ σ Γ') ->
-  {m : sem γ' _} → lf-sem2 Γ' (lf-tp-vsubst σ S) m -> lf-sem2 Γ' (lf-tp-subst  (nExtend nId (reify m)) (lf-tp-vsubst (ext σ) T)) (n γ' σ m)
+lf-sem : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (n : sem γ t) -> Set
+lf-sem Γ (atom A) n = Γ ⊢ n ⇐ atom A
+lf-sem Γ (S ⇝ T) n = {γ' : _} {Γ' : lf-ctx γ'} {σ : vsubst _ γ'} (θ : lf-vsubst Γ σ Γ') ->
+  {m : sem γ' _} → lf-sem Γ' (lf-tp-vsubst σ S) m -> lf-sem Γ' (lf-tp-subst  (nExtend nId (reify m)) (lf-tp-vsubst (ext σ) T)) (n γ' σ m)
 
 lf-wkn : ∀ {γ} {Γ : lf-ctx γ} {s} {S : lf-tp γ s} -> lf-vsubst Γ wkn (Γ , S)
 lf-wkn = {!!}
 
 mutual 
- lf-reflect : ∀ {γ t} {T : lf-tp γ t} {Γ : lf-ctx γ} {r : rtm γ t} -> (Γ ⊢ r ⇒ T) -> lf-sem2 Γ T (reflect r)
+ lf-reflect : ∀ {γ t} {T : lf-tp γ t} {Γ : lf-ctx γ} {r : rtm γ t} -> (Γ ⊢ r ⇒ T) -> lf-sem Γ T (reflect r)
  lf-reflect {T = atom A} R = neut R
  lf-reflect {T = S ⇝ T} R = λ θ x → lf-reflect ((rsubst-lemma θ R) · lf-reify x)
 
- lf-reify : ∀ {γ t} {T : lf-tp γ t} {Γ : lf-ctx γ} {n : sem γ t} -> lf-sem2 Γ T n -> (Γ ⊢ (reify n) ⇐ T)
+ lf-reify : ∀ {γ t} {T : lf-tp γ t} {Γ : lf-ctx γ} {n : sem γ t} -> lf-sem Γ T n -> (Γ ⊢ (reify n) ⇐ T)
  lf-reify {T = atom A} N = N
  lf-reify {T = S ⇝ T} N with lf-reify (N lf-wkn (lf-reflect (v z)))
  ... | w = ƛ {!!} -- Okay I'm gonna have to write a solver for these problems or something
 
+lf-subst : ∀ {γ δ} (Γ : lf-ctx γ) (Δ : lf-ctx δ) (θ : subst γ δ) -> Set
+lf-subst {γ} Γ Δ θ = ∀ {t} {T : lf-tp γ t} {x : var γ t} -> lf-var Γ T x -> lf-sem Δ (lf-tp-subst (unEmbed θ) T) (θ x)
+
+lf-id : ∀ {γ} {Γ : lf-ctx γ} -> lf-vsubst Γ id Γ
+lf-id = {!!}
+
+mutual
+ lf-srSubst : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : subst γ δ} {t r} {T : lf-tp γ t}
+    -> (Γ ⊢ r ⇒ T) -> lf-subst Γ Δ σ -> lf-sem Δ (lf-tp-subst (unEmbed σ) T) (srSubst σ r)
+ lf-srSubst (v y) θ = θ y
+ lf-srSubst {σ = σ} (_·_ {T = T} R N) θ with lf-srSubst R θ lf-id | lf-sSubst N θ
+ ... | w1 | w2 = {!!}
+
+ lf-sSubst : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : subst γ δ} {t n} {T : lf-tp γ t}
+    -> (Γ ⊢ n ⇐ T) -> lf-subst Γ Δ σ -> lf-sem Δ (lf-tp-subst (unEmbed σ) T) (sSubst σ n)
+ lf-sSubst (ƛ N) θ = λ θ' x → {!!}
+ lf-sSubst (neut R) θ = lf-srSubst R θ
