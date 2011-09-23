@@ -300,5 +300,8 @@ mutual
 
  lf-sSubst : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : subst γ δ} {t n} {T : lf-tp γ t}
     -> (Γ ⊢ n ⇐ T) -> lf-subst Γ Δ σ -> lf-sem Δ (lf-tp-subst (unEmbed σ) T) (sSubst σ n)
- lf-sSubst (ƛ N) θ = λ θ' x → {!!}
+ lf-sSubst {γ} {δ} {Γ} {Δ} {σ} {t ⇝ s1} {ƛ n} {T ⇝ S} (ƛ N) θ = {!!}
  lf-sSubst (neut R) θ = lf-srSubst R θ
+
+ -- Maybe I'll have an easier time if I Σ-up the T's in the derivations, and prove after the
+ -- fact that they're equal?
