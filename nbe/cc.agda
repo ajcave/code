@@ -68,27 +68,6 @@ proj1 [ M , N ] = M
 proj2 : ∀ {t u s} -> norm t (u × s) -> norm t s
 proj2 [ M , N ] = N
 
-mutual
- cutr : ∀ {t u s} -> neut u s -> norm t u -> norm t s
- cutr id n = n
- cutr (π₁∘ r) n = proj1 (cutr r n)
- cutr (π₂∘ r) n = proj2 (cutr r n)
- cutr (M ∘ m) n = η-expand (M ∘ (m ⊙ n))
-
- _⊙_ : ∀ {t u s} -> norm u s -> norm t u -> norm t s
- _⊙_ (▹ r) n = cutr r n
- _⊙_ [ m1 , m2 ] n = [ (m1 ⊙ n) , (m2 ⊙ n) ]
- _⊙_ tt n = tt
-
-eval : ∀ {t u} -> exp t u -> norm t u
-eval (▹ M) = η-expand (M ∘ (η-expand id))
-eval (m ∘ n) = (eval m) ⊙ (eval n)
-eval [ m , n ] = [ (eval m) , (eval n) ]
-eval π₁ = η-expand (π₁∘ id)
-eval π₂ = η-expand (π₂∘ id)
-eval id = η-expand id
-eval tt = tt
-
 eval2 : ∀ {u t s} -> exp t u -> norm s t -> norm s u
 eval2 (▹ y) n = η-expand (y ∘ n)
 eval2 (y ∘ y') n = eval2 y (eval2 y' n)
@@ -110,7 +89,7 @@ mutual
  emb [ m , n ] = [ (emb m) , (emb n) ]
  emb tt = tt
 
-η-cut : ∀ {s t u} (r : neut u s) (m : norm t u) -> ((η-expand r) ⊙ m) ≡ (cutr r m)
+{- η-cut : ∀ {s t u} (r : neut u s) (m : norm t u) -> ((η-expand r) ⊙ m) ≡ (cutr r m)
 η-cut {▹ a} r m = refl
 η-cut {t × u} r m rewrite η-cut (π₁∘ r) m | η-cut (π₂∘ r) m = {!!} -- just prove eta
 η-cut {⊤} r m = {!!} -- just prove extensionality
@@ -128,7 +107,7 @@ mutual
  eval-emb tt = refl
 
 soundness : ∀ {t u} {m n : exp t u} -> m ≈ n -> (eval m) ≡ (eval n)
-soundness E = {!!} -- "Easy"
+soundness E = {!!} -- "Easy" -}
 
 mutual
  cut2 : ∀ {s t u} (n : norm u s) (r : neut t u) -> norm t s
@@ -153,7 +132,6 @@ mutual
  embr-cutr2 (π₂∘ y) n = trans assoc (refl ∘ (embr-cutr2 y n))
  embr-cutr2 (y ∘ y') n = trans assoc (refl ∘ embr-cut2 y' n)
 
--- Is spine form better?
 emb-η : ∀ {s t u} (y : neut u s) (n : neut t u) -> emb (η-expand (cutr2 y n)) ≈ (embr y ∘ embr n)
 emb-η {▹ a} y n = embr-cutr2 y n
 emb-η {t × u} y n = trans (trans (sym π-η) [ (sym assoc) , (sym assoc) ]) [ emb-η (π₁∘ y) n , emb-η (π₂∘ y) n ]
@@ -171,3 +149,11 @@ emb-eval tt n = ⊤
 completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (eval2 m1 n1) ≡ (eval2 m2 n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
 completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (subst (λ x -> emb (eval2 m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
 
+eval1 : ∀ {t u} -> exp t u -> norm t u
+eval1 m = eval2 m (η-expand id)
+
+emb-id : ∀ {t} -> emb (η-expand (id {t})) ≈ id
+emb-id = trans idL (emb-η id id)
+
+completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval1 m1) ≡ (eval1 m2) -> m1 ≈ m2
+completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ emb-id) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (sym emb-id))) (sym idR)))
