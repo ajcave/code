@@ -6,6 +6,9 @@ data _≡_ {A : Set} (x : A) : (y : A) -> Set where
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
 
+subst : ∀ {A : Set} (P : A -> Set) {a b : A} -> a ≡ b -> P a -> P b
+subst P refl x = x
+
 postulate
  O : Set
 
@@ -86,17 +89,14 @@ eval π₂ = η-expand (π₂∘ id)
 eval id = η-expand id
 eval tt = tt
 
-mutual
- eval2r : ∀ {u t s} -> exp t (▹ u) -> norm s t -> neut s (▹ u)
- eval2r (▹ y) m = y ∘ {!!}
- eval2r (y ∘ y') m = eval2r y {!!}
- eval2r π₁ m = π₁∘ {!eval2r!}
- eval2r π₂ m = {!!}
- eval2r id m = {!!}
- eval2 : ∀ {u t} -> exp t u -> norm t u
- eval2 {▹ a} m = ▹ (eval2r m {!!})
- eval2 {t × u} m = [ (eval2 (π₁ ∘ m)) , (eval2 (π₂ ∘ m)) ]
- eval2 {⊤} m = tt
+eval2 : ∀ {u t s} -> exp t u -> norm s t -> norm s u
+eval2 (▹ y) n = η-expand (y ∘ n)
+eval2 (y ∘ y') n = eval2 y (eval2 y' n)
+eval2 [ y , y' ] n = [ (eval2 y n) , (eval2 y' n) ]
+eval2 π₁ n = proj1 n
+eval2 π₂ n = proj2 n
+eval2 id n = n
+eval2 tt n = tt
 
 mutual
  embr : ∀ {t u} -> neut t u -> exp t u
@@ -130,17 +130,44 @@ mutual
 soundness : ∀ {t u} {m n : exp t u} -> m ≈ n -> (eval m) ≡ (eval n)
 soundness E = {!!} -- "Easy"
 
-completeness : ∀ {t u} (m n : exp t u) -> (eval m) ≡ (eval n) -> m ≈ n
-completeness m n E = {!!}
+mutual
+ cut2 : ∀ {s t u} (n : norm u s) (r : neut t u) -> norm t s
+ cut2 (▹ y) r = ▹ (cutr2 y r)
+ cut2 [ y , y' ] r = [ cut2 y r , cut2 y' r ]
+ cut2 tt r = tt
+ cutr2 : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> neut t s
+ cutr2 id r2 = r2
+ cutr2 (π₁∘ y) r2 = π₁∘ (cutr2 y r2)
+ cutr2 (π₂∘ y) r2 = π₂∘ (cutr2 y r2)
+ cutr2 (y ∘ y') r2 = y ∘ (cut2 y' r2)
 
-emb-eval : ∀ {t u} (n : exp t u) -> emb (eval n) ≈ n
-emb-eval n = completeness _ _ (eval-emb (eval n))
+mutual
+ embr-cut2 : ∀ {s t u} (m : norm u s) (r : neut t u) -> emb (cut2 m r) ≈ (emb m ∘ embr r)
+ embr-cut2 (▹ y) r = embr-cutr2 y r
+ embr-cut2 [ y , y' ] r = trans (sym π-η) [ (trans (sym assoc) (trans ((sym π₁-β) ∘ refl) (embr-cut2 y r)))
+                                          , (trans (sym assoc) (trans ((sym π₂-β) ∘ refl) (embr-cut2 y' r))) ]
+ embr-cut2 tt r = ⊤
+ embr-cutr2 : ∀ {s t u} (y : neut u s) (n : neut t u) -> embr (cutr2 y n) ≈ (embr y ∘ embr n)
+ embr-cutr2 id n = sym idL
+ embr-cutr2 (π₁∘ y) n = trans assoc (refl ∘ (embr-cutr2 y n))
+ embr-cutr2 (π₂∘ y) n = trans assoc (refl ∘ (embr-cutr2 y n))
+ embr-cutr2 (y ∘ y') n = trans assoc (refl ∘ embr-cut2 y' n)
 
-subst : ∀ {A : Set} (P : A -> Set) {a1 a2 : A} -> a1 ≡ a2 -> P a1 -> P a2
-subst P refl x = x
+-- Is spine form better?
+emb-η : ∀ {s t u} (y : neut u s) (n : neut t u) -> emb (η-expand (cutr2 y n)) ≈ (embr y ∘ embr n)
+emb-η {▹ a} y n = embr-cutr2 y n
+emb-η {t × u} y n = trans (trans (sym π-η) [ (sym assoc) , (sym assoc) ]) [ emb-η (π₁∘ y) n , emb-η (π₂∘ y) n ]
+emb-η {⊤} y n = ⊤
 
-pf1 : ∀ {u t} {m n : exp t u} -> (eval m) ≡ (eval n) -> m ≈ n
-pf1 {▹ a} E = {!!}
-pf1 {t' × u} {t} {m} {n} E = []-extensionality (pf1 (subst (λ x → ((eval π₁) ⊙ eval m) ≡ (eval π₁ ⊙ x)) E refl))
-                                               (pf1 (subst (λ x → ((eval π₂) ⊙ eval m) ≡ (eval π₂ ⊙ x)) E refl))
-pf1 {⊤} E = ⊤
+emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (eval2 m n) ≈ (m ∘ (emb n))
+emb-eval (▹ y) n = trans idL (emb-η id (y ∘ n))
+emb-eval (y ∘ y') n = trans (trans assoc (refl ∘ (emb-eval y' n))) (emb-eval y (eval2 y' n))
+emb-eval [ y , y' ] n = trans (trans (sym π-η) [ (trans (sym assoc) ((sym π₁-β) ∘ refl)) , (trans (sym assoc) ((sym π₂-β) ∘ refl)) ]) [ (emb-eval y n) , (emb-eval y' n) ]
+emb-eval π₁ [ y , y' ] = sym π₁-β
+emb-eval π₂ [ y , y' ] = sym π₂-β
+emb-eval id n = sym idL
+emb-eval tt n = ⊤
+
+completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (eval2 m1 n1) ≡ (eval2 m2 n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
+completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (subst (λ x -> emb (eval2 m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
+
