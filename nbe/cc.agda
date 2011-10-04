@@ -61,3 +61,11 @@ mutual
  cut : ∀ {t u s} -> norm u s -> norm t u -> norm t s
  cut (▹ r) n = cutr r n
  cut [ m1 , m2 ] n = [ (cut m1 n) , (cut m2 n) ]
+
+eval : ∀ {t u} -> exp t u -> norm t u
+eval (▹ M) = η-expand (M ∘ (η-expand id))
+eval (m ∘ n) = cut (eval m) (eval n)
+eval [ m , n ] = [ (eval m) , (eval n) ]
+eval π₁ = η-expand (π1∘ id)
+eval π₂ = η-expand (π2∘ id)
+eval id = η-expand id
