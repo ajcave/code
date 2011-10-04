@@ -4,8 +4,8 @@ postulate
  O : Set
 
 data tp : Set where
- ▹ : O -> tp
- _×_ : tp -> tp -> tp
+ ▹ : (a : O) -> tp
+ _×_ : (t u : tp) -> tp
 
 postulate
  var : tp -> tp -> Set
@@ -33,7 +33,7 @@ data _≈_ : ∀ {t u} -> exp t u -> exp t u -> Set where
 
 mutual
  data neut : tp -> tp -> Set where
-  v : ∀ {t} -> neut t t
+  id : ∀ {t} -> neut t t
   π1∘ : ∀ {t u s} -> neut t (u × s) -> neut t u
   π2∘ : ∀ {t u s} -> neut t (u × s) -> neut t s
   _∘_ : ∀ {t u s} -> var u s -> norm t u -> neut t s 
@@ -41,6 +41,23 @@ mutual
   ▹ : ∀ {t a} -> neut t (▹ a) -> norm t (▹ a)
   [_,_] : ∀ {t u s} -> norm t u -> norm t s -> norm t (u × s)
 
+η-expand : ∀ {u t} -> neut t u -> norm t u
+η-expand {▹ a} R = ▹ R
+η-expand {t × u} R = [ (η-expand (π1∘ R)) , (η-expand (π2∘ R)) ]
 
-  
-  
+proj1 : ∀ {t u s} -> norm t (u × s) -> norm t u
+proj1 [ M , N ] = M
+
+proj2 : ∀ {t u s} -> norm t (u × s) -> norm t s
+proj2 [ M , N ] = N
+
+mutual
+ cutr : ∀ {t u s} -> neut u s -> norm t u -> norm t s
+ cutr id n = n
+ cutr (π1∘ r) n = proj1 (cutr r n)
+ cutr (π2∘ r) n = proj2 (cutr r n)
+ cutr (M ∘ m) n = η-expand (M ∘ (cut m n))
+
+ cut : ∀ {t u s} -> norm u s -> norm t u -> norm t s
+ cut (▹ r) n = cutr r n
+ cut [ m1 , m2 ] n = [ (cut m1 n) , (cut m2 n) ]
