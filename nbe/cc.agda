@@ -77,6 +77,9 @@ eval2 π₂ n = proj2 n
 eval2 id n = n
 eval2 tt n = tt
 
+eval1 : ∀ {t u} -> exp t u -> norm t u
+eval1 m = eval2 m (η-expand id)
+
 mutual
  embr : ∀ {t u} -> neut t u -> exp t u
  embr id = id
@@ -137,6 +140,9 @@ emb-η {▹ a} y n = embr-cutr2 y n
 emb-η {t × u} y n = trans (trans (sym π-η) [ (sym assoc) , (sym assoc) ]) [ emb-η (π₁∘ y) n , emb-η (π₂∘ y) n ]
 emb-η {⊤} y n = ⊤
 
+emb-id : ∀ {t} -> emb (η-expand (id {t})) ≈ id
+emb-id = trans idL (emb-η id id)
+
 emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (eval2 m n) ≈ (m ∘ (emb n))
 emb-eval (▹ y) n = trans idL (emb-η id (y ∘ n))
 emb-eval (y ∘ y') n = trans (trans assoc (refl ∘ (emb-eval y' n))) (emb-eval y (eval2 y' n))
@@ -148,12 +154,6 @@ emb-eval tt n = ⊤
 
 completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (eval2 m1 n1) ≡ (eval2 m2 n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
 completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (subst (λ x -> emb (eval2 m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
-
-eval1 : ∀ {t u} -> exp t u -> norm t u
-eval1 m = eval2 m (η-expand id)
-
-emb-id : ∀ {t} -> emb (η-expand (id {t})) ≈ id
-emb-id = trans idL (emb-η id id)
 
 completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval1 m1) ≡ (eval1 m2) -> m1 ≈ m2
 completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ emb-id) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (sym emb-id))) (sym idR)))
