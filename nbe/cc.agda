@@ -121,34 +121,20 @@ mutual
  eval-embr (π₁∘ y) rewrite eval-embr y | η-cut (π₁∘ id) (η-expand y) = refl
  eval-embr (π₂∘ y) rewrite eval-embr y | η-cut (π₂∘ id) (η-expand y) = refl
  eval-embr (M ∘ m) rewrite eval-emb m | η-cut (M ∘ η-expand id) m | η-cut id m = refl
+
  eval-emb : ∀ {t u} (n : norm t u) -> eval (emb n) ≡ n
  eval-emb (▹ r) = eval-embr r
  eval-emb [ m , n ] rewrite eval-emb m | eval-emb n = refl
  eval-emb tt = refl
 
-emb-eval : ∀ {t u} (n : exp t u) -> emb (eval n) ≈ n
-emb-eval (▹ M) = {!!}
-emb-eval (m ∘ n) = {!!}
-emb-eval [ m , n ] = []-extensionality (trans (trans (sym π₁-β) (emb-eval m)) π₁-β) (trans (trans (sym π₂-β) (emb-eval n)) π₂-β)
-emb-eval π₁ = {!!}
-emb-eval π₂ = {!!}
-emb-eval id = {!!}
-emb-eval tt = refl
+soundness : ∀ {t u} {m n : exp t u} -> m ≈ n -> (eval m) ≡ (eval n)
+soundness E = {!!} -- "Easy"
 
-pf : ∀ {t u} (m n : exp t u) -> (eval m) ≡ (eval n) -> m ≈ n
-pf (▹ y) (▹ y') E = {!!}
-pf (▹ y) (y' ∘ y0) E = {!!}
-pf (▹ y) [ y' , y0 ] E = {!!}
-pf (▹ y) π₁ E = {!!}
-pf (▹ y) π₂ E = {!!}
-pf (▹ y) id E = {!!}
-pf (▹ y) tt E = {!!}
-pf (y ∘ y') n E = {!!}
-pf [ y , y' ] n E = {!!}
-pf π₁ n E = {!!}
-pf π₂ n E = {!!}
-pf id n E = {!!}
-pf tt n E = {!!}
+completeness : ∀ {t u} (m n : exp t u) -> (eval m) ≡ (eval n) -> m ≈ n
+completeness m n E = {!!}
+
+emb-eval : ∀ {t u} (n : exp t u) -> emb (eval n) ≈ n
+emb-eval n = completeness _ _ (eval-emb (eval n))
 
 subst : ∀ {A : Set} (P : A -> Set) {a1 a2 : A} -> a1 ≡ a2 -> P a1 -> P a2
 subst P refl x = x
