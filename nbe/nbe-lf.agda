@@ -255,7 +255,7 @@ mutual
    (θ : lf-vsubst Γ σ Δ)
    {t r} {T : lf-tp γ t} (R : Γ ⊢ r ⇒ T) -> Δ ⊢ (rappSubst σ r) ⇒ (lf-tp-vsubst σ T)
  rsubst-lemma θ (v y) = v (θ y)
- rsubst-lemma θ (R · N) with rsubst-lemma θ R | nsubst-lemma θ N
+ rsubst-lemma θ (R · N) with (rsubst-lemma θ R) | (nsubst-lemma θ N)
  ... | w1 | w2 = {!!}
 
  nsubst-lemma : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : vsubst γ δ}
