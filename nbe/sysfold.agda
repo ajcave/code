@@ -75,8 +75,8 @@ ids : ∀ {A} {Δ : ctx A} -> gsubst (var Δ) Δ
 ids {Δ = ⊡} = ⊡
 ids {Δ = Γ , T} = (gmap pop ids) , top
 
-vwkn : ∀ {A} {Δ1 : ctx A} T -> gsubst (var (Δ1 , T)) Δ1
-vwkn T = gmap pop ids
+wkn : ∀ {A} {Δ1 : ctx A} T -> gsubst (var (Δ1 , T)) Δ1
+wkn T = gmap pop ids
 
 [_] : ∀ {Δ1 Δ2} -> tvsubst Δ1 Δ2 -> tp Δ1 -> tp Δ2
 [ σ ] (v y) = v (gapp σ y)
@@ -84,7 +84,7 @@ vwkn T = gmap pop ids
 [ σ ] (Π T) = Π ([ ext σ ] T)
 
 t-ext : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 ->  tsubst (Δ1 , ⋆) (Δ2 , ⋆)
-t-ext θ = (gmap [ vwkn ⋆ ] θ) , (v top)
+t-ext θ = (gmap [ wkn ⋆ ] θ) , (v top)
 
 [[_]] : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp Δ1 -> tp Δ2
 [[ θ ]] (v y) = gapp θ y
@@ -96,7 +96,7 @@ id x = x
 
 id-tsubst : ∀ {Δ1} -> tsubst Δ1 Δ1
 id-tsubst {⊡} = ⊡
-id-tsubst {Δ , T} = (gmap [ vwkn ⋆ ] (id-tsubst {Δ})) , v top
+id-tsubst {Δ , T} = (gmap [ wkn ⋆ ] (id-tsubst {Δ})) , v top
 
 mutual
  data rtm (Δ : ctx sort) (Γ : ctx (tp Δ)) : tp Δ -> Set where
@@ -106,7 +106,7 @@ mutual
          -> rtm Δ Γ ([[ id-tsubst , S ]] T)
  data ntm (Δ : ctx sort) (Γ : ctx (tp Δ)) : tp Δ -> Set where 
   ƛ : ∀ {T S : tp Δ} -> ntm Δ (Γ , T) S -> ntm Δ Γ (T ⇒ S)
-  Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (map [ vwkn ⋆ ] Γ) T -> ntm Δ Γ (Π T)
+  Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (map [ wkn ⋆ ] Γ) T -> ntm Δ Γ (Π T)
   ▹ : ∀ {A} -> rtm Δ Γ (v A) -> ntm Δ Γ (v A)
 
 vsubst : ∀ {Δ : ctx sort} (Γ Γ' : ctx (tp Δ)) -> Set
@@ -128,9 +128,9 @@ record candidate Δ1 (T : tp Δ1) : Set₁ where
 --  Funct : ∀ Δ2 (σ : tvsubst Δ1 Δ2) (Γ : ctx (tp Δ1)) -> cand.sem (candi Δ1 …) Γ -> cand.sem (candi Δ2 σ) (map [ σ ] Γ)
 
 -- TODO: Rewrite this as an inductive type.
-〚_〛 : (Δ1 : ctx sort) {Δ2 : ctx sort} (θ : tsubst Δ1 Δ2) -> Set
-〚 ⊡ 〛 θ = unit
-〚 Δ , l 〛 (θ , U) = (〚 Δ 〛 θ) * (candidate _ U)
+data Subst Δ2 : (Δ1 : ctx sort) (σ : tsubst Δ1 Δ2) -> Set where
+ ⊡ : Subst Δ2 ⊡ ⊡
+ _,_ : ∀ {Δ1} {σ : tsubst Δ1 Δ2} -> Subst Δ2 Δ1 σ -> {U : tp Δ2} (R : candidate Δ2 U) -> Subst Δ2 (Δ1 , ⋆) (σ , U)
 
 lem1' : ∀ {Δ1 Δ2 Δ3} (σ1 : tvsubst Δ2 Δ3) (σ2 : tvsubst Δ1 Δ2) -> ((ext σ1) ∘ (ext σ2)) ≡ ext (σ1 ∘ σ2)
 lem1' σ1 ⊡ = refl
@@ -152,20 +152,20 @@ cand-app-funct σ σ' {U} R M | .([ σ' ∘ σ ] U) | refl = {!!} -- Oops, Funct
 cand-app : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) {U : tp _} (R : candidate Δ1 U) -> candidate Δ2 ([ σ ] U)
 cand-app {Δ1} {Δ2} σ {U} R = record { candi = λ Δ3 σ' → cand-app' σ R σ' }
 
-st-subst-app : ∀ {Δ1 Δ2 Δ3} (σ : tvsubst Δ2 Δ3) {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ)  -> 〚 Δ1 〛 (gmap [ σ ] θ)
-st-subst-app σ {⊡} Δ' = tt
+st-subst-app : ∀ {Δ1 Δ2 Δ3} (σ : tvsubst Δ2 Δ3) {θ : tsubst Δ1 Δ2} (Δ' : Subst Δ2 Δ1 θ)  -> Subst Δ3 Δ1 (gmap [ σ ] θ)
+st-subst-app σ {⊡} Δ' = ⊡
 st-subst-app {Δ1 , _} {Δ2} {Δ3} σ {θ , T} (Δ' , R) = st-subst-app σ Δ' , (cand-app σ R)
 
-vari : ∀ {Δ1 Δ2 : ctx sort} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) (α : var Δ1 ⋆) -> candidate Δ2 (gapp θ α)
-vari {θ = ⊡} _ ()
-vari {θ = θ , T} (Δ' , α) top = α
-vari {θ = θ , T} (Δ' , α) (pop y) = vari Δ' y
+vari : ∀ {Δ1 Δ2 : ctx sort} {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) (α : var Δ1 ⋆) -> candidate Δ2 (gapp σ α)
+vari {σ = ⊡} _ ()
+vari {σ = σ , T} (Δ' , α) top = α
+vari {σ = σ , T} (Δ' , α) (pop y) = vari Δ' y
 
-sem : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) (T : tp Δ1) -> (Γ : ctx (tp Δ2)) -> Set
-sem {Δ1} {Δ2} Δ' (v y) Γ = cand.sem (candidate.candi (vari Δ' y) _ ids) Γ -- Is this what we want?
-sem Δ' (T ⇒ S) Γ = ∀ Γ' -> vsubst Γ Γ' -> sem Δ' T Γ' → sem Δ' S Γ'
-sem {Δ1} {Δ2} Δ' (Π T) Γ = ∀ Δ2' (σ : tvsubst Δ2 Δ2') (U : tp Δ2') (R : candidate Δ2' U)
-                                 → sem {θ = _ , U} ((st-subst-app σ Δ') , R) T (map [ σ ] Γ)
+sem : ∀ {Δ1 Δ2} {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) (T : tp Δ1) -> (Γ : ctx (tp Δ2)) -> Set
+sem {Δ1} {Δ2} θ (v y) Γ = cand.sem (candidate.candi (vari θ y) _ ids) Γ -- Is this what we want?
+sem {Δ1} {Δ2} θ (T ⇒ S) Γ = ∀ Γ' -> vsubst Γ Γ' -> sem θ T Γ' → sem θ S Γ'
+sem {Δ1} {Δ2} θ (Π T) Γ = ∀ Δ2' (σ : tvsubst Δ2 Δ2') (U : tp Δ2') (R : candidate Δ2' U)
+                                 → sem {σ = _ , U} ((st-subst-app σ θ) , R) T (map [ σ ] Γ)
 
 varTsubst : ∀ {Δ1 Δ2 Γ T} (σ : tvsubst Δ1 Δ2) -> var Γ T -> var (map [ σ ] Γ) ([ σ ] T)
 varTsubst σ top = top
@@ -182,7 +182,7 @@ mutual
  rappSubst σ (R $ S) = (rappSubst σ R) $ S
  nappSubst : ∀ {Δ Γ Γ' S} -> vsubst Γ Γ' -> ntm Δ Γ S -> ntm Δ Γ' S 
  nappSubst σ (ƛ N) = ƛ (nappSubst (ext σ) N)
- nappSubst σ (Λ N) = Λ (nappSubst (lift (vwkn ⋆) σ) N)
+ nappSubst σ (Λ N) = Λ (nappSubst (lift (wkn ⋆) σ) N)
  nappSubst σ (▹ R) = ▹ (rappSubst σ R)
 
 mutual
@@ -196,7 +196,7 @@ mutual
  nappTSubst σ (Λ N) = Λ {!!}
  nappTSubst σ (▹ R) = ▹ (rappTSubst σ R)
 
-appSubst : ∀ {Δ1 Δ2} {Γ1 Γ2 : ctx (tp Δ2)} {θ : tsubst Δ1 Δ2} {Δ' : 〚 Δ1 〛 θ} -> vsubst Γ1 Γ2 -> ∀ {S} ->  sem Δ' S Γ1 -> sem Δ' S Γ2
+appSubst : ∀ {Δ1 Δ2} {Γ1 Γ2 : ctx (tp Δ2)} {θ : tsubst Δ1 Δ2} {Δ' : Subst Δ2 Δ1 θ} -> vsubst Γ1 Γ2 -> ∀ {S} ->  sem Δ' S Γ1 -> sem Δ' S Γ2
 appSubst {Δ' = Δ'} θ {v α} M = cand.funct (candidate.candi (vari Δ' α) _ ids) θ M
 appSubst θ {T ⇒ S} M = λ Γ' σ x → M Γ' (σ ∘ θ) x
 appSubst θ {Π T} M = λ Δ σ U R → appSubst (lift σ θ) {T} (M Δ σ U R)
@@ -208,7 +208,7 @@ data eqdep {B} (A : B -> Set) {b} (x : A b) : ∀ {c} -> A c -> Set where
   -> (candidate.candi (vari (st-subst-app σ Δ') y) _ …) ≡ (cand-app' σ (vari Δ' y) …)
 lem0 σ Δ' y = {!!} -}
 
-appTSubst : ∀ {Δ1 Δ2 Δ3 Γ} {θ : tsubst Δ1 Δ2} {Δ' : 〚 Δ1 〛 θ} S -> (σ : tvsubst Δ2 Δ3) -> sem Δ' S Γ -> sem (st-subst-app σ Δ') S (map [ σ ] Γ)
+appTSubst : ∀ {Δ1 Δ2 Δ3 Γ} {θ : tsubst Δ1 Δ2} {Δ' : Subst Δ2 Δ1 θ} S -> (σ : tvsubst Δ2 Δ3) -> sem Δ' S Γ -> sem (st-subst-app σ Δ') S (map [ σ ] Γ)
 appTSubst {Γ = Γ} {Δ' = Δ'} (v y) σ M = {!!}
 appTSubst (T ⇒ S) σ M = λ Γ' σ' x → {!!} -- Crap, this will have to quantify over extensions to Δ too.. Or.. ?
 appTSubst (Π T) σ M = λ Δ2' σ' U R → {!!} -- "Easy"
@@ -225,23 +225,23 @@ neut-candidate : ∀ {Δ} -> candidate (Δ , ⋆) (v top)
 neut-candidate {Δ} = record { candi = λ Δ2 σ → record { sem = λ Γ → rtm Δ2 Γ ([ σ ] (v top)); funct = rappSubst; reflect = id; reify = ▹ } } 
 
 mutual
- reflect : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) T {Γ} -> rtm Δ2 Γ ([[ θ ]] T) -> sem Δ' T Γ
+ reflect : ∀ {Δ1 Δ2} {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) T {Γ} -> rtm Δ2 Γ ([[ σ ]] T) -> sem θ T Γ
  reflect Δ' (v α) r = cand.reflect (candidate.candi (vari Δ' α) _ ids) {!!} -- Easy
  reflect Δ' (T ⇒ S) r = λ Γ' σ x → reflect Δ' S (rappSubst σ r · reify Δ' T x)
- reflect {Δ2 = Δ2} {θ = θ} Δ' (Π T) {Γ} r = foo --foo
-   where foo : ∀ Δ2' (σ : tvsubst Δ2 Δ2') (U : tp Δ2') (R : candidate Δ2' U) -> sem {θ = gmap [ σ ] θ , U} (st-subst-app σ Δ' , R) T (map [ σ ] Γ)
-         foo Δ2' σ U R with (rappTSubst σ r) $ U
-         ... | w = reflect {θ = gmap [ σ ] θ , U} (st-subst-app σ Δ' , R) T {!!} -- "Easy"
- reify : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) T {Γ} -> sem Δ' T Γ -> ntm Δ2 Γ ([[ θ ]] T)
+ reflect {Δ2 = Δ2} {σ} θ (Π T) {Γ} r = foo --foo
+   where foo : ∀ Δ2' (σ' : tvsubst Δ2 Δ2') (U : tp Δ2') (R : candidate Δ2' U) -> sem {σ = gmap [ σ' ] σ , U} (st-subst-app σ' θ , R) T (map [ σ' ] Γ)
+         foo Δ2' σ' U R with (rappTSubst σ' r) $ U
+         ... | w = reflect {σ = gmap [ σ' ] σ , U} (st-subst-app σ' θ , R) T {!!} -- "Easy"
+ reify : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : Subst Δ2 Δ1 θ) T {Γ} -> sem Δ' T Γ -> ntm Δ2 Γ ([[ θ ]] T)
  reify Δ' (v α) M with cand.reify (candidate.candi (vari Δ' α) _ ids) M
  ... | w = {!!} -- "Easy"
- reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) (vwkn _) (reflect Δ' T (v top))))
- reify {θ = θ} Δ' (Π T) M = Λ (reify (st-subst-app (vwkn ⋆) Δ' , neut-candidate) T (M _ (vwkn ⋆) (v top) neut-candidate))
+ reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) (wkn _) (reflect Δ' T (v top))))
+ reify {θ = θ} Δ' (Π T) M = Λ (reify (st-subst-app (wkn ⋆) Δ' , neut-candidate) T (M _ (wkn ⋆) (v top) neut-candidate))
 
-sem-cand : ∀ {Δ1 Δ2} (θ : tsubst Δ1 Δ2) (Δ' : 〚 Δ1 〛 θ) (T : tp Δ1) -> candidate Δ2 ([[ θ ]] T)
-sem-cand θ Δ' T = record { candi = λ Δ2 σ → record { sem = sem {θ = gmap [ σ ] θ} (st-subst-app σ Δ') T; funct = {!!}; reflect = {!!}; reify = {!!} } } -- Easy
+sem-cand : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) (θ : Subst Δ2 Δ1 σ) (T : tp Δ1) -> candidate Δ2 ([[ σ ]] T)
+sem-cand σ θ T = record { candi = λ Δ2 σ' → record { sem = sem {σ = gmap [ σ' ] σ} (st-subst-app σ' θ) T; funct = {!!}; reflect = {!!}; reify = {!!} } } -- Easy
 
-subst : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Γ1 : ctx (tp Δ1)) (Γ1 : ctx (tp Δ2)) (Δ' : 〚 Δ1 〛 θ) -> Set
+subst : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Γ1 : ctx (tp Δ1)) (Γ1 : ctx (tp Δ2)) (Δ' : Subst Δ2 Δ1 θ) -> Set
 subst Γ1 Γ2 Δ' = gsubst (λ T -> sem Δ' T Γ2) Γ1
 
 tsubstLookup-map : ∀ {A} {Exp1 Exp2 : A -> Set} {Δ1} (f : ∀ {T} -> Exp1 T -> Exp2 T) (θ : gsubst Exp1 Δ1) {T} (y : var Δ1 T) -> gapp (gmap f θ) y ≡ f (gapp θ y)
@@ -254,19 +254,19 @@ trans refl f = f
 
 tsubstLookup-id : ∀ {Δ} (y : var Δ _) -> gapp id-tsubst y ≡ v y
 tsubstLookup-id top = refl
-tsubstLookup-id (pop y) = trans (tsubstLookup-map [ vwkn ⋆ ] id-tsubst y) foo
- where foo : [ vwkn ⋆ ] (gapp id-tsubst y) ≡ v (pop y)
+tsubstLookup-id (pop y) = trans (tsubstLookup-map [ wkn ⋆ ] id-tsubst y) foo
+ where foo : [ wkn ⋆ ] (gapp id-tsubst y) ≡ v (pop y)
        foo rewrite tsubstLookup-id y with tsubstLookup-map pop ids y
        ... | w = {!!}
 
 mutual
- sem-subst1 :  ∀ {Δ1 Δ2} Γ {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) S T -> sem {θ = θ , [[ θ ]] S} (Δ' , sem-cand θ Δ' S) T Γ -> sem Δ' ([[ id-tsubst , S ]] T) Γ
+ sem-subst1 :  ∀ {Δ1 Δ2} Γ {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) S T -> sem {σ = σ , [[ σ ]] S} (θ , sem-cand σ θ S) T Γ -> sem θ ([[ id-tsubst , S ]] T) Γ
  sem-subst1 Γ Δ S (v top) = λ x → {!!} -- "Easy"
  sem-subst1 Γ Δ S (v (pop y)) rewrite tsubstLookup-id y = λ x → x
  sem-subst1 Γ Δ S (T ⇒ S') = λ M Γ' σ x → sem-subst1 Γ' Δ S S' (M Γ' σ (sem-subst2 Γ' Δ S T x))
  sem-subst1 Γ Δ S (Π T) = λ M Δ2' σ U R → {!!} -- Gonna have to generalize this...
 
- sem-subst2 :  ∀ {Δ1 Δ2} Γ {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) S T -> sem Δ' ([[ id-tsubst , S ]] T) Γ -> sem {θ = θ , [[ θ ]] S} (Δ' , sem-cand θ Δ' S) T Γ
+ sem-subst2 :  ∀ {Δ1 Δ2} Γ {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) S T -> sem θ ([[ id-tsubst , S ]] T) Γ -> sem {σ = σ , [[ σ ]] S} (θ , sem-cand σ θ S) T Γ
  sem-subst2 Γ Δ S (v top) = λ x → {!!} -- "Easy"
  sem-subst2 Γ Δ S (v (pop y)) rewrite tsubstLookup-id y = λ x → x
  sem-subst2 Γ Δ S (T ⇒ S') = λ M Γ' σ x → sem-subst2 Γ' Δ S S' (M Γ' σ (sem-subst1 Γ' Δ S T x))
@@ -276,16 +276,16 @@ mutual
 --st-subst-app-id θ Δ' = ?
 
 mutual
- srSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> rtm Δ1 Γ1 T -> sem Δ' T Γ2
- srSubst Δ' σ (v y) = gapp σ y
- srSubst Δ' σ (R · N) = (srSubst Δ' σ R) _ ids (sSubst Δ' σ N)
- srSubst {Γ2 = Γ2} {θ = θ} Δ' σ (_$_ {T} R S) with srSubst Δ' σ R _ ids ([[ θ ]] S) (sem-cand θ Δ' S)
- ... | w = sem-subst1 Γ2 Δ' S T {!!} -- "Easy"
+ srSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) -> subst Γ1 Γ2 θ -> rtm Δ1 Γ1 T -> sem θ T Γ2
+ srSubst θ σ (v y) = gapp σ y
+ srSubst θ σ (R · N) = (srSubst θ σ R) _ ids (sSubst θ σ N)
+ srSubst {Γ2 = Γ2} {σ = σ1} θ σ (_$_ {T} R S) with srSubst θ σ R _ ids ([[ σ1 ]] S) (sem-cand σ1 θ S)
+ ... | w = sem-subst1 Γ2 θ S T {!!} -- "Easy"
 
- sSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) -> subst Γ1 Γ2 Δ' -> ntm Δ1 Γ1 T -> sem Δ' T Γ2
- sSubst {θ = θ} Δ' σ (ƛ {T} {S} N) = λ Γ' σ' s → sSubst Δ' ((gmap (appSubst σ') σ) , s) N
- sSubst {θ = θ} Δ' σ (Λ N) = λ Δ3 σt U R → sSubst {θ = gmap [ σt ] θ , U} (st-subst-app σt Δ' , R) {!!} N -- Ugly
- sSubst Δ' σ (▹ R) = srSubst Δ' σ R
+ sSubst : ∀ {Δ1 Δ2 Γ1 Γ2 T} {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) -> subst Γ1 Γ2 θ -> ntm Δ1 Γ1 T -> sem θ T Γ2
+ sSubst {σ = σ1} θ σ (ƛ {T} {S} N) = λ Γ' σ' s → sSubst θ ((gmap (appSubst σ') σ) , s) N
+ sSubst {σ = σ1} θ σ (Λ N) = λ Δ3 σt U R → sSubst {σ = gmap [ σt ] σ1 , U} (st-subst-app σt θ , R) {!!} N -- Ugly
+ sSubst θ σ (▹ R) = srSubst θ σ R
 
 nsubst : ∀ {Δ} (Γ1 Γ2 : ctx (tp Δ)) -> Set
 nsubst {Δ} Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm Δ Γ2 T
