@@ -1,13 +1,6 @@
 module cc (O : Set) where
 
-data _≡_ {A : Set} (x : A) : (y : A) -> Set where
- refl : x ≡ x
-
-{-# BUILTIN EQUALITY _≡_ #-}
-{-# BUILTIN REFL refl #-}
-
-subst : ∀ {A : Set} (P : A -> Set) {a b : A} -> a ≡ b -> P a -> P b
-subst P refl x = x
+open import eq
 
 data tp : Set where
  ▹ : (a : O) -> tp
@@ -129,7 +122,7 @@ module foo (var : tp -> tp -> Set) where
  emb-eval tt n = ⊤
 
  completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (eval2 m1 n1) ≡ (eval2 m2 n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
- completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (subst (λ x -> emb (eval2 m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
+ completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (≡-subst (λ x -> emb (eval2 m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
 
  completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval1 m1) ≡ (eval1 m2) -> m1 ≈ m2
  completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ emb-id) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (sym emb-id))) (sym idR)))

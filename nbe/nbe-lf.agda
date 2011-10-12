@@ -1,10 +1,5 @@
 module nbe-lf where
-
-data _≡_ {A : Set} (x : A) : (y : A) -> Set where
- refl : x ≡ x
-
-{-# BUILTIN EQUALITY _≡_ #-}
-{-# BUILTIN REFL refl #-}
+open import eq
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -43,6 +38,9 @@ mutual
  data ntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
   neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
+
+import cc
+open module cc1 = cc ctx hiding (tp)
 
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)

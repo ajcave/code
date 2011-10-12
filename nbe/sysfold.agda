@@ -26,51 +26,47 @@ record _*_ (A : Set) (B : Set) : Set where
     fst : A
     snd : B
 
+record sort : Set where
+ constructor ⋆
+
 data ctx (A : Set) : Set where
  ⊡ : ctx A
- _,_ : (Γ : ctx A) -> (x : A) -> ctx A
+ _,_ : (Γ : ctx A) -> (T : A) -> ctx A
 
-data tvar {A : Set} : ∀ (Δ : ctx A) (x : A) -> Set where
- z : ∀ {Δ T} -> tvar (Δ , T) T
- s : ∀ {Δ T S} -> tvar Δ T -> tvar (Δ , S) T
+data var {A : Set} : ∀ (Δ : ctx A) (x : A) -> Set where
+ z : ∀ {Δ T} -> var (Δ , T) T
+ s : ∀ {Δ T S} -> var Δ T -> var (Δ , S) T
 
 record unit : Set where
  constructor tt
 
-lctx = ctx unit
-
-data tp (Δ : lctx) : Set where
- v : tvar Δ _ -> tp Δ 
+data tp (Δ : ctx sort) : Set where
+ v : var Δ ⋆ -> tp Δ 
  _⇒_ : ∀ (T : tp Δ) -> (S : tp Δ) -> tp Δ
  Π : ∀ (T : tp (Δ , _)) -> tp Δ
 
-data tctx (Δ : lctx) : Set where
- ⊡ : tctx Δ
- _,_ : ∀ (Γ : tctx Δ) -> (T : tp Δ) -> tctx Δ
-
-data var {Δ : lctx} : ∀ (Γ : tctx Δ) (T : tp Δ) -> Set where
- z : ∀ {Γ} {T : tp Δ} -> var (Γ , T) T
- s : ∀ {Γ} {T : tp Δ} {S : tp Δ} -> var Γ T -> var (Γ , S) T
+tctx : (Δ : ctx sort) -> Set
+tctx Δ = ctx (tp Δ)
 
 tctxM : ∀ {Δ1 Δ2} (f : tp Δ1 -> tp Δ2) -> tctx Δ1 -> tctx Δ2
 tctxM f ⊡ = ⊡
 tctxM f (Γ , x) = tctxM f Γ , f x 
  
 tvsubst : ∀ Δ1 Δ2 -> Set
-tvsubst Δ1 Δ2 = ∀ {x : _ } (T : tvar Δ1 x) -> tvar Δ2 x
+tvsubst Δ1 Δ2 = ∀ {x : _ } (T : var Δ1 x) -> var Δ2 x
 
 data tsubst : ∀ Δ1 Δ2 -> Set where
  ⊡ : ∀ {Δ2} -> tsubst ⊡ Δ2
- _,_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp Δ2 -> tsubst (Δ1 , tt) Δ2
+ _,_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp Δ2 -> tsubst (Δ1 , ⋆) Δ2
 
 _∘_ : ∀ {A : Set} {B : Set} {C : Set} (g : B -> C) (f : A -> B) -> A -> C
 (g ∘ f) x = g (f x)
 
-_,,_ : ∀ {Δ1 Δ2 l} -> tvsubst Δ1 Δ2 -> tvar Δ2 l -> tvsubst (Δ1 , l) Δ2
+_,,_ : ∀ {Δ1 Δ2 l} -> tvsubst Δ1 Δ2 -> var Δ2 l -> tvsubst (Δ1 , l) Δ2
 _,,_ σ x z = x
 _,,_ σ x (s y) = σ y
 
-_×_ : ∀ {Δ1 Δ2 l m} -> tvsubst Δ1 Δ2 -> tvar (Δ2 , l) m -> tvsubst (Δ1 , m) (Δ2 , l)
+_×_ : ∀ {Δ1 Δ2 l m} -> tvsubst Δ1 Δ2 -> var (Δ2 , l) m -> tvsubst (Δ1 , m) (Δ2 , l)
 (σ × y) = (s ∘ σ) ,, y
 
 vext : ∀ {Δ1 Δ2 m} -> tvsubst Δ1 Δ2 -> tvsubst (Δ1 , m) (Δ2 , m)
@@ -85,7 +81,7 @@ tsubstMap : ∀ {Δ1 Δ2 Δ3} -> (tp Δ2 -> tp Δ3) -> tsubst Δ1 Δ2 -> tsubst 
 tsubstMap f ⊡ = ⊡
 tsubstMap f (θ , T) = (tsubstMap f θ) , (f T)
 
-tsubstLookup : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tvar Δ1 tt -> tp Δ2
+tsubstLookup : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> var Δ1 ⋆ -> tp Δ2
 tsubstLookup ⊡ ()
 tsubstLookup (Θ , T) z = T
 tsubstLookup (θ , T) (s x) = tsubstLookup θ x
@@ -106,17 +102,17 @@ id-tsubst {⊡} = ⊡
 id-tsubst {Δ , T} = (tsubstMap [ s ] (id-tsubst {Δ})) , v z
 
 mutual
- data rtm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where
+ data rtm (Δ : ctx sort) (Γ : tctx Δ) : tp Δ -> Set where
   v : ∀ {T : tp Δ} -> var Γ T -> rtm Δ Γ T
   _·_ : ∀ {T : tp Δ} {S : tp Δ} -> rtm Δ Γ (T ⇒ S) -> ntm Δ Γ T -> rtm Δ Γ S
   _$_ : ∀ {T : tp (Δ , _)} -> rtm Δ Γ (Π T) -> (S : tp Δ)
          -> rtm Δ Γ ([[ id-tsubst , S ]] T)
- data ntm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where 
+ data ntm (Δ : ctx sort) (Γ : tctx Δ) : tp Δ -> Set where 
   ƛ : ∀ {T S : tp Δ} -> ntm Δ (Γ , T) S -> ntm Δ Γ (T ⇒ S)
   Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (tctxM [ s ] Γ) T -> ntm Δ Γ (Π T)
   ▹ : ∀ {A} -> rtm Δ Γ (v A) -> ntm Δ Γ (v A)
 
-vsubst : ∀ {Δ : lctx} (Γ Γ' : tctx Δ) -> Set
+vsubst : ∀ {Δ : ctx sort} (Γ Γ' : tctx Δ) -> Set
 vsubst Γ Γ' = ∀ {T} -> var Γ T -> var Γ' T
 
 -- Technically I can't use a record here. That's strange.
@@ -135,7 +131,7 @@ record candidate Δ1 (T : tp Δ1) : Set₁ where
   Funct : ∀ Δ2 (σ : tvsubst Δ1 Δ2) (Γ : tctx Δ1) -> cand.sem (candi Δ1 …) Γ -> cand.sem (candi Δ2 σ) (tctxM [ σ ] Γ)
 
 -- TODO: Rewrite this as an inductive type.
-〚_〛 : (Δ1 : lctx) {Δ2 : lctx} (θ : tsubst Δ1 Δ2) -> Set
+〚_〛 : (Δ1 : ctx sort) {Δ2 : ctx sort} (θ : tsubst Δ1 Δ2) -> Set
 〚 ⊡ 〛 θ = unit
 〚 Δ , l 〛 (θ , U) = (〚 Δ 〛 θ) * (candidate _ U)
 
@@ -162,7 +158,7 @@ st-subst-app : ∀ {Δ1 Δ2 Δ3} (σ : tvsubst Δ2 Δ3) {θ : tsubst Δ1 Δ2} (�
 st-subst-app σ {⊡} Δ' = tt
 st-subst-app {Δ1 , _} {Δ2} {Δ3} σ {θ , T} (Δ' , R) = st-subst-app σ Δ' , (cand-app σ R)
 
-vari : ∀ {Δ1 Δ2 : lctx} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) (α : tvar Δ1 _) -> candidate Δ2 (tsubstLookup θ α)
+vari : ∀ {Δ1 Δ2 : ctx sort} {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) (α : var Δ1 _) -> candidate Δ2 (tsubstLookup θ α)
 vari {θ = ⊡} _ ()
 vari {θ = θ , T} (Δ' , α) z = α
 vari {θ = θ , T} (Δ' , α) (s y) = vari Δ' y
@@ -173,10 +169,10 @@ sem Δ' (T ⇒ S) Γ = ∀ Γ' -> vsubst Γ Γ' -> sem Δ' T Γ' → sem Δ' S �
 sem {Δ1} {Δ2} Δ' (Π T) Γ = ∀ Δ2' (σ : tvsubst Δ2 Δ2') (U : tp Δ2') (R : candidate Δ2' U)
                                  → sem {θ = _ , U} ((st-subst-app σ Δ') , R) T (tctxM [ σ ] Γ)
 
-_∘₁_ : ∀ {Δ : lctx} {Γ Γ' ψ : tctx Δ} -> vsubst Γ' Γ -> vsubst ψ Γ' -> vsubst ψ Γ
+_∘₁_ : ∀ {Δ : ctx sort} {Γ Γ' ψ : tctx Δ} -> vsubst Γ' Γ -> vsubst ψ Γ' -> vsubst ψ Γ
 (σ1 ∘₁ σ2) x = σ1 (σ2 x)
 
-ext : ∀ {Δ : lctx} {Γ Γ' : tctx Δ} {T} -> vsubst Γ Γ' -> vsubst (Γ , T) (Γ' , T)
+ext : ∀ {Δ : ctx sort} {Γ Γ' : tctx Δ} {T} -> vsubst Γ Γ' -> vsubst (Γ , T) (Γ' , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
 
@@ -228,7 +224,7 @@ appTSubst {Γ = Γ} {Δ' = Δ'} (v y) σ M = {!!}
 appTSubst (T ⇒ S) σ M = λ Γ' σ' x → {!!} -- Crap, this will have to quantify over extensions to Δ too.. Or.. ?
 appTSubst (Π T) σ M = λ Δ2' σ' U R → {!!} -- "Easy"
 
-wkn : ∀ {Δ : lctx} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
+wkn : ∀ {Δ : ctx sort} {Γ : tctx Δ} {T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
 lem : ∀ {Δ1 Δ2 Δ3} (θ1 : tsubst Δ1 Δ2) (θ2 : tsubst Δ2 Δ3) T -> [[ θ2 ]] ([[ θ1 ]] T) ≡ [[ tsubstMap [[ θ2 ]] θ1 ]] T
@@ -239,7 +235,7 @@ lem2 : ∀ {Δ1 Δ2 Δ3 Δ4} (f : tp Δ1 -> tp Δ2) (g : tp Δ2 -> tp Δ3) (θ :
 lem2 f g ⊡ = refl
 lem2 f g (θ , T) rewrite lem2 f g θ = refl
 
-neut-candidate : ∀ {Δ} -> candidate (Δ , tt) (v z)
+neut-candidate : ∀ {Δ} -> candidate (Δ , ⋆) (v z)
 neut-candidate {Δ} = record { candi = λ Δ2 σ → record { sem = λ Γ → rtm Δ2 Γ ([ σ ] (v z)); funct = rappSubst; reflect = …; reify = ▹ }; Funct = λ Δ2 σ Γ x → rappTSubst σ x } 
 
 mutual
@@ -270,7 +266,7 @@ extend : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} {Γ1 : tctx Δ1} {Γ2 : tctx Δ2} (
 extend Δ' θ M z = M
 extend Δ' θ M (s y) = θ y
 
-tsubstLookup-map : ∀ {Δ1 Δ2 Δ3} (f : tp Δ2 -> tp Δ3) (θ : tsubst Δ1 Δ2) (y : tvar Δ1 _) -> tsubstLookup (tsubstMap f θ) y ≡ f (tsubstLookup θ y)
+tsubstLookup-map : ∀ {Δ1 Δ2 Δ3} (f : tp Δ2 -> tp Δ3) (θ : tsubst Δ1 Δ2) (y : var Δ1 _) -> tsubstLookup (tsubstMap f θ) y ≡ f (tsubstLookup θ y)
 tsubstLookup-map f ⊡ ()
 tsubstLookup-map f (θ , T) z = refl
 tsubstLookup-map f (θ , T) (s y) = tsubstLookup-map f θ y
@@ -278,7 +274,7 @@ tsubstLookup-map f (θ , T) (s y) = tsubstLookup-map f θ y
 trans : ∀ {A} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
 trans refl f = f
 
-tsubstLookup-id : ∀ {Δ} (y : tvar Δ _) -> tsubstLookup id-tsubst y ≡ v y
+tsubstLookup-id : ∀ {Δ} (y : var Δ _) -> tsubstLookup id-tsubst y ≡ v y
 tsubstLookup-id z = refl
 tsubstLookup-id (s y) = trans (tsubstLookup-map [ s ] id-tsubst y) foo
  where foo : [ s ] (tsubstLookup id-tsubst y) ≡ v (s y)
