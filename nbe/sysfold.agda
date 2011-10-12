@@ -253,7 +253,7 @@ extend : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} {Γ1 : ctx (tp Δ1)} {Γ2 : ctx (tp
 extend Δ' θ M top = M
 extend Δ' θ M (pop y) = θ y
 
-tsubstLookup-map : ∀ {Δ1 Δ2 Δ3} (f : tp Δ2 -> tp Δ3) (θ : tsubst Δ1 Δ2) (y : var Δ1 _) -> gapp (gmap f θ) y ≡ f (gapp θ y)
+tsubstLookup-map : ∀ {A} {Exp1 Exp2 : A -> Set} {Δ1} (f : ∀ {T} -> Exp1 T -> Exp2 T) (θ : gsubst Exp1 Δ1) {T} (y : var Δ1 T) -> gapp (gmap f θ) y ≡ f (gapp θ y)
 tsubstLookup-map f ⊡ ()
 tsubstLookup-map f (θ , T) top = refl
 tsubstLookup-map f (θ , T) (pop y) = tsubstLookup-map f θ y
@@ -265,7 +265,8 @@ tsubstLookup-id : ∀ {Δ} (y : var Δ _) -> gapp id-tsubst y ≡ v y
 tsubstLookup-id top = refl
 tsubstLookup-id (pop y) = trans (tsubstLookup-map [ vwkn ⋆ ] id-tsubst y) foo
  where foo : [ vwkn ⋆ ] (gapp id-tsubst y) ≡ v (pop y)
-       foo rewrite tsubstLookup-id y = {!!}
+       foo rewrite tsubstLookup-id y with tsubstLookup-map pop ids y
+       ... | w = {!!}
 
 mutual
  sem-subst1 :  ∀ {Δ1 Δ2} Γ {θ : tsubst Δ1 Δ2} (Δ' : 〚 Δ1 〛 θ) S T -> sem {θ = θ , [[ θ ]] S} (Δ' , sem-cand θ Δ' S) T Γ -> sem Δ' ([[ id-tsubst , S ]] T) Γ
