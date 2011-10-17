@@ -83,7 +83,9 @@ module foo (var : tp -> tp -> Set) where
  emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (m ⊙ n) ≈ (m ∘ (emb n))
  emb-eval (▹ y) n = emb-η (y ∘ n)
  emb-eval (y ∘ y') n = trans (trans assoc (refl ∘ (emb-eval y' n))) (emb-eval y (y' ⊙ n))
- emb-eval [ y , y' ] n = trans (trans (sym π-η) [ (trans (sym assoc) ((sym π₁-β) ∘ refl)) , (trans (sym assoc) ((sym π₂-β) ∘ refl)) ]) [ (emb-eval y n) , (emb-eval y' n) ]
+ emb-eval [ y , y' ] n = trans (trans (sym π-η) [ (trans (sym assoc) ((sym π₁-β) ∘ refl))
+                                                , (trans (sym assoc) ((sym π₂-β) ∘ refl)) ])
+                                                [ (emb-eval y n) , (emb-eval y' n) ]
  emb-eval π₁ [ y , y' ] = sym π₁-β
  emb-eval π₂ [ y , y' ] = sym π₂-β
  emb-eval id n = sym idL
