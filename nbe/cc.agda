@@ -46,6 +46,11 @@ module foo (var : tp -> tp -> Set) where
    [_,_] : ∀ {t u s} -> norm t u -> norm t s -> norm t (u × s)
    tt : ∀ {t} -> norm t ⊤
 
+ η-expand : ∀ {u t} -> neut t u -> norm t u
+ η-expand {▹ a} R = ▹ R
+ η-expand {t × u} R = [ (η-expand (π₁∘ R)) , (η-expand (π₂∘ R)) ]
+ η-expand {⊤} R = tt
+
  mutual
   embr : ∀ {t u} -> neut t u -> exp t u
   embr id = id
@@ -57,7 +62,6 @@ module foo (var : tp -> tp -> Set) where
   emb (▹ r) = embr r
   emb [ m , n ] = [ (emb m) , (emb n) ]
   emb tt = tt
-
 
  mutual
   _◆_ : ∀ {s t u} (n : norm u s) (r : neut t u) -> norm t s
@@ -84,10 +88,7 @@ module foo (var : tp -> tp -> Set) where
   embr-functr (π₂∘ y) n = trans assoc (refl ∘ (embr-functr y n))
   embr-functr (y ∘ y') n = trans assoc (refl ∘ embr-funct y' n)
 
- η-expand : ∀ {u t} -> neut t u -> norm t u
- η-expand {▹ a} R = ▹ R
- η-expand {t × u} R = [ (η-expand (π₁∘ R)) , (η-expand (π₂∘ R)) ]
- η-expand {⊤} R = tt
+
 
  emb-η : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> emb (η-expand (r1 ◇ r2)) ≈ (embr r1 ∘ embr r2)
  emb-η {▹ a} y n = embr-functr y n
