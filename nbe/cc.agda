@@ -10,12 +10,12 @@ data tp : Set where
 module foo (var : tp -> tp -> Set) where
 
  data exp : tp -> tp -> Set where
-  ▹ : ∀ {t s} -> var t s -> exp t s
   _∘_ : ∀ {t u s} -> exp u s -> exp t u -> exp t s
+  id : ∀ {t} -> exp t t
+  ▹ : ∀ {t s} -> var t s -> exp t s
   [_,_] : ∀ {t u s} -> exp t u -> exp t s -> exp t (u × s)
   π₁ : ∀ {t s} -> exp (t × s) t
   π₂ : ∀ {t s} -> exp (t × s) s
-  id : ∀ {t} -> exp t t
   tt : ∀ {t} -> exp t ⊤
 
  data _≈_ : ∀ {t u} -> exp t u -> exp t u -> Set where
@@ -25,10 +25,10 @@ module foo (var : tp -> tp -> Set) where
   assoc : ∀ {t u s v} {m : exp u s} {n : exp t u} {p : exp v t} -> (m ∘ (n ∘ p)) ≈ ((m ∘ n) ∘ p)
   idL : ∀ {t u} {m : exp t u} -> (id ∘ m) ≈ m
   idR : ∀ {t u} {m : exp t u} -> (m ∘ id) ≈ m
+  _∘_ : ∀ {t u s} {m1 m2 : exp u s} {n1 n2 : exp t u} -> m1 ≈ m2 -> n1 ≈ n2 -> (m1 ∘ n1) ≈ (m2 ∘ n2)
   π₁-β : ∀ {t u s} {m : exp t u} {n : exp t s} -> (π₁ ∘ [ m , n ]) ≈ m
   π₂-β : ∀ {t u s} {m : exp t u} {n : exp t s} -> (π₂ ∘ [ m , n ]) ≈ n
   π-η : ∀ {t u s} {m : exp t (u × s)} -> m ≈ [ π₁ ∘ m , π₂ ∘ m ]
-  _∘_ : ∀ {t u s} {m1 m2 : exp u s} {n1 n2 : exp t u} -> m1 ≈ m2 -> n1 ≈ n2 -> (m1 ∘ n1) ≈ (m2 ∘ n2)
   [_,_] : ∀ {t u s} {m1 m2 : exp t u} {n1 n2 : exp t s} -> m1 ≈ m2 -> n1 ≈ n2 -> [ m1 , n1 ] ≈ [ m2 , n2 ]
   ⊤ : ∀ {t} {m1 m2 : exp t ⊤} -> m1 ≈ m2
 
@@ -57,17 +57,17 @@ module foo (var : tp -> tp -> Set) where
  proj2 : ∀ {t u s} -> norm t (u × s) -> norm t s
  proj2 [ M , N ] = N
 
- eval2 : ∀ {u t s} -> exp t u -> norm s t -> norm s u
- eval2 (▹ y) n = η-expand (y ∘ n)
- eval2 (y ∘ y') n = eval2 y (eval2 y' n)
- eval2 [ y , y' ] n = [ (eval2 y n) , (eval2 y' n) ]
- eval2 π₁ n = proj1 n
- eval2 π₂ n = proj2 n
- eval2 id n = n
- eval2 tt n = tt
+ eval : ∀ {u t s} -> exp t u -> norm s t -> norm s u
+ eval (▹ y) n = η-expand (y ∘ n)
+ eval (y ∘ y') n = eval y (eval y' n)
+ eval [ y , y' ] n = [ (eval y n) , (eval y' n) ]
+ eval π₁ n = proj1 n
+ eval π₂ n = proj2 n
+ eval id n = n
+ eval tt n = tt
 
  eval1 : ∀ {t u} -> exp t u -> norm t u
- eval1 m = eval2 m (η-expand id)
+ eval1 m = eval m (η-expand id)
 
  mutual
   embr : ∀ {t u} -> neut t u -> exp t u
@@ -82,29 +82,29 @@ module foo (var : tp -> tp -> Set) where
   emb tt = tt
 
  mutual
-  cut2 : ∀ {s t u} (n : norm u s) (r : neut t u) -> norm t s
-  cut2 (▹ y) r = ▹ (cutr2 y r)
-  cut2 [ y , y' ] r = [ cut2 y r , cut2 y' r ]
-  cut2 tt r = tt
-  cutr2 : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> neut t s
-  cutr2 id r2 = r2
-  cutr2 (π₁∘ y) r2 = π₁∘ (cutr2 y r2)
-  cutr2 (π₂∘ y) r2 = π₂∘ (cutr2 y r2)
-  cutr2 (y ∘ y') r2 = y ∘ (cut2 y' r2)
+  _◆_ : ∀ {s t u} (n : norm u s) (r : neut t u) -> norm t s
+  ▹ r1 ◆ r2 = ▹ (r1 ◇ r2)
+  [ n1 , n2 ] ◆ r = [ n1 ◆ r , n2 ◆ r ]
+  tt ◆ r = tt
+  _◇_ : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> neut t s
+  id ◇ r2 = r2
+  π₁∘ r1 ◇ r2 = π₁∘ (r1 ◇ r2)
+  π₂∘ r1 ◇ r2 = π₂∘ (r1 ◇ r2)
+  (M ∘ n) ◇ r2 = M ∘ (n ◆ r2)
 
  mutual
-  embr-cut2 : ∀ {s t u} (m : norm u s) (r : neut t u) -> emb (cut2 m r) ≈ (emb m ∘ embr r)
+  embr-cut2 : ∀ {s t u} (m : norm u s) (r : neut t u) -> emb (m ◆ r) ≈ (emb m ∘ embr r)
   embr-cut2 (▹ y) r = embr-cutr2 y r
   embr-cut2 [ y , y' ] r = trans (sym π-η) [ (trans (sym assoc) (trans ((sym π₁-β) ∘ refl) (embr-cut2 y r)))
                                            , (trans (sym assoc) (trans ((sym π₂-β) ∘ refl) (embr-cut2 y' r))) ]
   embr-cut2 tt r = ⊤
-  embr-cutr2 : ∀ {s t u} (y : neut u s) (n : neut t u) -> embr (cutr2 y n) ≈ (embr y ∘ embr n)
+  embr-cutr2 : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> embr (r1 ◇ r2) ≈ (embr r1 ∘ embr r2)
   embr-cutr2 id n = sym idL
   embr-cutr2 (π₁∘ y) n = trans assoc (refl ∘ (embr-cutr2 y n))
   embr-cutr2 (π₂∘ y) n = trans assoc (refl ∘ (embr-cutr2 y n))
   embr-cutr2 (y ∘ y') n = trans assoc (refl ∘ embr-cut2 y' n)
 
- emb-η : ∀ {s t u} (y : neut u s) (n : neut t u) -> emb (η-expand (cutr2 y n)) ≈ (embr y ∘ embr n)
+ emb-η : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> emb (η-expand (r1 ◇ r2)) ≈ (embr r1 ∘ embr r2)
  emb-η {▹ a} y n = embr-cutr2 y n
  emb-η {t × u} y n = trans (trans (sym π-η) [ (sym assoc) , (sym assoc) ]) [ emb-η (π₁∘ y) n , emb-η (π₂∘ y) n ]
  emb-η {⊤} y n = ⊤
@@ -112,17 +112,17 @@ module foo (var : tp -> tp -> Set) where
  emb-id : ∀ {t} -> emb (η-expand (id {t})) ≈ id
  emb-id = trans idL (emb-η id id)
 
- emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (eval2 m n) ≈ (m ∘ (emb n))
+ emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (eval m n) ≈ (m ∘ (emb n))
  emb-eval (▹ y) n = trans idL (emb-η id (y ∘ n))
- emb-eval (y ∘ y') n = trans (trans assoc (refl ∘ (emb-eval y' n))) (emb-eval y (eval2 y' n))
+ emb-eval (y ∘ y') n = trans (trans assoc (refl ∘ (emb-eval y' n))) (emb-eval y (eval y' n))
  emb-eval [ y , y' ] n = trans (trans (sym π-η) [ (trans (sym assoc) ((sym π₁-β) ∘ refl)) , (trans (sym assoc) ((sym π₂-β) ∘ refl)) ]) [ (emb-eval y n) , (emb-eval y' n) ]
  emb-eval π₁ [ y , y' ] = sym π₁-β
  emb-eval π₂ [ y , y' ] = sym π₂-β
  emb-eval id n = sym idL
  emb-eval tt n = ⊤
 
- completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (eval2 m1 n1) ≡ (eval2 m2 n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
- completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (≡-subst (λ x -> emb (eval2 m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
+ completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (eval m1 n1) ≡ (eval m2 n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
+ completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (≡-subst (λ x -> emb (eval m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
 
  completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval1 m1) ≡ (eval1 m2) -> m1 ≈ m2
  completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ emb-id) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (sym emb-id))) (sym idR)))

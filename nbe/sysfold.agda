@@ -232,11 +232,11 @@ mutual
    where foo : ∀ Δ2' (σ' : tvsubst Δ2 Δ2') (U : tp Δ2') (R : candidate Δ2' U) -> sem {σ = gmap [ σ' ] σ , U} (st-subst-app σ' θ , R) T (map [ σ' ] Γ)
          foo Δ2' σ' U R with (rappTSubst σ' r) $ U
          ... | w = reflect {σ = gmap [ σ' ] σ , U} (st-subst-app σ' θ , R) T {!!} -- "Easy"
- reify : ∀ {Δ1 Δ2} {θ : tsubst Δ1 Δ2} (Δ' : Subst Δ2 Δ1 θ) T {Γ} -> sem Δ' T Γ -> ntm Δ2 Γ ([[ θ ]] T)
+ reify : ∀ {Δ1 Δ2} {σ : tsubst Δ1 Δ2} (θ : Subst Δ2 Δ1 σ) T {Γ} -> sem θ T Γ -> ntm Δ2 Γ ([[ σ ]] T)
  reify Δ' (v α) M with cand.reify (candidate.candi (vari Δ' α) _ ids) M
  ... | w = {!!} -- "Easy"
- reify {θ = θ} Δ' (T ⇒ S) M = ƛ (reify Δ' S (M (_ , [[ θ ]] T) (wkn _) (reflect Δ' T (v top))))
- reify {θ = θ} Δ' (Π T) M = Λ (reify (st-subst-app (wkn ⋆) Δ' , neut-candidate) T (M _ (wkn ⋆) (v top) neut-candidate))
+ reify {σ = σ} θ (T ⇒ S) M = ƛ (reify θ S (M (_ , [[ σ ]] T) (wkn _) (reflect θ T (v top))))
+ reify {σ = σ} θ (Π T) M = Λ (reify (st-subst-app (wkn ⋆) θ , neut-candidate) T (M _ (wkn ⋆) (v top) neut-candidate))
 
 sem-cand : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) (θ : Subst Δ2 Δ1 σ) (T : tp Δ1) -> candidate Δ2 ([[ σ ]] T)
 sem-cand σ θ T = record { candi = λ Δ2 σ' → record { sem = sem {σ = gmap [ σ' ] σ} (st-subst-app σ' θ) T; funct = {!!}; reflect = {!!}; reify = {!!} } } -- Easy
