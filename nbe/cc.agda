@@ -51,18 +51,12 @@ module foo (var : tp -> tp -> Set) where
  η-expand {t × u} R = [ (η-expand (π₁∘ R)) , (η-expand (π₂∘ R)) ]
  η-expand {⊤} R = tt
 
- proj1 : ∀ {t u s} -> norm t (u × s) -> norm t u
- proj1 [ M , N ] = M
-
- proj2 : ∀ {t u s} -> norm t (u × s) -> norm t s
- proj2 [ M , N ] = N
-
  eval : ∀ {u t s} -> exp t u -> norm s t -> norm s u
- eval (▹ y) n = η-expand (y ∘ n)
- eval (y ∘ y') n = eval y (eval y' n)
- eval [ y , y' ] n = [ (eval y n) , (eval y' n) ]
- eval π₁ n = proj1 n
- eval π₂ n = proj2 n
+ eval (▹ θ) n = η-expand (θ ∘ n)
+ eval (m1 ∘ m2) n = eval m1 (eval m2 n)
+ eval [ n1 , n2 ] n = [ (eval n1 n) , (eval n2 n) ]
+ eval π₁ [ n , m ] = n
+ eval π₂ [ n , m ] = m
  eval id n = n
  eval tt n = tt
 
@@ -86,6 +80,7 @@ module foo (var : tp -> tp -> Set) where
   ▹ r1 ◆ r2 = ▹ (r1 ◇ r2)
   [ n1 , n2 ] ◆ r = [ n1 ◆ r , n2 ◆ r ]
   tt ◆ r = tt
+
   _◇_ : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> neut t s
   id ◇ r2 = r2
   π₁∘ r1 ◇ r2 = π₁∘ (r1 ◇ r2)
@@ -93,19 +88,20 @@ module foo (var : tp -> tp -> Set) where
   (M ∘ n) ◇ r2 = M ∘ (n ◆ r2)
 
  mutual
-  embr-cut2 : ∀ {s t u} (m : norm u s) (r : neut t u) -> emb (m ◆ r) ≈ (emb m ∘ embr r)
-  embr-cut2 (▹ y) r = embr-cutr2 y r
-  embr-cut2 [ y , y' ] r = trans (sym π-η) [ (trans (sym assoc) (trans ((sym π₁-β) ∘ refl) (embr-cut2 y r)))
-                                           , (trans (sym assoc) (trans ((sym π₂-β) ∘ refl) (embr-cut2 y' r))) ]
-  embr-cut2 tt r = ⊤
-  embr-cutr2 : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> embr (r1 ◇ r2) ≈ (embr r1 ∘ embr r2)
-  embr-cutr2 id n = sym idL
-  embr-cutr2 (π₁∘ y) n = trans assoc (refl ∘ (embr-cutr2 y n))
-  embr-cutr2 (π₂∘ y) n = trans assoc (refl ∘ (embr-cutr2 y n))
-  embr-cutr2 (y ∘ y') n = trans assoc (refl ∘ embr-cut2 y' n)
+  embr-funct : ∀ {s t u} (m : norm u s) (r : neut t u) -> emb (m ◆ r) ≈ (emb m ∘ embr r)
+  embr-funct (▹ y) r = embr-functr y r
+  embr-funct [ y , y' ] r = trans (sym π-η) [ (trans (sym assoc) (trans ((sym π₁-β) ∘ refl) (embr-funct y r)))
+                                           , (trans (sym assoc) (trans ((sym π₂-β) ∘ refl) (embr-funct y' r))) ]
+  embr-funct tt r = ⊤
+
+  embr-functr : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> embr (r1 ◇ r2) ≈ (embr r1 ∘ embr r2)
+  embr-functr id n = sym idL
+  embr-functr (π₁∘ y) n = trans assoc (refl ∘ (embr-functr y n))
+  embr-functr (π₂∘ y) n = trans assoc (refl ∘ (embr-functr y n))
+  embr-functr (y ∘ y') n = trans assoc (refl ∘ embr-funct y' n)
 
  emb-η : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> emb (η-expand (r1 ◇ r2)) ≈ (embr r1 ∘ embr r2)
- emb-η {▹ a} y n = embr-cutr2 y n
+ emb-η {▹ a} y n = embr-functr y n
  emb-η {t × u} y n = trans (trans (sym π-η) [ (sym assoc) , (sym assoc) ]) [ emb-η (π₁∘ y) n , emb-η (π₂∘ y) n ]
  emb-η {⊤} y n = ⊤
 
