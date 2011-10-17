@@ -46,23 +46,6 @@ module foo (var : tp -> tp -> Set) where
    [_,_] : ∀ {t u s} -> norm t u -> norm t s -> norm t (u × s)
    tt : ∀ {t} -> norm t ⊤
 
- η-expand : ∀ {u t} -> neut t u -> norm t u
- η-expand {▹ a} R = ▹ R
- η-expand {t × u} R = [ (η-expand (π₁∘ R)) , (η-expand (π₂∘ R)) ]
- η-expand {⊤} R = tt
-
- eval : ∀ {u t s} -> exp t u -> norm s t -> norm s u
- eval (▹ θ) n = η-expand (θ ∘ n)
- eval (m1 ∘ m2) n = eval m1 (eval m2 n)
- eval [ n1 , n2 ] n = [ (eval n1 n) , (eval n2 n) ]
- eval π₁ [ n , m ] = n
- eval π₂ [ n , m ] = m
- eval id n = n
- eval tt n = tt
-
- eval1 : ∀ {t u} -> exp t u -> norm t u
- eval1 m = eval m (η-expand id)
-
  mutual
   embr : ∀ {t u} -> neut t u -> exp t u
   embr id = id
@@ -74,6 +57,7 @@ module foo (var : tp -> tp -> Set) where
   emb (▹ r) = embr r
   emb [ m , n ] = [ (emb m) , (emb n) ]
   emb tt = tt
+
 
  mutual
   _◆_ : ∀ {s t u} (n : norm u s) (r : neut t u) -> norm t s
@@ -90,8 +74,8 @@ module foo (var : tp -> tp -> Set) where
  mutual
   embr-funct : ∀ {s t u} (m : norm u s) (r : neut t u) -> emb (m ◆ r) ≈ (emb m ∘ embr r)
   embr-funct (▹ y) r = embr-functr y r
-  embr-funct [ y , y' ] r = trans (sym π-η) [ (trans (sym assoc) (trans ((sym π₁-β) ∘ refl) (embr-funct y r)))
-                                           , (trans (sym assoc) (trans ((sym π₂-β) ∘ refl) (embr-funct y' r))) ]
+  embr-funct [ n1 , n2 ] r = trans (sym π-η) [ (trans (sym assoc) (trans ((sym π₁-β) ∘ refl) (embr-funct n1 r)))
+                                             , (trans (sym assoc) (trans ((sym π₂-β) ∘ refl) (embr-funct n2 r))) ]
   embr-funct tt r = ⊤
 
   embr-functr : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> embr (r1 ◇ r2) ≈ (embr r1 ∘ embr r2)
@@ -100,6 +84,11 @@ module foo (var : tp -> tp -> Set) where
   embr-functr (π₂∘ y) n = trans assoc (refl ∘ (embr-functr y n))
   embr-functr (y ∘ y') n = trans assoc (refl ∘ embr-funct y' n)
 
+ η-expand : ∀ {u t} -> neut t u -> norm t u
+ η-expand {▹ a} R = ▹ R
+ η-expand {t × u} R = [ (η-expand (π₁∘ R)) , (η-expand (π₂∘ R)) ]
+ η-expand {⊤} R = tt
+
  emb-η : ∀ {s t u} (r1 : neut u s) (r2 : neut t u) -> emb (η-expand (r1 ◇ r2)) ≈ (embr r1 ∘ embr r2)
  emb-η {▹ a} y n = embr-functr y n
  emb-η {t × u} y n = trans (trans (sym π-η) [ (sym assoc) , (sym assoc) ]) [ emb-η (π₁∘ y) n , emb-η (π₂∘ y) n ]
@@ -107,6 +96,18 @@ module foo (var : tp -> tp -> Set) where
 
  emb-id : ∀ {t} -> emb (η-expand (id {t})) ≈ id
  emb-id = trans idL (emb-η id id)
+
+ eval : ∀ {u t s} -> exp t u -> norm s t -> norm s u
+ eval (▹ θ) n = η-expand (θ ∘ n)
+ eval (m1 ∘ m2) n = eval m1 (eval m2 n)
+ eval [ n1 , n2 ] n = [ (eval n1 n) , (eval n2 n) ]
+ eval π₁ [ n , m ] = n
+ eval π₂ [ n , m ] = m
+ eval id n = n
+ eval tt n = tt
+
+ eval1 : ∀ {t u} -> exp t u -> norm t u
+ eval1 m = eval m (η-expand id)
 
  emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (eval m n) ≈ (m ∘ (emb n))
  emb-eval (▹ y) n = trans idL (emb-η id (y ∘ n))
@@ -122,23 +123,3 @@ module foo (var : tp -> tp -> Set) where
 
  completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval1 m1) ≡ (eval1 m2) -> m1 ≈ m2
  completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ emb-id) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (sym emb-id))) (sym idR)))
-
-{- η-cut : ∀ {s t u} (r : neut u s) (m : norm t u) -> ((η-expand r) ⊙ m) ≡ (cutr r m)
-η-cut {▹ a} r m = refl
-η-cut {t × u} r m rewrite η-cut (π₁∘ r) m | η-cut (π₂∘ r) m = {!!} -- just prove eta
-η-cut {⊤} r m = {!!} -- just prove extensionality
-
-mutual
- eval-embr : ∀ {t u} (r : neut t u) -> eval (embr r) ≡ (η-expand r)
- eval-embr id = refl
- eval-embr (π₁∘ y) rewrite eval-embr y | η-cut (π₁∘ id) (η-expand y) = refl
- eval-embr (π₂∘ y) rewrite eval-embr y | η-cut (π₂∘ id) (η-expand y) = refl
- eval-embr (M ∘ m) rewrite eval-emb m | η-cut (M ∘ η-expand id) m | η-cut id m = refl
-
- eval-emb : ∀ {t u} (n : norm t u) -> eval (emb n) ≡ n
- eval-emb (▹ r) = eval-embr r
- eval-emb [ m , n ] rewrite eval-emb m | eval-emb n = refl
- eval-emb tt = refl
-
-soundness : ∀ {t u} {m n : exp t u} -> m ≈ n -> (eval m) ≡ (eval n)
-soundness E = {!!} -- "Easy" -}
