@@ -107,7 +107,7 @@ module foo (var : tp -> tp -> Set) where
  tt ⊙ n = tt
 
  eval1 : ∀ {t u} -> exp t u -> norm t u
- eval1 m = m ⊙ (η-expand id)
+ eval1 m = m ⊙ (η-expand id) 
 
  emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (m ⊙ n) ≈ (m ∘ (emb n))
  emb-eval (▹ y) n = trans idL (emb-η id (y ∘ n))
