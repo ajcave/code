@@ -77,8 +77,8 @@ module foo (var : tp -> tp -> Set) where
  id ⊙ n = n
  tt ⊙ n = tt
 
- eval1 : ∀ {t u} -> exp t u -> norm t u
- eval1 m = m ⊙ (η-expand id) 
+ eval : ∀ {t u} -> exp t u -> norm t u
+ eval m = m ⊙ (η-expand id) 
 
  emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (m ⊙ n) ≈ (m ∘ (emb n))
  emb-eval (▹ y) n = emb-η (y ∘ n)
@@ -94,5 +94,5 @@ module foo (var : tp -> tp -> Set) where
  completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (m1 ⊙ n1) ≡ (m2 ⊙ n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
  completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (≡-subst (λ x -> emb (m1 ⊙ n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
 
- completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval1 m1) ≡ (eval1 m2) -> m1 ≈ m2
+ completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval m1) ≡ (eval m2) -> m1 ≈ m2
  completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ emb-η id) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (sym (emb-η id)))) (sym idR)))
