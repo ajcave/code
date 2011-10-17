@@ -97,29 +97,29 @@ module foo (var : tp -> tp -> Set) where
  emb-id : ∀ {t} -> emb (η-expand (id {t})) ≈ id
  emb-id = trans idL (emb-η id id)
 
- eval : ∀ {u t s} -> exp t u -> norm s t -> norm s u
- eval (▹ θ) n = η-expand (θ ∘ n)
- eval (m1 ∘ m2) n = eval m1 (eval m2 n)
- eval [ n1 , n2 ] n = [ (eval n1 n) , (eval n2 n) ]
- eval π₁ [ n , m ] = n
- eval π₂ [ n , m ] = m
- eval id n = n
- eval tt n = tt
+ _⊙_ : ∀ {u t s} -> exp t u -> norm s t -> norm s u
+ (▹ θ) ⊙ n = η-expand (θ ∘ n)
+ (m1 ∘ m2) ⊙ n = m1 ⊙ (m2 ⊙ n)
+ [ n1 , n2 ] ⊙ n = [ (n1 ⊙ n) , (n2 ⊙ n) ]
+ π₁ ⊙ [ n , m ] = n
+ π₂ ⊙ [ n , m ] = m
+ id ⊙ n = n
+ tt ⊙ n = tt
 
  eval1 : ∀ {t u} -> exp t u -> norm t u
- eval1 m = eval m (η-expand id)
+ eval1 m = m ⊙ (η-expand id)
 
- emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (eval m n) ≈ (m ∘ (emb n))
+ emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> emb (m ⊙ n) ≈ (m ∘ (emb n))
  emb-eval (▹ y) n = trans idL (emb-η id (y ∘ n))
- emb-eval (y ∘ y') n = trans (trans assoc (refl ∘ (emb-eval y' n))) (emb-eval y (eval y' n))
+ emb-eval (y ∘ y') n = trans (trans assoc (refl ∘ (emb-eval y' n))) (emb-eval y (y' ⊙ n))
  emb-eval [ y , y' ] n = trans (trans (sym π-η) [ (trans (sym assoc) ((sym π₁-β) ∘ refl)) , (trans (sym assoc) ((sym π₂-β) ∘ refl)) ]) [ (emb-eval y n) , (emb-eval y' n) ]
  emb-eval π₁ [ y , y' ] = sym π₁-β
  emb-eval π₂ [ y , y' ] = sym π₂-β
  emb-eval id n = sym idL
  emb-eval tt n = ⊤
 
- completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (eval m1 n1) ≡ (eval m2 n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
- completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (≡-subst (λ x -> emb (eval m1 n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
+ completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (m1 ⊙ n1) ≡ (m2 ⊙ n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
+ completeness' m1 m2 n1 n2 H = trans (emb-eval m2 n2) (trans (≡-subst (λ x -> emb (m1 ⊙ n1) ≈ emb x) H refl) (sym (emb-eval m1 n1)))
 
  completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval1 m1) ≡ (eval1 m2) -> m1 ≈ m2
  completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ emb-id) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (sym emb-id))) (sym idR)))
