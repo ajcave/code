@@ -90,12 +90,12 @@ module foo (var : tp -> tp -> Set) where
  emb-eval π₂ [ n1 , n2 ] = π₂-β
  emb-eval ! n = !
 -- Is there a way to define emb-eval simultaneously with ⊙ and emb-η with η-expand kind of like how intrinsically typed means we're defining substitution simultaneously with the proof of the substitution lemma?
- 
+
+ emb-eval' : ∀ {t u} (m : exp t u) -> m ≈ emb (eval m)
+ emb-eval' m = trans (emb-eval m (η-expand id)) (trans (refl ∘ (emb-η id)) (sym idR))
+
  ≡-emb : ∀ {t u} {n1 n2 : norm t u} -> n1 ≡ n2 -> emb n1 ≈ emb n2
  ≡-emb refl = refl
 
- completeness' : ∀ {t u s} (m1 m2 : exp u s) (n1 n2 : norm t u) -> (m1 ⊙ n1) ≡ (m2 ⊙ n2) -> (m1 ∘ (emb n1)) ≈ (m2 ∘ (emb n2))
- completeness' m1 m2 n1 n2 H = trans (sym (emb-eval m2 n2)) (trans (≡-emb H) (emb-eval m1 n1))
-
  completeness : ∀ {t u} (m1 m2 : exp t u) -> (eval m1) ≡ (eval m2) -> m1 ≈ m2
- completeness {t} {u} m1 m2 H = trans idR (trans (refl ∘ (sym (emb-η id))) (trans (trans (completeness' m1 m2 _ _ H) (refl ∘ (emb-η id))) (sym idR)))
+ completeness {t} {u} m1 m2 H = trans (trans (sym (emb-eval' m2)) (≡-emb H)) (emb-eval' m1)
