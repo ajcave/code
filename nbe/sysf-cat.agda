@@ -115,9 +115,9 @@ mutual
  nSub : ∀ {Δ1 Δ2 Δ3} -> ntp Δ2 Δ3 -> rtp Δ1 Δ2 -> ntp Δ1 Δ3
  nSub (▹ y) T = ▹ (rSub y T)
  nSub (T ⇒ S) T' = (nSub T T') ⇒ nSub S T'
- nSub (Π T) T' = {!!}
- nSub (T × U) T' = {!!}
- nSub (T , U) T' = {!!}
+ nSub (Π T) T' = Π (nSub T {!!})
+ nSub (T × U) T' = (nSub T T') × (nSub U T')
+ nSub (T , U) T' = (nSub T T') , (nSub U T')
 
 mutual
  rtSub : ∀ {Δ1 Δ2 Δ3} -> rtp Δ2 Δ3 -> ntp Δ1 Δ2 -> ntp Δ1 Δ3
@@ -129,9 +129,11 @@ mutual
  ntSub : ∀ {Δ1 Δ2 Δ3} -> ntp Δ2 Δ3 -> ntp Δ1 Δ2 -> ntp Δ1 Δ3
  ntSub (▹ y) T = rtSub y T
  ntSub (T ⇒ S) T' = (ntSub T T') ⇒ (ntSub S T')
- ntSub (Π T) T' = Π (ntSub T ({!!} , {!!}))
- ntSub (T × U) T' = {!!}
- ntSub (T , U) T' = {!!}
+ -- What if we make the monoidal structure separate from the product structure (explicit weakening and contraction). Easier?
+ ntSub (Π T) T' = Π (ntSub T ({!!} , (▹ (π₂ v)))) --(nSub T' (π₁ v) , ▹ (π₂ v)))
+ ntSub (T × U) T' = (ntSub T T') × (ntSub U T')
+ ntSub (T , U) T' = (ntSub T T') , (ntSub U T')
+
 mutual
  data rtm (Δ : sort) (Γ : ntp Δ ⋆) : ntp Δ ⋆ -> Set where
   id : rtm Δ Γ Γ
