@@ -227,15 +227,14 @@ mutual
  ≪ v y ≫r = v ≪ y ≫v
  ≪_≫r {Γ} (_·_ {T} R N) = ≡-subst (λ x → rtm ≪ Γ ≫c (≪ T ≫t ⇝ x)) (≡-sym (lf-tp-subst-≪≫ (n-single ≪ N ≫n) _)) ≪ R ≫r · ≪ N ≫n
 
-{-
-data lf-vsubst' {δ} (Δ : lf-ctx δ) : ∀ {γ} (Γ : lf-ctx γ) (σ : vsubst γ δ) -> Set where
- ⊡ : lf-vsubst' Δ ⊡ ⊡
- _,_ : ∀ {γ} {Γ : lf-ctx γ} (σ : vsubst γ δ) -> lf-vsubst' Δ Γ σ -> ∀ {u} {U : lf-tp γ u} {y : var δ u} -> lf-var Δ (lf-tp-vsubst σ U) y ->  lf-vsubst' Δ (Γ , U) (σ , y)
+mutual
+ data lf-vsubst (Δ : lf-ctx) : ∀ (Γ : lf-ctx) -> Set where
+  ⊡ : lf-vsubst Δ ⊡
+  _,_ : ∀ {Γ : lf-ctx} -> (σ : lf-vsubst Δ Γ) -> ∀ {U}-> lf-var Δ (lf-tp-vsubst ≪ σ ≫s U) -> lf-vsubst Δ (Γ , U)
+ ≪_≫s : ∀ {Δ Γ} -> lf-vsubst Δ Γ -> vsubst ≪ Γ ≫c ≪ Δ ≫c
+ ≪ σ ≫s = {!!}
 
-lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
-lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
-
-vsubst' : ctx -> ctx -> Set
+{-vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
 
 _∘₁_ : ∀ {A B C} (f : vsubst' B C) (g : vsubst' A B) -> (vsubst' A C)
@@ -295,14 +294,28 @@ mutual
  nsubst-lemma θ (neut R) = neut (rsubst-lemma θ R)
 
 lift : ∀ {Γ Δ} -> vsubst Γ Δ -> nSubst Γ Δ
-lift σ x = η-exp (v (vsubst-app σ x))
+lift σ x = η-exp (v (vsubst-app σ x)) -}
 
-lf-sem : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (n : sem γ t) -> Set
-lf-sem Γ (atom A) n = Γ ⊢ n ⇐ atom A
-lf-sem Γ (S ⇝ T) n = {γ' : _} {Γ' : lf-ctx γ'} {σ : vsubst _ γ'} (θ : lf-vsubst Γ σ Γ') ->
-  {m : sem γ' _} → lf-sem Γ' (lf-tp-vsubst σ S) m -> lf-sem Γ' (lf-tp-subst  (nExtend nId (reify m)) (lf-tp-vsubst (ext σ) T)) (n γ' σ m)
+data conn {γ} : lf-tp γ -> tp -> Set where
+ atom : ∀ A -> conn (atom A) (atom ≪ A ≫a)
+ _⇝_ : ∀ {S s T t} -> conn S s -> conn T t -> conn (S ⇝ T) (t ⇝ s)
 
-lf-wkn : ∀ {γ} {Γ : lf-ctx γ} {s} {S : lf-tp γ s} -> lf-vsubst Γ wkn (Γ , S)
+mutual
+ lf-sem : ∀ Γ (T : lf-tp ≪ Γ ≫c) -> Set
+ lf-sem Γ (atom A') = Γ ⊢⇐ atom A'
+ lf-sem Γ (T ⇝ S) = {Γ' : _} (θ : lf-vsubst Γ' Γ) → (s : lf-sem Γ' (lf-tp-vsubst ≪ θ ≫s T)) → lf-sem Γ' {!!}
+
+ ≪_≫sem : ∀ {Γ T} -> lf-sem Γ T -> sem ≪ Γ ≫c ≪ T ≫t
+ ≪_≫sem {Γ} {atom A} M = ≪ M ≫n
+ ≪_≫sem {Γ} {S ⇝ T} M = λ Γ' σ x → {!!} {- Crap contravariance! -}
+-- lf-sem Γ (atom A) = Γ ⊢⇐ atom A
+-- lf-sem Γ (S ⇝ T) = ∀ {Γ'} (θ : lf-vsubst Γ' Γ) ->
+--  (s : lf-sem Γ' (lf-tp-vsubst ≪ θ ≫s S)) -> lf-sem Γ' (lf-tp-subst (nExtend nId (reify {!!})) (lf-tp-vsubst (ext ≪ θ ≫s) T))
+ 
+ --≪_≫sem : ∀ {Γ T} -> lf-sem Γ T -> sem ≪ Γ ≫c ≪ T ≫t
+-- ≪ M ≫sem = {!!}
+
+{- lf-wkn : ∀ {γ} {Γ : lf-ctx γ} {s} {S : lf-tp γ s} -> lf-vsubst Γ wkn (Γ , S)
 lf-wkn = {!!}
 
 mutual 
