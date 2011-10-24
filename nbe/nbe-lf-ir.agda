@@ -301,21 +301,9 @@ data conn {γ} : lf-tp γ -> tp -> Set where
  _⇝_ : ∀ {S s T t} -> conn S s -> conn T t -> conn (S ⇝ T) (t ⇝ s)
 
 mutual
- lf-sem : ∀ Γ (T : lf-tp ≪ Γ ≫c) -> Set
- lf-sem Γ (atom A') = Γ ⊢⇐ atom A'
- lf-sem Γ (T ⇝ S) = {Γ' : _} (θ : lf-vsubst Γ' Γ) → (s : lf-sem Γ' (lf-tp-vsubst ≪ θ ≫s T)) → lf-sem Γ' {!!}
-
- ≪_≫sem : ∀ {Γ T} -> lf-sem Γ T -> sem ≪ Γ ≫c ≪ T ≫t
- ≪_≫sem {Γ} {atom A} M = ≪ M ≫n
- ≪_≫sem {Γ} {S ⇝ T} M = λ Γ' σ x → {!!} {- !!! Crap contravariance! -}
-
-
--- lf-sem Γ (atom A) = Γ ⊢⇐ atom A
--- lf-sem Γ (S ⇝ T) = ∀ {Γ'} (θ : lf-vsubst Γ' Γ) ->
---  (s : lf-sem Γ' (lf-tp-vsubst ≪ θ ≫s S)) -> lf-sem Γ' (lf-tp-subst (nExtend nId (reify {!!})) (lf-tp-vsubst (ext ≪ θ ≫s) T))
- 
- --≪_≫sem : ∀ {Γ T} -> lf-sem Γ T -> sem ≪ Γ ≫c ≪ T ≫t
--- ≪ M ≫sem = {!!}
+ lf-sem : ∀ Γ (T : lf-tp ≪ Γ ≫c) -> sem ≪ Γ ≫c ≪ T ≫t -> Set
+ lf-sem Γ (atom A') n = Σ (λ N → ≪ N ≫n ≡ n)
+ lf-sem Γ (T ⇝ S) n = {Γ' : _} (θ : lf-vsubst Γ' Γ) → (m : sem ≪ Γ' ≫c ≪ T ≫t) -> lf-sem Γ' (lf-tp-vsubst ≪ θ ≫s T) (≡-subst (λ x → sem ≪ Γ' ≫c x) (≡-sym ≪ ≪ θ ≫s -subst- T ≫t) m) -> lf-sem Γ' (lf-tp-subst (nExtend nId (reify m)) (lf-tp-vsubst (ext ≪ θ ≫s) S)) (≡-subst (λ x → sem ≪ Γ' ≫c x) (≡-sym (≡-trans (lf-tp-subst-≪≫ _ _) ≪ _ -subst- S ≫t)) (n ≪ Γ' ≫c ≪ θ ≫s m))
 
 {- lf-wkn : ∀ {γ} {Γ : lf-ctx γ} {s} {S : lf-tp γ s} -> lf-vsubst Γ wkn (Γ , S)
 lf-wkn = {!!}
