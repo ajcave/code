@@ -307,7 +307,9 @@ mutual
 
  ≪_≫sem : ∀ {Γ T} -> lf-sem Γ T -> sem ≪ Γ ≫c ≪ T ≫t
  ≪_≫sem {Γ} {atom A} M = ≪ M ≫n
- ≪_≫sem {Γ} {S ⇝ T} M = λ Γ' σ x → {!!} {- Crap contravariance! -}
+ ≪_≫sem {Γ} {S ⇝ T} M = λ Γ' σ x → {!!} {- !!! Crap contravariance! -}
+
+
 -- lf-sem Γ (atom A) = Γ ⊢⇐ atom A
 -- lf-sem Γ (S ⇝ T) = ∀ {Γ'} (θ : lf-vsubst Γ' Γ) ->
 --  (s : lf-sem Γ' (lf-tp-vsubst ≪ θ ≫s S)) -> lf-sem Γ' (lf-tp-subst (nExtend nId (reify {!!})) (lf-tp-vsubst (ext ≪ θ ≫s) T))
