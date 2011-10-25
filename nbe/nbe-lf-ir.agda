@@ -296,10 +296,6 @@ mutual
 lift : ∀ {Γ Δ} -> vsubst Γ Δ -> nSubst Γ Δ
 lift σ x = η-exp (v (vsubst-app σ x)) -}
 
-data conn {γ} : lf-tp γ -> tp -> Set where
- atom : ∀ A -> conn (atom A) (atom ≪ A ≫a)
- _⇝_ : ∀ {S s T t} -> conn S s -> conn T t -> conn (S ⇝ T) (t ⇝ s)
-
 mutual
  lf-sem : ∀ Γ (T : lf-tp ≪ Γ ≫c) -> sem ≪ Γ ≫c ≪ T ≫t -> Set
  lf-sem Γ (atom A') n = Σ (λ N → ≪ N ≫n ≡ n)
