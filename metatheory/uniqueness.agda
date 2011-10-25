@@ -39,7 +39,7 @@ data _≡_ {A : Set} (x : A) : A -> Set where
 
 uniqueness : ∀ {Γ m T S} -> of Γ m T -> of Γ m S -> T ≡ S
 uniqueness (▹ x) (▹ .x) = refl
-uniqueness {n} {m · n'} (M · N) (M' · N') with uniqueness M M'
-uniqueness {n} {m · n'} (M · N) (M' · N') | refl = refl
+uniqueness (M · N) (M' · N') with uniqueness M M'
+... | refl = refl
 uniqueness (ƛ M) (ƛ M') with uniqueness M M'
 ... | refl = refl
