@@ -139,14 +139,18 @@ mutual
 sId : ∀ {Γ} -> subst Γ Γ
 sId x = reflect (v x)
 
+-- By computing this by induction we get the η-expansions we need
 nSubst : ctx -> ctx -> Set
-nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
+nSubst ⊡ Δ = Unit
+nSubst (Γ , T) Δ = (nSubst Γ Δ) * (ntm Δ T)
 
 embed : ∀ {Γ T} -> ntm Γ T -> sem Γ T
 embed N = sSubst sId N
 
 embed* : ∀ {Γ Δ} -> nSubst Γ Δ -> subst Γ Δ
-embed* θ x = embed (θ x)
+embed* {⊡} θ ()
+embed* {Γ , T} (θ , N) z = embed N
+embed* {Γ , T} (θ , N) (s y) = embed* θ y
 
 cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
 cut θ t = reify (sSubst (embed* θ) t)
@@ -157,7 +161,6 @@ arr Γ T = ∀ {Δ} -> nSubst Γ Δ -> ntm Δ T
 interp : ∀ {Γ T} -> ntm Γ T -> arr Γ T
 interp N σ = cut σ N
 
--- Do we get the η-expansion we need? I think if we compute nSubst by induction using * we do
 
 {-nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
