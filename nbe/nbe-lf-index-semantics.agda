@@ -191,7 +191,7 @@ nId2 : ∀ {Γ} -> nSubst Γ Γ
 nId2 {⊡} = tt
 nId2 {Γ , T} = (nId2 ⊙ nwkn) , nv z
 
-test : ∀ {Γ T} -> ((nwkn {Γ} {T ⇝ T}) ⊙ (nId2 , ƛ (nv z))) ≡ nId2
+test : ∀ {Γ T} -> ((nwkn {Γ} {T ⇝ T}) ⊙ (nId2 , ƛ (nv z))) ≡ nId2 
 test = {!!} -- Is this doomed, or will it all work out when we use garr?
 -- Crap maybe I need something more like the cut principle that shows up in my solver, where ⊙ inducts on first argument?
 -- I think so.. I think ginterp should have type exp Δ Γ -> garr Δ Γ, where garr is the same as before
