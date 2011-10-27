@@ -1,5 +1,5 @@
 {-# OPTIONS --type-in-type #-}
-module Yoneda where
+module Yoneda-ascii where
 
 data _≡_ {A : Set}(a : A) : {A' : Set} → A' → Set where
  refl : a ≡ a
@@ -62,22 +62,22 @@ data Obj (Base : Set) : Set where
  ⊤ : Obj Base
 
 record Cat : Set where
- field Base  : Set
-       Hom   : Obj Base → Obj Base → Set
-       iden  : ∀{X} → Hom X X
-       comp  : ∀{X Y Z} → Hom Y Z → Hom X Y → Hom X Z
-       idl   : ∀{X Y}{f : Hom X Y} → comp iden f ≡ f
-       idr   : ∀{X Y}{f : Hom X Y} → comp f iden ≡ f
-       ass   : ∀{W X Y Z}{f : Hom Y Z}{g : Hom X Y}{h : Hom W X} →
-               comp (comp f g) h ≡ comp f (comp g h)
-       π₁    : ∀ {X Y} → Hom (X × Y) X
-       π₂    : ∀ {X Y} → Hom (X × Y) Y
-       pair  : ∀ {X Y Z} → Hom X Y → Hom X Z → Hom X (Y × Z)
-       π₁β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₁ (pair f g) ≡ f 
-       π₂β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₂ (pair f g) ≡ g
-       η     : ∀ {X Y Z}{f : Hom X (Y × Z)} -> f ≡ (pair (comp π₁ f) (comp π₂ f))
-       !     : ∀ {X} -> Hom X ⊤
-       !η    : ∀ {X}{f g : Hom X ⊤} -> f ≡ g
+ field Base   : Set
+       Hom    : Obj Base → Obj Base → Set
+       iden   : ∀{X} → Hom X X
+       comp   : ∀{X Y Z} → Hom Y Z → Hom X Y → Hom X Z
+       idl    : ∀{X Y}{f : Hom X Y} → comp iden f ≡ f
+       idr    : ∀{X Y}{f : Hom X Y} → comp f iden ≡ f
+       ass    : ∀{W X Y Z}{f : Hom Y Z}{g : Hom X Y}{h : Hom W X} →
+                comp (comp f g) h ≡ comp f (comp g h)
+       proj1  : ∀ {X Y} → Hom (X × Y) X
+       proj2  : ∀ {X Y} → Hom (X × Y) Y
+       pair   : ∀ {X Y Z} → Hom X Y → Hom X Z → Hom X (Y × Z)
+       proj1B : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp proj1 (pair f g) ≡ f 
+       proj2B : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp proj2 (pair f g) ≡ g
+       eta    : ∀ {X Y Z}{f : Hom X (Y × Z)} -> f ≡ (pair (comp proj1 f) (comp proj2 f))
+       !      : ∀ {X} -> Hom X ⊤
+       !eta   : ∀ {X}{f g : Hom X ⊤} -> f ≡ g
 open Cat
 
 --Now, Yoneda's embedding says that we can view morphism in C as the following polymorphic function:
@@ -90,7 +90,7 @@ Y {C} f = λ Z g → comp C g f
 Y-1 : ∀{C A B} → (∀ Z → Hom C B Z → Hom C A Z) → Hom C A B
 Y-1 {C}{A}{B} α = α B (iden C)
 
--- Homs which give us the β and η laws
+
 
 HomI : ∀ C (X Y : Obj (Base C)) -> Set
 HomI C X (▹ B) = Hom C X (▹ B)
@@ -98,27 +98,28 @@ HomI C X (Y1 × Y2) = (HomI C X Y1) * (HomI C X Y2)
 HomI C X ⊤ = Unit
 
 --Given any category we can transform it like so:
+--(Adding fields for projections, pairing, etc)
 
 CatY : Cat → Cat
-CatY C = record {
- Base  = Base C;
- Hom   = λ X Y → ∀ Z → HomI C Z X → HomI C Z Y;
- iden  = λ Z -> id;
- comp  = λ α β Z → (α Z) ◦ (β Z);
- idl   = refl;
- idr   = refl;
- ass   = refl;
- π₁    = λ Z -> _*_.fst;
- π₂    = λ Z -> _*_.snd;
- pair  = λ f g Z x → (f Z x , g Z x);
- π₁β   = refl;
- π₂β   = refl;
- η     = refl;
- !     = λ Z x → tt;
- !η    = refl
+CatY C  = record {
+ Base   = Base C;
+ Hom    = λ X Y → ∀ Z → HomI C Z X → HomI C Z Y;
+ iden   = λ Z -> id;
+ comp   = λ α β Z → (α Z) ◦ (β Z);
+ idl    = refl;
+ idr    = refl;
+ ass    = refl;
+ proj1  = λ Z -> _*_.fst;
+ proj2  = λ Z -> _*_.snd;
+ pair   = λ f g Z x → (f Z x , g Z x);
+ proj1β = refl;
+ proj2β = refl;
+ eta    = refl;
+ !      = λ Z x → tt;
+ !eta   = refl
  }
 
--- Notice that we get the β and η laws for free
+-- Notice we get π₁β, π₂β
 
 postulate
  C : Cat
@@ -131,8 +132,8 @@ HomC X Y = Hom CY X Y
 _∘_ : ∀ {X Y Z} (f : HomC Y Z) (g : HomC X Y) -> HomC X Z
 _∘_ {X} {Y} {Z} f g = comp CY {X} {Y} {Z} f g
 
-〈_,_〉 : ∀ {X Y Z} (f : HomC X Y) (g : HomC X Z) -> HomC X (Y × Z)
-〈_,_〉 {X} {Y} {Z} f g = pair CY {X} {Y} {Z} f g
+[_,_] : ∀ {X Y Z} (f : HomC X Y) (g : HomC X Z) -> HomC X (Y × Z)
+[_,_] {X} {Y} {Z} f g = pair CY {X} {Y} {Z} f g
 
 ide : ∀ {X} -> HomC X X
 ide {X} = iden CY {X}
@@ -144,12 +145,12 @@ ide {X} = iden CY {X}
 π2 {X} {Y} = π₂ CY {X} {Y}
 
 test : ∀ Γ Δ S T (σ : HomC Δ Γ) (N : HomC Γ T) (M : HomC (Γ × T) S)
-        -> (_∘_ {Δ} {Γ × T} {S} M (_∘_ {Δ} {Γ} {Γ × T} (〈_,_〉 {Γ} {Γ} {T} (ide {Γ}) N) σ))
-         ≡ (_∘_ {Δ} {Γ × T} {S} M (_∘_ {Δ} {Δ × T} {Γ × T} (〈_,_〉 {Δ × T} {Γ} {T} (_∘_ {Δ × T} {Δ} {Γ} σ (π1 {Δ} {T})) (π2 {Δ} {T})) (〈_,_〉 {Δ} {Δ} {T} (ide {Δ}) (_∘_ {Δ} {Γ} {T} N σ))))
+        -> (_∘_ {Δ} {Γ × T} {S} M (_∘_ {Δ} {Γ} {Γ × T} ([_,_] {Γ} {Γ} {T} (ide {Γ}) N) σ))
+         ≡ (_∘_ {Δ} {Γ × T} {S} M (_∘_ {Δ} {Δ × T} {Γ × T} ([_,_] {Δ × T} {Γ} {T} (_∘_ {Δ × T} {Δ} {Γ} σ (π1 {Δ} {T})) (π2 {Δ} {T})) ([_,_] {Δ} {Δ} {T} (ide {Δ}) (_∘_ {Δ} {Γ} {T} N σ))))
 test Γ Δ S T σ N M = refl
 
 test2 : ∀ {Γ Δ S T} {σ : HomC Δ Γ} {N : HomC Γ T} {M : HomC (Γ × T) S}
-        -> (M ∘ (〈 ide , N 〉 ∘ σ)) ≡ ((M ∘ 〈 σ ∘ π1 , π2 〉) ∘ 〈 ide , (N ∘ σ) 〉)
+        -> (M ∘ ([ ide , N ] ∘ σ)) ≡ ((M ∘ [ σ ∘ π1 , π2 ]) ∘ [ ide , (N ∘ σ) ])
 test2 = {!!}
 {-module foo (C : Cat) where
 
