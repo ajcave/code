@@ -189,8 +189,8 @@ n-single-subst M N = cut (n-single N) M
 napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
 napp (ƛ M) N = n-single-subst M N
 
-unEmbed : ∀ {Γ Δ} -> subst Γ Δ -> nSubst Γ Δ
-unEmbed θ = {!!} --x = reify (θ x)
+--unEmbed : ∀ {Γ Δ} -> subst Γ Δ -> nSubst Γ Δ
+--unEmbed θ = {!!} --x = reify (θ x)
 
 -- Let's try this technique in the language with non-canonical forms, because substitution is easier there,
 -- And it still requires proofs about substitution in the index language
