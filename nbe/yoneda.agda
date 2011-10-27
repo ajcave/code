@@ -4,6 +4,15 @@ module yoneda where
 data _≡_ {A : Set}(a : A) : {A' : Set} → A' → Set where
  refl : a ≡ a
 
+record Unit : Set where
+ constructor tt
+
+record _*_ (A B : Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B
+
 sym : ∀{A A' : Set}{a : A}{a' : A'} → a ≡ a' → a' ≡ a
 sym refl = refl
 
@@ -47,15 +56,26 @@ f ◦ g = λ x → f (g x)
 
 --Ok, now we define a category as follows:
 
+data Obj (Base : Set) : Set where
+ ▹ : Base -> Obj Base
+ _×_ : (X Y : Obj Base) -> Obj Base
+ ⊤ : Obj Base
+
 record Cat : Set where
- field Obj  : Set
-       Hom  : Obj → Obj → Set
-       iden : ∀{X} → Hom X X
-       comp : ∀{X Y Z} → Hom Y Z → Hom X Y → Hom X Z
-       idl  : ∀{X Y}{f : Hom X Y} → comp iden f ≡ f
-       idr  : ∀{X Y}{f : Hom X Y} → comp f iden ≡ f
-       ass  : ∀{W X Y Z}{f : Hom Y Z}{g : Hom X Y}{h : Hom W X} →
-              comp (comp f g) h ≡ comp f (comp g h)
+ field Base  : Set
+       Hom   : Obj Base → Obj Base → Set
+       iden  : ∀{X} → Hom X X
+       comp  : ∀{X Y Z} → Hom Y Z → Hom X Y → Hom X Z
+       idl   : ∀{X Y}{f : Hom X Y} → comp iden f ≡ f
+       idr   : ∀{X Y}{f : Hom X Y} → comp f iden ≡ f
+       ass   : ∀{W X Y Z}{f : Hom Y Z}{g : Hom X Y}{h : Hom W X} →
+               comp (comp f g) h ≡ comp f (comp g h)
+       π₁    : ∀ {X Y} → Hom (X × Y) X
+       π₂    : ∀ {X Y} → Hom (X × Y) Y
+       [_,_] : ∀ {X Y Z} → Hom X Y → Hom X Z → Hom X (Y × Z)
+       π₁β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₁ [ f , g ] ≡ f 
+       π₂β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₂ [ f , g ] ≡ g
+       η     : ∀ {X Y Z}{f : Hom X (Y × Z)} -> f ≡ [ comp π₁ f , comp π₂ f ]  
 open Cat
 
 --Now, Yoneda's embedding says that we can view morphism in C as the following polymorphic function:
@@ -70,15 +90,27 @@ Y-1 {C}{A}{B} α = α B (iden C)
 
 --Given any category we can transform it like so:
 
+HomI : ∀ C (X Y : Obj (Base C)) -> Set
+HomI C X (▹ B) = Hom C X (▹ B)
+HomI C X (Y1 × Y2) = (HomI C X Y1) * (HomI C X Y2)
+HomI C X ⊤ = Unit
+
 CatY : Cat → Cat
 CatY C = record {
- Obj  = Obj C;
- Hom  = λ X Y → ∀ Z → Hom C Y Z → Hom C X Z;
- iden = λ X → id;
- comp = λ α β Z → β Z ◦ α Z;
- idl  = refl;
- idr  = refl;
- ass  = refl}
+ Base  = Base C;
+ Hom   = λ X Y → ∀ Z → HomI C Z X → HomI C Z Y;
+ iden  = λ X → id;
+ comp  = λ α β Z → α Z ◦ β Z;
+ idl   = refl;
+ idr   = refl;
+ ass   = refl;
+ π₁    = λ Z → _*_.fst;
+ π₂    = λ Z → _*_.snd;
+ [_,_] = λ f g Z' x → (f Z' x , g Z' x);
+ π₁β   = refl;
+ π₂β   = refl;
+ η     = refl
+ }
 
 {-Notice we get the identities, and associativity for free.
 
