@@ -53,11 +53,11 @@ sem1 Γ T = ⟦ Γ ⟧c -> ⟦ T ⟧t
 
 ⟦_⟧v : ∀ {Γ T} -> var Γ T -> sem1 Γ T
 ⟦_⟧v z (t1 , t2) = t2
-⟦_⟧v (s y) (t1 , t2) = ⟦ y ⟧v t1
+⟦_⟧v (s y) (t1 , t2) = ⟦ y ⟧v t1 -}
 
 _∘_ : {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘ g) x = f (g x)
-
+{-
 mutual
  ⟦_⟧r : ∀ {Γ T} -> rtm Γ T -> sem1 Γ T
  ⟦ v y ⟧r = ⟦ y ⟧v
@@ -158,26 +158,30 @@ cut θ t = reify (sSubst (embed* θ) t)
 arr : ctx -> tp -> Set
 arr Γ T = ∀ {Δ} -> nSubst Γ Δ -> ntm Δ T
 
-interp : ∀ {Γ T} -> ntm Γ T -> arr Γ T
+
+
+⌞_⌟ : ∀ {Γ Δ} -> (∀ {T} -> var Γ T -> ntm Δ T) -> nSubst Γ Δ
+⌞_⌟ {⊡} σ = tt
+⌞_⌟ {Γ , T} σ = ⌞ σ ∘ s ⌟ , σ z
+
+_⊙_ : ∀ {Γ Δ Ψ} -> nSubst Δ Ψ -> nSubst Γ Δ -> nSubst Γ Ψ -- Could implement with ⌞_⌟ and lookup
+_⊙_ {⊡} θ σ = tt
+_⊙_ {Γ , T} θ (σ , N) = (θ ⊙ σ) , (cut θ N)
+
+interp : ∀ {Γ T} -> ntm Γ T -> arr Γ T -- What construction is this? Functor into Set where an arrow N becomes (N∘) ?
 interp N σ = cut σ N
 
-
-{-nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
+nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
 
-nExtend : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Δ T -> nSubst (Γ , T) Δ
-nExtend θ N z = N
-nExtend θ N (s y) = θ y
-
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
-n-ext θ z = nv z
-n-ext θ (s y) = nappSubst wkn (θ y)
+n-ext θ = (⌞ nv ∘ s ⌟ ⊙ θ) , (nv z) --z = nv z
 
 nId : ∀ {Γ} -> nSubst Γ Γ
-nId x = nv x
+nId = ⌞ nv ⌟
 
 n-single : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
-n-single N = nExtend nId N
+n-single N = nId , N
 
 n-single-subst : ∀ {Γ T S} -> ntm (Γ , S) T -> ntm Γ S -> ntm Γ T
 n-single-subst M N = cut (n-single N) M
@@ -186,7 +190,10 @@ napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
 napp (ƛ M) N = n-single-subst M N
 
 unEmbed : ∀ {Γ Δ} -> subst Γ Δ -> nSubst Γ Δ
-unEmbed θ x = reify (θ x)
+unEmbed θ = {!!} --x = reify (θ x)
+
+-- Let's try this technique in the language with non-canonical forms, because substitution is easier there,
+-- And it still requires proofs about substitution in the index language
 
 postulate
  lf-atomic-tp : (Γ : ctx) -> atomic_tp -> Set
@@ -211,7 +218,7 @@ lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
 
 lf-tp-wkn : ∀ {Γ : ctx} (t : tp) {s} (S : lf-tp Γ s) -> lf-tp (Γ , t) s
 lf-tp-wkn t S = lf-tp-vsubst wkn S
-
+{-
 {- Compare this style with not indexing by everything. Involves induction-recursion everywhere?
    I suspect there may be more preservation lemmas? -}
 data lf-ctx : ctx -> Set where
