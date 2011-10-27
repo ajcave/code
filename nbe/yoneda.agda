@@ -76,6 +76,7 @@ record Cat : Set where
        π₁β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₁ [ f , g ] ≡ f 
        π₂β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₂ [ f , g ] ≡ g
        η     : ∀ {X Y Z}{f : Hom X (Y × Z)} -> f ≡ [ comp π₁ f , comp π₂ f ]  
+       !     : ∀ {X}{f g : Hom X ⊤} -> f ≡ g
 open Cat
 
 --Now, Yoneda's embedding says that we can view morphism in C as the following polymorphic function:
@@ -109,7 +110,8 @@ CatY C = record {
  [_,_] = λ f g Z' x → (f Z' x , g Z' x);
  π₁β   = refl;
  π₂β   = refl;
- η     = refl
+ η     = refl;
+ !     = refl
  }
 
 {-Notice we get the identities, and associativity for free.
