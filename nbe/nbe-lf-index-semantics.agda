@@ -141,50 +141,50 @@ sId x = reflect (v x)
 
 -- By computing this by induction we get the η-expansions we need
 nSubst : ctx -> ctx -> Set
-nSubst ⊡ Δ = Unit
-nSubst (Γ , T) Δ = (nSubst Γ Δ) * (ntm Δ T)
+nSubst Δ ⊡ = Unit
+nSubst Δ (Γ , T) = (nSubst Δ Γ) * (ntm Δ T)
 
 embed : ∀ {Γ T} -> ntm Γ T -> sem Γ T
 embed N = sSubst sId N
 
-embed* : ∀ {Γ Δ} -> nSubst Γ Δ -> subst Γ Δ
+embed* : ∀ {Γ Δ} -> nSubst Δ Γ -> subst Γ Δ
 embed* {⊡} θ ()
 embed* {Γ , T} (θ , N) z = embed N
 embed* {Γ , T} (θ , N) (s y) = embed* θ y
 
-cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
+cut : ∀ {Γ Δ T} -> nSubst Δ Γ -> ntm Γ T -> ntm Δ T
 cut θ t = reify (sSubst (embed* θ) t)
 
 arr : ctx -> tp -> Set
-arr Γ T = ∀ {Δ} -> nSubst Γ Δ -> ntm Δ T
+arr Γ T = ∀ {Δ} -> nSubst Δ Γ -> ntm Δ T
 
 interp : ∀ {Γ T} -> ntm Γ T -> arr Γ T -- What construction is this? Functor into Set where an arrow N becomes (N∘) ?
 interp N σ = cut σ N
 
-⌞_⌟ : ∀ {Γ Δ} -> (∀ {T} -> var Γ T -> ntm Δ T) -> nSubst Γ Δ
+⌞_⌟ : ∀ {Γ Δ} -> (∀ {T} -> var Γ T -> ntm Δ T) -> nSubst Δ Γ
 ⌞_⌟ {⊡} σ = tt
 ⌞_⌟ {Γ , T} σ = ⌞ σ ∘ s ⌟ , σ z
 
-_⊙_ : ∀ {Γ Δ Ψ} -> nSubst Δ Ψ -> nSubst Γ Δ -> nSubst Γ Ψ -- Could implement with ⌞_⌟ and lookup
-_⊙_ {⊡} θ σ = tt
-_⊙_ {Γ , T} θ (σ , N) = (θ ⊙ σ) , (cut θ N)
+_⊙_ : ∀ {Γ Δ Ψ} -> nSubst Δ Γ -> nSubst Ψ Δ -> nSubst Ψ Γ -- Could implement with ⌞_⌟ and lookup
+_⊙_ {⊡} σ θ = tt
+_⊙_ {Γ , T} (σ , N) θ = (σ ⊙ θ) , (cut θ N)
 
 garr : ctx -> ctx -> Set
-garr Γ Ψ = ∀ {Δ} -> nSubst Γ Δ -> nSubst Ψ Δ
+garr Γ Ψ = ∀ {Δ} -> nSubst Δ Γ -> nSubst Δ Ψ
 
-ginterp : ∀ {Γ Δ} -> nSubst Δ Γ -> garr Γ Δ
-ginterp θ σ = σ ⊙ θ
+ginterp : ∀ {Γ Δ} -> nSubst Δ Γ -> garr Δ Γ
+ginterp θ = _⊙_ θ
 
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
 
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
-n-ext θ = (⌞ nv ∘ s ⌟ ⊙ θ) , (nv z) --z = nv z
+n-ext θ = (θ ⊙ ⌞ nv ∘ s ⌟) , (nv z) --z = nv z
 
 nId : ∀ {Γ} -> nSubst Γ Γ
 nId = ⌞ nv ⌟
 
-n-single : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
+n-single : ∀ {Γ T} -> ntm Γ T -> nSubst Γ (Γ , T)
 n-single N = nId , N
 
 n-single-subst : ∀ {Γ T S} -> ntm (Γ , S) T -> ntm Γ S -> ntm Γ T
