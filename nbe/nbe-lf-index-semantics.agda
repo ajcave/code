@@ -179,7 +179,7 @@ nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
 
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
-n-ext θ = (θ ⊙ ⌞ nv ∘ s ⌟) , (nv z) --z = nv z
+n-ext θ = (θ ⊙ ⌞ nv ∘ s ⌟) , (nv z)
 
 nId : ∀ {Γ} -> nSubst Γ Γ
 nId = ⌞ nv ⌟
