@@ -158,7 +158,8 @@ cut θ t = reify (sSubst (embed* θ) t)
 arr : ctx -> tp -> Set
 arr Γ T = ∀ {Δ} -> nSubst Γ Δ -> ntm Δ T
 
-
+interp : ∀ {Γ T} -> ntm Γ T -> arr Γ T -- What construction is this? Functor into Set where an arrow N becomes (N∘) ?
+interp N σ = cut σ N
 
 ⌞_⌟ : ∀ {Γ Δ} -> (∀ {T} -> var Γ T -> ntm Δ T) -> nSubst Γ Δ
 ⌞_⌟ {⊡} σ = tt
@@ -168,8 +169,11 @@ _⊙_ : ∀ {Γ Δ Ψ} -> nSubst Δ Ψ -> nSubst Γ Δ -> nSubst Γ Ψ -- Could 
 _⊙_ {⊡} θ σ = tt
 _⊙_ {Γ , T} θ (σ , N) = (θ ⊙ σ) , (cut θ N)
 
-interp : ∀ {Γ T} -> ntm Γ T -> arr Γ T -- What construction is this? Functor into Set where an arrow N becomes (N∘) ?
-interp N σ = cut σ N
+garr : ctx -> ctx -> Set
+garr Γ Ψ = ∀ {Δ} -> nSubst Γ Δ -> nSubst Ψ Δ
+
+ginterp : ∀ {Γ Δ} -> nSubst Δ Γ -> garr Γ Δ
+ginterp θ σ = σ ⊙ θ
 
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
