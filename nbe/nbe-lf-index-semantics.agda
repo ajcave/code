@@ -178,8 +178,11 @@ ginterp θ = _⊙_ θ
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
 
+nwkn : ∀ {Γ T} -> nSubst (Γ , T) Γ
+nwkn = ⌞ nv ∘ s ⌟
+
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
-n-ext θ = (θ ⊙ ⌞ nv ∘ s ⌟) , (nv z)
+n-ext θ = (θ ⊙ nwkn) , (nv z)
 
 nId : ∀ {Γ} -> nSubst Γ Γ
 nId = ⌞ nv ⌟
