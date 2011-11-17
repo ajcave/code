@@ -1,6 +1,5 @@
 module cr where
 
-
 _∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘ g) x = f (g x)
 

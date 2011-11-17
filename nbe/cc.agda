@@ -7,12 +7,12 @@ data tp : Set where
  _×_ : (t u : tp) -> tp
  ⊤ : tp
 
-module foo (var : tp -> tp -> Set) where
+module ccsolve (mvar : tp -> tp -> Set) where
 
  data exp : tp -> tp -> Set where
   _∘_ : ∀ {t u s} -> exp u s -> exp t u -> exp t s
   id : ∀ {t} -> exp t t
-  ▹ : ∀ {t s} -> var t s -> exp t s
+  ▹ : ∀ {t s} -> mvar t s -> exp t s
   [_,_] : ∀ {t u s} -> exp t u -> exp t s -> exp t (u × s)
   π₁ : ∀ {t s} -> exp (t × s) t
   π₂ : ∀ {t s} -> exp (t × s) s
@@ -40,7 +40,7 @@ module foo (var : tp -> tp -> Set) where
    id : ∀ {t} -> neut t t
    π₁∘ : ∀ {t u s} -> neut t (u × s) -> neut t u
    π₂∘ : ∀ {t u s} -> neut t (u × s) -> neut t s
-   _∘_ : ∀ {t u s} -> var u s -> norm t u -> neut t s 
+   _∘_ : ∀ {t u s} -> mvar u s -> norm t u -> neut t s 
   data norm : tp -> tp -> Set where
    ▹ : ∀ {t a} -> neut t (▹ a) -> norm t (▹ a)
    [_,_] : ∀ {t u s} -> norm t u -> norm t s -> norm t (u × s)
