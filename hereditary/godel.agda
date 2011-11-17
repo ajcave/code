@@ -112,9 +112,11 @@ mutual
  ƛ N ◇ (N' , S) = (N [[ z := N' ]]) ◇ S
  < N , M > ◇ πl S = N ◇ S
  < N , M > ◇ πr S = M ◇ S
- N ◇ (iter Z F) = iter2 N Z F
+ ▹ x S ◇ iter Z F = {!!}
+ zero ◇ iter Z F = Z
+ succ y ◇ iter Z F = y ◇ iter Z F
 
- iter2 : ∀ {Γ τ} -> nf Γ (▹ nat) -> (Z : nf Γ τ) -> (F : nf (Γ , τ) τ) -> nf Γ τ
- iter2 (▹ x S) Z F = {!!}
- iter2 zero Z F = Z
- iter2 (succ y) Z F = iter2 y (F [[ z := Z ]]) F
+-- iter2 : ∀ {Γ τ} -> nf Γ (▹ nat) -> (Z : nf Γ τ) -> (F : nf (Γ , τ) τ) -> nf Γ τ
+-- iter2 (▹ x S) Z F = {!!}
+-- iter2 zero Z F = Z
+-- iter2 (succ y) Z F = iter2 y (F [[ z := Z ]]) F
