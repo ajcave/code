@@ -14,3 +14,6 @@ data _≡_ {A : Set} (x : A) : (y : A) -> Set where
 
 ≡-trans : ∀ {A : Set} {a b c : A} -> a ≡ b -> b ≡ c -> a ≡ c
 ≡-trans refl refl = refl
+
+≡-cong : ∀ {A : Set} (f : A -> Set) {a b} -> a ≡ b -> f a -> f b
+≡-cong f refl x = x

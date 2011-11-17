@@ -80,6 +80,9 @@ sub θ (▹ x) = θ x
 sub θ (ƛ M) = ƛ (sub (ext θ) M)
 sub θ (M · N) = (sub θ M) · (sub θ N)
 
+_•_ : ∀ {n m k} (σ1 : subst m k) (σ2 : subst n m) -> subst n k
+σ1 • σ2 = sub σ1 ∘ σ2
+
 id : ∀ {n} -> subst n n
 id x = ▹ x
 
@@ -110,10 +113,12 @@ proj2 {s n} (s x) = vsub s (proj2 x)
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
 single M N = sub (id ,, N) M 
 
-open module ccsolve1 = ccsolve (λ t s → subst (len s) (len t)) hiding (_∘_; id)
+open module ccsolve1 = ccsolve (λ t s → subst (len s) (len t)) hiding (id)
+
+id1 = cc.ccsolve.id
 
 ⟦_⟧ : ∀ {t s} -> exp t s -> subst (len s) (len t)
-⟦ cc.ccsolve._∘_ M N ⟧ = (sub ⟦ N ⟧) ∘ ⟦ M ⟧
+⟦ cc.ccsolve._◦_ M N ⟧ = ⟦ N ⟧ • ⟦ M ⟧
 ⟦ cc.ccsolve.id ⟧ = id
 ⟦ cc.ccsolve.▹ x ⟧ = x
 ⟦ cc.ccsolve.[_,_] M N ⟧ = pair ⟦ M ⟧ ⟦ N ⟧
@@ -124,6 +129,8 @@ open module ccsolve1 = ccsolve (λ t s → subst (len s) (len t)) hiding (_∘_;
 _≋_ : ∀ {A B : Set} (f g : A -> B) -> Set
 f ≋ g = ∀ x -> f x ≡ g x
 
+-- Is it easier to prove these kinds of laws for the 1-at-a-time version?
+-- Or what if we made our lambda calculus more closely resemble this structure?
 ⟦_⟧eq : ∀ {t s} {M N : exp t s} -> M ≈ N -> ⟦ M ⟧ ≋ ⟦ N ⟧
 ⟦_⟧eq cc.ccsolve.refl x = refl
 ⟦_⟧eq (cc.ccsolve.sym y) x = ≡-sym (⟦ y ⟧eq x)
@@ -131,10 +138,10 @@ f ≋ g = ∀ x -> f x ≡ g x
 ⟦_⟧eq cc.ccsolve.assoc x = {!!}
 ⟦_⟧eq cc.ccsolve.idL x = refl
 ⟦_⟧eq cc.ccsolve.idR x = {!!}
-⟦_⟧eq (cc.ccsolve._∘_ y y') x = {!!}
+⟦_⟧eq (cc.ccsolve._◦_ y y') x = {!!}
 ⟦_⟧eq cc.ccsolve.π₁-β x = {!!}
 ⟦_⟧eq cc.ccsolve.π₂-β x = {!!}
-⟦_⟧eq cc.ccsolve.π-η x = {!!}
+⟦_⟧eq cc.ccsolve.π-η x = {!!} 
 ⟦_⟧eq (cc.ccsolve.[_,_] y y') x = {!!}
 ⟦_⟧eq cc.ccsolve.! ()  
 
@@ -173,12 +180,26 @@ pr-ext θ (s x) = {!!}
 -- Okay, we can add constructions to our CC language like "ext", where they reduce to the other primitives
 -- This might help the translation
 
+► : ∀ {n} (N : tm n) -> subst (s z) n
+► N z = N
+► N (s ())
+
+sub-resp-≋ : ∀ {n m} {σ1 σ2 : subst n m} -> σ1 ≋ σ2 -> (sub σ1) ≋ (sub σ2)
+sub-resp-≋ H = {!!} 
+
+--lem : ∀ {t s} (σ : mvar s t) (N : mvar t (▹ tt)) -> ([ id1 , (▹ N) ] ◦ (▹ σ)) ≈ ([ ((▹ σ) ◦ π₁) , π₂ ] ◦ [ id1 , ((▹ N) ◦ (▹ σ)) ])
+--lem σ N = completeness ([ id1 , (▹ N) ] ◦ (▹ σ)) ([ ((▹ σ) ◦ π₁) , π₂ ] ◦ [ id1 , ((▹ N) ◦ (▹ σ)) ]) refl
+
+-- When can I exploit unification in reverse to get one from the other for free?
+lem2 : ∀ {n m} (σ : subst n m) (N : tm n) -> (σ • (id ,, N)) ≋ ((id ,, sub σ N) • (ext σ))
+lem2 σ N = ⟦ (completeness ([ id1 , (▹ (► N)) ] ◦ (▹ σ))  ([ ((▹ σ) ◦ π₁) , π₂ ] ◦ [ id1 , ((▹ (► N)) ◦ (▹ σ)) ]) refl) ⟧eq 
+
 pr-subst-app : ∀ {n m} {M1 M2 : tm n} {σ1 σ2 : subst n m} -> pr-subst σ1 σ2 -> pr M1 M2 -> pr (sub σ1 M1) (sub σ2 M2)
 pr-subst-app θ (▹ x) = θ x
 pr-subst-app θ (ƛ m') = ƛ (pr-subst-app (pr-ext θ) m')
 pr-subst-app θ (m' · n') = (pr-subst-app θ m') · (pr-subst-app θ n')
 pr-subst-app θ (βp m' n') with βp (pr-subst-app (pr-ext θ) m') (pr-subst-app θ n')
-... | w1 = {!!}
+... | w1 = ≡-cong (pr _) (≡-sym (sub-resp-≋ (lem2 {!!} {!!}) ?)) w1
 
 
 {-prsub : ∀ {n} {M M' : tm (s n)} {N N'} -> pr M M' -> pr N N' -> pr (single M N) (single M' N')
