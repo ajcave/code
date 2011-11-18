@@ -256,7 +256,7 @@ pr-subst-app θ (▹ x) = θ x
 pr-subst-app θ (ƛ m') = ƛ (pr-subst-app (pr-ext θ) m')
 pr-subst-app θ (m' · n') = (pr-subst-app θ m') · (pr-subst-app θ n')
 pr-subst-app θ (βp m' n') with βp (pr-subst-app (pr-ext θ) m') (pr-subst-app θ n')
-... | w1 = ?
+... | w1 = ≡-cong (pr _) {!!} w1
 
 
 {-prsub : ∀ {n} {M M' : tm (s n)} {N N'} -> pr M M' -> pr N N' -> pr (single M N) (single M' N')
