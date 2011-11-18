@@ -140,29 +140,29 @@ vsub-funct σ1 σ2 (M · N) = ≡-cong2 _·_ (vsub-funct σ1 σ2 M) (vsub-funct 
 _⊙_ : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> subst m k
 σ1 ⊙ σ2 = (vsub σ1) ∘ σ2
 
-ext-vext-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : vsubst m n) -> ext (σ1 ∘ σ2) ≋ ((ext σ1) ∘ (vext σ2))
+ext-vext-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : vsubst m n) -> ext (σ1 ∘ σ2) ≋ (ext σ1 ∘ vext σ2)
 ext-vext-funct σ1 σ2 z = refl
 ext-vext-funct σ1 σ2 (s x) = refl
 
-ext-vext-funct2 : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> ext (σ1 ⊙ σ2) ≋ ((vext σ1) ⊙ (ext σ2))
+ext-vext-funct2 : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> ext (σ1 ⊙ σ2) ≋ (vext σ1 ⊙ ext σ2)
 ext-vext-funct2 σ1 σ2 z = refl
 ext-vext-funct2 σ1 σ2 (s x) = ≡-trans (≡-sym (vsub-funct s σ1 (σ2 x))) (vsub-funct (vext σ1) s (σ2 x))
 
-sub-vsub-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : vsubst m n) -> sub (σ1 ∘ σ2) ≋ ((sub σ1) ∘ (vsub σ2))
+sub-vsub-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : vsubst m n) -> sub (σ1 ∘ σ2) ≋ (sub σ1 ∘ vsub σ2)
 sub-vsub-funct σ1 σ2 (▹ x) = refl
 sub-vsub-funct σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (ext-vext-funct σ1 σ2) M) (sub-vsub-funct (ext σ1) (vext σ2) M))
 sub-vsub-funct σ1 σ2 (M · N) = ≡-cong2 _·_ (sub-vsub-funct σ1 σ2 M) (sub-vsub-funct σ1 σ2 N)
 
-sub-vsub-funct2 : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> sub ((vsub σ1) ∘ σ2) ≋ ((vsub σ1) ∘ (sub σ2))
+sub-vsub-funct2 : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> sub (σ1 ⊙ σ2) ≋ (vsub σ1 ∘ sub σ2)
 sub-vsub-funct2 σ1 σ2 (▹ x) = refl
 sub-vsub-funct2 σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (ext-vext-funct2 σ1 σ2) M) (sub-vsub-funct2 (vext σ1) (ext σ2) M))
 sub-vsub-funct2 σ1 σ2 (M · N) = ≡-cong2 _·_ (sub-vsub-funct2 σ1 σ2 M) (sub-vsub-funct2 σ1 σ2 N)
 
-ext-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : subst m n) -> ext (σ1 • σ2) ≋ ((ext σ1) • (ext σ2))
+ext-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : subst m n) -> ext (σ1 • σ2) ≋ (ext σ1 • ext σ2)
 ext-funct σ1 σ2 z = refl
 ext-funct σ1 σ2 (s x) = ≡-trans (≡-sym (sub-vsub-funct2 s σ1 (σ2 x))) (sub-vsub-funct ((vsub s ∘ σ1) ,, ▹ z) s (σ2 x))
 
-sub-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : subst m n) -> sub (σ1 • σ2) ≋ ((sub σ1) ∘ (sub σ2))
+sub-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : subst m n) -> sub (σ1 • σ2) ≋ (sub σ1 ∘ sub σ2)
 sub-funct σ1 σ2 (▹ x) = refl
 sub-funct σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (ext-funct σ1 σ2) M) (sub-funct (ext σ1) (ext σ2) M))
 sub-funct σ1 σ2 (M · N) = ≡-cong2 _·_ (sub-funct σ1 σ2 M) (sub-funct σ1 σ2 N)
