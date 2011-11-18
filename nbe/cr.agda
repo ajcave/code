@@ -4,6 +4,9 @@ open import eq
 _∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘ g) x = f (g x)
 
+_≋_ : ∀ {A B : Set} (f g : A -> B) -> Set
+f ≋ g = ∀ x -> f x ≡ g x
+
 data nat : Set where 
  z : nat
  s : (n : nat) -> nat
@@ -47,9 +50,12 @@ len cc.⊤ = z
 
 -- TODO: Try computing vsubst by recursion on n
 
+_,,,_ : ∀ {n m} -> vsubst n m -> var m -> vsubst (s n) m
+(θ ,,, x) z = x
+(θ ,,, x) (s n) = θ n
+
 vext : ∀ {n m} -> vsubst n m -> vsubst (s n) (s m)
-vext θ z = z
-vext θ (s x) = s (θ x)
+vext θ = (s ∘ θ) ,,, z
 
 vsub : ∀ {n m} -> vsubst n m -> tm n -> tm m
 vsub θ (▹ x) = ▹ (θ x)
@@ -64,6 +70,10 @@ wkn-vsub = s
 
 subst : (n m : nat) -> Set
 subst n m = var n -> tm m
+
+► : ∀ {n} (N : tm n) -> subst (s z) n
+► N z = N
+► N (s ())
 
 wkn-subst : ∀ {n m} (θ : subst n m) -> subst n (s m)
 wkn-subst θ = (vsub s) ∘ θ
@@ -80,7 +90,13 @@ sub θ (▹ x) = θ x
 sub θ (ƛ M) = ƛ (sub (ext θ) M)
 sub θ (M · N) = (sub θ M) · (sub θ N)
 
-_•_ : ∀ {n m k} (σ1 : subst m k) (σ2 : subst n m) -> subst n k
+sub-resp-≋ : ∀ {n m} {σ1 σ2 : subst n m} -> σ1 ≋ σ2 -> (sub σ1) ≋ (sub σ2)
+sub-resp-≋ H = {!!} 
+
+vsub-resp-≋ : ∀ {n m} {σ1 σ2 : vsubst n m} -> σ1 ≋ σ2 -> (vsub σ1) ≋ (vsub σ2)
+vsub-resp-≋ H = {!!} 
+
+_•_ : ∀ {A : Set} {m k} (σ1 : subst m k) (σ2 : A -> tm m) -> A -> tm k
 σ1 • σ2 = sub σ1 ∘ σ2
 
 id : ∀ {n} -> subst n n
@@ -93,13 +109,6 @@ pair : ∀ {n m k} -> subst m k -> subst n k -> subst (m + n) k
 pair {z} σ1 σ2 = σ1
 pair {s n} σ1 σ2 = (pair σ1 (σ2 ∘ s)) ,, (σ2 z)
 
-{-inl : ∀ {n m} -> var m -> var (m + n)
-inl {z} x = x
-inl {s n} x = s (inl {n} x) 
-
-proj1 : ∀ {n m k} -> subst (m + n) k -> subst m k
-proj1 {n} σ = σ ∘ (inl {n}) -}
-
 proj1 : ∀ {m n} -> subst n (n + m)
 proj1 {z} = id
 proj1 {s m} = vsub s ∘ proj1 {m}
@@ -108,6 +117,55 @@ proj2 : ∀ {m n} -> subst m (n + m)
 proj2 {z} ()
 proj2 {s n} z = ▹ z
 proj2 {s n} (s x) = vsub s (proj2 x)
+
+--β1 : ∀ {n m k} (σ1 : subst m k) (σ2 : subst n k) -> σ1 ≋ ((pair σ1 σ2) • (proj1 {n}))
+--β1 {z} σ1 σ2 x = refl
+--β1 {s n} σ1 σ2 x = {!!} 
+
+--pair-distrib : ∀ {n m k} (σ1 : subst m k) (N : tm n) (σ2 : vsubst n m) -> (sub (σ1 ,, N) ∘ (vsub σ2)) ≋ (sub (σ1 ∘ σ2 ,,  
+
+-- TODO: Try the generic traversal!
+-- TODO: I'm pretty sure I had less of these in the Coq proof for Beluga^mu. Why?
+-- TODO: Identify combinators from which functors can automatically be derived
+
+vext-funct : ∀ {m n k} -> (σ1 : vsubst n k) (σ2 : vsubst m n) -> vext (σ1 ∘ σ2) ≋ (vext σ1 ∘ vext σ2)
+vext-funct σ1 σ2 z = refl
+vext-funct σ1 σ2 (s x) = refl
+
+vsub-funct : ∀ {m n k} -> (σ1 : vsubst n k) (σ2 : vsubst m n) -> vsub (σ1 ∘ σ2) ≋ (vsub σ1 ∘ vsub σ2)
+vsub-funct σ1 σ2 (▹ x) = refl
+vsub-funct σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (vsub-resp-≋ (vext-funct σ1 σ2) M) (vsub-funct (vext σ1) (vext σ2) M))
+vsub-funct σ1 σ2 (M · N) = ≡-cong2 _·_ (vsub-funct σ1 σ2 M) (vsub-funct σ1 σ2 N)
+
+_⊙_ : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> subst m k
+σ1 ⊙ σ2 = (vsub σ1) ∘ σ2
+
+ext-vext-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : vsubst m n) -> ext (σ1 ∘ σ2) ≋ ((ext σ1) ∘ (vext σ2))
+ext-vext-funct σ1 σ2 z = refl
+ext-vext-funct σ1 σ2 (s x) = refl
+
+ext-vext-funct2 : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> ext (σ1 ⊙ σ2) ≋ ((vext σ1) ⊙ (ext σ2))
+ext-vext-funct2 σ1 σ2 z = refl
+ext-vext-funct2 σ1 σ2 (s x) = ≡-trans (≡-sym (vsub-funct s σ1 (σ2 x))) (vsub-funct (vext σ1) s (σ2 x))
+
+sub-vsub-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : vsubst m n) -> sub (σ1 ∘ σ2) ≋ ((sub σ1) ∘ (vsub σ2))
+sub-vsub-funct σ1 σ2 (▹ x) = refl
+sub-vsub-funct σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (ext-vext-funct σ1 σ2) M) (sub-vsub-funct (ext σ1) (vext σ2) M))
+sub-vsub-funct σ1 σ2 (M · N) = ≡-cong2 _·_ (sub-vsub-funct σ1 σ2 M) (sub-vsub-funct σ1 σ2 N)
+
+sub-vsub-funct2 : ∀ {m n k} (σ1 : vsubst n k) (σ2 : subst m n) -> sub ((vsub σ1) ∘ σ2) ≋ ((vsub σ1) ∘ (sub σ2))
+sub-vsub-funct2 σ1 σ2 (▹ x) = refl
+sub-vsub-funct2 σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (ext-vext-funct2 σ1 σ2) M) (sub-vsub-funct2 (vext σ1) (ext σ2) M))
+sub-vsub-funct2 σ1 σ2 (M · N) = ≡-cong2 _·_ (sub-vsub-funct2 σ1 σ2 M) (sub-vsub-funct2 σ1 σ2 N)
+
+ext-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : subst m n) -> ext (σ1 • σ2) ≋ ((ext σ1) • (ext σ2))
+ext-funct σ1 σ2 z = refl
+ext-funct σ1 σ2 (s x) = ≡-trans (≡-sym (sub-vsub-funct2 s σ1 (σ2 x))) (sub-vsub-funct ((vsub s ∘ σ1) ,, ▹ z) s (σ2 x))
+
+sub-funct : ∀ {m n k} (σ1 : subst n k) (σ2 : subst m n) -> sub (σ1 • σ2) ≋ ((sub σ1) ∘ (sub σ2))
+sub-funct σ1 σ2 (▹ x) = refl
+sub-funct σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (ext-funct σ1 σ2) M) (sub-funct (ext σ1) (ext σ2) M))
+sub-funct σ1 σ2 (M · N) = ≡-cong2 _·_ (sub-funct σ1 σ2 M) (sub-funct σ1 σ2 N)
 
 -- Single substitution as a special case of simultaneous
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
@@ -126,8 +184,6 @@ id1 = cc.ccsolve.id
 ⟦_⟧ {.(u × v)} {.v} (π₂ {u} {v}) = proj2 {len v}
 ⟦ cc.ccsolve.! ⟧ = λ () 
 
-_≋_ : ∀ {A B : Set} (f g : A -> B) -> Set
-f ≋ g = ∀ x -> f x ≡ g x
 
 -- Is it easier to prove these kinds of laws for the 1-at-a-time version?
 -- Or what if we made our lambda calculus more closely resemble this structure?
@@ -180,12 +236,8 @@ pr-ext θ (s x) = {!!}
 -- Okay, we can add constructions to our CC language like "ext", where they reduce to the other primitives
 -- This might help the translation
 
-► : ∀ {n} (N : tm n) -> subst (s z) n
-► N z = N
-► N (s ())
 
-sub-resp-≋ : ∀ {n m} {σ1 σ2 : subst n m} -> σ1 ≋ σ2 -> (sub σ1) ≋ (sub σ2)
-sub-resp-≋ H = {!!} 
+
 
 --lem : ∀ {t s} (σ : mvar s t) (N : mvar t (▹ tt)) -> ([ id1 , (▹ N) ] ◦ (▹ σ)) ≈ ([ ((▹ σ) ◦ π₁) , π₂ ] ◦ [ id1 , ((▹ N) ◦ (▹ σ)) ])
 --lem σ N = completeness ([ id1 , (▹ N) ] ◦ (▹ σ)) ([ ((▹ σ) ◦ π₁) , π₂ ] ◦ [ id1 , ((▹ N) ◦ (▹ σ)) ]) refl
@@ -199,7 +251,7 @@ pr-subst-app θ (▹ x) = θ x
 pr-subst-app θ (ƛ m') = ƛ (pr-subst-app (pr-ext θ) m')
 pr-subst-app θ (m' · n') = (pr-subst-app θ m') · (pr-subst-app θ n')
 pr-subst-app θ (βp m' n') with βp (pr-subst-app (pr-ext θ) m') (pr-subst-app θ n')
-... | w1 = ≡-cong (pr _) (≡-sym (sub-resp-≋ (lem2 {!!} {!!}) ?)) w1
+... | w1 = ≡-cong (pr _) (≡-sym (sub-resp-≋ (lem2 {!!} {!!}) {!!})) w1
 
 
 {-prsub : ∀ {n} {M M' : tm (s n)} {N N'} -> pr M M' -> pr N N' -> pr (single M N) (single M' N')
