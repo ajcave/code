@@ -231,9 +231,12 @@ data cd {n : nat} : tm n -> tm n -> Set where
 pr-subst : ∀ {n m} (σ1 σ2 : subst n m) -> Set
 pr-subst {n} {m} σ1 σ2 = (x : var n) -> pr (σ1 x) (σ2 x)
 
+pr, : ∀ {n m} {σ1 σ2 : subst m n} -> pr-subst σ1 σ2 -> {N1 N2 : tm n} -> pr N1 N2 -> pr-subst (σ1 ,, N1) (σ2 ,, N2)
+pr, θ N z = N
+pr, θ N (s x) = θ x
+
 pr-ext : ∀ {n m : nat} {σ1 σ2 : subst n m} (θ : pr-subst σ1 σ2) -> pr-subst (ext σ1) (ext σ2)
-pr-ext θ z = ▹ z
-pr-ext θ (s x) = {!!}
+pr-ext θ = pr, {!!} (▹ z)
 
 -- Okay, we can add constructions to our CC language like "ext", where they reduce to the other primitives
 -- This might help the translation
@@ -265,7 +268,7 @@ triangle (ƛ m) (ƛ m') = ƛ (triangle m m')
 triangle (m · n') (m' ·₁ n0) = triangle m m' · triangle n' n0
 triangle (m · n') (m' ·₂ n0) = triangle m m' · triangle n' n0
 triangle (ƛ m · n') (βc m' n0) = βp (triangle m m') (triangle n' n0)
-triangle (βp m n') (βc m' n0) = {!!} --prsub (triangle m m') (triangle n' n0)
+triangle (βp m n') (βc m' n0) = pr-subst-app (pr, ▹ (triangle n' n0)) (triangle m m') --prsub (triangle m m') (triangle n' n0)
 
 cdTotal : ∀ {n} (M : tm n) -> Σ (cd M)
 cdTotal (▹ x) = ▹ x , ▹ x
