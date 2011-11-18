@@ -126,12 +126,6 @@ proj2 {z} ()
 proj2 {s n} z = ▹ z
 proj2 {s n} (s x) = vsub s (proj2 x)
 
---β1 : ∀ {n m k} (σ1 : subst m k) (σ2 : subst n k) -> σ1 ≋ ((pair σ1 σ2) • (proj1 {n}))
---β1 {z} σ1 σ2 x = refl
---β1 {s n} σ1 σ2 x = {!!} 
-
---pair-distrib : ∀ {n m k} (σ1 : subst m k) (N : tm n) (σ2 : vsubst n m) -> (sub (σ1 ,, N) ∘ (vsub σ2)) ≋ (sub (σ1 ∘ σ2 ,,  
-
 -- TODO: Try the generic traversal!
 -- TODO: I'm pretty sure I had less of these in the Coq proof for Beluga^mu. Why?
 -- TODO: Identify combinators from which functors can automatically be derived
@@ -237,18 +231,6 @@ data cd {n : nat} : tm n -> tm n -> Set where
 pr-subst : ∀ {n m} (σ1 σ2 : subst n m) -> Set
 pr-subst {n} {m} σ1 σ2 = (x : var n) -> pr (σ1 x) (σ2 x)
 
-{-data pr-subst : {n m : nat} (σ1 σ2 : subst n m) -> Set where
- ⊡ : ∀ {m} -> pr-subst {m = m} ⊡ ⊡
- _,_ : ∀ {n m} {σ1 σ2 : subst n m} (θ : pr-subst σ1 σ2) {M1 M2 : tm m} -> pr M1 M2 -> pr-subst (σ1 , M1) (σ2 , M2)
-
-pr-map : ∀ {n m k} {σ1 σ2 : subst n m} {f1 f2 : tm m -> tm k} (F : ∀ {M1 M2} -> pr M1 M2 -> pr (f1 M1) (f2 M2)) (θ : pr-subst σ1 σ2)
- -> pr-subst (subst-map f1 σ1) (subst-map f2 σ2)
-pr-map F ⊡ = ⊡
-pr-map F (θ , m) = (pr-map F θ) , F m
-
-pr-wkn : ∀ {n m} {σ1 σ2 : subst n m} (θ : pr-subst σ1 σ2) -> pr-subst (wkn-subst σ1) (wkn-subst σ2)
-pr-wkn θ = pr-map (λ x → {!!}) {!!}
--}
 pr-ext : ∀ {n m : nat} {σ1 σ2 : subst n m} (θ : pr-subst σ1 σ2) -> pr-subst (ext σ1) (ext σ2)
 pr-ext θ z = ▹ z
 pr-ext θ (s x) = {!!}
