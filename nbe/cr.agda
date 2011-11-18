@@ -4,8 +4,6 @@ open import eq
 _∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘ g) x = f (g x)
 
-_≋_ : ∀ {A B : Set} (f g : A -> B) -> Set
-f ≋ g = ∀ x -> f x ≡ g x
 
 data nat : Set where 
  z : nat
@@ -62,8 +60,8 @@ vsub θ (▹ x) = ▹ (θ x)
 vsub θ (ƛ M) = ƛ (vsub (vext θ) M)
 vsub θ (M · N) = (vsub θ M) · (vsub θ N)
 
-id-vsub : ∀ {n} -> vsubst n n
-id-vsub x = x
+id : ∀ {A : Set} -> A -> A
+id x = x
 
 wkn-vsub : ∀ {n} -> vsubst n (s n)
 wkn-vsub = s
@@ -90,27 +88,37 @@ sub θ (▹ x) = θ x
 sub θ (ƛ M) = ƛ (sub (ext θ) M)
 sub θ (M · N) = (sub θ M) · (sub θ N)
 
+-- Gee I wish we had functional extensionality
+ext-resp-≋ : ∀ {n m} {σ1 σ2 : subst n m} -> σ1 ≋ σ2 -> (ext σ1) ≋ (ext σ2)
+ext-resp-≋ H z = refl
+ext-resp-≋ H (s x) = ≡-cong1 (vsub s) (H x)
+
 sub-resp-≋ : ∀ {n m} {σ1 σ2 : subst n m} -> σ1 ≋ σ2 -> (sub σ1) ≋ (sub σ2)
-sub-resp-≋ H = {!!} 
+sub-resp-≋ H (▹ x) = H x
+sub-resp-≋ H (ƛ M) = ≡-cong1 ƛ (sub-resp-≋ (ext-resp-≋ H) M)
+sub-resp-≋ H (M · N) = ≡-cong2 _·_ (sub-resp-≋ H M) (sub-resp-≋ H N) 
+
+vext-resp-≋ : ∀ {n m} {σ1 σ2 : vsubst n m} -> σ1 ≋ σ2 -> (vext σ1) ≋ (vext σ2)
+vext-resp-≋ H z = refl
+vext-resp-≋ H (s x) = ≡-cong1 s (H x)
 
 vsub-resp-≋ : ∀ {n m} {σ1 σ2 : vsubst n m} -> σ1 ≋ σ2 -> (vsub σ1) ≋ (vsub σ2)
-vsub-resp-≋ H = {!!} 
+vsub-resp-≋ H (▹ x) = ≡-cong1 ▹ (H x)
+vsub-resp-≋ H (ƛ M) = ≡-cong1 ƛ (vsub-resp-≋ (vext-resp-≋ H) M)
+vsub-resp-≋ H (M · N) = ≡-cong2 _·_ (vsub-resp-≋ H M) (vsub-resp-≋ H N) 
 
 _•_ : ∀ {A : Set} {m k} (σ1 : subst m k) (σ2 : A -> tm m) -> A -> tm k
 σ1 • σ2 = sub σ1 ∘ σ2
 
-id : ∀ {n} -> subst n n
-id x = ▹ x
-
 wkn : ∀ {n} -> subst n (s n)
-wkn {n} = wkn-subst id
+wkn {n} = wkn-subst ▹
 
 pair : ∀ {n m k} -> subst m k -> subst n k -> subst (m + n) k
 pair {z} σ1 σ2 = σ1
 pair {s n} σ1 σ2 = (pair σ1 (σ2 ∘ s)) ,, (σ2 z)
 
 proj1 : ∀ {m n} -> subst n (n + m)
-proj1 {z} = id
+proj1 {z} = ▹
 proj1 {s m} = vsub s ∘ proj1 {m}
 
 proj2 : ∀ {m n} -> subst m (n + m)
@@ -167,9 +175,21 @@ sub-funct σ1 σ2 (▹ x) = refl
 sub-funct σ1 σ2 (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (ext-funct σ1 σ2) M) (sub-funct (ext σ1) (ext σ2) M))
 sub-funct σ1 σ2 (M · N) = ≡-cong2 _·_ (sub-funct σ1 σ2 M) (sub-funct σ1 σ2 N)
 
+sub-assoc : ∀ {l m n k} (σ1 : subst n k) (σ2 : subst m n) (σ3 : subst l m) -> ((σ1 • σ2) • σ3) ≋ (σ1 • (σ2 • σ3))
+sub-assoc σ1 σ2 σ3 x = sub-funct σ1 σ2 (σ3 x)
+
+sub-η-expand : ∀ {m n} (σ : subst (s m) n) -> σ ≋ ((σ ∘ s) ,, σ z)
+sub-η-expand σ z = refl
+sub-η-expand σ (s x) = refl
+
+sub-id : ∀ {m} -> sub (▹ {m}) ≋ id
+sub-id (▹ x) = refl
+sub-id (ƛ M) = ≡-cong1 ƛ (≡-trans (sub-resp-≋ (≋-sym (sub-η-expand ▹)) M) (sub-id M))
+sub-id (M · N) = ≡-cong2 _·_ (sub-id M) (sub-id N)
+
 -- Single substitution as a special case of simultaneous
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
-single M N = sub (id ,, N) M 
+single M N = sub (▹ ,, N) M 
 
 open module ccsolve1 = ccsolve (λ t s → subst (len s) (len t)) hiding (id)
 
@@ -177,7 +197,7 @@ id1 = cc.ccsolve.id
 
 ⟦_⟧ : ∀ {t s} -> exp t s -> subst (len s) (len t)
 ⟦ cc.ccsolve._◦_ M N ⟧ = ⟦ N ⟧ • ⟦ M ⟧
-⟦ cc.ccsolve.id ⟧ = id
+⟦ cc.ccsolve.id ⟧ = ▹
 ⟦ cc.ccsolve.▹ x ⟧ = x
 ⟦ cc.ccsolve.[_,_] M N ⟧ = pair ⟦ M ⟧ ⟦ N ⟧
 ⟦_⟧ {.(u × v)} {.u} (π₁ {u} {v}) = proj1 {len v}
@@ -191,10 +211,10 @@ id1 = cc.ccsolve.id
 ⟦_⟧eq cc.ccsolve.refl x = refl
 ⟦_⟧eq (cc.ccsolve.sym y) x = ≡-sym (⟦ y ⟧eq x)
 ⟦_⟧eq (cc.ccsolve.trans y y') x = ≡-trans (⟦ y' ⟧eq x) (⟦ y ⟧eq x)
-⟦_⟧eq cc.ccsolve.assoc x = {!!}
+⟦_⟧eq (cc.ccsolve.assoc m n p) x = sub-assoc ⟦ p ⟧ ⟦ n ⟧ ⟦ m ⟧ x
 ⟦_⟧eq cc.ccsolve.idL x = refl
-⟦_⟧eq cc.ccsolve.idR x = {!!}
-⟦_⟧eq (cc.ccsolve._◦_ y y') x = {!!}
+⟦_⟧eq cc.ccsolve.idR x = sub-id _
+⟦_⟧eq (cc.ccsolve._◦_ y y') x = ≡-cong-app (sub-resp-≋ ⟦ y' ⟧eq) (⟦ y ⟧eq x)
 ⟦_⟧eq cc.ccsolve.π₁-β x = {!!}
 ⟦_⟧eq cc.ccsolve.π₂-β x = {!!}
 ⟦_⟧eq cc.ccsolve.π-η x = {!!} 
@@ -243,7 +263,7 @@ pr-ext θ (s x) = {!!}
 --lem σ N = completeness ([ id1 , (▹ N) ] ◦ (▹ σ)) ([ ((▹ σ) ◦ π₁) , π₂ ] ◦ [ id1 , ((▹ N) ◦ (▹ σ)) ]) refl
 
 -- When can I exploit unification in reverse to get one from the other for free?
-lem2 : ∀ {n m} (σ : subst n m) (N : tm n) -> (σ • (id ,, N)) ≋ ((id ,, sub σ N) • (ext σ))
+lem2 : ∀ {n m} (σ : subst n m) (N : tm n) -> (σ • (▹ ,, N)) ≋ ((▹ ,, sub σ N) • (ext σ))
 lem2 σ N = ⟦ (completeness ([ id1 , (▹ (► N)) ] ◦ (▹ σ))  ([ ((▹ σ) ◦ π₁) , π₂ ] ◦ [ id1 , ((▹ (► N)) ◦ (▹ σ)) ]) refl) ⟧eq 
 
 pr-subst-app : ∀ {n m} {M1 M2 : tm n} {σ1 σ2 : subst n m} -> pr-subst σ1 σ2 -> pr M1 M2 -> pr (sub σ1 M1) (sub σ2 M2)

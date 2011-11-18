@@ -22,7 +22,7 @@ module ccsolve (mvar : tp -> tp -> Set) where
   refl : ∀ {t u} {m : exp t u} -> m ≈ m
   sym : ∀ {t u} {m n : exp t u} -> m ≈ n -> n ≈ m
   trans : ∀ {t u} {m n p : exp t u} -> n ≈ p -> m ≈ n -> m ≈ p 
-  assoc : ∀ {t u s v} {m : exp u s} {n : exp t u} {p : exp v t} -> (m ◦ (n ◦ p)) ≈ ((m ◦ n) ◦ p)
+  assoc : ∀ {t u s v} (m : exp u s) (n : exp t u) (p : exp v t) -> (m ◦ (n ◦ p)) ≈ ((m ◦ n) ◦ p)
   idL : ∀ {t u} {m : exp t u} -> (id ◦ m) ≈ m
   idR : ∀ {t u} {m : exp t u} -> (m ◦ id) ≈ m
   _◦_ : ∀ {t u s} {m1 m2 : exp u s} {n1 n2 : exp t u} -> m1 ≈ m2 -> n1 ≈ n2 -> (m1 ◦ n1) ≈ (m2 ◦ n2)
@@ -81,11 +81,11 @@ module ccsolve (mvar : tp -> tp -> Set) where
  eval m = m ⊙ (η-expand id) 
 
  emb-eval : ∀ {t u s} (m : exp u s) (n : norm t u) -> (m ◦ (emb n)) ≈ emb (m ⊙ n)
- emb-eval (m1 ◦ m2) n = trans (emb-eval m1 (m2 ⊙ n)) (trans (refl ◦ (emb-eval m2 n)) (sym assoc))
+ emb-eval (m1 ◦ m2) n = trans (emb-eval m1 (m2 ⊙ n)) (trans (refl ◦ (emb-eval m2 n)) (sym (assoc _ _ _)))
  emb-eval id n = idL
  emb-eval (▹ M) n = emb-η (M ◦ n)
- emb-eval [ m1 , m2 ] n = trans [ trans (emb-eval m1 n) (trans (π₁-β ◦ refl) assoc)
-                                , trans (emb-eval m2 n) (trans (π₂-β ◦ refl) assoc) ] π-η
+ emb-eval [ m1 , m2 ] n = trans [ trans (emb-eval m1 n) (trans (π₁-β ◦ refl) (assoc _ _ _))
+                                , trans (emb-eval m2 n) (trans (π₂-β ◦ refl) (assoc _ _ _)) ] π-η
  emb-eval π₁ [ n1 , n2 ] = π₁-β
  emb-eval π₂ [ n1 , n2 ] = π₂-β
  emb-eval ! n = !
