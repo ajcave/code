@@ -18,6 +18,9 @@ f ≋ g = ∀ x -> f x ≡ g x
 ≋-sym : ∀ {A B : Set} {f g : A -> B} -> f ≋ g -> g ≋ f
 ≋-sym H x = ≡-sym (H x)
 
+≋-refl : ∀ {A B : Set} (f : A -> B) -> f ≋ f
+≋-refl f x = refl
+
 ≡-trans : ∀ {A : Set} {a b c : A} -> a ≡ b -> b ≡ c -> a ≡ c
 ≡-trans refl refl = refl
 

@@ -126,6 +126,17 @@ proj2 {z} ()
 proj2 {s n} z = ▹ z
 proj2 {s n} (s x) = vsub s (proj2 x)
 
+∘-resp-≋1 : ∀ {A B C} {f1 f2 : B -> C} -> f1 ≋ f2 -> (g : A -> B) -> (f1 ∘ g) ≋ (f2 ∘ g)
+∘-resp-≋1 H1 g x = ≡-cong-app H1 refl
+
+∘-resp-≋2 : ∀ {A B C}  (g : B -> C) {f1 f2 : A -> B} -> f1 ≋ f2 -> (g ∘ f1) ≋ (g ∘ f2)
+∘-resp-≋2 g H1 x = ≡-cong1 g (H1 x)
+
+pair-resp-≋ : ∀ {n m k} {σ1a σ1b : subst m k} {σ2a σ2b : subst n k} -> σ1a ≋ σ1b -> σ2a ≋ σ2b -> pair σ1a σ2a ≋ pair σ1b σ2b
+pair-resp-≋ {z} H1 H2 x = H1 x
+pair-resp-≋ {s n} H1 H2 z = H2 z
+pair-resp-≋ {s n} H1 H2 (s x) = pair-resp-≋ H1 (∘-resp-≋1 H2 s) x
+
 -- TODO: Try the generic traversal!
 -- TODO: I'm pretty sure I had less of these in the Coq proof for Beluga^mu. Why?
 -- TODO: Identify combinators from which functors can automatically be derived
@@ -190,6 +201,13 @@ sub-id (M · N) = ≡-cong2 _·_ (sub-id M) (sub-id N)
 β2 {s n} σ1 σ2 z = refl
 β2 {s n} σ1 σ2 (s x) = ≡-trans (≡-sym (sub-vsub-funct (pair σ1 (σ2 ∘ s) ,, σ2 z) s (proj2 x))) (β2 σ1 (σ2 ∘ s) x)
 
+sub-η : ∀ {n m k} (σ : subst (m + n) k) -> σ ≋ (pair (σ • (proj1 {n})) (σ • (proj2 {n})))
+sub-η {z} σ x = refl
+sub-η {s n} σ z = refl
+sub-η {s n} σ (s x) = ≡-trans (sub-η {n} (σ ∘ s) x) (≡-sym (pair-resp-≋
+           (∘-resp-≋1 (≋-sym (sub-vsub-funct σ s)) (proj1 {n}))
+           (∘-resp-≋1 (≋-sym (sub-vsub-funct σ s)) (proj2 {n})) x))
+
 -- Single substitution as a special case of simultaneous
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
 single M N = sub (▹ ,, N) M 
@@ -218,10 +236,10 @@ id1 = cc.ccsolve.id
 ⟦_⟧eq cc.ccsolve.idL x = refl
 ⟦_⟧eq cc.ccsolve.idR x = sub-id _
 ⟦_⟧eq (cc.ccsolve._◦_ y y') x = ≡-cong-app (sub-resp-≋ ⟦ y' ⟧eq) (⟦ y ⟧eq x)
-⟦_⟧eq cc.ccsolve.π₁-β x = {!!}
-⟦_⟧eq cc.ccsolve.π₂-β x = {!!}
-⟦_⟧eq cc.ccsolve.π-η x = {!!} 
-⟦_⟧eq (cc.ccsolve.[_,_] y y') x = {!!}
+⟦_⟧eq (cc.ccsolve.π₁-β {m = M} {n = N}) x = β1 ⟦ M ⟧ ⟦ N ⟧ x
+⟦_⟧eq (cc.ccsolve.π₂-β {m = M} {n = N}) x = β2 ⟦ M ⟧ ⟦ N ⟧ x
+⟦_⟧eq (cc.ccsolve.π-η {u = u} {s = t} {m = M}) x = sub-η {len t} ⟦ M ⟧ x 
+⟦_⟧eq (cc.ccsolve.[_,_] y y') x = pair-resp-≋ ⟦ y ⟧eq ⟦ y' ⟧eq x
 ⟦_⟧eq cc.ccsolve.! ()  
 
 data pr {n : nat} : tm n -> tm n -> Set where
