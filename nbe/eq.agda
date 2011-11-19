@@ -24,6 +24,9 @@ f ≋ g = ∀ x -> f x ≡ g x
 ≡-trans : ∀ {A : Set} {a b c : A} -> a ≡ b -> b ≡ c -> a ≡ c
 ≡-trans refl refl = refl
 
+≋-trans : ∀ {A B : Set} {f g h : A -> B} -> f ≋ g -> g ≋ h -> f ≋ h
+≋-trans H1 H2 x = ≡-trans (H1 x) (H2 x)
+
 ≡-cong : ∀ {A : Set} (f : A -> Set) {a b} -> a ≡ b -> f a -> f b
 ≡-cong f refl x = x
 

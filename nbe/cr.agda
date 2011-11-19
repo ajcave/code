@@ -217,30 +217,30 @@ open module ccsolve1 = ccsolve (λ t s → subst (len s) (len t)) hiding (id)
 id1 = cc.ccsolve.id
 
 ⟦_⟧ : ∀ {t s} -> exp t s -> subst (len s) (len t)
-⟦ cc.ccsolve._◦_ M N ⟧ = ⟦ N ⟧ • ⟦ M ⟧
+⟦ M ◦ N ⟧ = ⟦ N ⟧ • ⟦ M ⟧
 ⟦ cc.ccsolve.id ⟧ = ▹
-⟦ cc.ccsolve.▹ x ⟧ = x
-⟦ cc.ccsolve.[_,_] M N ⟧ = pair ⟦ M ⟧ ⟦ N ⟧
+⟦ ▹ x ⟧ = x
+⟦ [ M , N ] ⟧ = pair ⟦ M ⟧ ⟦ N ⟧
 ⟦_⟧ {.(u × v)} {.u} (π₁ {u} {v}) = proj1 {len v}
 ⟦_⟧ {.(u × v)} {.v} (π₂ {u} {v}) = proj2 {len v}
-⟦ cc.ccsolve.! ⟧ = λ () 
+⟦ ! ⟧ = λ () 
 
 
 -- Is it easier to prove these kinds of laws for the 1-at-a-time version?
 -- Or what if we made our lambda calculus more closely resemble this structure?
 ⟦_⟧eq : ∀ {t s} {M N : exp t s} -> M ≈ N -> ⟦ M ⟧ ≋ ⟦ N ⟧
-⟦_⟧eq cc.ccsolve.refl x = refl
-⟦_⟧eq (cc.ccsolve.sym y) x = ≡-sym (⟦ y ⟧eq x)
-⟦_⟧eq (cc.ccsolve.trans y y') x = ≡-trans (⟦ y' ⟧eq x) (⟦ y ⟧eq x)
-⟦_⟧eq (cc.ccsolve.assoc m n p) x = sub-assoc ⟦ p ⟧ ⟦ n ⟧ ⟦ m ⟧ x
-⟦_⟧eq cc.ccsolve.idL x = refl
-⟦_⟧eq cc.ccsolve.idR x = sub-id _
-⟦_⟧eq (cc.ccsolve._◦_ y y') x = ≡-cong-app (sub-resp-≋ ⟦ y' ⟧eq) (⟦ y ⟧eq x)
-⟦_⟧eq (cc.ccsolve.π₁-β {m = M} {n = N}) x = β1 ⟦ M ⟧ ⟦ N ⟧ x
-⟦_⟧eq (cc.ccsolve.π₂-β {m = M} {n = N}) x = β2 ⟦ M ⟧ ⟦ N ⟧ x
-⟦_⟧eq (cc.ccsolve.π-η {u = u} {s = t} {m = M}) x = sub-η {len t} ⟦ M ⟧ x 
-⟦_⟧eq (cc.ccsolve.[_,_] y y') x = pair-resp-≋ ⟦ y ⟧eq ⟦ y' ⟧eq x
-⟦_⟧eq cc.ccsolve.! ()  
+⟦ refl ⟧eq = ≋-refl _
+⟦ sym y ⟧eq = ≋-sym ⟦ y ⟧eq
+⟦ trans y y' ⟧eq = ≋-trans ⟦ y' ⟧eq ⟦ y ⟧eq
+⟦ assoc m n p ⟧eq = sub-assoc ⟦ p ⟧ ⟦ n ⟧ ⟦ m ⟧
+⟦ idL ⟧eq = ≋-refl _
+⟦ idR ⟧eq = λ x -> sub-id _
+⟦ y ◦ y' ⟧eq = λ x -> ≡-cong-app (sub-resp-≋ ⟦ y' ⟧eq) (⟦ y ⟧eq x)
+⟦ π₁-β {m = M} {n = N} ⟧eq = β1 ⟦ M ⟧ ⟦ N ⟧
+⟦ π₂-β {m = M} {n = N} ⟧eq = β2 ⟦ M ⟧ ⟦ N ⟧
+⟦ π-η {s = t} {m = M} ⟧eq = sub-η {len t} ⟦ M ⟧
+⟦ [ y , y' ] ⟧eq = pair-resp-≋ ⟦ y ⟧eq ⟦ y' ⟧eq
+⟦ ! ⟧eq = λ ()
 
 data pr {n : nat} : tm n -> tm n -> Set where
  ▹ : (x : var n) -> pr (▹ x) (▹ x) 
