@@ -185,6 +185,11 @@ sub-id (M · N) = ≡-cong2 _·_ (sub-id M) (sub-id N)
 β1 {z} σ1 σ2 x = refl
 β1 {s n} σ1 σ2 x = ≡-trans (≡-sym (sub-vsub-funct (pair σ1 (σ2 ∘ s) ,, σ2 z) s (proj1 {n} x))) (β1 σ1 (σ2 ∘ s) x)
 
+β2 : ∀ {m n k} (σ1 : subst n k) (σ2 : subst m k) -> ((pair σ1 σ2) • (proj2 {m})) ≋ σ2
+β2 {z} σ1 σ2 ()
+β2 {s n} σ1 σ2 z = refl
+β2 {s n} σ1 σ2 (s x) = ≡-trans (≡-sym (sub-vsub-funct (pair σ1 (σ2 ∘ s) ,, σ2 z) s (proj2 x))) (β2 σ1 (σ2 ∘ s) x)
+
 -- Single substitution as a special case of simultaneous
 single : ∀ {n} -> tm (s n) -> tm n -> tm n
 single M N = sub (▹ ,, N) M 
