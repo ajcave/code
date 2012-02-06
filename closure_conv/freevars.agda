@@ -83,14 +83,21 @@ _∪_ {z} σ1 σ2 = _ , (id , (! , σ1))
 _∪_ {s y} σ1 σ2 with σ2 top
 _∪_ {s y} σ1 σ2 | q with inRange? σ1 q
 _∪_ {s y} σ1 σ2 | .(σ1 x) | inl (inr x) with σ1 ∪ (σ2 ∘ pop)
-_∪_ {s y} σ1 σ2 | .(σ1 x) | inl (inr x) | r , (σ' , (σ1' , σ2')) = r , (σ' , ((σ1' ,, (σ' x)) , σ2'))
+_∪_ {s y} σ1 σ2 | .(σ1 x) | inl (inr x) | r , (σ1' , (σ2' , σ')) = r , (σ1' , ((σ2' ,, (σ1' x)) , σ'))
 _∪_ {s y} σ1 σ2 | q | inr y' with σ1 ∪ (σ2 ∘ pop)
-_∪_ {s y} σ1 σ2 | q | inr y0 | r , (σ' , (σ1' , σ2')) = (s r) , ((pop ∘ σ') , (ext σ1' , (σ2' ,, (σ2 top))))
+_∪_ {s y} σ1 σ2 | q | inr y0 | r , (σ1' , (σ2' , σ')) = (s r) , ((pop ∘ σ1') , (ext σ2' , (σ' ,, (σ2 top))))
 -- prove this is a pullback?
+
+_[_] : ∀ {n m} -> tm n -> sub n m -> tm m
+▹ x [ σ ] = ▹ (σ x)
+ƛ M [ σ ] = ƛ (M [ (ext σ) ])
+(M · N) [ σ ] = (M [ σ ]) · (N [ σ ])
 
 fv : ∀ {n} -> tm n -> Σ (λ m -> (sub m n) * tm m)
 fv (▹ x) = (s z) , ((λ _ → x) , ▹ top)
 fv (ƛ M) with fv M
 fv (ƛ M) | m , (σ , M') = {!!}
 fv (M · N) with fv M | fv N
-fv (M · N) | m1 , (σ1 , M1) | m2 , (σ2 , M2) = {!!} 
+fv (M · N) | m1 , (σ1 , M1) | m2 , (σ2 , M2) with σ1 ∪ σ2
+fv (M · N) | m1 , (σ1 , M1) | m2 , (σ2 , M2) | r , (σ1' , (σ2' , σ')) = r , (σ' , ((M1 [ σ1' ]) · (M2 [ σ2' ])))
+-- Have a nice representation for pattern fragment substitutions? Just syntactic & affine
