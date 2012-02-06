@@ -88,6 +88,11 @@ _∪_ {s y} σ1 σ2 | q | inr y' with σ1 ∪ (σ2 ∘ pop)
 _∪_ {s y} σ1 σ2 | q | inr y0 | r , (σ1' , (σ2' , σ')) = (s r) , ((pop ∘ σ1') , (ext σ2' , (σ' ,, (σ2 top))))
 -- prove this is a pullback?
 
+rem : ∀ {m n} -> sub m (s n) -> Σ (λ r -> (sub r m) * (sub m (s r)))
+rem {z} σ = z , (! , !)
+rem {s y} σ with rem (σ ∘ pop)
+rem {s y} σ | r , (σ1 , σ2) = {!!}
+
 _[_] : ∀ {n m} -> tm n -> sub n m -> tm m
 ▹ x [ σ ] = ▹ (σ x)
 ƛ M [ σ ] = ƛ (M [ (ext σ) ])
