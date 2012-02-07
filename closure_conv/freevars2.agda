@@ -102,3 +102,24 @@ fv (M · N) with fv M | fv N
 fv (M · N) | Γ1 , (σ1 , M') | Γ2 , (σ2 , N') with σ1 ∪ σ2
 fv (M · N) | Γ1 , (σ1 , M') | Γ2 , (σ2 , N') | uc Δ' σ1' σ2' σ = Δ' , (σ , ((M' [ σ1' ]) · (N' [ σ2' ])))
 -- Prove universality in that if there is another solution, it factors into this one?
+-- The condition looks a lot like the correctness for unification. How are these two problems related?
+-- Can we view this as a unification problem?
+
+-- What about evaluation strategy: Would Beluga compose the substitutions and apply them once,
+-- or apply them one at a time like we do here?
+-- By using a smarter representation for the result term, we could do it here
+
+-- Now how does this fit into closure conversion?
+
+record solution Δ T (M : tm Δ T) : Set where
+ field
+  Γ : ctx Unit
+  σ : psub Γ Δ
+  M' : tm Γ T
+  pf : M ≡ M' [ σ ]
+
+fv2 : ∀ {Δ T} (M : tm Δ T) -> solution Δ T M
+fv2 (▹ x) = record { Γ = ⊡ , tt; σ = singleton x; M' = ▹ top; pf = {!!} }
+fv2 (ƛ M) with fv2 M
+... | w = {!w!}
+fv2 (M · N) = {!!}
