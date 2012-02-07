@@ -68,7 +68,7 @@ record union {A} (Γ1 Γ2 Δ : ctx A) : Set where
   σ' : psub Δ' Δ
 
 _∪_ : ∀ {A} {Γ1 Γ2 Δ : ctx A} -> psub Γ1 Δ -> psub Γ2 Δ -> union Γ1 Γ2 Δ
-end ∪ end = uc ⊡ end end end 
+end ∪ end = uc ⊡ end end end
 keep σ1 T ∪ keep σ2 .T with σ1 ∪ σ2
 keep σ1 T ∪ keep σ2 .T | uc Δ' σ1' σ2' σ' = uc (Δ' , T) (keep σ1' T) (keep σ2' T) (keep σ' T)
 keep σ1 T ∪ drop σ2 .T with σ1 ∪ σ2
