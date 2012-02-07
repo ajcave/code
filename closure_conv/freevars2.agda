@@ -79,12 +79,25 @@ drop σ1 T ∪ keep σ2 .T | uc Δ' σ1' σ2' σ' = uc (Δ' , T) (drop σ1' T) (
 drop σ1 T ∪ drop σ2 .T with σ1 ∪ σ2
 drop σ1 T ∪ drop σ2 .T | uc Δ' σ1' σ2' σ' = uc Δ' σ1' σ2' (drop σ' T)
 
-rem : ∀ {A T} {Γ Δ : ctx A} -> psub Γ (Δ , T) -> Σ (λ Γ' -> (psub Γ' Γ) * (psub Γ (Γ' , T)))
-rem {A} {T} (keep σ .T) = _ , (drop id T , id)
-rem {A} {T} (drop σ .T) = _ , (id , drop id T)
+rem : ∀ {A T} {Γ Δ : ctx A} -> psub Γ (Δ , T) -> Σ (λ Γ' -> (psub Γ' Γ) * ((psub Γ (Γ' , T)) * (psub Γ' Δ)))
+rem {A} {T} {Γ , .T} (keep σ .T) = Γ , (drop id T , (id , σ))
+rem {A} {T} {Γ}      (drop σ .T) = Γ , (id , (drop id T , σ))
 -- I think this is canonical...
 
 _[_] : ∀ {Γ Δ T} -> tm Γ T -> psub Γ Δ -> tm Δ T
 ▹ x [ σ ] = ▹ (app-psub σ x)
 ƛ M [ σ ] = ƛ (M [ keep σ tt ])
 (M · N) [ σ ] = (M [ σ ]) · (N [ σ ])
+
+singleton : ∀ {A T} {Γ : ctx A} -> var Γ T -> psub (⊡ , T) Γ
+singleton top = keep ! _
+singleton (pop y) = drop (singleton y) _
+
+fv : ∀ {Δ T} -> tm Δ T -> Σ (λ Γ -> (psub Γ Δ) * (tm Γ T))
+fv (▹ x) = (⊡ , _) , (singleton x , ▹ top)
+fv (ƛ M) with fv M
+fv (ƛ M) | Γ , (σ , M') with rem σ
+fv (ƛ M) | Γ , (σ , M') | Γ' , (_ , (σ' , σ'')) = Γ' , (σ'' , (ƛ (M' [ σ' ])))
+fv (M · N) with fv M | fv N
+fv (M · N) | Γ1 , (σ1 , M') | Γ2 , (σ2 , N') with σ1 ∪ σ2
+fv (M · N) | Γ1 , (σ1 , M') | Γ2 , (σ2 , N') | uc Δ' σ1' σ2' σ = Δ' , (σ , ((M' [ σ1' ]) · (N' [ σ2' ])))
