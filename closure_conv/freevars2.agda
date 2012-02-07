@@ -67,6 +67,7 @@ record union {A} (Γ1 Γ2 Δ : ctx A) : Set where
   σ2' : psub Γ2 Δ'
   σ' : psub Δ' Δ
 
+-- Could separate this out into 4 functions
 _∪_ : ∀ {A} {Γ1 Γ2 Δ : ctx A} -> psub Γ1 Δ -> psub Γ2 Δ -> union Γ1 Γ2 Δ
 end ∪ end = uc ⊡ end end end
 keep σ1 T ∪ keep σ2 .T with σ1 ∪ σ2
@@ -77,33 +78,3 @@ drop σ1 T ∪ keep σ2 .T with σ1 ∪ σ2
 drop σ1 T ∪ keep σ2 .T | uc Δ' σ1' σ2' σ' = uc (Δ' , T) (drop σ1' T) (keep σ2' T) (keep σ' T)
 drop σ1 T ∪ drop σ2 .T with σ1 ∪ σ2
 drop σ1 T ∪ drop σ2 .T | uc Δ' σ1' σ2' σ' = uc Δ' σ1' σ2' (drop σ' T)
-
-{-
-_∪₁_ : ∀ {A} {Γ1 Γ2 Δ : ctx A} -> psub Γ1 Δ -> psub Γ2 Δ -> ctx A
-end ∪₁ end = ⊡
-keep σ1 T ∪₁ keep σ2 .T = (σ1 ∪₁ σ2) , T
-keep σ1 T ∪₁ drop σ2 .T = (σ1 ∪₁ σ2) , T
-drop σ1 T ∪₁ keep σ2 .T = (σ1 ∪₁ σ2) , T
-drop σ1 T ∪₁ drop σ2 .T = σ1 ∪₁ σ2
-
-_∪_l : ∀ {A} {Γ1 Γ2 Δ : ctx A} (σ1 : psub Γ1 Δ) (σ2 : psub Γ2 Δ) -> psub Γ1 (σ1 ∪₁ σ2)
-end ∪ end l = end
-keep σ1 T ∪ keep σ2 .T l = keep (σ1 ∪ σ2 l) T
-keep σ1 T ∪ drop σ2 .T l = keep (σ1 ∪ σ2 l) T
-drop σ1 T ∪ keep σ2 .T l = drop (σ1 ∪ σ2 l) T
-drop σ1 T ∪ drop σ2 .T l = σ1 ∪ σ2 l
-
-_∪_r : ∀ {A} {Γ1 Γ2 Δ : ctx A} (σ1 : psub Γ1 Δ) (σ2 : psub Γ2 Δ) -> psub Γ2 (σ1 ∪₁ σ2)
-end ∪ end r = end
-keep σ1 T ∪ keep σ2 .T r = keep (σ1 ∪ σ2 r) T
-keep σ1 T ∪ drop σ2 .T r = drop (σ1 ∪ σ2 r) T
-drop σ1 T ∪ keep σ2 .T r = keep (σ1 ∪ σ2 r) T
-drop σ1 T ∪ drop σ2 .T r = σ1 ∪ σ2 r
-
-_∪_c : ∀ {A} {Γ1 Γ2 Δ : ctx A} (σ1 : psub Γ1 Δ) (σ2 : psub Γ2 Δ) -> psub (σ1 ∪₁ σ2) Δ
-end ∪ end c = end
-keep σ T ∪ keep σ' .T c = keep (σ ∪ σ' c) T
-keep σ T ∪ drop σ' .T c = keep (σ ∪ σ' c) T
-drop σ T ∪ keep σ' .T c = keep (σ ∪ σ' c) T
-drop σ T ∪ drop σ' .T c = drop (σ ∪ σ' c) T
--}
