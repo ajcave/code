@@ -60,6 +60,7 @@ id {A} {⊡} = end
 id {A} {Γ , T} = keep id T
 
 record union {A} (Γ1 Γ2 Δ : ctx A) : Set where
+ constructor uc
  field
   Δ' : ctx A
   σ1' : psub Γ1 Δ'
@@ -68,6 +69,13 @@ record union {A} (Γ1 Γ2 Δ : ctx A) : Set where
 
 _∪₁_ : ∀ {A} {Γ1 Γ2 Δ : ctx A} -> psub Γ1 Δ -> psub Γ2 Δ -> union Γ1 Γ2 Δ
 _∪₁_ {Γ2 = Γ2} end σ2 = record { Δ' = Γ2; σ1' = !; σ2' = id; σ' = σ2 }
-keep σ1 T ∪₁ σ2 = {!!}
-drop σ1 T ∪₁ σ2 = {!!}
+keep σ1 T ∪₁ keep σ2 .T with σ1 ∪₁ σ2
+keep σ1 T ∪₁ keep σ2 .T | uc Δ' σ1' σ2' σ' = uc (Δ' , T) (keep σ1' T) (keep σ2' T) (keep σ' T)
+keep σ1 T ∪₁ drop σ2 .T with σ1 ∪₁ σ2
+keep σ1 T ∪₁ drop σ2 .T | uc Δ' σ1' σ2' σ' = uc (Δ' , T) (keep σ1' T) (drop σ2' T) (keep σ' T)
+drop σ1 T ∪₁ keep σ2 .T with σ1 ∪₁ σ2
+drop σ1 T ∪₁ keep σ2 .T | uc Δ' σ1' σ2' σ' = uc (Δ' , T) (drop σ1' T) (keep σ2' T) (keep σ' T)
+drop σ1 T ∪₁ drop σ2 .T with σ1 ∪₁ σ2
+drop σ1 T ∪₁ drop σ2 .T | uc Δ' σ1' σ2' σ' = uc Δ' σ1' σ2' (drop σ' T)
+-- Could we do this more symmetrically by induction on Δ?
 
