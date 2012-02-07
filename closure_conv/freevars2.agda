@@ -80,5 +80,5 @@ drop σ1 T ∪ drop σ2 .T with σ1 ∪ σ2
 drop σ1 T ∪ drop σ2 .T | uc Δ' σ1' σ2' σ' = uc Δ' σ1' σ2' (drop σ' T)
 
 rem : ∀ {A T} {Γ Δ : ctx A} -> psub Γ (Δ , T) -> Σ (λ Γ' -> (psub Γ' Γ) * (psub Γ (Γ' , T)))
-rem {A} {T} (keep σ .T) = _ , ((drop id T) , id)
+rem {A} {T} (keep σ .T) = _ , (drop id T , id)
 rem {A} {T} (drop σ .T) = _ , (id , drop id T)
