@@ -101,3 +101,4 @@ fv (ƛ M) | Γ , (σ , M') | Γ' , (_ , (σ' , σ'')) = Γ' , (σ'' , (ƛ (M' [ 
 fv (M · N) with fv M | fv N
 fv (M · N) | Γ1 , (σ1 , M') | Γ2 , (σ2 , N') with σ1 ∪ σ2
 fv (M · N) | Γ1 , (σ1 , M') | Γ2 , (σ2 , N') | uc Δ' σ1' σ2' σ = Δ' , (σ , ((M' [ σ1' ]) · (N' [ σ2' ])))
+-- Prove universality in that if there is another solution, it factors into this one?
