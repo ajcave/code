@@ -83,3 +83,8 @@ rem : ∀ {A T} {Γ Δ : ctx A} -> psub Γ (Δ , T) -> Σ (λ Γ' -> (psub Γ' �
 rem {A} {T} (keep σ .T) = _ , (drop id T , id)
 rem {A} {T} (drop σ .T) = _ , (id , drop id T)
 -- I think this is canonical...
+
+_[_] : ∀ {Γ Δ T} -> tm Γ T -> psub Γ Δ -> tm Δ T
+▹ x [ σ ] = ▹ (app-psub σ x)
+ƛ M [ σ ] = ƛ (M [ keep σ tt ])
+(M · N) [ σ ] = (M [ σ ]) · (N [ σ ])
