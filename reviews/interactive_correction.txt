@@ -12,7 +12,7 @@ The limitations of the tool appear severe. For example: when extending a term la
 
 The restriction that applications of induction functions must be fully applied is particularly severe. They simply disallow definitions such as "Definition invalid := exp_rec". Even if this is expanded to "Definition invalid P c a e = exp_rec P c a e", if one extends exp with a new constructor, one likely simultaneously wants to extend "invalid" with an extra parameter. But the tool does not permit this because they wish to avoid cascading extensions. 
 
-My understanding is that if an extension requires anything but the most trivial of changes (adding branches to pattern matches), the extension process fails entirely and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps our function needs another parameter or we need a modified induction invariant). If the authors believe that this will not be an issue, they should explain why.
+My understanding is that if an extension requires anything but the most trivial of changes (adding branches to pattern matches), the extension process fails entirely and the user must manually perform the extension. It seems to me that this will be extremely common in non-trivial examples (e.g. perhaps our function needs another parameter or we need a modified induction invariant). Allowing partial successes would go a long way. 
 
 There are ad-hoc restrictions: in Section 3.3, page 9, they explain that the tool only permits adding new constructor parameters *after* old parameters. This suggests that the syntax for constructor extensions is insufficient and should provide a way to map the old parameters to the new.
 
