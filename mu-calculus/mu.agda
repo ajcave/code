@@ -22,28 +22,26 @@ data prop (ζ : ctx type) : Set where
  ◇ : (A : prop ζ) -> prop ζ
  _⊃_ : (A B : prop ζ) -> prop ζ
 
-data judge (ζ : ctx type) : Set where
- _true : (A : prop ζ) -> judge ζ
 
 mutual
- data _,_,_⊢_true (ζ : ctx type) (Δ : ctx (judge ζ)) (Γ : ctx (judge ζ)) : prop ζ -> Set where
-  ▹ : {A : prop ζ} (x : var Γ (A true))
+ data _,_,_⊢_true (ζ : ctx type) (Δ : ctx (prop ζ)) (Γ : ctx (prop ζ)) : prop ζ -> Set where
+  ▹ : {A : prop ζ} (x : var Γ A)
                 -> -------------------
                     ζ , Δ , Γ ⊢ A true
-  ƛ : {A B : prop ζ} -> (M : ζ , Δ , (Γ , A true) ⊢ B true)
+  ƛ : {A B : prop ζ} -> (M : ζ , Δ , (Γ , A) ⊢ B true)
                      -> -----------------------------------
                         ζ , Δ , Γ ⊢ (A ⊃ B) true
   _·_ : {A B : prop ζ}    (M : ζ , Δ , Γ ⊢ (A ⊃ B) true) (N : ζ , Δ , Γ ⊢ A true)
                        -> -------------------------------------------------------
                                             ζ , Δ , Γ ⊢ B true
-  let-box : ∀ {A C} (M : ζ , Δ , Γ ⊢ (□ A) true) (N : ζ , (Δ , A true) , Γ ⊢ C true)
+  let-box : ∀ {A C} (M : ζ , Δ , Γ ⊢ (□ A) true) (N : ζ , (Δ , A) , Γ ⊢ C true)
                   -> ---------------------------------------------------------------
                                           ζ , Δ , Γ ⊢ C true
   box : ∀ {A} -> (M : ζ , ⊡ , Δ ⊢ A true)
               -> ------------------------
                    ζ , Δ , Γ ⊢ (□ A) true
 
-sub-valid : ∀ {ζ Δ Γ A C} (D : ζ , ⊡ , Δ ⊢ A true) (E : ζ , (Δ , A true) , Γ ⊢ C true)
+sub-valid : ∀ {ζ Δ Γ A C} (D : ζ , ⊡ , Δ ⊢ A true) (E : ζ , (Δ , A) , Γ ⊢ C true)
  ->  ζ , Δ , Γ ⊢ C true
 sub-valid D (▹ x) = ▹ x
 sub-valid D (ƛ M) = ƛ (sub-valid D M)
@@ -52,5 +50,5 @@ sub-valid D (let-box M N) = {!!}
 sub-valid D (box M) = box {!!}
 
 data step {ζ Δ Γ} : {A : prop ζ} -> ζ , Δ , Γ ⊢ A true -> ζ , Δ , Γ ⊢ A true -> Set where
- box-red : ∀ {A C} (D : ζ , ⊡ , Δ ⊢ A true) (E : ζ , (Δ , A true) , Γ ⊢ C true)
+ box-red : ∀ {A C} (D : ζ , ⊡ , Δ ⊢ A true) (E : ζ , (Δ , A) , Γ ⊢ C true)
                 -> step (let-box (box D) E) (sub-valid D E)
