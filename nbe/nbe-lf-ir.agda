@@ -1,4 +1,4 @@
-module nbe-lf where
+module nbe-lf-ir where
 open import eq
 
 record _*_ (A B : Set) : Set where
@@ -6,6 +6,12 @@ record _*_ (A B : Set) : Set where
  field
   fst : A
   snd : B
+
+record Σ {A : Set} (B : A -> Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B fst
 
 record Unit : Set where
  constructor tt
@@ -27,9 +33,8 @@ data var {A : Set} : (Γ : ctx' A) -> (T : A) -> Set where
  z : ∀ {Γ T} -> var (Γ , T) T
  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
 
-data vsubst : ∀ (Γ : ctx) (Δ : ctx) -> Set where 
- ⊡ : ∀ {Δ} -> vsubst ⊡ Δ
- _,_ : ∀ {Γ Δ U} -> (σ : vsubst Γ Δ) -> (x : var Δ U) -> vsubst (Γ , U) Δ
+vsubst : ctx -> ctx -> Set
+vsubst Γ Δ = ∀ {u} -> var Γ u -> var Δ u
 
 mutual 
  data rtm (Γ : ctx) : (T : tp) -> Set where
@@ -46,31 +51,25 @@ sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S
 
-vsubst-app : ∀ {Γ Δ U} -> vsubst Γ Δ -> var Γ U -> var Δ U
-vsubst-app ⊡ ()
-vsubst-app (σ , x) z = x
-vsubst-app (σ , x) (s y) = vsubst-app σ y
-
-vsubst-map : ∀ {Δ Γ ψ} -> (∀ {U} -> var Δ U -> var Γ U) -> vsubst ψ Δ -> vsubst ψ Γ
-vsubst-map σ1 ⊡ = ⊡
-vsubst-map σ1 (σ , x) = (vsubst-map σ1 σ) , (σ1 x)
-
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
-σ1 ∘ σ2 = vsubst-map (vsubst-app σ1) σ2
+(σ1 ∘ σ2) x = σ1 (σ2 x)
 
 id : ∀ {Γ} -> vsubst Γ Γ
-id {⊡} = ⊡
-id {Γ , T} = vsubst-map s id , z
+id x = x
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn = vsubst-map s id
+wkn = s
 
-ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
-ext σ = (vsubst-map s σ) , z
+_,,_ : ∀ {Γ Δ T} -> vsubst Γ Δ -> var Δ T -> vsubst (Γ , T) Δ
+_,,_ σ x z = x
+_,,_ σ x (s y) = σ y
+
+ext : ∀ {T Γ Δ} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
+ext σ = (s ∘ σ) ,, z
 
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
- rappSubst σ (v y) = v (vsubst-app σ y)
+ rappSubst σ (v y) = v (σ y)
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
  nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
  nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
@@ -150,64 +149,92 @@ unEmbed : ∀ {Γ Δ} -> subst Γ Δ -> nSubst Γ Δ
 unEmbed θ x = reify (θ x)
 
 postulate
- lf-atomic-tp : (Γ : ctx) -> atomic_tp -> Set
- lf-tp-vsubst-atomic : ∀ {γ δ : ctx} (σ : vsubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
- lf-tp-subst-atomic : ∀ {γ δ : ctx} (θ : nSubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
+ lf-atomic-tp : (Γ : ctx) -> Set
+ ≪_≫a : ∀ {γ : ctx} -> lf-atomic-tp γ -> atomic_tp
+ lf-tp-vsubst-atomic : ∀ {γ δ : ctx} (σ : vsubst γ δ) (A : lf-atomic-tp γ) -> lf-atomic-tp δ
+ lf-tp-subst-atomic : ∀ {γ δ : ctx} (θ : nSubst γ δ) (A : lf-atomic-tp γ) -> lf-atomic-tp δ
 
-data lf-tp (Γ : ctx) : (t : tp) -> Set where
- atom : ∀ {a} (A : lf-atomic-tp Γ a) -> lf-tp Γ (atom a)
- _⇝_ : ∀ {s t} (S : lf-tp Γ s) -> (T : lf-tp (Γ , s) t) -> lf-tp Γ (s ⇝ t)
+mutual
+ data lf-tp (Γ : ctx) : Set where
+  atom : ∀ (A : lf-atomic-tp Γ) -> lf-tp Γ
+  _⇝_ : ∀ (S : lf-tp Γ) -> (T : lf-tp (Γ , ≪ S ≫t)) -> lf-tp Γ
+ ≪_≫t : ∀ {Γ : ctx} -> lf-tp Γ -> tp
+ ≪ atom A ≫t = atom ≪ A ≫a
+ ≪ S ⇝ T ≫t = ≪ S ≫t ⇝ ≪ T ≫t
 
-lf-tp-vsubst : ∀ {γ δ : ctx} (σ : vsubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
+--≪_-subst-_≫t : ∀ {γ δ} (σ : vsubst γ δ) (S : lf-tp γ) -> ≪ lf-tp-vsubst σ S ≫t ≡ ≪ S ≫t
+--≪ σ -subst- S ≫t = ?
+-- Maybe if I generalize lf-tp-vsubst to a general traversal, I can prove this lemma first?
+
+lf-tp-vsubst' : ∀ {γ δ : ctx} (σ : vsubst γ δ) (S : lf-tp γ) -> Σ {lf-tp δ} (λ T -> ≪ T ≫t ≡ ≪ S ≫t) 
+lf-tp-vsubst' σ (atom A) = (atom (lf-tp-vsubst-atomic σ A)) , {!!}
+lf-tp-vsubst' {γ} {δ} σ (S ⇝ T) with lf-tp-vsubst' σ S | lf-tp-vsubst' (ext σ) T
+... | S' , eq1 | T' , eq2  = (S' ⇝ ≡-subst (λ x → lf-tp (δ , x)) (≡-sym eq1) T') , {!!}
+
+lf-tp-vsubst : ∀ {γ δ : ctx} (σ : vsubst γ δ) (S : lf-tp γ) -> lf-tp δ
 lf-tp-vsubst σ (atom A) = atom (lf-tp-vsubst-atomic σ A)
-lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) T)
+lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) {!!})
 
-lf-tp-vsubst-id :  ∀ {γ : ctx} {s} (S : lf-tp γ s) -> lf-tp-vsubst id S ≡ S
+≪_-subst-_≫t : ∀ {γ δ} (σ : vsubst γ δ) (S : lf-tp γ) -> ≪ lf-tp-vsubst σ S ≫t ≡ ≪ S ≫t
+≪ σ -subst- S ≫t = {!!}
+
+lf-tp-vsubst-id :  ∀ {γ : ctx} (S : lf-tp γ) -> lf-tp-vsubst id S ≡ S
 lf-tp-vsubst-id (atom A) = {!!}
-lf-tp-vsubst-id (S ⇝ T) rewrite lf-tp-vsubst-id S | lf-tp-vsubst-id T = refl
+lf-tp-vsubst-id (S ⇝ T) = {!!}
 
-lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
+lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) (S : lf-tp γ) -> lf-tp δ
 lf-tp-subst θ (atom A) = atom (lf-tp-subst-atomic θ A)
-lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
+lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ {!!} -- (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
 
-lf-tp-wkn : ∀ {Γ : ctx} (t : tp) {s} (S : lf-tp Γ s) -> lf-tp (Γ , t) s
+lf-tp-subst-≪≫ : ∀ {γ δ : ctx} (θ : nSubst γ δ) (S : lf-tp γ) -> ≪ lf-tp-subst θ S ≫t ≡ ≪ S ≫t
+lf-tp-subst-≪≫ θ S = {!!}
+
+lf-tp-wkn : ∀ {Γ : ctx} (t : tp) (S : lf-tp Γ) -> lf-tp (Γ , t)
 lf-tp-wkn t S = lf-tp-vsubst wkn S
 
 {- Compare this style with not indexing by everything. Involves induction-recursion everywhere?
    I suspect there may be more preservation lemmas? -}
-data lf-ctx : ctx -> Set where
- ⊡ : lf-ctx ⊡
- _,_ : ∀ {γ} (Γ : lf-ctx γ) -> {t : tp} -> (T : lf-tp γ t) -> lf-ctx (γ , t)
+mutual
+ data lf-ctx : Set where
+  ⊡ : lf-ctx
+  _,_ : ∀ (Γ : lf-ctx) (T : lf-tp (≪ Γ ≫c)) -> lf-ctx
+ ≪_≫c : lf-ctx -> ctx
+ ≪ ⊡ ≫c = ⊡
+ ≪ Γ , T ≫c = ≪ Γ ≫c , ≪ T ≫t
 
-data lf-var : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (x : var γ t) -> Set where
- z : ∀ {γ Γ t T} -> lf-var {γ , t} (Γ , T) (lf-tp-wkn t T) z
- s : ∀ {γ Γ t T u U x} -> lf-var {γ} Γ {t} T x -> lf-var (Γ , U) (lf-tp-wkn u T) (s x)
+
+data lf-var : ∀ (Γ : lf-ctx) (T : lf-tp (≪ Γ ≫c)) -> Set where
+ z : ∀ {Γ T} -> lf-var (Γ , T) (lf-tp-wkn ≪ T ≫t T)
+ s : ∀ {Γ T U} -> lf-var Γ T  -> lf-var (Γ , U) (lf-tp-wkn ≪ U ≫t T)
+
+≪_≫v : ∀ {Γ} {T} -> lf-var Γ T -> var ≪ Γ ≫c ≪ T ≫t
+≪_≫v {.(Γ , T)} {.(lf-tp-vsubst wkn T)} (z {Γ} {T}) = ≡-subst (λ x → var ≪ Γ , T ≫c x) (≡-sym ≪ wkn -subst- _ ≫t) z
+≪_≫v {.(Γ , U)} {.(lf-tp-vsubst wkn T)} (s {Γ} {T} {U} y) = ≡-subst (λ x → var ≪ Γ , U ≫c x) (≡-sym ≪ wkn -subst- T ≫t) (s (≪_≫v {Γ} {T} y))
 
 mutual
- data _⊢_⇒_ {γ} (Γ : lf-ctx γ) : ∀ {t}  (r : rtm γ t) (T : lf-tp γ t) -> Set where
-  v : ∀ {t T x} ->
-         lf-var Γ {t} T x
-      -> Γ ⊢ (v x) ⇒ T
-  _·_ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {r n} ->
-         (R : Γ ⊢ r ⇒ (T ⇝ S))
-      -> (N : Γ ⊢ n ⇐ T)
-      ->      Γ ⊢ (r · n) ⇒ (lf-tp-subst (n-single n) S)
- data _⊢_⇐_ {γ} (Γ : lf-ctx γ) : ∀ {t} (n : ntm γ t) (T : lf-tp γ t) -> Set where
-  ƛ : ∀ {t} {T : lf-tp γ t} {s} {S : lf-tp (γ , t) s} {n} ->
-         (N : (Γ , T) ⊢    n  ⇐ S)
-      ->       Γ      ⊢ (ƛ n) ⇐ (T ⇝ S)
-  neut : ∀ {a} {A : lf-atomic-tp γ a} {r} ->
-         (R : Γ ⊢ r ⇒ (atom A))
-       ->     Γ ⊢ (neut r) ⇐ (atom A)
+ data _⊢⇒_ Γ : ∀ (T : lf-tp ≪ Γ ≫c) -> Set where
+  v : ∀ {T} -> lf-var Γ T -> Γ ⊢⇒ T
+  _·_ : ∀ {T S} -> (R : Γ ⊢⇒ (T ⇝ S)) -> (N : Γ ⊢⇐ T)
+                -> Γ ⊢⇒ (lf-tp-subst (n-single ≪ N ≫n) S)
+ data _⊢⇐_ Γ : ∀ (T : lf-tp ≪ Γ ≫c) -> Set where
+  ƛ : ∀ {T S}-> (N : (Γ , T) ⊢⇐ S) -> Γ ⊢⇐ (T ⇝ S)
+  neut : ∀ {A} -> (R : Γ ⊢⇒ (atom A)) -> Γ ⊢⇐ (atom A)
 
-data lf-vsubst' {δ} (Δ : lf-ctx δ) : ∀ {γ} (Γ : lf-ctx γ) (σ : vsubst γ δ) -> Set where
- ⊡ : lf-vsubst' Δ ⊡ ⊡
- _,_ : ∀ {γ} {Γ : lf-ctx γ} (σ : vsubst γ δ) -> lf-vsubst' Δ Γ σ -> ∀ {u} {U : lf-tp γ u} {y : var δ u} -> lf-var Δ (lf-tp-vsubst σ U) y ->  lf-vsubst' Δ (Γ , U) (σ , y)
+ ≪_≫n : ∀ {Γ T} (N : Γ ⊢⇐ T) -> ntm ≪ Γ ≫c ≪ T ≫t
+ ≪ ƛ N ≫n = ƛ ≪ N ≫n
+ ≪ neut R ≫n = neut ≪ R ≫r
+ ≪_≫r : ∀ {Γ T} (R : Γ ⊢⇒ T) -> rtm ≪ Γ ≫c ≪ T ≫t
+ ≪ v y ≫r = v ≪ y ≫v
+ ≪_≫r {Γ} (_·_ {T} R N) = ≡-subst (λ x → rtm ≪ Γ ≫c (≪ T ≫t ⇝ x)) (≡-sym (lf-tp-subst-≪≫ (n-single ≪ N ≫n) _)) ≪ R ≫r · ≪ N ≫n
 
-lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
-lf-vsubst {γ} {δ} Γ σ Δ = ∀ {u} {U : lf-tp γ u} {x : var γ u} (X : lf-var Γ U x) -> lf-var Δ (lf-tp-vsubst σ U) (vsubst-app σ x)
+mutual
+ data lf-vsubst (Δ : lf-ctx) : ∀ (Γ : lf-ctx) -> Set where
+  ⊡ : lf-vsubst Δ ⊡
+  _,_ : ∀ {Γ : lf-ctx} -> (σ : lf-vsubst Δ Γ) -> ∀ {U}-> lf-var Δ (lf-tp-vsubst ≪ σ ≫s U) -> lf-vsubst Δ (Γ , U)
+ ≪_≫s : ∀ {Δ Γ} -> lf-vsubst Δ Γ -> vsubst ≪ Γ ≫c ≪ Δ ≫c
+ ≪ σ ≫s = {!!}
 
-vsubst' : ctx -> ctx -> Set
+{-vsubst' : ctx -> ctx -> Set
 vsubst' γ δ = ∀ {U} -> var γ U -> var δ U
 
 _∘₁_ : ∀ {A B C} (f : vsubst' B C) (g : vsubst' A B) -> (vsubst' A C)
@@ -267,14 +294,14 @@ mutual
  nsubst-lemma θ (neut R) = neut (rsubst-lemma θ R)
 
 lift : ∀ {Γ Δ} -> vsubst Γ Δ -> nSubst Γ Δ
-lift σ x = η-exp (v (vsubst-app σ x))
+lift σ x = η-exp (v (vsubst-app σ x)) -}
 
-lf-sem : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (n : sem γ t) -> Set
-lf-sem Γ (atom A) n = Γ ⊢ n ⇐ atom A
-lf-sem Γ (S ⇝ T) n = {γ' : _} {Γ' : lf-ctx γ'} {σ : vsubst _ γ'} (θ : lf-vsubst Γ σ Γ') ->
-  {m : sem γ' _} → lf-sem Γ' (lf-tp-vsubst σ S) m -> lf-sem Γ' (lf-tp-subst  (nExtend nId (reify m)) (lf-tp-vsubst (ext σ) T)) (n γ' σ m)
+mutual
+ lf-sem : ∀ Γ (T : lf-tp ≪ Γ ≫c) -> sem ≪ Γ ≫c ≪ T ≫t -> Set
+ lf-sem Γ (atom A') n = Σ (λ N → ≪ N ≫n ≡ n)
+ lf-sem Γ (T ⇝ S) n = {Γ' : _} (θ : lf-vsubst Γ' Γ) → (m : sem ≪ Γ' ≫c ≪ T ≫t) -> lf-sem Γ' (lf-tp-vsubst ≪ θ ≫s T) (≡-subst (λ x → sem ≪ Γ' ≫c x) (≡-sym ≪ ≪ θ ≫s -subst- T ≫t) m) -> lf-sem Γ' (lf-tp-subst (nExtend nId (reify m)) (lf-tp-vsubst (ext ≪ θ ≫s) S)) (≡-subst (λ x → sem ≪ Γ' ≫c x) (≡-sym (≡-trans (lf-tp-subst-≪≫ _ _) ≪ _ -subst- S ≫t)) (n ≪ Γ' ≫c ≪ θ ≫s m))
 
-lf-wkn : ∀ {γ} {Γ : lf-ctx γ} {s} {S : lf-tp γ s} -> lf-vsubst Γ wkn (Γ , S)
+{- lf-wkn : ∀ {γ} {Γ : lf-ctx γ} {s} {S : lf-tp γ s} -> lf-vsubst Γ wkn (Γ , S)
 lf-wkn = {!!}
 
 mutual 
@@ -303,7 +330,7 @@ mutual
  lf-sSubst : ∀ {γ δ} {Γ : lf-ctx γ} {Δ : lf-ctx δ} {σ : subst γ δ} {t n} {T : lf-tp γ t}
     -> (Γ ⊢ n ⇐ T) -> lf-subst Γ Δ σ -> lf-sem Δ (lf-tp-subst (unEmbed σ) T) (sSubst σ n)
  lf-sSubst {γ} {δ} {Γ} {Δ} {σ} {t ⇝ s1} {ƛ n} {T ⇝ S} (ƛ N) θ = λ θ' x → {!!}
- lf-sSubst (neut R) θ = lf-srSubst R θ
+ lf-sSubst (neut R) θ = lf-srSubst R θ -}
 
  -- Maybe I'll have an easier time if I Σ-up the T's in the derivations, and prove after the
  -- fact that they're equal?

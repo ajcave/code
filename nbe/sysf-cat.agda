@@ -1,5 +1,5 @@
 {-# OPTIONS --type-in-type #-}
-module sysfold where
+module sysf-cat where
 
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
@@ -19,10 +19,11 @@ record _*_ (A : Set) (B : Set) : Set where
     fst : A
     snd : B
 
-record sort : Set where
- constructor ⋆
+data sort : Set where
+ ⋆ : sort
+ _×_ : sort -> sort -> sort
 
-data ctx (A : Set) : Set where
+{-data ctx (A : Set) : Set where
  ⊡ : ctx A
  _,_ : (Γ : ctx A) -> (T : A) -> ctx A
 
@@ -31,18 +32,26 @@ data var {A : Set} : ∀ (Δ : ctx A) (x : A) -> Set where
  pop : ∀ {Δ T S} -> var Δ T -> var (Δ , S) T
 
 record unit : Set where
- constructor tt
+ constructor tt -}
 
-data tp (Δ : ctx sort) : Set where
- v : var Δ ⋆ -> tp Δ 
- _⇒_ : ∀ (T : tp Δ) -> (S : tp Δ) -> tp Δ
- Π : ∀ (T : tp (Δ , _)) -> tp Δ
+mutual
+ data rtp (Δ : sort) : sort -> Set where
+  v : rtp Δ Δ
+  π₁ : ∀ {S K} -> rtp Δ (S × K) -> rtp Δ S
+  π₂ : ∀ {S K} -> rtp Δ (S × K) -> rtp Δ K
+ data ntp (Δ : sort) : sort -> Set where
+  ▹ : rtp Δ ⋆ -> ntp Δ ⋆
+  _⇒_ : ∀ (T : ntp Δ ⋆) -> (S : ntp Δ ⋆) -> ntp Δ ⋆
+  Π : ∀ (T : ntp (Δ × ⋆) ⋆) -> ntp Δ ⋆
+  _×_ : (T U : ntp Δ ⋆)-> ntp Δ ⋆
+  _,_ : ∀ {S K} (T : ntp Δ S) (U : ntp Δ K) -> ntp Δ (S × K)
+ 
 
-map : ∀ {A B} (f : A -> B) -> ctx A -> ctx B
+{-map : ∀ {A B} (f : A -> B) -> ctx A -> ctx B
 map f ⊡ = ⊡
-map f (Γ , x) = map f Γ , f x 
+map f (Γ , x) = map f Γ , f x -}
 
-data gsubst {A : Set} (Exp : A -> Set) : ctx A -> Set where
+{-data gsubst {A : Set} (Exp : A -> Set) : ctx A -> Set where
  ⊡ : gsubst Exp ⊡
  _,_ : ∀ {Γ T} -> (σ : gsubst Exp Γ) -> (x : Exp T) -> gsubst Exp (Γ , T)
 
@@ -96,33 +105,57 @@ id x = x
 
 id-tsubst : ∀ {Δ1} -> tsubst Δ1 Δ1
 id-tsubst {⊡} = ⊡
-id-tsubst {Δ , T} = (gmap [ wkn ⋆ ] (id-tsubst {Δ})) , v top
+id-tsubst {Δ , T} = (gmap [ wkn ⋆ ] (id-tsubst {Δ})) , v top -}
 
 mutual
- data rtm (Δ : ctx sort) (Γ : ctx (tp Δ)) : tp Δ -> Set where
-  v : ∀ {T : tp Δ} -> var Γ T -> rtm Δ Γ T
-  _·_ : ∀ {T : tp Δ} {S : tp Δ} -> rtm Δ Γ (T ⇒ S) -> ntm Δ Γ T -> rtm Δ Γ S
-  _$_ : ∀ {T : tp (Δ , _)} -> rtm Δ Γ (Π T) -> (S : tp Δ)
-         -> rtm Δ Γ ([[ id-tsubst , S ]] T)
- data ntm (Δ : ctx sort) (Γ : ctx (tp Δ)) : tp Δ -> Set where 
-  ƛ : ∀ {T S : tp Δ} -> ntm Δ (Γ , T) S -> ntm Δ Γ (T ⇒ S)
-  Λ : ∀ {T : tp (Δ , _)} -> ntm (Δ , _) (map [ wkn ⋆ ] Γ) T -> ntm Δ Γ (Π T)
-  ▹ : ∀ {A} -> rtm Δ Γ (v A) -> ntm Δ Γ (v A)
+ rSub : ∀ {Δ1 Δ2 Δ3} -> rtp Δ2 Δ3 -> rtp Δ1 Δ2 -> rtp Δ1 Δ3
+ rSub v T = T
+ rSub (π₁ y) T = π₁ (rSub y T)
+ rSub (π₂ y) T = π₂ (rSub y T)
+ nSub : ∀ {Δ1 Δ2 Δ3} -> ntp Δ2 Δ3 -> rtp Δ1 Δ2 -> ntp Δ1 Δ3
+ nSub (▹ y) T = ▹ (rSub y T)
+ nSub (T ⇒ S) T' = (nSub T T') ⇒ nSub S T'
+ nSub (Π T) T' = Π (nSub T {!!})
+ nSub (T × U) T' = (nSub T T') × (nSub U T')
+ nSub (T , U) T' = (nSub T T') , (nSub U T')
 
-vsubst : ∀ {Δ : ctx sort} (Γ Γ' : ctx (tp Δ)) -> Set
-vsubst Γ Γ' = gsubst (var Γ') Γ
+mutual
+ rtSub : ∀ {Δ1 Δ2 Δ3} -> rtp Δ2 Δ3 -> ntp Δ1 Δ2 -> ntp Δ1 Δ3
+ rtSub v T = T
+ rtSub (π₁ y) T with rtSub y T
+ rtSub (π₁ y) T | T' , U = T'
+ rtSub (π₂ y) T with rtSub y T
+ ... | T' , U = U
+ ntSub : ∀ {Δ1 Δ2 Δ3} -> ntp Δ2 Δ3 -> ntp Δ1 Δ2 -> ntp Δ1 Δ3
+ ntSub (▹ y) T = rtSub y T
+ ntSub (T ⇒ S) T' = (ntSub T T') ⇒ (ntSub S T')
+ -- What if we make the monoidal structure separate from the product structure (explicit weakening and contraction). Easier?
+ ntSub (Π T) T' = Π (ntSub T ({!!} , (▹ (π₂ v)))) --(nSub T' (π₁ v) , ▹ (π₂ v)))
+ ntSub (T × U) T' = (ntSub T T') × (ntSub U T')
+ ntSub (T , U) T' = (ntSub T T') , (ntSub U T')
+
+mutual
+ data rtm (Δ : sort) (Γ : ntp Δ ⋆) : ntp Δ ⋆ -> Set where
+  id : rtm Δ Γ Γ
+  _·_ : ∀ {T : ntp Δ ⋆} {S : ntp Δ ⋆} -> rtm Δ Γ (T ⇒ S) -> ntm Δ Γ T -> rtm Δ Γ S
+  _$_ : ∀ {T : ntp (Δ × ⋆) ⋆} -> rtm Δ Γ (Π T) -> (S : ntp Δ ⋆)
+         -> rtm Δ Γ {!!}
+ data ntm (Δ : sort) (Γ : ntp Δ ⋆) : ntp Δ ⋆ -> Set where 
+  ƛ : ∀ {T S : ntp Δ ⋆} -> ntm Δ (Γ × T) S -> ntm Δ Γ (T ⇒ S)
+  Λ : ∀ {T : ntp (Δ × ⋆) ⋆} -> ntm (Δ × ⋆) {!!} T -> ntm Δ Γ (Π T)
+  ▹ : ∀ {A} -> rtm Δ Γ (▹ A) -> ntm Δ Γ (▹ A)
 
 -- Technically I can't use a record here. That's strange.
 -- It seems that (A : Set) -> P A -> B is not interchangible with Σ (A : Set). P A -> B,
 -- If I understand the "strong sums in impredicative type theory" issue correctly...
 record cand Δ T : Set₁ where
  field
-  sem : (Γ : ctx (tp Δ)) -> Set
-  funct : ∀ {Γ1 Γ2} -> vsubst Γ1 Γ2 -> sem Γ1 -> sem Γ2
+  sem : (Γ : ntp Δ ⋆) -> Set
+  funct : ∀ {Γ1 Γ2} -> {!!} -> sem Γ1 -> sem Γ2
   reflect : ∀ {Γ} -> rtm Δ Γ T -> sem Γ
   reify : ∀ {Γ} -> sem Γ -> ntm Δ Γ T
 
-record candidate Δ1 (T : tp Δ1) : Set₁ where
+{-record candidate Δ1 (T : tp Δ1) : Set₁ where
  field
   candi : ∀ Δ2 (σ : tvsubst Δ1 Δ2) -> cand Δ2 ([ σ ] T)
 --  Funct : ∀ Δ2 (σ : tvsubst Δ1 Δ2) (Γ : ctx (tp Δ1)) -> cand.sem (candi Δ1 …) Γ -> cand.sem (candi Δ2 σ) (map [ σ ] Γ)
@@ -291,4 +324,4 @@ nsubst : ∀ {Δ} (Γ1 Γ2 : ctx (tp Δ)) -> Set
 nsubst {Δ} Γ1 Γ2 = ∀ {T} -> var Γ1 T -> ntm Δ Γ2 T
 cut : ∀ {Δ Γ1 Γ2 T} -> nsubst Γ1 Γ2 -> ntm Δ Γ1 T -> ntm Δ Γ2 T -- TODO: I probably need to cut the types simultaneously.
 cut θ N = {!!} --reify id-cands _ (sSubst (λ x → sSubst (λ x' → reflect _ _ (v x')) (θ x)) N)
-
+-}

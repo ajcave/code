@@ -1,4 +1,4 @@
-module nbe-lf where
+module nbe-lf-index-semantics where
 open import eq
 
 record _*_ (A B : Set) : Set where
@@ -12,6 +12,7 @@ record Unit : Set where
 
 postulate
  atomic_tp : Set
+ ⟦_⟧a : atomic_tp -> Set
 
 data tp : Set where
  atom : (A : atomic_tp) -> tp
@@ -39,6 +40,33 @@ mutual
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
   neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
 
+{- ⟦_⟧t : tp -> Set
+⟦ atom A ⟧t = ⟦ A ⟧a -- What if I start this at ntm ⊡ A? Then can I extract terms back out?
+⟦ T ⇝ S ⟧t = ⟦ T ⟧t → ⟦ S ⟧t 
+
+⟦_⟧c : ctx -> Set
+⟦ ⊡ ⟧c = Unit
+⟦ Γ , T ⟧c = ⟦ Γ ⟧c * ⟦ T ⟧t
+
+sem1 : ctx -> tp -> Set
+sem1 Γ T = ⟦ Γ ⟧c -> ⟦ T ⟧t
+
+⟦_⟧v : ∀ {Γ T} -> var Γ T -> sem1 Γ T
+⟦_⟧v z (t1 , t2) = t2
+⟦_⟧v (s y) (t1 , t2) = ⟦ y ⟧v t1 -}
+
+_∘_ : {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
+(f ∘ g) x = f (g x)
+{-
+mutual
+ ⟦_⟧r : ∀ {Γ T} -> rtm Γ T -> sem1 Γ T
+ ⟦ v y ⟧r = ⟦ y ⟧v
+ ⟦ R · N ⟧r = λ x -> ⟦ R ⟧r x (⟦ N ⟧n x)
+
+ ⟦_⟧n : ∀ {Γ T} -> ntm Γ T -> sem1 Γ T
+ ⟦ ƛ N ⟧n = λ x y → ⟦ N ⟧n (x , y)
+ ⟦ neut R ⟧n = ⟦ R ⟧r -}
+
 import cc
 open module cc1 = cc ctx hiding (tp)
 
@@ -55,8 +83,8 @@ vsubst-map : ∀ {Δ Γ ψ} -> (∀ {U} -> var Δ U -> var Γ U) -> vsubst ψ Δ
 vsubst-map σ1 ⊡ = ⊡
 vsubst-map σ1 (σ , x) = (vsubst-map σ1 σ) , (σ1 x)
 
-_∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
-σ1 ∘ σ2 = vsubst-map (vsubst-app σ1) σ2
+_∘₁_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
+σ1 ∘₁ σ2 = vsubst-map (vsubst-app σ1) σ2
 
 id : ∀ {Γ} -> vsubst Γ Γ
 id {⊡} = ⊡
@@ -78,7 +106,7 @@ mutual
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = nappSubst σ M
-appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
+appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘₁ σ) s
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
@@ -111,34 +139,65 @@ mutual
 sId : ∀ {Γ} -> subst Γ Γ
 sId x = reflect (v x)
 
+-- By computing this by induction we get the η-expansions we need
 nSubst : ctx -> ctx -> Set
-nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
+nSubst Δ ⊡ = Unit
+nSubst Δ (Γ , T) = (nSubst Δ Γ) * (ntm Δ T)
 
 embed : ∀ {Γ T} -> ntm Γ T -> sem Γ T
 embed N = sSubst sId N
 
-embed* : ∀ {Γ Δ} -> nSubst Γ Δ -> subst Γ Δ
-embed* θ x = embed (θ x)
+embed* : ∀ {Γ Δ} -> nSubst Δ Γ -> subst Γ Δ
+embed* {⊡} θ ()
+embed* {Γ , T} (θ , N) z = embed N
+embed* {Γ , T} (θ , N) (s y) = embed* θ y
 
-cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
+cut : ∀ {Γ Δ T} -> nSubst Δ Γ -> ntm Γ T -> ntm Δ T
 cut θ t = reify (sSubst (embed* θ) t)
+
+arr : ctx -> tp -> Set
+arr Γ T = ∀ {Δ} -> nSubst Δ Γ -> ntm Δ T
+
+interp : ∀ {Γ T} -> ntm Γ T -> arr Γ T -- What construction is this? Functor into Set where an arrow N becomes (N∘) ?
+interp N σ = cut σ N
+
+⌞_⌟ : ∀ {Γ Δ} -> (∀ {T} -> var Γ T -> ntm Δ T) -> nSubst Δ Γ
+⌞_⌟ {⊡} σ = tt
+⌞_⌟ {Γ , T} σ = ⌞ σ ∘ s ⌟ , σ z
+
+_⊙_ : ∀ {Γ Δ Ψ} -> nSubst Δ Γ -> nSubst Ψ Δ -> nSubst Ψ Γ -- Could implement with ⌞_⌟ and lookup
+_⊙_ {⊡} σ θ = tt
+_⊙_ {Γ , T} (σ , N) θ = (σ ⊙ θ) , (cut θ N)
+
+garr : ctx -> ctx -> Set
+garr Γ Ψ = ∀ {Δ} -> nSubst Δ Γ -> nSubst Δ Ψ
+
+ginterp : ∀ {Γ Δ} -> nSubst Δ Γ -> garr Δ Γ
+ginterp θ = _⊙_ θ
 
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = reify (reflect (v x))
 
-nExtend : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Δ T -> nSubst (Γ , T) Δ
-nExtend θ N z = N
-nExtend θ N (s y) = θ y
+nwkn : ∀ {Γ T} -> nSubst (Γ , T) Γ
+nwkn = ⌞ nv ∘ s ⌟
 
 n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
-n-ext θ z = nv z
-n-ext θ (s y) = nappSubst wkn (θ y)
+n-ext θ = (θ ⊙ nwkn) , (nv z)
 
 nId : ∀ {Γ} -> nSubst Γ Γ
-nId x = nv x
+nId = ⌞ nv ⌟
 
-n-single : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
-n-single N = nExtend nId N
+nId2 : ∀ {Γ} -> nSubst Γ Γ
+nId2 {⊡} = tt
+nId2 {Γ , T} = (nId2 ⊙ nwkn) , nv z
+
+test : ∀ {Γ T} -> ((nwkn {Γ} {T ⇝ T}) ⊙ (nId2 , ƛ (nv z))) ≡ nId2 
+test = {!!} -- Is this doomed, or will it all work out when we use garr?
+-- Crap maybe I need something more like the cut principle that shows up in my solver, where ⊙ inducts on first argument?
+-- I think so.. I think ginterp should have type exp Δ Γ -> garr Δ Γ, where garr is the same as before
+
+n-single : ∀ {Γ T} -> ntm Γ T -> nSubst Γ (Γ , T)
+n-single N = nId , N
 
 n-single-subst : ∀ {Γ T S} -> ntm (Γ , S) T -> ntm Γ S -> ntm Γ T
 n-single-subst M N = cut (n-single N) M
@@ -146,8 +205,11 @@ n-single-subst M N = cut (n-single N) M
 napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
 napp (ƛ M) N = n-single-subst M N
 
-unEmbed : ∀ {Γ Δ} -> subst Γ Δ -> nSubst Γ Δ
-unEmbed θ x = reify (θ x)
+--unEmbed : ∀ {Γ Δ} -> subst Γ Δ -> nSubst Γ Δ
+--unEmbed θ = {!!} --x = reify (θ x)
+
+-- Let's try this technique in the language with non-canonical forms, because substitution is easier there,
+-- And it still requires proofs about substitution in the index language
 
 postulate
  lf-atomic-tp : (Γ : ctx) -> atomic_tp -> Set
@@ -172,7 +234,7 @@ lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
 
 lf-tp-wkn : ∀ {Γ : ctx} (t : tp) {s} (S : lf-tp Γ s) -> lf-tp (Γ , t) s
 lf-tp-wkn t S = lf-tp-vsubst wkn S
-
+{-
 {- Compare this style with not indexing by everything. Involves induction-recursion everywhere?
    I suspect there may be more preservation lemmas? -}
 data lf-ctx : ctx -> Set where
@@ -306,4 +368,4 @@ mutual
  lf-sSubst (neut R) θ = lf-srSubst R θ
 
  -- Maybe I'll have an easier time if I Σ-up the T's in the derivations, and prove after the
- -- fact that they're equal?
+ -- fact that they're equal? -}
