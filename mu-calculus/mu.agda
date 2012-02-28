@@ -31,8 +31,8 @@ id-vsub : ∀ {A} (Γ : ctx A) -> vsub Γ Γ
 id-vsub ⊡ = ⊡
 id-vsub (Γ , T) = (sub-map pop (id-vsub Γ)) , top
 
-wkn-vsub : ∀ {A} (Γ : ctx A) T -> vsub (Γ , T) Γ
-wkn-vsub Γ T = sub-map pop (id-vsub Γ)
+wkn-vsub : ∀ {A} {Γ : ctx A} {T} -> vsub (Γ , T) Γ
+wkn-vsub {A} {Γ} {T} = sub-map pop (id-vsub Γ)
 
 vsub-ext : ∀ {A T} {Γ1 Γ2 : ctx A} -> vsub Γ1 Γ2 -> vsub (Γ1 , T) (Γ2 , T)
 vsub-ext σ = (sub-map pop σ) , top
@@ -54,22 +54,22 @@ data prop (ζ : ctx type) : Set where
 psub : ∀ (ζ1 ζ2 : ctx type) -> Set
 psub ζ1 ζ2 = sub (const1 (prop ζ1)) ζ2
 
-app-pvsub : ∀ {ζ1 ζ2} -> vsub ζ2 ζ1 -> prop ζ1 -> prop ζ2
-app-pvsub σ (▸ P) = ▸ P
-app-pvsub σ (▹ A) = ▹ ([ σ ]v A)
-app-pvsub σ (μ F) = μ (app-pvsub (vsub-ext σ) F)
-app-pvsub σ (□ A) = □ (app-pvsub σ A)
-app-pvsub σ (◇ A) = ◇ (app-pvsub σ A)
-app-pvsub σ (A ⊃ B) = (app-pvsub σ A) ⊃ app-pvsub σ B
+[_]pv : ∀ {ζ1 ζ2} -> vsub ζ2 ζ1 -> prop ζ1 -> prop ζ2
+[ σ ]pv (▸ P) = ▸ P
+[ σ ]pv (▹ A) = ▹ ([ σ ]v A)
+[ σ ]pv (μ F) = μ ([ vsub-ext σ ]pv F)
+[ σ ]pv (□ A) = □ ([ σ ]pv A)
+[ σ ]pv (◇ A) = ◇ ([ σ ]pv A)
+[ σ ]pv (A ⊃ B) = ([ σ ]pv A) ⊃ ([ σ ]pv B)
 
 id-psub : ∀ {ζ} -> psub ζ ζ
 id-psub {⊡} = ⊡
-id-psub {ζ , #prop} = (sub-map (app-pvsub (wkn-vsub ζ #prop)) id-psub) , (▹ top)
+id-psub {ζ , #prop} = (sub-map [ wkn-vsub ]pv id-psub) , (▹ top)
 
 psub-ext : ∀ {ζ1 ζ2} -> psub ζ1 ζ2 -> psub (ζ1 , #prop) (ζ2 , #prop)
-psub-ext σ = (sub-map (app-pvsub (wkn-vsub _ _)) σ) , ▹ top
+psub-ext σ = (sub-map [ wkn-vsub ]pv σ) , ▹ top
 
-[_]p_ : ∀ {ζ1 ζ2} -> psub ζ2 ζ1 -> prop ζ1 -> prop ζ2
+[_]p : ∀ {ζ1 ζ2} -> psub ζ2 ζ1 -> prop ζ1 -> prop ζ2
 [ σ ]p (▸ P) = ▸ P
 [ σ ]p (▹ A) = [ σ ]v A
 [ σ ]p (μ F) = μ ([ psub-ext σ ]p F)
@@ -77,7 +77,7 @@ psub-ext σ = (sub-map (app-pvsub (wkn-vsub _ _)) σ) , ▹ top
 [ σ ]p (◇ A) = ◇ ([ σ ]p A)
 [ σ ]p (A ⊃ B) = ([ σ ]p A) ⊃ ([ σ ]p B)
 
-[_/x]p_ : ∀ {ζ} -> prop ζ -> prop (ζ , #prop) -> prop ζ
+[_/x]p : ∀ {ζ} -> prop ζ -> prop (ζ , #prop) -> prop ζ
 [ M /x]p A = [ id-psub , M ]p A
 
 data judgement : Set where
@@ -116,7 +116,36 @@ mutual
   rec : ∀ {F C} -> (M : Δ , Γ ⊢ μ F - true) -> (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
                 -> -------------------------------------------------------------------
                                 Δ , Γ ⊢ C - true -- What about poss?
-  
+
+[_]tv : ∀ {Δ Γ1 Γ2 A J} -> vsub Γ2 Γ1 -> Δ , Γ1 ⊢ A - J -> Δ , Γ2 ⊢ A - J
+[_]tv σ (▹ x) = ▹ ([ σ ]v x)
+[_]tv σ (ƛ M) = ƛ ([ vsub-ext σ ]tv M)
+[_]tv σ (M · N) = [ σ ]tv M · [ σ ]tv N
+[_]tv σ (let-box M N) = let-box ([ σ ]tv M) ([ σ ]tv N)
+[_]tv σ (box M) = box M
+[_]tv σ (▸ M) = ▸ M
+[_]tv σ (dia M) = dia ([ σ ]tv M)
+[_]tv σ (let-dia M N) = let-dia ([ σ ]tv M) N
+[_]tv σ (fold M) = fold ([ σ ]tv M)
+[_]tv σ (rec M N) = rec ([ σ ]tv M) N
+
+truesub : ∀ Δ (Γ1 Γ2 : ctx (prop ⊡)) -> Set
+truesub Δ Γ1 Γ2 = sub (λ A -> Δ , Γ1 ⊢ A - true) Γ2
+
+truesub-ext : ∀ {Δ Γ1 Γ2 T} -> truesub Δ Γ1 Γ2 -> truesub Δ (Γ1 , T) (Γ2 , T)
+truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top) 
+
+[_]t : ∀ {Δ Γ1 Γ2 A J} -> truesub Δ Γ2 Γ1 -> Δ , Γ1 ⊢ A - J -> Δ , Γ2 ⊢ A - J
+[_]t σ (▹ x) = [ σ ]v x
+[_]t σ (ƛ M) = ƛ ([ truesub-ext σ ]t M)
+[_]t σ (M · N) = [ σ ]t M · [ σ ]t N
+[_]t σ (let-box M N) = let-box ([ σ ]t M) ([ {!!} ]t N)
+[_]t σ (box M) = {!!}
+[_]t σ (▸ M) = {!!}
+[_]t σ (dia M) = {!!}
+[_]t σ (let-dia M N) = {!!}
+[_]t σ (fold M) = {!!}
+[_]t σ (rec M N) = {!!}
 
 validsub : ∀ (Δ1 Δ2 : ctx (prop ⊡)) -> Set
 validsub Δ1 Δ2 = sub (λ A -> ⊡ , Δ1 ⊢ A - true) Δ2
