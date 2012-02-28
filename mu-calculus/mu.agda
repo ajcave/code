@@ -193,4 +193,4 @@ data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set w
  box-red : ∀ {A C} (M : ⊡ , Δ ⊢ A - true) (N : (Δ , A) , Γ ⊢ C - true)
                 -> step (let-box (box M) N) ([ validsub-id , M ]va N)
  dia-red : ∀ {A C} (M : Δ , Γ ⊢ A - poss) (N : ⊡ , (Δ , A) ⊢ C - true)
-                -> step (let-dia (dia M) N) {!!}
+                -> step (let-dia (dia M) N) (〈 M /x〉 N)
