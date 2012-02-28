@@ -27,12 +27,15 @@ sub-map f (σ , M) = (sub-map f σ) , (f M)
 vsub : ∀ {A} (Γ1 Γ2 : ctx A) -> Set
 vsub Γ1 Γ2 = sub (var Γ1) Γ2
 
-id-vsub : ∀ {A} (Γ : ctx A) -> vsub Γ Γ
-id-vsub ⊡ = ⊡
-id-vsub (Γ , T) = (sub-map pop (id-vsub Γ)) , top
+wkn : ∀ {A} {Γ1 Γ2} {T : A} -> vsub Γ1 Γ2 -> vsub (Γ1 , T) Γ2
+wkn σ = sub-map pop σ
+
+id-vsub : ∀ {A} {Γ : ctx A} -> vsub Γ Γ
+id-vsub {A} {⊡} = ⊡
+id-vsub {A} {Γ , T} = (wkn id-vsub) , top
 
 wkn-vsub : ∀ {A} {Γ : ctx A} {T} -> vsub (Γ , T) Γ
-wkn-vsub {A} {Γ} {T} = sub-map pop (id-vsub Γ)
+wkn-vsub {A} {Γ} {T} = wkn id-vsub
 
 vsub-ext : ∀ {A T} {Γ1 Γ2 : ctx A} -> vsub Γ1 Γ2 -> vsub (Γ1 , T) (Γ2 , T)
 vsub-ext σ = (sub-map pop σ) , top
@@ -185,7 +188,7 @@ validsub-id = truesub-id
 [ θ ]va rec M N = rec ([ θ ]va M) N
 
 〈_/x〉 : ∀ {Δ Γ A C} (M : Δ , Γ ⊢ A - poss) (N : ⊡ , (Δ , A) ⊢ C - true) -> Δ , Γ ⊢ C - poss
-〈_/x〉 (let-box M N) N' = let-box M (〈 N /x〉 ([ (sub-map pop wkn-vsub) , top ]tv N'))
+〈_/x〉 (let-box M N) N' = let-box M (〈 N /x〉 ([ wkn wkn-vsub , top ]tv N'))
 〈_/x〉 (▸ M) N = ▸ ([ truesub-id , M ]t N)
 〈_/x〉 (let-dia M N) N' = let-dia M ([ (sub-map [ wkn-vsub ]tv truesub-id) , N ]t N')  
 
