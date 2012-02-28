@@ -85,43 +85,55 @@ data judgement : Set where
  poss : judgement
 
 mutual
- data _,_,_⊢_-_ (ζ : ctx type) (Δ : ctx (prop ζ)) (Γ : ctx (prop ζ)) : prop ζ -> judgement -> Set where
-  ▹ : {A : prop ζ} (x : var Γ A)
-                -> -------------------
-                    ζ , Δ , Γ ⊢ A - true
-  ƛ : {A B : prop ζ} -> (M : ζ , Δ , (Γ , A) ⊢ B - true)
-                     -> -----------------------------------
-                             ζ , Δ , Γ ⊢ (A ⊃ B) - true
-  _·_ : {A B : prop ζ}    (M : ζ , Δ , Γ ⊢ (A ⊃ B) - true) (N : ζ , Δ , Γ ⊢ A - true)
-                       -> -----------------------------------------------------------
-                                            ζ , Δ , Γ ⊢ B - true
-  let-box : ∀ {A C J} (M : ζ , Δ , Γ ⊢ (□ A) - true) (N : ζ , (Δ , A) , Γ ⊢ C - J)
+ data _,_⊢_-_ (Δ : ctx (prop ⊡)) (Γ : ctx (prop ⊡)) : prop ⊡ -> judgement -> Set where
+  ▹ : ∀ {A} -> (x : var Γ A)
+            -> -------------------
+                Δ , Γ ⊢ A - true
+  ƛ : ∀ {A B} -> (M : Δ , (Γ , A) ⊢ B - true)
+              -> ----------------------------------
+                      Δ , Γ ⊢ (A ⊃ B) - true
+  _·_ : ∀ {A B} -> (M : Δ , Γ ⊢ (A ⊃ B) - true) (N : Δ , Γ ⊢ A - true)
+                -> -----------------------------------------------------------
+                                Δ , Γ ⊢ B - true
+  let-box : ∀ {A C J} (M : Δ , Γ ⊢ (□ A) - true) (N : (Δ , A) , Γ ⊢ C - J)
                    -> ---------------------------------------------------------------
-                                          ζ , Δ , Γ ⊢ C - J
-  box : ∀ {A} -> (M : ζ , ⊡ , Δ ⊢ A - true)
+                                          Δ , Γ ⊢ C - J
+  box : ∀ {A} -> (M : ⊡ , Δ ⊢ A - true)
               -> --------------------------
-                   ζ , Δ , Γ ⊢ (□ A) - true
-  ▸ : ∀ {A} -> (M : ζ , ⊡ , Δ ⊢ A - true)
+                   Δ , Γ ⊢ (□ A) - true
+  ▸ : ∀ {A} -> (M : ⊡ , Δ ⊢ A - true)
             -> --------------------------
-                    ζ , Δ , Γ ⊢ A - poss
-  dia : ∀ {A} -> (M : ζ , Δ , Γ ⊢ A - poss)
+                    Δ , Γ ⊢ A - poss
+  dia : ∀ {A} -> (M : Δ , Γ ⊢ A - poss)
               -> --------------------------
-                     ζ , Δ , Γ ⊢ ◇ A - true
-  let-dia : ∀ {A C} -> (M : ζ , Δ , Γ ⊢ ◇ A - true) -> (N : ζ , ⊡ , (Δ , A) ⊢ C - poss)
+                     Δ , Γ ⊢ ◇ A - true
+  let-dia : ∀ {A C} -> (M : Δ , Γ ⊢ ◇ A - true) -> (N : ⊡ , (Δ , A) ⊢ C - true)
                     -> ----------------------------------------------------------------
-                                      ζ , Δ , Γ ⊢ C - poss
-  fold : ∀ {F} -> (M : ζ , Δ , Γ ⊢ ([ μ F /x]p F) - true)
+                                      Δ , Γ ⊢ C - poss
+  fold : ∀ {F} -> (M : Δ , Γ ⊢ ([ μ F /x]p F) - true)
                -> -----------------------------------------------------
-                                ζ , Δ , Γ ⊢ μ F - true
-  rec : ∀ {F C} -> (M : ζ , Δ , Γ ⊢ μ F - true) -> (N : ζ , ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
+                                Δ , Γ ⊢ μ F - true
+  rec : ∀ {F C} -> (M : Δ , Γ ⊢ μ F - true) -> (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
                 -> -------------------------------------------------------------------
-                                ζ , Δ , Γ ⊢ C - true -- What about poss?
+                                Δ , Γ ⊢ C - true -- What about poss?
   
 
-sub-valid : ∀ {ζ Δ Γ A C} (D : ζ , ⊡ , Δ ⊢ A - true) (E : ζ , (Δ , A) , Γ ⊢ C - true)
- ->  ζ , Δ , Γ ⊢ C - true
-sub-valid D M = {!!}
+validsub : ∀ (Δ1 Δ2 : ctx (prop ⊡)) -> Set
+validsub Δ1 Δ2 = sub (λ A -> ⊡ , Δ1 ⊢ A - true) Δ2
 
-data step {ζ Δ Γ} : {A : prop ζ} -> ζ , Δ , Γ ⊢ A - true -> ζ , Δ , Γ ⊢ A - true -> Set where
- box-red : ∀ {A C} (D : ζ , ⊡ , Δ ⊢ A - true) (E : ζ , (Δ , A) , Γ ⊢ C - true)
-                -> step (let-box (box D) E) (sub-valid D E)
+[_]va_ : ∀ {Δ1 Δ2 Γ C J} (θ : validsub Δ2 Δ1) (M : Δ1 , Γ ⊢ C - J)
+ ->  Δ2 , Γ ⊢ C - J
+[ θ ]va ▸ M = ▸ {!!}
+[ θ ]va ▹ x = ▹ x
+[ θ ]va ƛ M = ƛ ([ θ ]va M)
+[ θ ]va (M · N) = ([ θ ]va M) · ([ θ ]va N)
+[ θ ]va let-box M N = let-box ([ θ ]va M) ([ {!!} ]va N)
+[ θ ]va box M = box {!!}
+[ θ ]va dia M = dia ([ θ ]va M)
+[ θ ]va let-dia M N = let-dia ([ θ ]va M) {!!}
+[ θ ]va fold M = fold ([ θ ]va M)
+[ θ ]va rec M N = rec ([ θ ]va M) N
+
+--data step {Δ Γ} : ∀ {A} -> Δ , Γ ⊢ A - true -> Δ , Γ ⊢ A - true -> Set where
+-- box-red : ∀ {A C} (D : ⊡ , Δ ⊢ A - true) (E : (Δ , A) , Γ ⊢ C - true)
+--                -> step (let-box (box D) E) (sub-valid D E)
