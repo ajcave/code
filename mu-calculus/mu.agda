@@ -77,6 +77,9 @@ psub-ext σ = (sub-map (app-pvsub (wkn-vsub _ _)) σ) , ▹ top
 [ σ ]p (◇ A) = ◇ ([ σ ]p A)
 [ σ ]p (A ⊃ B) = ([ σ ]p A) ⊃ ([ σ ]p B)
 
+[_/x]p_ : ∀ {ζ} -> prop ζ -> prop (ζ , #prop) -> prop ζ
+[ M /x]p A = [ id-psub , M ]p A
+
 data judgement : Set where
  true : judgement
  poss : judgement
@@ -107,9 +110,12 @@ mutual
   let-dia : ∀ {A C} -> (M : ζ , Δ , Γ ⊢ ◇ A - true) -> (N : ζ , ⊡ , (Δ , A) ⊢ C - poss)
                     -> ----------------------------------------------------------------
                                       ζ , Δ , Γ ⊢ C - poss
-  fold : ∀ {F} -> (M : ζ , Δ , Γ ⊢ ([ id-psub , μ F ]p F) - true)
+  fold : ∀ {F} -> (M : ζ , Δ , Γ ⊢ ([ μ F /x]p F) - true)
                -> -----------------------------------------------------
                                 ζ , Δ , Γ ⊢ μ F - true
+  rec : ∀ {F C} -> (M : ζ , Δ , Γ ⊢ μ F - true) -> (N : ζ , ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
+                -> -------------------------------------------------------------------
+                                ζ , Δ , Γ ⊢ C - true -- What about poss?
   
 
 sub-valid : ∀ {ζ Δ Γ A C} (D : ζ , ⊡ , Δ ⊢ A - true) (E : ζ , (Δ , A) , Γ ⊢ C - true)
