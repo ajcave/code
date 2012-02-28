@@ -165,8 +165,7 @@ validsub Δ1 Δ2 = sub (λ A -> ⊡ , Δ1 ⊢ A - true) Δ2
 validsub-ext : ∀ {Δ1 Δ2 T} -> validsub Δ1 Δ2 -> validsub (Δ1 , T) (Δ2 , T)
 validsub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 
-[_]va_ : ∀ {Δ1 Δ2 Γ C J} (θ : validsub Δ2 Δ1) (M : Δ1 , Γ ⊢ C - J)
- ->  Δ2 , Γ ⊢ C - J
+[_]va_ : ∀ {Δ1 Δ2 Γ C J} (θ : validsub Δ2 Δ1) (M : Δ1 , Γ ⊢ C - J) ->  Δ2 , Γ ⊢ C - J
 [ θ ]va ▹ x = ▹ x
 [ θ ]va ƛ M = ƛ ([ θ ]va M)
 [ θ ]va (M · N) = ([ θ ]va M) · ([ θ ]va N)
