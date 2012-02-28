@@ -129,6 +129,18 @@ mutual
 [_]tv σ (fold M) = fold ([ σ ]tv M)
 [_]tv σ (rec M N) = rec ([ σ ]tv M) N
 
+[_]vav : ∀ {Δ1 Δ2 Γ A J} -> vsub Δ2 Δ1 -> Δ1 , Γ ⊢ A - J -> Δ2 , Γ ⊢ A - J
+[_]vav σ (▹ x) = ▹ x
+[_]vav σ (ƛ M) = ƛ ([ σ ]vav M)
+[_]vav σ (M · N) = [ σ ]vav M · [ σ ]vav N
+[_]vav σ (let-box M N) = let-box ([ σ ]vav M) ([ vsub-ext σ ]vav N)
+[_]vav σ (box M) = box ([ σ ]tv M)
+[_]vav σ (▸ M) = ▸ ([ σ ]tv M)
+[_]vav σ (dia M) = dia ([ σ ]vav M)
+[_]vav σ (let-dia M N) = let-dia ([ σ ]vav M) ([ vsub-ext σ ]tv N)
+[_]vav σ (fold M) = fold ([ σ ]vav M)
+[_]vav σ (rec M N) = rec ([ σ ]vav M) N
+
 truesub : ∀ Δ (Γ1 Γ2 : ctx (prop ⊡)) -> Set
 truesub Δ Γ1 Γ2 = sub (λ A -> Δ , Γ1 ⊢ A - true) Γ2
 
@@ -139,7 +151,7 @@ truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 [_]t σ (▹ x) = [ σ ]v x
 [_]t σ (ƛ M) = ƛ ([ truesub-ext σ ]t M)
 [_]t σ (M · N) = [ σ ]t M · [ σ ]t N
-[_]t σ (let-box M N) = let-box ([ σ ]t M) ([ {!!} ]t N)
+[_]t σ (let-box M N) = let-box ([ σ ]t M) ([ sub-map [ wkn-vsub ]vav σ ]t N)
 [_]t σ (box M) = {!!}
 [_]t σ (▸ M) = {!!}
 [_]t σ (dia M) = {!!}
