@@ -5,7 +5,7 @@ const1 b _ = b
 
 data ctx (A : Set) : Set where
  ⊡ : ctx A
- _,_ : ctx A -> A -> ctx A
+ _,_ : (Γ : ctx A) -> (T : A) -> ctx A
 
 data var {A : Set} : (Γ : ctx A) -> A -> Set where
  top : ∀ {Γ T} -> var (Γ , T) T
@@ -144,8 +144,12 @@ mutual
 truesub : ∀ Δ (Γ1 Γ2 : ctx (prop ⊡)) -> Set
 truesub Δ Γ1 Γ2 = sub (λ A -> Δ , Γ1 ⊢ A - true) Γ2
 
+truesub-id : ∀ {Δ Γ} -> truesub Δ Γ Γ
+truesub-id {Δ} {⊡} = ⊡
+truesub-id {Δ} {Γ , T} = (sub-map [ wkn-vsub ]tv truesub-id) , (▹ top)
+
 truesub-ext : ∀ {Δ Γ1 Γ2 T} -> truesub Δ Γ1 Γ2 -> truesub Δ (Γ1 , T) (Γ2 , T)
-truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top) 
+truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 
 [_]t : ∀ {Δ Γ1 Γ2 A J} -> truesub Δ Γ2 Γ1 -> Δ , Γ1 ⊢ A - J -> Δ , Γ2 ⊢ A - J
 [_]t σ (▹ x) = [ σ ]v x
@@ -165,6 +169,9 @@ validsub Δ1 Δ2 = truesub ⊡ Δ1 Δ2
 validsub-ext : ∀ {Δ1 Δ2 T} -> validsub Δ1 Δ2 -> validsub (Δ1 , T) (Δ2 , T)
 validsub-ext σ = truesub-ext σ
 
+validsub-id : ∀ {Δ} -> validsub Δ Δ
+validsub-id = truesub-id
+
 [_]va_ : ∀ {Δ1 Δ2 Γ C J} (θ : validsub Δ2 Δ1) (M : Δ1 , Γ ⊢ C - J) ->  Δ2 , Γ ⊢ C - J
 [ θ ]va ▹ x = ▹ x
 [ θ ]va ƛ M = ƛ ([ θ ]va M)
@@ -177,6 +184,13 @@ validsub-ext σ = truesub-ext σ
 [ θ ]va fold M = fold ([ θ ]va M)
 [ θ ]va rec M N = rec ([ θ ]va M) N
 
---data step {Δ Γ} : ∀ {A} -> Δ , Γ ⊢ A - true -> Δ , Γ ⊢ A - true -> Set where
--- box-red : ∀ {A C} (D : ⊡ , Δ ⊢ A - true) (E : (Δ , A) , Γ ⊢ C - true)
---                -> step (let-box (box D) E) (sub-valid D E)
+〈_/x〉 : ∀ {Δ Γ A C} (M : Δ , Γ ⊢ A - poss) (N : ⊡ , (Δ , A) ⊢ C - true) -> Δ , Γ ⊢ C - poss
+〈_/x〉 (let-box M N) N' = let-box M {!!}
+〈_/x〉 (▸ M) N = ▸ ([ truesub-id , M ]t N)
+〈_/x〉 (let-dia M N) N' = let-dia M {!!}  
+
+data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set where
+ box-red : ∀ {A C} (M : ⊡ , Δ ⊢ A - true) (N : (Δ , A) , Γ ⊢ C - true)
+                -> step (let-box (box M) N) ([ validsub-id , M ]va N)
+ dia-red : ∀ {A C} (M : Δ , Γ ⊢ A - poss) (N : ⊡ , (Δ , A) ⊢ C - true)
+                -> step (let-dia (dia M) N) {!!}
