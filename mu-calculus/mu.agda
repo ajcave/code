@@ -160,10 +160,10 @@ truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 [_]t σ (rec M N) = rec ([ σ ]t M) N
 
 validsub : ∀ (Δ1 Δ2 : ctx (prop ⊡)) -> Set
-validsub Δ1 Δ2 = sub (λ A -> ⊡ , Δ1 ⊢ A - true) Δ2
+validsub Δ1 Δ2 = truesub ⊡ Δ1 Δ2
 
 validsub-ext : ∀ {Δ1 Δ2 T} -> validsub Δ1 Δ2 -> validsub (Δ1 , T) (Δ2 , T)
-validsub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
+validsub-ext σ = truesub-ext σ
 
 [_]va_ : ∀ {Δ1 Δ2 Γ C J} (θ : validsub Δ2 Δ1) (M : Δ1 , Γ ⊢ C - J) ->  Δ2 , Γ ⊢ C - J
 [ θ ]va ▹ x = ▹ x
