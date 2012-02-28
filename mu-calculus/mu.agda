@@ -196,6 +196,11 @@ validsub-id = truesub-id
 〈_/x〉 (▸ M) N = ▸ ([ truesub-id , M ]t N)
 〈_/x〉 (let-dia M N) N' = let-dia M ([ (sub-map [ wkn-vsub ]tv truesub-id) , N ]t N')  
 
+-- generalize?
+data arrow : ∀ {ζ} -> psub ⊡ ζ -> psub ⊡ ζ -> Set where
+ ⊡ : arrow ⊡ ⊡
+ _,_ : ∀ {ζ} {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) {A B} (N : ⊡ , (⊡ , A) ⊢ B - true) -> arrow (σ1 , A) (σ2 , B)
+
 map : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
 map (▸ P) M = ▹ top
 map (▹ top) M = M
@@ -204,6 +209,19 @@ map (μ F) M = rec {!!} (▹ top) {!!}
 map (□ A) M = let-box (▹ top) (box (map A M)) -- And this right here is why we needed to clear the context, I bet
 map (◇ A) M = dia (let-dia (▹ top) (map A M))
 map (A ⊃ B) M = ƛ ([ ⊡ , ((▹ (pop top)) · (▹ top)) ]t (map B M)) -- Probably more natural in a sequent system
+
+arrow-lookup : ∀ {ζ} {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) (A : var ζ #prop) -> ⊡ , ⊡ , ([ σ1 ]v A) ⊢ [ σ2 ]v A - true
+arrow-lookup ⊡ ()
+arrow-lookup (θ , N) top = N
+arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
+
+map' : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
+map' (▸ P) θ = ▹ top
+map' (▹ A) θ = arrow-lookup θ A
+map' (μ F) θ = {!!}
+map' (□ A) θ = let-box (▹ top) (box (map' A θ))
+map' (◇ A) θ = dia (let-dia (▹ top) (map' A θ))
+map' (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map' B θ))
 
 -- Other way to write it maybe concludes Δ;Γ ⊢ F(A) -> Δ;Γ ⊢ F(B) ?
 
