@@ -171,10 +171,10 @@ validsub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 [ θ ]va ƛ M = ƛ ([ θ ]va M)
 [ θ ]va (M · N) = ([ θ ]va M) · ([ θ ]va N)
 [ θ ]va let-box M N = let-box ([ θ ]va M) ([ validsub-ext θ ]va N)
-[ θ ]va box M = box {!!}
-[ θ ]va ▸ M = ▸ {!!}
+[ θ ]va box M = box ([ θ ]t M)
+[ θ ]va ▸ M = ▸ ([ θ ]t M)
 [ θ ]va dia M = dia ([ θ ]va M)
-[ θ ]va let-dia M N = let-dia ([ θ ]va M) {!!}
+[ θ ]va let-dia M N = let-dia ([ θ ]va M) ([ truesub-ext θ ]t N)
 [ θ ]va fold M = fold ([ θ ]va M)
 [ θ ]va rec M N = rec ([ θ ]va M) N
 
