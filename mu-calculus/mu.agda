@@ -152,12 +152,12 @@ truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 [_]t σ (ƛ M) = ƛ ([ truesub-ext σ ]t M)
 [_]t σ (M · N) = [ σ ]t M · [ σ ]t N
 [_]t σ (let-box M N) = let-box ([ σ ]t M) ([ sub-map [ wkn-vsub ]vav σ ]t N)
-[_]t σ (box M) = {!!}
-[_]t σ (▸ M) = {!!}
-[_]t σ (dia M) = {!!}
-[_]t σ (let-dia M N) = {!!}
-[_]t σ (fold M) = {!!}
-[_]t σ (rec M N) = {!!}
+[_]t σ (box M) = box M
+[_]t σ (▸ M) = ▸ M
+[_]t σ (dia M) = dia ([ σ ]t M)
+[_]t σ (let-dia M N) = let-dia ([ σ ]t M) N
+[_]t σ (fold M) = fold ([ σ ]t M)
+[_]t σ (rec M N) = rec ([ σ ]t M) N
 
 validsub : ∀ (Δ1 Δ2 : ctx (prop ⊡)) -> Set
 validsub Δ1 Δ2 = sub (λ A -> ⊡ , Δ1 ⊢ A - true) Δ2
