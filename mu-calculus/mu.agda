@@ -200,10 +200,12 @@ map : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ 
 map (▸ P) M = ▹ top
 map (▹ top) M = M
 map (▹ (pop y)) M = ▹ top
-map (μ F) M = {!!}
-map (□ A) M = let-box (▹ top) (box (map A M))
+map (μ F) M = rec {!!} (▹ top) {!!}
+map (□ A) M = let-box (▹ top) (box (map A M)) -- And this right here is why we needed to clear the context, I bet
 map (◇ A) M = dia (let-dia (▹ top) (map A M))
-map (A ⊃ B) M = ƛ ([ ⊡ , ((▹ (pop top)) · (▹ top)) ]t (map B M))
+map (A ⊃ B) M = ƛ ([ ⊡ , ((▹ (pop top)) · (▹ top)) ]t (map B M)) -- Probably more natural in a sequent system
+
+-- Other way to write it maybe concludes Δ;Γ ⊢ F(A) -> Δ;Γ ⊢ F(B) ?
 
 data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set where
  box-red : ∀ {A C} (M : ⊡ , Δ ⊢ A - true) (N : (Δ , A) , Γ ⊢ C - true)
@@ -211,4 +213,4 @@ data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set w
  dia-red : ∀ {A C} (M : Δ , Γ ⊢ A - poss) (N : ⊡ , (Δ , A) ⊢ C - true)
                 -> step (let-dia (dia M) N) (〈 M /x〉 N)
  rec-red : ∀ {F C} (M : Δ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
-                -> step (rec F (inj M) N) ([ ⊡ , {!!} ]t ([ ⊡ ]va N))
+                -> step (rec F (inj M) N) ([ ⊡ , [ ⊡ , M ]t ([ ⊡ ]va map F (rec F (▹ top) N)) ]t ([ ⊡ ]va N))
