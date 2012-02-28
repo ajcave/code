@@ -218,7 +218,7 @@ arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
 map' : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
 map' (▸ P) θ = ▹ top
 map' (▹ A) θ = arrow-lookup θ A
-map' (μ F) θ = {!!}
+map' (μ F) {σ1} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {!!})
 map' (□ A) θ = let-box (▹ top) (box (map' A θ))
 map' (◇ A) θ = dia (let-dia (▹ top) (map' A θ))
 map' (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map' B θ))
