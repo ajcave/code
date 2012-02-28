@@ -35,10 +35,17 @@ data var {A : Set} : ctx A -> A -> Set where
  top : ∀ {Γ T} -> var (Γ , T) T
  pop : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
 
-data tm (Γ : ctx Unit) : Unit -> Set where
- ▹ : (x : var Γ tt) -> tm Γ tt
- ƛ : (M : tm (Γ , tt) tt) -> tm Γ tt
- _·_ : (M : tm Γ tt) -> (N : tm Γ tt) -> tm Γ tt
+data tp : Set where
+ i : tp
+ _⇝_ : (T S : tp) -> tp
+
+infixr 13 _⇝_
+infixl 14 _,_
+
+data tm (Γ : ctx tp) : tp -> Set where
+ ▹ : ∀ {T} (x : var Γ T) -> tm Γ T
+ ƛ : ∀ {T S} (M : tm (Γ , T) S) -> tm Γ (T ⇝ S)
+ _·_ : ∀ {T S} (M : tm Γ (T ⇝ S)) -> (N : tm Γ T) -> tm Γ S
 
 data psub {A} : ctx A -> ctx A -> Set where
  end : psub ⊡ ⊡
@@ -86,7 +93,7 @@ rem {A} {T} {Γ}      (drop σ .T) = Γ , (drop id T , σ)
 
 _[_] : ∀ {Γ Δ T} -> tm Γ T -> psub Γ Δ -> tm Δ T
 ▹ x [ σ ] = ▹ (app-psub σ x)
-ƛ M [ σ ] = ƛ (M [ keep σ tt ])
+ƛ M [ σ ] = ƛ (M [ keep σ _ ])
 (M · N) [ σ ] = (M [ σ ]) · (N [ σ ])
 
 singleton : ∀ {A T} {Γ : ctx A} -> var Γ T -> psub (⊡ , T) Γ
@@ -110,16 +117,46 @@ fv (M · N) | Γ1 , (σ1 , M') | Γ2 , (σ2 , N') | uc Δ' σ1' σ2' σ = Δ' , 
 -- By using a smarter representation for the result term, we could do it here
 
 -- Now how does this fit into closure conversion?
+data ctp : Set where
+ i : ctp
+ _⇝_ : (T S : ctp)-> ctp
+ code : (Tev : ctx ctp) (T S : ctp) -> ctp
+ ∧ : (Tev : ctx ctp) -> ctp
 
-record solution Δ T (M : tm Δ T) : Set where
+data cexp (Γ : ctx ctp) : ctp -> Set where
+ ▹ : ∀ {T} -> var Γ T -> cexp Γ T
+ _·_ : ∀ {T S} -> cexp Γ (T ⇝ S) -> cexp Γ T -> cexp Γ S
+ ƛ : ∀ {Tev T S} -> cexp (⊡ , (∧ Tev) , T) S -> cexp Γ (code Tev T S)
+ ≪_,_≫ : ∀ {Tev T S} -> cexp Γ (code Tev T S) -> psub Tev Γ -> cexp Γ (T ⇝ S)
+ π : ∀ {Tev T} -> var Tev T -> cexp Γ (∧ Tev) -> cexp Γ T
+ let* : ∀ {Δ} -> 
+
+〈_〉 : tp -> ctp
+〈 i 〉 = i
+〈 T ⇝ S 〉 = 〈 T 〉 ⇝ 〈 S 〉
+
+<_> : ctx tp -> ctx ctp
+< ⊡ > = ⊡
+< Γ , T > = < Γ > , 〈 T 〉
+
+vconv : ∀ {Γ T} -> var Γ T -> var < Γ > 〈 T 〉
+vconv top = top
+vconv (pop y) = pop (vconv y) 
+
+conv : ∀ {Γ T} -> tm Γ T -> cexp < Γ > 〈 T 〉
+conv (▹ x) = ▹ (vconv x)
+conv (ƛ M) = ≪ (ƛ {!!}) , id ≫ 
+conv (M · N) = {!!}
+
+{-record solution Δ T (M : tm Δ T) : Set where
  field
-  Γ : ctx Unit
+  Γ : ctx _
   σ : psub Γ Δ
   M' : tm Γ T
   pf : M ≡ M' [ σ ]
 
 fv2 : ∀ {Δ T} (M : tm Δ T) -> solution Δ T M
-fv2 (▹ x) = record { Γ = ⊡ , tt; σ = singleton x; M' = ▹ top; pf = {!!} }
+fv2 (▹ x) = record { Γ = ⊡ , _; σ = singleton x; M' = ▹ top; pf = {!!} }
 fv2 (ƛ M) with fv2 M
 ... | w = {!w!}
-fv2 (M · N) = {!!}
+fv2 (M · N) = {!!} -}
