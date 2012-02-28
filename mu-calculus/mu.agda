@@ -185,9 +185,9 @@ validsub-id = truesub-id
 [ θ ]va rec M N = rec ([ θ ]va M) N
 
 〈_/x〉 : ∀ {Δ Γ A C} (M : Δ , Γ ⊢ A - poss) (N : ⊡ , (Δ , A) ⊢ C - true) -> Δ , Γ ⊢ C - poss
-〈_/x〉 (let-box M N) N' = let-box M {!!}
+〈_/x〉 (let-box M N) N' = let-box M (〈 N /x〉 ([ (sub-map pop wkn-vsub) , top ]tv N'))
 〈_/x〉 (▸ M) N = ▸ ([ truesub-id , M ]t N)
-〈_/x〉 (let-dia M N) N' = let-dia M {!!}  
+〈_/x〉 (let-dia M N) N' = let-dia M ([ (sub-map [ wkn-vsub ]tv truesub-id) , N ]t N')  
 
 data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set where
  box-red : ∀ {A C} (M : ⊡ , Δ ⊢ A - true) (N : (Δ , A) , Γ ⊢ C - true)
