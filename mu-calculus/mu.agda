@@ -196,14 +196,14 @@ validsub-id = truesub-id
 〈_/x〉 (▸ M) N = ▸ ([ truesub-id , M ]t N)
 〈_/x〉 (let-dia M N) N' = let-dia M ([ (sub-map [ wkn-vsub ]tv truesub-id) , N ]t N')  
 
-map : ∀ {F A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
-map {▸ P} M = ▹ top
-map {▹ top} M = M
-map {▹ (pop y)} M = ▹ top
-map {μ F} M = {!!}
-map {□ A} M = {!!}
-map {◇ A} M = {!!}
-map {A ⊃ B} M = {!!}
+map : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
+map (▸ P) M = ▹ top
+map (▹ top) M = M
+map (▹ (pop y)) M = ▹ top
+map (μ F) M = {!!}
+map (□ A) M = let-box (▹ top) (box (map A M))
+map (◇ A) M = dia (let-dia (▹ top) (map A M))
+map (A ⊃ B) M = ƛ ([ ⊡ , ((▹ (pop top)) · (▹ top)) ]t (map B M))
 
 data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set where
  box-red : ∀ {A C} (M : ⊡ , Δ ⊢ A - true) (N : (Δ , A) , Γ ⊢ C - true)
