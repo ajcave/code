@@ -214,3 +214,5 @@ data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set w
                 -> step (let-dia (dia M) N) (〈 M /x〉 N)
  rec-red : ∀ {F C} (M : Δ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
                 -> step (rec F (inj M) N) ([ ⊡ , [ ⊡ , M ]t ([ ⊡ ]va map F (rec F (▹ top) N)) ]t ([ ⊡ ]va N))
+ app-red : ∀ {A B}  (M : Δ , (Γ , A) ⊢ B - true) (N : Δ , Γ ⊢ A - true)
+                -> step ((ƛ M) · N) ([ truesub-id , N ]t M)
