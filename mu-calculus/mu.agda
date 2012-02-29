@@ -152,6 +152,7 @@ sub-map-resp-≈ H (σ , M) = cong2 _,_ (sub-map-resp-≈ H σ) (H M)
 ext-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((psub-ext σ1) • (psub-ext σ2)) ≡ psub-ext (σ1 • σ2)
 ext-funct σ1 σ2 = cong1st _,_ (trans (sub-map-funct _ _ _) (trans (sub-map-resp-≈ (λ x → trans (sub-pvsub-funct _ _ x) (trans (cong1st [_]p (sub-map-funct _ _ _) x) (trans (cong1st [_]p {!!} x) (sym (pvsub-sub-funct _ _ x))))) _) (sym (sub-map-funct _ _ _)))) (▹ top)
 
+-- TODO: Take advantage of generic traversal to get functorality
 sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]p) ≈ [ σ1 • σ2 ]p
 sub-funct σ1 σ2 (▸ P) = refl
 sub-funct σ1 σ2 (▹ A) = sub-vsub-funct σ1 σ2 A
