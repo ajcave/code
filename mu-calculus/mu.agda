@@ -9,6 +9,12 @@ _∘_ : ∀ {A B C : Set} (g : B -> C) (f : A -> B) -> A -> C
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
+cong : ∀ {A B : Set} (f : A -> B) {x y} -> x ≡ y -> f x ≡ f y
+cong f refl = refl
+
+trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+trans refl refl = refl
+
 _≈_ : ∀ {A B : Set} (f g : A -> B) -> Set
 f ≈ g = ∀ x -> f x ≡ g x 
 
@@ -24,7 +30,7 @@ data sub {A} (exp : A -> Set) : ctx A -> Set where
  ⊡ : sub exp ⊡
  _,_ : ∀ {Δ T} (σ : sub exp Δ) (M : exp T) -> sub exp (Δ , T) 
 
-[_]v_ : ∀ {A} {exp : A -> Set} {Δ T} (σ : sub exp Δ) -> var Δ T -> exp T
+[_]v : ∀ {A} {exp : A -> Set} {Δ T} (σ : sub exp Δ) -> var Δ T -> exp T
 [ ⊡ ]v ()
 [ σ , M ]v top = M
 [ σ , M ]v (pop y) = [ σ ]v y
@@ -94,10 +100,21 @@ psub-ext σ = (sub-map [ wkn-vsub ]pv σ) , ▹ top
 [ σ ]p (A ⊃ B) = A ⊃ ([ σ ]p B)
 
 _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
-σ1 • σ2 = {!!}
+σ1 • ⊡ = ⊡
+σ1 • (σ , M) = (σ1 • σ) , ([ σ1 ]p M)
 
---sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> [ σ2 ]p ∘ [ σ1 ]p ≈ [ σ2 • σ1 ]p
---sub-funct σ1 σ2 = ?
+sub-vsub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]v) ≈ [ σ1 • σ2 ]v
+sub-vsub-funct σ1 ⊡ ()
+sub-vsub-funct σ1 (σ , M) top = refl
+sub-vsub-funct σ1 (σ , M) (pop y) = sub-vsub-funct σ1 σ y
+
+sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]p) ≈ [ σ1 • σ2 ]p
+sub-funct σ1 σ2 (▸ P) = refl
+sub-funct σ1 σ2 (▹ A) = sub-vsub-funct σ1 σ2 A
+sub-funct σ1 σ2 (μ F) = cong μ (trans (sub-funct (psub-ext σ1) (psub-ext σ2) F) (cong (λ σ → [ σ , ▹ top ]p F) {!!}))
+sub-funct σ1 σ2 (□ A) = cong □ (sub-funct σ1 σ2 A)
+sub-funct σ1 σ2 (◇ A) = cong ◇ (sub-funct σ1 σ2 A)
+sub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-funct σ1 σ2 B)
 
 [_/x]p : ∀ {ζ} -> functor ζ -> functor (ζ , #prop) -> functor ζ
 [ M /x]p A = [ id-psub , M ]p A
@@ -220,7 +237,7 @@ map : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ 
 map (▸ P) M = ▹ top
 map (▹ top) M = M
 map (▹ (pop y)) M = ▹ top
-map (μ F) M = rec {!!} (▹ top) {!!}
+map (μ F) M = rec {!([ (⊡ , [ ⊡ ]pv .A) , ▹ top ]p F)!} (▹ top) {!!}
 map (□ A) M = let-box (▹ top) (box (map A M)) -- And this right here is why we needed to clear the context, I bet
 map (◇ A) M = dia (let-dia (▹ top) (map A M))
 map (A ⊃ B) M = ƛ ([ ⊡ , ((▹ (pop top)) · (▹ top)) ]t (map B M)) -- Probably more natural in a sequent system
