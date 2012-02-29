@@ -6,11 +6,17 @@ const1 b _ = b
 _∘_ : ∀ {A B C : Set} (g : B -> C) (f : A -> B) -> A -> C
 (g ∘ f) x = g (f x)
 
+swap : ∀ {A B C : Set} (f : A -> B -> C) -> B -> A -> C
+swap f b a = f a b 
+
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
 cong : ∀ {A B : Set} (f : A -> B) {x y} -> x ≡ y -> f x ≡ f y
 cong f refl = refl
+
+cong1st : ∀ {A B C : Set} (f : A -> B -> C) {a1 a2} -> a1 ≡ a2 -> (b : B) -> f a1 b ≡ f a2 b 
+cong1st f refl b = refl
 
 trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
 trans refl refl = refl
@@ -108,10 +114,13 @@ sub-vsub-funct σ1 ⊡ ()
 sub-vsub-funct σ1 (σ , M) top = refl
 sub-vsub-funct σ1 (σ , M) (pop y) = sub-vsub-funct σ1 σ y
 
+ext-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((psub-ext σ1) • (psub-ext σ2)) ≡ psub-ext (σ1 • σ2)
+ext-funct σ1 σ2 = cong1st _,_ {!!} (▹ top)
+
 sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]p) ≈ [ σ1 • σ2 ]p
 sub-funct σ1 σ2 (▸ P) = refl
 sub-funct σ1 σ2 (▹ A) = sub-vsub-funct σ1 σ2 A
-sub-funct σ1 σ2 (μ F) = cong μ (trans (sub-funct (psub-ext σ1) (psub-ext σ2) F) (cong (λ σ → [ σ , ▹ top ]p F) {!!}))
+sub-funct σ1 σ2 (μ F) = cong μ (trans (sub-funct (psub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct σ1 σ2) F))
 sub-funct σ1 σ2 (□ A) = cong □ (sub-funct σ1 σ2 A)
 sub-funct σ1 σ2 (◇ A) = cong ◇ (sub-funct σ1 σ2 A)
 sub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-funct σ1 σ2 B)
