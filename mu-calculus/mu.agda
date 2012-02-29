@@ -12,14 +12,24 @@ swap f b a = f a b
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
+subst2/3 : ∀ {A B C : Set} (P : A → B -> C → Set)
+         {x₁ x₂ y₁ y₂} → x₁ ≡ x₂ → y₁ ≡ y₂ → (z : C) -> P x₂ y₂ z → P x₁ y₁ z
+subst2/3 P refl refl z p = p
+
 cong : ∀ {A B : Set} (f : A -> B) {x y} -> x ≡ y -> f x ≡ f y
 cong f refl = refl
 
 cong1st : ∀ {A B C : Set} (f : A -> B -> C) {a1 a2} -> a1 ≡ a2 -> (b : B) -> f a1 b ≡ f a2 b 
 cong1st f refl b = refl
 
+cong2 : ∀ {A B C : Set} (f : A -> B -> C) {a1 a2} -> a1 ≡ a2 -> {b1 b2 : B} -> b1 ≡ b2 -> f a1 b1 ≡ f a2 b2
+cong2 f refl refl = refl 
+
 trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
 trans refl refl = refl
+
+sym : ∀ {A : Set} {x y : A} -> x ≡ y -> y ≡ x
+sym refl = refl
 
 _≈_ : ∀ {A B : Set} (f g : A -> B) -> Set
 f ≈ g = ∀ x -> f x ≡ g x 
@@ -106,16 +116,41 @@ psub-ext σ = (sub-map [ wkn-vsub ]pv σ) , ▹ top
 [ σ ]p (A ⊃ B) = A ⊃ ([ σ ]p B)
 
 _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
-σ1 • ⊡ = ⊡
-σ1 • (σ , M) = (σ1 • σ) , ([ σ1 ]p M)
+σ1 • σ2 = sub-map [ σ1 ]p σ2
 
 sub-vsub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]v) ≈ [ σ1 • σ2 ]v
 sub-vsub-funct σ1 ⊡ ()
 sub-vsub-funct σ1 (σ , M) top = refl
 sub-vsub-funct σ1 (σ , M) (pop y) = sub-vsub-funct σ1 σ y
 
+sub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]pv) ≈ [ sub-map [ σ1 ]v σ2 ]p
+sub-pvsub-funct σ1 σ2 (▸ P) = refl
+sub-pvsub-funct σ1 σ2 (▹ A) = {!!}
+sub-pvsub-funct σ1 σ2 (μ F) = {!!}
+sub-pvsub-funct σ1 σ2 (□ A) = {!!}
+sub-pvsub-funct σ1 σ2 (◇ A) = {!!}
+sub-pvsub-funct σ1 σ2 (A ⊃ B) = {!!}
+
+pvsub-sub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]p) ≈ [ sub-map [ σ1 ]pv σ2 ]p
+pvsub-sub-funct σ1 σ2 (▸ P) = {!!}
+pvsub-sub-funct σ1 σ2 (▹ A) = {!!}
+pvsub-sub-funct σ1 σ2 (μ F) = {!!}
+pvsub-sub-funct σ1 σ2 (□ A) = {!!}
+pvsub-sub-funct σ1 σ2 (◇ A) = {!!}
+pvsub-sub-funct σ1 σ2 (A ⊃ B) = {!!}
+
+sub-map-funct : ∀ {A : Set} {exp1 exp2 exp3 : A -> Set} (g : ∀ {T} -> exp2 T -> exp3 T) (f : ∀ {T} -> exp1 T -> exp2 T)
+ -> ∀ {Δ} (σ : sub exp1 Δ) -> (((sub-map g) ∘ (sub-map f)) σ) ≡ (sub-map (g ∘ f) σ)
+sub-map-funct g f ⊡ = refl
+sub-map-funct g f (σ , M) = cong1st _,_ (sub-map-funct g f σ) (g (f M)) 
+
+sub-map-resp-≈ :  ∀ {A : Set} {exp1 exp2 : A -> Set} {f g : ∀ {T} -> exp1 T -> exp2 T} {Δ}
+ -> (∀ {T} -> f {T} ≈ g {T}) -> (σ : sub exp1 Δ) -> sub-map f σ ≡ sub-map g σ
+sub-map-resp-≈ H ⊡ = refl
+sub-map-resp-≈ H (σ , M) = cong2 _,_ (sub-map-resp-≈ H σ) (H M) 
+
 ext-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((psub-ext σ1) • (psub-ext σ2)) ≡ psub-ext (σ1 • σ2)
-ext-funct σ1 σ2 = cong1st _,_ {!!} (▹ top)
+ext-funct σ1 σ2 = cong1st _,_ (trans (sub-map-funct _ _ _) (trans (sub-map-resp-≈ (λ x → trans (sub-pvsub-funct _ _ x) (trans (cong1st [_]p (sub-map-funct _ _ _) x) (trans (cong1st [_]p {!!} x) (sym (pvsub-sub-funct _ _ x))))) _) (sym (sub-map-funct _ _ _)))) (▹ top)
 
 sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]p) ≈ [ σ1 • σ2 ]p
 sub-funct σ1 σ2 (▸ P) = refl
@@ -260,7 +295,7 @@ arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
 map' : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
 map' (▸ P) θ = ▹ top
 map' (▹ A) θ = arrow-lookup θ A
-map' (μ F) {σ1} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {!!})
+map' (μ F) {σ1} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡) (sub-funct _ _ F)) {!!} true {!!}))
 map' (□ A) θ = let-box (▹ top) (box (map' A θ))
 map' (◇ A) θ = dia (let-dia (▹ top) (map' A θ))
 map' (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map' B θ))
