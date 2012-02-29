@@ -3,6 +3,15 @@ module mu where
 const1 : ∀ {A : Set} {B : Set₁} -> B -> A -> B
 const1 b _ = b
 
+_∘_ : ∀ {A B C : Set} (g : B -> C) (f : A -> B) -> A -> C
+(g ∘ f) x = g (f x)
+
+data _≡_ {A : Set} (x : A) : A -> Set where
+ refl : x ≡ x
+
+_≈_ : ∀ {A B : Set} (f g : A -> B) -> Set
+f ≈ g = ∀ x -> f x ≡ g x 
+
 data ctx (A : Set) : Set where
  ⊡ : ctx A
  _,_ : (Γ : ctx A) -> (T : A) -> ctx A
@@ -83,6 +92,12 @@ psub-ext σ = (sub-map [ wkn-vsub ]pv σ) , ▹ top
 [ σ ]p (□ A) = □ ([ σ ]p A)
 [ σ ]p (◇ A) = ◇ ([ σ ]p A)
 [ σ ]p (A ⊃ B) = A ⊃ ([ σ ]p B)
+
+_•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
+σ1 • σ2 = {!!}
+
+--sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> [ σ2 ]p ∘ [ σ1 ]p ≈ [ σ2 • σ1 ]p
+--sub-funct σ1 σ2 = ?
 
 [_/x]p : ∀ {ζ} -> functor ζ -> functor (ζ , #prop) -> functor ζ
 [ M /x]p A = [ id-psub , M ]p A
@@ -214,6 +229,7 @@ arrow-lookup : ∀ {ζ} {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) (A : var ζ
 arrow-lookup ⊡ ()
 arrow-lookup (θ , N) top = N
 arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
+
 
 map' : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
 map' (▸ P) θ = ▹ top
