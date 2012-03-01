@@ -307,31 +307,24 @@ data arrow : ∀ {ζ} -> psub ⊡ ζ -> psub ⊡ ζ -> Set where
  ⊡ : arrow ⊡ ⊡
  _,_ : ∀ {ζ} {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) {A B} (N : ⊡ , (⊡ , A) ⊢ B - true) -> arrow (σ1 , A) (σ2 , B)
 
-map : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
-map (▸ P) M = ▹ top
-map (▹ top) M = M
-map (▹ (pop y)) M = ▹ top
-map (μ F) M = {!!} -- rec {!([ (⊡ , [ ⊡ ]pv .A) , ▹ top ]p F)!} (▹ top) {!!}
-map (□ A) M = let-box (▹ top) (box (map A M)) -- And this right here is why we needed to clear the context, I bet
-map (◇ A) M = dia (let-dia (▹ top) (map A M))
-map (A ⊃ B) M = ƛ ([ ⊡ , ((▹ (pop top)) · (▹ top)) ]t (map B M)) -- Probably more natural in a sequent system
-
 arrow-lookup : ∀ {ζ} {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) (A : var ζ #prop) -> ⊡ , ⊡ , ([ σ1 ]v A) ⊢ [ σ2 ]v A - true
 arrow-lookup ⊡ ()
 arrow-lookup (θ , N) top = N
 arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
 
-
-map' : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
-map' (▸ P) θ = ▹ top
-map' (▹ A) θ = arrow-lookup θ A
-map' (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡)
+map : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
+map (▸ P) θ = ▹ top
+map (▹ A) θ = arrow-lookup θ A
+map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡)
   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
-  true (map' F (θ , ▹ top))))
-map' (□ A) θ = let-box (▹ top) (box (map' A θ))
-map' (◇ A) θ = dia (let-dia (▹ top) (map' A θ))
-map' (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map' B θ))
+  true (map F (θ , ▹ top))))
+map (□ A) θ = let-box (▹ top) (box (map A θ))
+map (◇ A) θ = dia (let-dia (▹ top) (map A θ))
+map (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map B θ))
+
+map1 : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
+map1 F H = map F (⊡ , H)
 
 -- Other way to write it maybe concludes Δ;Γ ⊢ F(A) -> Δ;Γ ⊢ F(B) ?
 
@@ -341,6 +334,6 @@ data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set w
  dia-red : ∀ {A C} (M : Δ , Γ ⊢ A - poss) (N : ⊡ , (Δ , A) ⊢ C - true)
                 -> step (let-dia (dia M) N) (〈 M /x〉 N)
  rec-red : ∀ {F C} (M : Δ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
-                -> step (rec F (inj M) N) ([ ⊡ , [ ⊡ , M ]t ([ ⊡ ]va map F (rec F (▹ top) N)) ]t ([ ⊡ ]va N))
+                -> step (rec F (inj M) N) ([ ⊡ , [ ⊡ , M ]t ([ ⊡ ]va map1 F (rec F (▹ top) N)) ]t ([ ⊡ ]va N))
  app-red : ∀ {A B}  (M : Δ , (Γ , A) ⊢ B - true) (N : Δ , Γ ⊢ A - true)
                 -> step ((ƛ M) · N) ([ truesub-id , N ]t M)
