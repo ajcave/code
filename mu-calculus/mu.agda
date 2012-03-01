@@ -138,6 +138,11 @@ sub-pvsub-funct σ1 σ2 (□ A) = {!!}
 sub-pvsub-funct σ1 σ2 (◇ A) = {!!}
 sub-pvsub-funct σ1 σ2 (A ⊃ B) = {!!}
 
+pvsub-vsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]v) ≈ [ σ1 ◆ σ2 ]v
+pvsub-vsub-funct σ1 ⊡ ()
+pvsub-vsub-funct σ1 (σ , M) top = refl
+pvsub-vsub-funct σ1 (σ , M) (pop y) = pvsub-vsub-funct σ1 σ y
+
 pvsub-sub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]p) ≈ [ σ1 ◆ σ2 ]p
 pvsub-sub-funct σ1 σ2 (▸ P) = {!!}
 pvsub-sub-funct σ1 σ2 (▹ A) = {!!}
@@ -156,8 +161,12 @@ sub-map-resp-≈ :  ∀ {A : Set} {exp1 exp2 : A -> Set} {f g : ∀ {T} -> exp1 
 sub-map-resp-≈ H ⊡ = refl
 sub-map-resp-≈ H (σ , M) = cong2 _,_ (sub-map-resp-≈ H σ) (H M) 
 
+id-v-right : ∀ {ζ2 ζ1} (σ : psub ζ1 ζ2) -> (σ ◦ id-vsub) ≡ σ
+id-v-right ⊡ = refl
+id-v-right (σ , M) = cong1st _,_ (trans (sub-map-funct _ _ _) (id-v-right σ)) M
+
 ext-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((psub-ext σ1) • (psub-ext σ2)) ≡ psub-ext (σ1 • σ2)
-ext-funct σ1 σ2 = cong1st _,_ (trans (sub-map-funct _ _ _) (trans (sub-map-resp-≈ (λ x → trans (sub-pvsub-funct _ _ x) (trans (cong1st [_]p (sub-map-funct _ _ _) x) (trans (cong1st [_]p {!!} x) (sym (pvsub-sub-funct _ _ x))))) _) (sym (sub-map-funct _ _ _)))) (▹ top)
+ext-funct σ1 σ2 = cong1st _,_ (trans (sub-map-funct _ _ _) (trans (sub-map-resp-≈ (λ x → trans (sub-pvsub-funct _ _ x) (trans (cong1st [_]p (sub-map-funct _ _ _) x) (trans (cong1st [_]p (id-v-right _) x) (sym (pvsub-sub-funct _ _ x))))) _) (sym (sub-map-funct _ _ _)))) (▹ top)
 
 -- TODO: Take advantage of generic traversal to get functorality
 sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]p) ≈ [ σ1 • σ2 ]p
@@ -168,14 +177,19 @@ sub-funct σ1 σ2 (□ A) = cong □ (sub-funct σ1 σ2 A)
 sub-funct σ1 σ2 (◇ A) = cong ◇ (sub-funct σ1 σ2 A)
 sub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-funct σ1 σ2 B)
 
+
+vsub-v-id : ∀ {ζ} (A : var ζ #prop) -> [ id-vsub ]v A ≡ A
+vsub-v-id top = refl
+vsub-v-id (pop y) = {!!}
+
 sub-v-id : ∀ {ζ1} (A : var ζ1 #prop) -> [ id-psub ]v A ≡ ▹ A
 sub-v-id top = refl
-sub-v-id (pop y) = {!!}
+sub-v-id (pop y) = trans (sym (pvsub-vsub-funct wkn-vsub id-psub y)) (trans (cong [ wkn-vsub ]pv (sub-v-id y)) (cong ▹ {!!}))
 
 sub-id : ∀ {ζ1} (M : functor ζ1) -> [ id-psub ]p M ≡ M
 sub-id (▸ P) = refl
 sub-id (▹ A) = sub-v-id A
-sub-id (μ F) = {!!}
+sub-id (μ F) = cong μ (sub-id F)
 sub-id (□ A) = cong □ (sub-id A)
 sub-id (◇ A) = cong ◇ (sub-id A)
 sub-id (A ⊃ B) = cong (_⊃_ A) (sub-id B)
