@@ -104,8 +104,11 @@ id-psub : ∀ {ζ} -> psub ζ ζ
 id-psub {⊡} = ⊡
 id-psub {ζ , #prop} = (sub-map [ wkn-vsub ]pv id-psub) , (▹ top)
 
+psub-wkn : ∀ {ζ1 ζ2} (σ : psub ζ1 ζ2) -> psub (ζ1 , #prop) ζ2
+psub-wkn σ = sub-map [ wkn-vsub ]pv σ
+
 psub-ext : ∀ {ζ1 ζ2} -> psub ζ1 ζ2 -> psub (ζ1 , #prop) (ζ2 , #prop)
-psub-ext σ = (sub-map [ wkn-vsub ]pv σ) , ▹ top
+psub-ext σ = (psub-wkn σ) , ▹ top
 
 [_]p : ∀ {ζ1 ζ2} -> psub ζ2 ζ1 -> functor ζ1 -> functor ζ2
 [ σ ]p (▸ P) = ▸ P
@@ -165,8 +168,14 @@ id-v-right : ∀ {ζ2 ζ1} (σ : psub ζ1 ζ2) -> (σ ◦ id-vsub) ≡ σ
 id-v-right ⊡ = refl
 id-v-right (σ , M) = cong1st _,_ (trans (sub-map-funct _ _ _) (id-v-right σ)) M
 
+assocv : ∀ {ζ1 ζ2 ζ3 ζ4} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) (σ3 : psub ζ3 ζ4) -> (σ1 • (σ2 ◆ σ3)) ≡ ((σ1 ◦ σ2) • σ3)
+assocv σ1 σ2 σ3 = trans (sub-map-funct _ _ _) (sub-map-resp-≈ (sub-pvsub-funct σ1 σ2) σ3) 
+
+ext-wkn : ∀ {ζ1 ζ2} (σ1 : psub ζ1 ζ2) -> ((psub-ext σ1) ◦ wkn-vsub) ≡ (wkn-vsub ◆ σ1)
+ext-wkn σ1 = trans (sub-map-funct _ _ _) (id-v-right _)
+
 ext-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((psub-ext σ1) • (psub-ext σ2)) ≡ psub-ext (σ1 • σ2)
-ext-funct σ1 σ2 = cong1st _,_ (trans (sub-map-funct _ _ _) (trans (sub-map-resp-≈ (λ x → trans (sub-pvsub-funct _ _ x) (trans (cong1st [_]p (sub-map-funct _ _ _) x) (trans (cong1st [_]p (id-v-right _) x) (sym (pvsub-sub-funct _ _ x))))) _) (sym (sub-map-funct _ _ _)))) (▹ top)
+ext-funct σ1 σ2 = cong1st _,_ (trans (assocv _ _ _) (trans (sub-map-resp-≈ (λ x → trans (cong1st [_]p (ext-wkn σ1) x) (sym (pvsub-sub-funct _ _ x))) σ2) (sym (sub-map-funct _ _ σ2)))) (▹ top)
 
 -- TODO: Take advantage of generic traversal to get functorality
 sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]p) ≈ [ σ1 • σ2 ]p
@@ -201,8 +210,6 @@ sub-map-id (σ , M) = cong2 _,_ (sub-map-id σ) (sub-id M)
 assoc : ∀ {ζ1 ζ2 ζ3 ζ4} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) (σ3 : psub ζ3 ζ4) -> (σ1 • (σ2 • σ3)) ≡ ((σ1 • σ2) • σ3)
 assoc σ1 σ2 σ3 = trans (sub-map-funct _ _ _) (sub-map-resp-≈ (sub-funct σ1 σ2) σ3)
 
-assocv : ∀ {ζ1 ζ2 ζ3 ζ4} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) (σ3 : psub ζ3 ζ4) -> (σ1 • (σ2 ◆ σ3)) ≡ ((σ1 ◦ σ2) • σ3)
-assocv σ1 σ2 σ3 = trans (sub-map-funct _ _ _) (sub-map-resp-≈ (sub-pvsub-funct σ1 σ2) σ3) 
 
 [_/x]p : ∀ {ζ} -> functor ζ -> functor (ζ , #prop) -> functor ζ
 [ M /x]p A = [ id-psub , M ]p A
