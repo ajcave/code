@@ -325,7 +325,10 @@ arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
 map' : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
 map' (▸ P) θ = ▹ top
 map' (▹ A) θ = arrow-lookup θ A
-map' (μ F) {σ1} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡) (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F))) {!!} true (map' F (θ , (▹ top)))))
+map' (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡)
+  (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
+  (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
+  true (map' F (θ , ▹ top))))
 map' (□ A) θ = let-box (▹ top) (box (map' A θ))
 map' (◇ A) θ = dia (let-dia (▹ top) (map' A θ))
 map' (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map' B θ))
