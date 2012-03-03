@@ -236,13 +236,15 @@ mutual
               -> --------------------------
                    Δ , Γ ⊢ (□ A) - true
   ▸ : ∀ {A} -> (M : ⊡ , Δ ⊢ A - true)
-            -> --------------------------
+            -> -------------------------- I think this may not be allowed! It says that there's always a transition
                     Δ , Γ ⊢ A - poss
   dia : ∀ {A} -> (M : Δ , Γ ⊢ A - poss)
               -> --------------------------
                      Δ , Γ ⊢ ◇ A - true
   let-dia : ∀ {A C} -> (M : Δ , Γ ⊢ ◇ A - true) -> (N : ⊡ , (Δ , A) ⊢ C - true)
-                    -> ----------------------------------------------------------------
+                    -> ---------------------------------------------------------- Read this as saying that when proving a possibility we're allowed to take one possibility along with us, and all necessities.
+-- We may be able to get rid of the poss judgement... when proving ◇ A true we just have to pick a ◇ B true and carry it with us along
+-- with all the necessities we've already decided to bring. 
                                       Δ , Γ ⊢ C - poss
   inj : ∀ {F} -> (M : Δ , Γ ⊢ ([ μ F /x]p F) - true)
               -> -----------------------------------------------------
