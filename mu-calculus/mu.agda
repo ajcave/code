@@ -245,6 +245,7 @@ mutual
                     -> ---------------------------------------------------------- Read this as saying that when proving a possibility we're allowed to take one possibility along with us, and all necessities.
 -- We may be able to get rid of the poss judgement... when proving ◇ A true we just have to pick a ◇ B true and carry it with us along
 -- with all the necessities we've already decided to bring. 
+-- Is keeping the ▸ rule the same as saying that our transition system just has no dead states in it?
                                       Δ , Γ ⊢ C - poss
   inj : ∀ {F} -> (M : Δ , Γ ⊢ ([ μ F /x]p F) - true)
               -> -----------------------------------------------------
