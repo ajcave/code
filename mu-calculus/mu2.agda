@@ -338,6 +338,7 @@ map1 F H = map F (⊡ , H)
 data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set where
  box-red : ∀ {A C} (M : ⊡ , Δ ⊢ A - true) (N : (Δ , A) , Γ ⊢ C - true)
                 -> step (let-box (box M) N) ([ validsub-id , M ]va N)
+-- No local soundness/completeness for ◇? Because its introduction and elimination rules are the same thing!
 -- dia-red : ∀ {A B C} (M : Δ , Γ ⊢ ◇ A - true) (N1 : ⊡ , (Δ , A) ⊢ B - true) (N2 : ⊡ , (Δ , B) ⊢ C - true)
 --                -> step (let-dia (let-dia M N1) N2) (let-dia {!!} {!!})
  rec-red : ∀ {F C} (M : Δ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
