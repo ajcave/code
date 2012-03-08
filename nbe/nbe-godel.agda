@@ -123,8 +123,7 @@ mutual
  srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
  srSubst θ (π₁ R) = _*_.fst (srSubst θ R)
  srSubst θ (π₂ R) = _*_.snd (srSubst θ R)
- srSubst θ (rec R E0 ES) with srSubst θ R
- ... | w = iter1 w (λ x → reflect (rec x (reify (sSubst θ E0)) (reify (sSubst θ ES)))) (sSubst θ E0) (λ x → sSubst θ ES _ id x)
+ srSubst θ (rec R E0 ES) = iter1 (srSubst θ R) (λ x → reflect (rec x (reify (sSubst θ E0)) (reify (sSubst θ ES)))) (sSubst θ E0) (λ x → sSubst θ ES _ id x)
 
  sSubst : ∀ {Γ Δ T} -> subst Γ Δ -> ntm Γ T -> sem Δ T
  sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (λ x → appSubst _ σ (θ x)) s) M
