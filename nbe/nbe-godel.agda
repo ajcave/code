@@ -1,4 +1,4 @@
-module nbe-cut where
+module nbe-godel where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
