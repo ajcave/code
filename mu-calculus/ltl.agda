@@ -43,7 +43,34 @@ postulate
 data type : Set where
  ▸ : (P : atomic_type) -> type
  _▹_ : (A B : type) -> type
- □ ◇ : (A : type) -> type
+ □ ◇ ○ : (A : type) -> type
 -- _∧_ _⊃_ _∨_ : (A B : type) -> type
 -- ⊤ ⊥ : type
 
+data judgement : Set where
+ true next : judgement
+
+mutual
+ data _,_,_⊢_-_ (Δ : ctx type) (θ : ctx type) (Γ : ctx type) : type -> judgement -> Set where
+  ▹ : ∀ {A} -> (x : var Γ A)
+            -> -------------------
+               Δ , θ , Γ ⊢ A - true
+  let-next : ∀ {A C J} (M : Δ , θ , Γ ⊢ (○ A) - true) (N : Δ , (θ , A) , Γ ⊢ C - J)
+                   -> ---------------------------------------------------------------
+                                          Δ , θ , Γ ⊢ C - J
+  next : ∀ {A} -> (M : Δ , θ , Γ ⊢ A - next)
+               -> --------------------------
+                     Δ , θ , Γ ⊢ (○ A) - true
+  shift : ∀ {A} -> (M : Δ , ⊡ , θ ⊢ A - true)
+                -> --------------------------
+                     Δ , θ , Γ ⊢ A - next
+  let-box : ∀ {A C J} (M : Δ , θ , Γ ⊢ (□ A) - true) (N : (Δ , A) , θ , Γ ⊢ C - J)
+                   -> ---------------------------------------------------------------
+                                           Δ , θ , Γ ⊢ C - J
+  box : ∀ {A Γ'} (M : Δ , θ , Γ ⊩ Γ' - true) (N : Δ , ⊡ , Γ' ⊢ A - true) (P : Δ , ⊡ , Γ' ⊩ Γ' - next)
+              -> -------------------------------------------------------------------------------------
+                                           Δ , θ , Γ ⊢ (□ A) - true
+  
+
+ _,_,_⊩_-_ : (Δ : ctx type) (θ : ctx type) (Γ : ctx type) (Γ' : ctx type) -> judgement -> Set
+ Δ , θ , Γ ⊩ Γ' - J = sub (λ A → Δ , θ , Γ ⊢ A - J) Γ'
