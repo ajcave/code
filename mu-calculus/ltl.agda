@@ -55,6 +55,9 @@ mutual
   ▹ : ∀ {A} -> (x : var Γ A)
             -> -------------------
                Δ , θ , Γ ⊢ A - true
+  ▻ : ∀ {A} -> (u : var Δ A)
+            -> --------------------
+               Δ , θ , Γ ⊢ A - true
   let-next : ∀ {A C J} (M : Δ , θ , Γ ⊢ (○ A) - true) (N : Δ , (θ , A) , Γ ⊢ C - J)
                    -> ---------------------------------------------------------------
                                           Δ , θ , Γ ⊢ C - J
@@ -64,6 +67,7 @@ mutual
   shift : ∀ {A} -> (M : Δ , ⊡ , θ ⊢ A - true)
                 -> --------------------------
                      Δ , θ , Γ ⊢ A - next
+  -- I suspect we only need this for true, not next. Show admissibility for next using true?
   let-box : ∀ {A C J} (M : Δ , θ , Γ ⊢ (□ A) - true) (N : (Δ , A) , θ , Γ ⊢ C - J)
                    -> ---------------------------------------------------------------
                                            Δ , θ , Γ ⊢ C - J
@@ -86,6 +90,7 @@ mutual
 mutual
  [_]tv : ∀ {Δ θ Γ1 Γ2 A J} -> vsub Γ2 Γ1 -> Δ , θ , Γ1 ⊢ A - J -> Δ , θ , Γ2 ⊢ A - J
  [_]tv σ (▹ x) = ▹ ([ σ ]v x)
+ [_]tv σ (▻ u) = ▻ u
  [_]tv σ (let-next M N) = let-next ([ σ ]tv M) ([ σ ]tv N)
  [_]tv σ (next M) = next ([ σ ]tv M)
  [_]tv σ (shift M) = shift M
@@ -101,11 +106,37 @@ mutual
 
 mutual
  [_]nv : ∀ {Δ θ1 θ2 Γ A J} -> vsub θ2 θ1 -> Δ , θ1 , Γ ⊢ A - J -> Δ , θ2 , Γ ⊢ A - J
- [ σ ]nv M = {!!}
+ [_]nv σ (▹ x) = ▹ x
+ [_]nv σ (▻ u) = ▻ u
+ [_]nv σ (let-next M N) = let-next ([ σ ]nv M) ([ vsub-ext σ ]nv N)
+ [_]nv σ (next M) = next ([ σ ]nv M)
+ [_]nv σ (shift M) = shift ([ σ ]tv M)
+ [_]nv σ (let-box M N) = let-box ([ σ ]nv M) ([ σ ]nv N)
+ [_]nv σ (box M N P) = box ([ σ ]nvs M) N P
+ [_]nv σ (dia-rec M N P) = dia-rec ([ σ ]nv M) N P
+ [_]nv σ (dia-now M) = dia-now ([ σ ]nv M)
+ [_]nv σ (dia-next M) = dia-next ([ σ ]tv M)
+
+ [_]nvs : ∀ {Δ θ1 θ2 Γ A J} -> vsub θ2 θ1 -> Δ , θ1 , Γ ⊩ A - J -> Δ , θ2 , Γ ⊩ A - J
+ [_]nvs σ ⊡ = ⊡
+ [_]nvs σ (σ' , M) = ([ σ ]nvs σ') , ([ σ ]nv M)
 
 mutual
  [_]vav : ∀ {Δ1 Δ2 θ Γ A J} -> vsub Δ2 Δ1 -> Δ1 , θ , Γ ⊢ A - J -> Δ2 , θ , Γ ⊢ A - J
- [ σ ]vav M = {!!}
+ [_]vav σ (▹ x) = ▹ x
+ [_]vav σ (▻ u) = ▻ ([ σ ]v u)
+ [_]vav σ (let-next M N) = let-next ([ σ ]vav M) ([ σ ]vav N)
+ [_]vav σ (next M) = next ([ σ ]vav M)
+ [_]vav σ (shift M) = shift ([ σ ]vav M)
+ [_]vav σ (let-box M N) = let-box ([ σ ]vav M) ([ vsub-ext σ ]vav N)
+ [_]vav σ (box M N P) = box ([ σ ]vavs M) ([ σ ]vav N) ([ σ ]vavs P)
+ [_]vav σ (dia-rec M N P) = dia-rec ([ σ ]vav M) ([ σ ]vav N) ([ σ ]vav P)
+ [_]vav σ (dia-now M) = dia-now ([ σ ]vav M)
+ [_]vav σ (dia-next M) = dia-next ([ σ ]vav M)
+
+ [_]vavs : ∀ {Δ1 Δ2 θ Γ A J} -> vsub Δ2 Δ1 -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
+ [_]vavs σ ⊡ = ⊡
+ [_]vavs σ (σ' , M) = ([ σ ]vavs σ') , ([ σ ]vav M)
 
 truesub-id : ∀ {Δ θ Γ} -> Δ , θ , Γ ⊩ Γ - true
 truesub-id {Δ} {θ} {⊡} = ⊡
@@ -117,6 +148,7 @@ truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 mutual
  [_]t : ∀ {Δ θ Γ1 Γ2 A J} -> Δ , θ , Γ2 ⊩ Γ1 - true -> Δ , θ , Γ1 ⊢ A - J -> Δ , θ , Γ2 ⊢ A - J
  [_]t σ (▹ x) = [ σ ]v x
+ [_]t σ (▻ u) = ▻ u
  [_]t σ (let-next M N) = let-next ([ σ ]t M) ([ sub-map [ wkn-vsub ]nv σ ]t N)
  [_]t σ (next M) = next ([ σ ]t M)
  [_]t σ (shift M) = shift M
