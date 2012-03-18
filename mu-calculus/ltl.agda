@@ -44,8 +44,8 @@ data type : Set where
  ▸ : (P : atomic_type) -> type
  _▹_ : (A B : type) -> type
  □ ◇ ○ : (A : type) -> type
--- _∧_ _⊃_ _∨_ : (A B : type) -> type
--- ⊤ ⊥ : type
+ _∧_ _⊃_ _∨_ : (A B : type) -> type
+ ⊤ ⊥ : type
 
 data judgement : Set where
  true next : judgement
@@ -70,6 +70,15 @@ mutual
   box : ∀ {A Γ'} (M : Δ , θ , Γ ⊩ Γ' - true) (N : Δ , ⊡ , Γ' ⊢ A - true) (P : Δ , ⊡ , Γ' ⊩ Γ' - next)
               -> -------------------------------------------------------------------------------------
                                            Δ , θ , Γ ⊢ (□ A) - true
+  dia-rec : ∀ {A C} (M : Δ , θ , Γ ⊢ (◇ A) - true) (N : Δ , ⊡ , (⊡ , A) ⊢ C - true) (P : Δ , (⊡ , C) , ⊡ ⊢ C - true)
+                 -> ------------------------------------------------------------------------------------------------
+                                           Δ , θ , Γ ⊢ C - true
+  dia-now : ∀ {A} (M : Δ , θ , Γ ⊢ A - true)
+               -> --------------------------
+                    Δ , θ , Γ ⊢ (◇ A) - true
+  dia-next : ∀ {A} (M : Δ , ⊡ , θ ⊢ (◇ A) - true)
+               -> -------------------------------
+                    Δ , θ , Γ ⊢ (◇ A) - true
   
 
  _,_,_⊩_-_ : (Δ : ctx type) (θ : ctx type) (Γ : ctx type) (Γ' : ctx type) -> judgement -> Set
