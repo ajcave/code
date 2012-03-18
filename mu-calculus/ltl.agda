@@ -50,6 +50,10 @@ data type : Set where
 data judgement : Set where
  true next : judgement
 
+-- Try the system without Δ, so the other elim rule.
+-- I think we can have atomic init rule for this system, but not for the one without Δ
+-- This stems from the direct treatment of □ as a fixpoint: fixpoints must be considered atomic
+-- for purposes of the init rule
 mutual
  data _,_,_⊢_-_ (Δ : ctx type) (θ : ctx type) (Γ : ctx type) : type -> judgement -> Set where
   ▹ : ∀ {A} -> (x : var Γ A)
@@ -198,6 +202,7 @@ validsub Δ1 Δ2 θ Γ = sub (unfold Δ2 θ Γ) Δ1
 wkn-validsub1 : ∀ {Δ1 Δ2 θ T Γ} -> validsub Δ1 Δ2 θ Γ -> validsub Δ1 Δ2 (θ , T) Γ
 wkn-validsub1 M = sub-map (λ x → rule (unfold.Γ' x) (sub-map [ wkn-vsub ]nv (unfold.start x)) (unfold.conseq x) (unfold.preserve x)) M 
 
+-- Do a big simultaneous subst for Δ, θ, and Γ all at the same time to achieve weakening stuff?
 mutual
  [_]va : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊢ A - J -> Δ2 , θ , Γ ⊢ A - J
  [_]va σ (▹ x) = ▹ x
@@ -206,10 +211,10 @@ mutual
  [_]va σ (let-next M N) = let-next ([ σ ]va M) ([ wkn-validsub1 σ ]va N)
  [_]va σ (next M) = next ([ σ ]va M)
  [_]va σ (shift M) = {!!}
- [_]va σ (let-box M N) = {!!}
- [_]va σ (box M N P) = box {!!} {!!} {!!}
+ [_]va σ (let-box M N) = let-box ([ σ ]va M) {!!}
+ [_]va σ (box M N P) = {!!}
  [_]va σ (dia-rec M N P) = {!!}
- [_]va σ (dia-now M) = {!!}
+ [_]va σ (dia-now M) = dia-now ([ σ ]va M)
  [_]va σ (dia-next M) = {!!}
 
  [_]vas : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
