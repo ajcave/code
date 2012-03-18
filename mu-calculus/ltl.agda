@@ -82,3 +82,19 @@ mutual
   
  _,_,_⊩_-_ : (Δ : ctx type) (θ : ctx type) (Γ : ctx type) (Γ' : ctx type) -> judgement -> Set
  Δ , θ , Γ ⊩ Γ' - J = sub (λ A → Δ , θ , Γ ⊢ A - J) Γ'
+
+mutual
+ [_]tv : ∀ {Δ θ Γ1 Γ2 A J} -> vsub Γ2 Γ1 -> Δ , θ , Γ1 ⊢ A - J -> Δ , θ , Γ2 ⊢ A - J
+ [_]tv σ (▹ x) = ▹ ([ σ ]v x)
+ [_]tv σ (let-next M N) = let-next ([ σ ]tv M) ([ σ ]tv N)
+ [_]tv σ (next M) = next ([ σ ]tv M)
+ [_]tv σ (shift M) = shift M
+ [_]tv σ (let-box M N) = let-box ([ σ ]tv M) ([ σ ]tv N)
+ [_]tv σ (box M N P) = box ([ σ ]tvs M) N P
+ [_]tv σ (dia-rec M N P) = dia-rec ([ σ ]tv M) N P
+ [_]tv σ (dia-now M) = dia-now ([ σ ]tv M)
+ [_]tv σ (dia-next M) = dia-next M
+
+ [_]tvs : ∀ {Δ θ Γ1 Γ2 Γ' J} -> vsub Γ2 Γ1 -> Δ , θ , Γ1 ⊩ Γ' - J -> Δ , θ , Γ2 ⊩ Γ' - J
+ [_]tvs σ ⊡ = ⊡
+ [_]tvs σ (σ' , M) = ([ σ ]tvs σ') , ([ σ ]tv M)
