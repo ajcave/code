@@ -98,3 +98,34 @@ mutual
  [_]tvs : ∀ {Δ θ Γ1 Γ2 Γ' J} -> vsub Γ2 Γ1 -> Δ , θ , Γ1 ⊩ Γ' - J -> Δ , θ , Γ2 ⊩ Γ' - J
  [_]tvs σ ⊡ = ⊡
  [_]tvs σ (σ' , M) = ([ σ ]tvs σ') , ([ σ ]tv M)
+
+mutual
+ [_]nv : ∀ {Δ θ1 θ2 Γ A J} -> vsub θ2 θ1 -> Δ , θ1 , Γ ⊢ A - J -> Δ , θ2 , Γ ⊢ A - J
+ [ σ ]nv M = {!!}
+
+mutual
+ [_]vav : ∀ {Δ1 Δ2 θ Γ A J} -> vsub Δ2 Δ1 -> Δ1 , θ , Γ ⊢ A - J -> Δ2 , θ , Γ ⊢ A - J
+ [ σ ]vav M = {!!}
+
+truesub-id : ∀ {Δ θ Γ} -> Δ , θ , Γ ⊩ Γ - true
+truesub-id {Δ} {θ} {⊡} = ⊡
+truesub-id {Δ} {θ} {Γ , T} = (sub-map [ wkn-vsub ]tv truesub-id) , (▹ top)
+
+truesub-ext : ∀ {Δ θ Γ1 Γ2 T} -> Δ , θ , Γ1 ⊩ Γ2 - true -> Δ , θ , (Γ1 , T) ⊩ (Γ2 , T) - true
+truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
+
+mutual
+ [_]t : ∀ {Δ θ Γ1 Γ2 A J} -> Δ , θ , Γ2 ⊩ Γ1 - true -> Δ , θ , Γ1 ⊢ A - J -> Δ , θ , Γ2 ⊢ A - J
+ [_]t σ (▹ x) = [ σ ]v x
+ [_]t σ (let-next M N) = let-next ([ σ ]t M) ([ sub-map [ wkn-vsub ]nv σ ]t N)
+ [_]t σ (next M) = next ([ σ ]t M)
+ [_]t σ (shift M) = shift M
+ [_]t σ (let-box M N) = let-box ([ σ ]t M) ([ sub-map [ wkn-vsub ]vav σ ]t N)
+ [_]t σ (box M N P) = box ([ σ ]ts M) N P
+ [_]t σ (dia-rec M N P) = dia-rec ([ σ ]t M) N P
+ [_]t σ (dia-now M) = dia-now ([ σ ]t M)
+ [_]t σ (dia-next M) = dia-next M
+
+ [_]ts : ∀ {Δ θ Γ1 Γ2 Γ' J} -> Δ , θ , Γ2 ⊩ Γ1 - true -> Δ , θ , Γ1 ⊩ Γ' - J -> Δ , θ , Γ2 ⊩ Γ' - J
+ [_]ts σ ⊡ = ⊡
+ [_]ts σ (σ' , M) = ([ σ ]ts σ') , ([ σ ]t M)
