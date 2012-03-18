@@ -161,3 +161,21 @@ mutual
  [_]ts : ∀ {Δ θ Γ1 Γ2 Γ' J} -> Δ , θ , Γ2 ⊩ Γ1 - true -> Δ , θ , Γ1 ⊩ Γ' - J -> Δ , θ , Γ2 ⊩ Γ' - J
  [_]ts σ ⊡ = ⊡
  [_]ts σ (σ' , M) = ([ σ ]ts σ') , ([ σ ]t M)
+
+mutual
+ [_]n : ∀ {Δ θ1 θ2 Γ A J} -> Δ , ⊡ , θ2 ⊩ θ1 - true -> Δ , θ1 , Γ ⊢ A - J -> Δ , θ2 , Γ ⊢ A - J
+ [_]n σ (▹ x) = ▹ x
+ [_]n σ (▻ u) = ▻ u
+ [_]n σ (let-next M N) = let-next ([ σ ]n M) ([ truesub-ext σ ]n N)
+ [_]n σ (next M) = next ([ σ ]n M)
+ [_]n σ (shift M) = shift ([ σ ]t M) --!
+ [_]n σ (let-box M N) = let-box ([ σ ]n M) ([ sub-map [ wkn-vsub ]vav σ ]n N)
+ [_]n σ (box M N P) = box ([ σ ]ns M) N P
+ [_]n σ (dia-rec M N P) = dia-rec ([ σ ]n M) N P
+ [_]n σ (dia-now M) = dia-now ([ σ ]n M)
+ [_]n σ (dia-next M) = dia-next ([ σ ]t M) --!
+
+ [_]ns : ∀ {Δ θ1 θ2 Γ A J} -> Δ , ⊡ , θ2 ⊩ θ1 - true -> Δ , θ1 , Γ ⊩ A - J -> Δ , θ2 , Γ ⊩ A - J
+ [ σ ]ns M = {!!}
+ 
+ 
