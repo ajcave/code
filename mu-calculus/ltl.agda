@@ -183,4 +183,35 @@ mutual
 〈_/x〉 (let-next M N) N' = let-next M (〈 N /x〉 ([ (wkn (wkn-vsub)) , top ]nv N'))
 〈_/x〉 (shift M) N = [ truesub-id , M ]n N
 〈_/x〉 (let-box M N) N' = let-box M (〈 N /x〉 ([ wkn-vsub ]vav N'))
- 
+
+record unfold (Δ θ Γ : ctx type) (A : type) : Set where
+ constructor rule
+ field
+  Γ' : ctx type
+  start : Δ , θ , Γ ⊩ Γ' - true
+  conseq : Δ , ⊡ , Γ' ⊢ A - true
+  preserve : Δ , ⊡ , Γ' ⊩ Γ' - next
+
+validsub : ∀ (Δ1 Δ2 θ Γ : ctx type) -> Set
+validsub Δ1 Δ2 θ Γ = sub (unfold Δ2 θ Γ) Δ1
+
+wkn-validsub1 : ∀ {Δ1 Δ2 θ T Γ} -> validsub Δ1 Δ2 θ Γ -> validsub Δ1 Δ2 (θ , T) Γ
+wkn-validsub1 M = sub-map (λ x → rule (unfold.Γ' x) (sub-map [ wkn-vsub ]nv (unfold.start x)) (unfold.conseq x) (unfold.preserve x)) M 
+
+mutual
+ [_]va : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊢ A - J -> Δ2 , θ , Γ ⊢ A - J
+ [_]va σ (▹ x) = ▹ x
+ [_]va σ (▻ u) with [ σ ]v u
+ [_]va σ (▻ u) | rule Γ' σ' M _ = [ σ' ]t ([ ⊡ ]n M)
+ [_]va σ (let-next M N) = let-next ([ σ ]va M) ([ wkn-validsub1 σ ]va N)
+ [_]va σ (next M) = next ([ σ ]va M)
+ [_]va σ (shift M) = {!!}
+ [_]va σ (let-box M N) = {!!}
+ [_]va σ (box M N P) = box {!!} {!!} {!!}
+ [_]va σ (dia-rec M N P) = {!!}
+ [_]va σ (dia-now M) = {!!}
+ [_]va σ (dia-next M) = {!!}
+
+ [_]vas : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
+ [_]vas σ ⊡ = ⊡
+ [_]vas σ (σ' , M) = ([ σ ]vas σ') , ([ σ ]va M)
