@@ -80,6 +80,5 @@ mutual
                -> -------------------------------
                     Δ , θ , Γ ⊢ (◇ A) - true
   
-
  _,_,_⊩_-_ : (Δ : ctx type) (θ : ctx type) (Γ : ctx type) (Γ' : ctx type) -> judgement -> Set
  Δ , θ , Γ ⊩ Γ' - J = sub (λ A → Δ , θ , Γ ⊢ A - J) Γ'
