@@ -179,4 +179,8 @@ mutual
  [_]ns σ ⊡ = ⊡
  [_]ns σ (σ' , M) = ([ σ ]ns σ') , ([ σ ]n M)
  
+〈_/x〉 : ∀ {Δ θ Γ A B J} -> Δ , θ , Γ ⊢ A - next ->  Δ , (θ , A) , Γ ⊢ B - J -> Δ , θ , Γ ⊢ B - J
+〈_/x〉 (let-next M N) N' = let-next M (〈 N /x〉 ([ (wkn (wkn-vsub)) , top ]nv N'))
+〈_/x〉 (shift M) N = [ truesub-id , M ]n N
+〈_/x〉 (let-box M N) N' = let-box M (〈 N /x〉 ([ wkn-vsub ]vav N'))
  
