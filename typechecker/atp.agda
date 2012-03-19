@@ -140,8 +140,8 @@ mutual
  infer Γ (▹ x) = yep (lookup Γ x) (▹ x)
  infer Γ (E · I) with infer Γ E
  ... | yep (A ⊃ B) D with check Γ I A
- ... | yep F = yep B (⊃E D F)
- ... | nope  = nope
+ ...                    | yep F = yep B (⊃E D F)
+ ...                    | nope  = nope
  infer Γ (E · I) | _ = nope
  infer Γ (fst E) with infer Γ E
  ... | yep (A ∧ B) D = yep A (∧E₁ D)
@@ -172,8 +172,8 @@ mutual
  check Γ (inr I) _ = nope
  check Γ (case E of-inl=> I₁ |inr=> I₂) C with infer Γ E
  ... | yep (A ∨ B) D with check (Γ , A) I₁ C | check (Γ , B) I₂ C
- ... | yep D₁ | yep D₂ = yep (∨E D D₁ D₂)
- ... | _ | _           = nope
+ ...                      | yep D₁           | yep D₂ = yep (∨E D D₁ D₂)
+ ...                      | _                | _      = nope
  check Γ (case E of-inl=> I₁ |inr=> I₂) C | _ = nope
  check Γ 〈〉 ⊤ = yep ⊤I
  check Γ 〈〉 _ = nope
