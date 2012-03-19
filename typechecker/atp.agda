@@ -1,5 +1,22 @@
 module atp where
 
+-- Basic library stuff
+record Σ {A : Set} (B : A -> Set) : Set where
+ constructor _,_
+ field
+  first : A
+  second : B first
+
+data empty : Set where
+
+record unit : Set where
+ constructor *
+
+data eq-result {A : Set} (x : A) : (y : A) -> Set where
+ is-equal : eq-result x x
+ not-equal : ∀ {y} -> eq-result x y
+
+-- Contexts are lists of types
 data ctx (A : Set) : Set where
  ⊡ : ctx A
  _,_ : (Γ : ctx A) -> (T : A) -> ctx A
@@ -9,13 +26,8 @@ data var {A : Set} : (Γ : ctx A) -> A -> Set where
  top : ∀ {Γ T} -> var (Γ , T) T
  pop : ∀ {Γ S T} -> var Γ T -> var (Γ , S) T
 
-record unit : Set where
- constructor *
-
-data eq-result {A : Set} (x : A) : (y : A) -> Set where
- is-equal : eq-result x x
- not-equal : ∀ {y} -> eq-result x y
-
+-- We have some unspecified bunch of atomic types
+-- We need to be able to test them for equality
 postulate
  atomic-type : Set
  atomic-eq? : (P Q : atomic-type) -> eq-result P Q
@@ -25,6 +37,7 @@ data type : Set where
  _∧_ _∨_ _⊃_ : (A B : type) -> type
  ⊤ ⊥ : type
 
+-- We can decide whether or not two types are equal
 eq? : (A B : type) -> eq-result A B
 eq? (▹ P) (▹ Q) with atomic-eq? P Q
 eq? (▹ P) (▹ .P) | is-equal = is-equal
@@ -42,6 +55,7 @@ eq? ⊤ ⊤ = is-equal
 eq? ⊥ ⊥ = is-equal
 eq? _ _ = not-equal
 
+-- Our grammar. Maintains well-scopedness
 mutual
  -- Well-scoped de Bruijn indices. ctx unit is essentially nat
  data neut (Γ : ctx unit) : Set where
@@ -63,6 +77,7 @@ mutual
 ⌞ ⊡ ⌟ = ⊡
 ⌞ Γ , T ⌟ = ⌞ Γ ⌟ , *
 
+-- We can look up a variable in a context to get a type
 lookup : ∀ Γ -> var ⌞ Γ ⌟ * -> type
 lookup ⊡ ()
 lookup (Γ , T) top = T
@@ -70,6 +85,7 @@ lookup (Γ , T) (pop x) = lookup Γ x
 
 infix 40 _,_
 
+-- Let's produce typing derivations as output
 mutual
  data _⊢_∶_↓ (Γ : ctx type) : (E : neut ⌞ Γ ⌟) (A : type) -> Set where
   ▹ : ∀ {A} (x : var ⌞ Γ ⌟ A)
@@ -111,14 +127,6 @@ mutual
                -> -----------------
                    Γ ⊢ (▸ E) ∶ A ⇑
 
-record Σ {A : Set} (B : A -> Set) : Set where
- constructor _,_
- field
-  first : A
-  second : B first
-
-data empty : Set where
-
 data infer-result Γ E : Set where
  yep : ∀ A -> Γ ⊢ E ∶ A ↓ -> infer-result Γ E
  nope : infer-result Γ E
@@ -131,47 +139,47 @@ mutual
  infer : ∀ Γ E -> infer-result Γ E
  infer Γ (▹ x) = yep (lookup Γ x) (▹ x)
  infer Γ (E · I) with infer Γ E
- infer Γ (E · I) | yep (A ⊃ B) D with check Γ I A
- infer Γ (E · I) | yep (A ⊃ B) D | yep F = yep B (⊃E D F)
- infer Γ (E · I) | yep (A ⊃ B) D | nope = nope
+ ... | yep (A ⊃ B) D with check Γ I A
+ ... | yep F = yep B (⊃E D F)
+ ... | nope  = nope
  infer Γ (E · I) | _ = nope
  infer Γ (fst E) with infer Γ E
- infer Γ (fst E) | yep (A ∧ B) D = yep A (∧E₁ D)
- infer Γ (fst E) | _ = nope
+ ... | yep (A ∧ B) D = yep A (∧E₁ D)
+ ... | _             = nope
  infer Γ (snd E) with infer Γ E
- infer Γ (snd E) | yep (A ∧ B) D = yep B (∧E₂ D)
- infer Γ (snd E) | _ = nope
+ ... | yep (A ∧ B) D = yep B (∧E₂ D)
+ ... | _             = nope
  infer Γ [ I ∶ A ] with check Γ I A
- infer Γ [ I ∶ A ] | yep D = yep A (⇑↓ D)
- infer Γ [ I ∶ A ] | nope = nope
+ ... | yep D = yep A (⇑↓ D)
+ ... | nope  = nope
 
  check : ∀ Γ I A -> check-result Γ I A
  check Γ 〈 I₁ , I₂ 〉 (A ∧ B) with check Γ I₁ A | check Γ I₂ B
- check Γ 〈 I₁ , I₂ 〉 (A ∧ B) | yep D₁ | yep D₂ = yep (∧I D₁ D₂)
- check Γ 〈 I₁ , I₂ 〉 (A ∧ B) | _ | _ = nope
+ ... | yep D₁ | yep D₂ = yep (∧I D₁ D₂)
+ ... | _ | _           = nope
  check Γ 〈 I₁ , I₂ 〉 _ = nope
  check Γ (ƛ I) (A ⊃ B) with check (Γ , A) I B
- check Γ (ƛ I) (A ⊃ B) | yep D = yep (⊃I D)
- check Γ (ƛ I) (A ⊃ B) | nope = nope 
+ ... | yep D = yep (⊃I D)
+ ... | nope  = nope 
  check Γ (ƛ I) _ = nope
  check Γ (inl I) (A ∨ B) with check Γ I A
- check Γ (inl I) (A ∨ B) | yep D = yep (∨I₁ D)
- check Γ (inl I) (A ∨ B) | nope = nope
+ ... | yep D = yep (∨I₁ D)
+ ... | nope  = nope
  check Γ (inl I) _ = nope
  check Γ (inr I) (A ∨ B) with check Γ I B
- check Γ (inr I) (A ∨ B) | yep D = yep (∨I₂ D)
- check Γ (inr I) (A ∨ B) | nope = nope
+ ... | yep D = yep (∨I₂ D)
+ ... | nope  = nope
  check Γ (inr I) _ = nope
  check Γ (case E of-inl=> I₁ |inr=> I₂) C with infer Γ E
- check Γ (case E of-inl=> I₁ |inr=> I₂) C | yep (A ∨ B) D with check (Γ , A) I₁ C | check (Γ , B) I₂ C
- check Γ (case E of-inl=> I₁ |inr=> I₂) C | yep (A ∨ B) D | yep D₁ | yep D₂ = yep (∨E D D₁ D₂)
- check Γ (case E of-inl=> I₁ |inr=> I₂) C | yep (A ∨ B) D | _ | _ = nope
+ ... | yep (A ∨ B) D with check (Γ , A) I₁ C | check (Γ , B) I₂ C
+ ... | yep D₁ | yep D₂ = yep (∨E D D₁ D₂)
+ ... | _ | _           = nope
  check Γ (case E of-inl=> I₁ |inr=> I₂) C | _ = nope
  check Γ 〈〉 ⊤ = yep ⊤I
  check Γ 〈〉 _ = nope
  check Γ (abort E) C with infer Γ E
- check Γ (abort E) C | yep ⊥ D = yep (⊥E D)
- check Γ (abort E) C | _ = nope
+ ... | yep ⊥ D = yep (⊥E D)
+ ... | _       = nope
  check Γ (▸ E) A with infer Γ E
  check Γ (▸ E) A | yep A' D with eq? A A'
  check Γ (▸ E) A | yep .A D | is-equal = yep (↓⇑ D)
