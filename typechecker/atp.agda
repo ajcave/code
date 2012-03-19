@@ -43,7 +43,7 @@ eq? ⊥ ⊥ = is-equal
 eq? _ _ = not-equal
 
 mutual
- -- Well-scoped de Bruijn indices
+ -- Well-scoped de Bruijn indices. ctx unit is essentially nat
  data neut (Γ : ctx unit) : Set where
   ▹ : (x : var Γ *) -> neut Γ -- variables are neutral
   _·_ : (E : neut Γ) (I : norm Γ) -> neut Γ -- application
@@ -126,7 +126,6 @@ data infer-result Γ E : Set where
 data check-result Γ I A : Set where
  yep : Γ ⊢ I ∶ A ⇑ -> check-result Γ I A
  nope : check-result Γ I A
-
 
 mutual
  infer : ∀ Γ E -> infer-result Γ E
