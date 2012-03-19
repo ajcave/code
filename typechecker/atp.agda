@@ -85,7 +85,7 @@ lookup (Γ , T) (pop x) = lookup Γ x
 
 infix 40 _,_
 
--- Let's produce typing derivations as output
+-- Let's produce typing derivations as output so I don't get it wrong
 mutual
  data _⊢_∶_↓ (Γ : ctx type) : (E : neut ⌞ Γ ⌟) (A : type) -> Set where
   ▹ : ∀ {A} (x : var ⌞ Γ ⌟ A)
