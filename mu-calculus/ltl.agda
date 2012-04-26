@@ -212,7 +212,7 @@ mutual
  [_]va σ (next M) = next ([ σ ]va M)
  [_]va σ (shift M) = {!!}
  [_]va σ (let-box M N) = let-box ([ σ ]va M) {!!}
- [_]va σ (box M N P) = {!!}
+ [_]va σ (box M N P) = box {!!} {!!} {!!}
  [_]va σ (dia-rec M N P) = {!!}
  [_]va σ (dia-now M) = dia-now ([ σ ]va M)
  [_]va σ (dia-next M) = {!!}
