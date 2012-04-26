@@ -12,11 +12,11 @@ postulate
  compare : (x y : A) -> order x y
 
 data SList : A -> Set where
- nil : ∀ {b} -> SList b
- cons : (x : A) -> {b : A} -> b ≤ x -> SList x -> SList b
+ • : ∀ {b} -> SList b
+ _≤[_]_ : (x : A) -> {b : A} -> b ≤ x -> SList x -> SList b
 
 insert : (x : A) -> {b : A} -> b ≤ x -> SList b -> SList b
-insert x w nil = cons _ w nil
-insert x w (cons y w' ys) with compare x y
-insert x w (cons y w' ys) | le w1 = cons x w (cons y w1 ys)
-insert x w (cons y w' ys) | ge w2 = cons y w' (insert x w2 ys)
+insert x w • = x ≤[ w ] •
+insert x w (y ≤[ u ] ys) with compare x y
+insert x w (y ≤[ u ] ys) | le v = x ≤[ w ] (y ≤[ v ] ys)
+insert x w (y ≤[ u ] ys) | ge v = y ≤[ u ] (insert x v ys)
