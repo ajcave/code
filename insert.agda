@@ -9,7 +9,7 @@ data order (x y : A) : Set where
  ge : y ≤ x -> order x y
 
 postulate
- dec : (x y : A) -> order x y
+ compare : (x y : A) -> order x y
 
 data SList : A -> Set where
  nil : ∀ {b} -> SList b
@@ -17,6 +17,6 @@ data SList : A -> Set where
 
 insert : ∀ {x b} -> b ≤ x -> SList b -> SList b
 insert w nil = cons w nil
-insert {x} w (cons {y2} w' ys) with dec x y2
+insert {x} w (cons {y2} w' ys) with compare x y2
 insert w (cons {y2} w' ys) | le w1 = cons w (cons w1 ys)
 insert w (cons {y2} w' ys) | ge w2 = cons w' (insert w2 ys) 
