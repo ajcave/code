@@ -13,10 +13,10 @@ postulate
 
 data SList : A -> Set where
  nil : ∀ {b} -> SList b
- cons : ∀ {x b} -> b ≤ x -> SList x -> SList b
+ cons : (x : A) -> {b : A} -> b ≤ x -> SList x -> SList b
 
-insert : ∀ {x b} -> b ≤ x -> SList b -> SList b
-insert w nil = cons w nil
-insert {x} w (cons {y2} w' ys) with compare x y2
-insert w (cons {y2} w' ys) | le w1 = cons w (cons w1 ys)
-insert w (cons {y2} w' ys) | ge w2 = cons w' (insert w2 ys)
+insert : (x : A) -> {b : A} -> b ≤ x -> SList b -> SList b
+insert x w nil = cons _ w nil
+insert x w (cons y w' ys) with compare x y
+insert x w (cons y w' ys) | le w1 = cons x w (cons y w1 ys)
+insert x w (cons y w' ys) | ge w2 = cons y w' (insert x w2 ys)
