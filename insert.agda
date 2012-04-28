@@ -13,40 +13,36 @@ postulate
 
 data SList : A -> Set where
  • : ∀ {b} -> SList b
- _≤[_]_ : (x : A) -> {b : A} -> b ≤ x -> SList x -> SList b
+ _≤_[_],_ : (b x : A) -> b ≤ x -> SList x -> SList b
 
-insert : (x : A) -> {b : A} -> b ≤ x -> SList b -> SList b
-insert x w • = x ≤[ w ] •
-insert x w (y ≤[ u ] ys) with compare x y
-insert x w (y ≤[ u ] ys) | le v = x ≤[ w ] (y ≤[ v ] ys)
-insert x w (y ≤[ u ] ys) | ge v = y ≤[ u ] (insert x v ys)
+insert : (b x : A) -> b ≤ x -> SList b -> SList b
+insert b x u • = b ≤ x [ u ], •
+insert b x u (.b ≤ y [ v ], ys) with compare x y
+insert b x u (.b ≤ y [ v ], ys) | le w = b ≤ x [ u ], (x ≤ y [ w ], ys)
+insert b x u (.b ≤ y [ v ], ys) | ge w = b ≤ y [ v ], (insert y x w ys)
 
-insert'  : (x : A) -> {b : A} -> b ≤ x -> SList b -> SList b
-insert' x w • = x ≤[ {!!} ] •
-insert' x w (x' ≤[ y ] y') = {!!}
+min : (x y : A) -> A
+min x y with compare x y
+min x y | le _ = x
+min x y | ge _ = y
 
-data SList2 : A -> Set where
- • : ∀ {b} -> SList2 b
- _≤_[_]≤_ : (b : A) -> (x : A) -> b ≤ x -> SList2 x -> SList2 b
+insert' : (b x : A) -> SList b -> SList (min b x)
+insert' b x xs with compare b x
+insert' b x xs | le u = insert b x u xs
+insert' b x xs | ge u = x ≤ b [ u ], xs
 
-insert''  : {b : A} -> (x : A) -> b ≤ x -> SList2 b -> SList2 b
-insert'' x w • = _ ≤ x [ w ]≤ •
-insert'' x w (b ≤ y [ u ]≤ ys) with compare x y
-insert'' x w (b ≤ y [ u ]≤ ys) | le v = b ≤ x [ w ]≤ (x ≤ y [ v ]≤ ys)
-insert'' x w (b ≤ y [ u ]≤ ys) | ge v = b ≤ y [ u ]≤ insert'' x v ys
+record Σ {A : Set} (B : A -> Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B fst
 
-data Nat : Set where 
- z : Nat
- s : Nat -> Nat
+data List (A : Set) : Set where
+ • : List A
+ _,_ : A -> List A -> List A
 
-data SList3 : Nat -> A -> Set where
- • : ∀ {b} -> SList3 z b
- _≤_[_]≤_ : {n : Nat} -> (b : A) -> (x : A) -> b ≤ x -> SList3 n x -> SList3 (s n) b
+insertionSort : List A -> Σ (λ b -> SList b)
+insertionSort • = {!!} , •
+insertionSort (x , xs) with insertionSort xs
+insertionSort (x , xs) | b , ys = min b x , (insert' b x ys)
 
--- Can do this with auto!
-insert'''  : {n : Nat} {b : A} -> (x : A) -> b ≤ x -> SList3 n b -> SList3 (s n) b
-insert''' x w • = _ ≤ x [ w ]≤ •
-insert''' x w (b ≤ x' [ y ]≤ y') with compare x x'
-insert''' x w (b ≤ x' [ y' ]≤ y0) | le y = b ≤ x [ w ]≤ (x ≤ x' [ y ]≤ y0)
-insert''' x w (b ≤ x' [ y' ]≤ y0) | ge y with insert''' x y y0
-... | q = b ≤ x' [ y' ]≤ q
