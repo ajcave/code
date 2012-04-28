@@ -45,4 +45,3 @@ insertionSort : List A -> Σ (λ b -> SList b)
 insertionSort • = {!!} , •
 insertionSort (x , xs) with insertionSort xs
 insertionSort (x , xs) | b , ys = min b x , (insert' b x ys)
-
