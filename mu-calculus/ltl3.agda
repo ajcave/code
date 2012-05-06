@@ -173,7 +173,7 @@ mutual
  [_]ts σ ⊡ = ⊡
  [_]ts σ (σ' , M) = ([ σ ]ts σ') , ([ σ ]t M)
 
-{-
+
 mutual
  [_]n : ∀ {Δ θ1 θ2 Γ A J} -> Δ , ⊡ , θ2 ⊩ θ1 - true -> Δ , θ1 , Γ ⊢ A - J -> Δ , θ2 , Γ ⊢ A - J
  [_]n σ (▹ x) = ▹ x
@@ -184,13 +184,15 @@ mutual
  [_]n σ (let-box M N) = let-box ([ σ ]n M) ([ sub-map [ wkn-vsub ]vav σ ]n N)
  [_]n σ (box M N P) = box ([ σ ]ns M) N P
  [_]n σ (dia-rec M N P) = dia-rec ([ σ ]n M) N P
- [_]n σ (dia-now M) = dia-now ([ σ ]n M)
- [_]n σ (dia-next M) = dia-next ([ σ ]t M) --!
+ [_]n σ (dia M) = dia ([ σ ]n M)
+ [_]n σ (poss-now M) = poss-now ([ σ ]n M)
+ [_]n σ (poss-next M) = poss-next ([ σ ]t M) --!
 
  [_]ns : ∀ {Δ θ1 θ2 Γ A J} -> Δ , ⊡ , θ2 ⊩ θ1 - true -> Δ , θ1 , Γ ⊩ A - J -> Δ , θ2 , Γ ⊩ A - J
  [_]ns σ ⊡ = ⊡
  [_]ns σ (σ' , M) = ([ σ ]ns σ') , ([ σ ]n M)
- 
+
+
 〈_/x〉 : ∀ {Δ θ Γ A B J} -> Δ , θ , Γ ⊢ A - next ->  Δ , (θ , A) , Γ ⊢ B - J -> Δ , θ , Γ ⊢ B - J
 〈_/x〉 (let-next M N) N' = let-next M (〈 N /x〉 ([ (wkn (wkn-vsub)) , top ]nv N'))
 〈_/x〉 (shift M) N = [ truesub-id , M ]n N
@@ -222,9 +224,10 @@ mutual
  [_]va σ (let-box M N) = let-box ([ σ ]va M) {!!}
  [_]va σ (box M N P) = box {!!} {!!} {!!}
  [_]va σ (dia-rec M N P) = {!!}
- [_]va σ (dia-now M) = dia-now ([ σ ]va M)
- [_]va σ (dia-next M) = {!!}
+ [_]va σ (dia M) = dia ([ σ ]va M)
+ [_]va σ (poss-now M) = poss-now ([ σ ]va M)
+ [_]va σ (poss-next M) = {!!}
 
  [_]vas : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
  [_]vas σ ⊡ = ⊡
- [_]vas σ (σ' , M) = ([ σ ]vas σ') , ([ σ ]va M) -}
+ [_]vas σ (σ' , M) = ([ σ ]vas σ') , ([ σ ]va M)
