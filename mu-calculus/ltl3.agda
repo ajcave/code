@@ -239,7 +239,7 @@ mutual
  [_]va σ (poss-now M) = poss-now ([ σ ]va M)
  [_]va σ (poss-next M) = {!!} -- This is precisely the lemma we want. Hmm if we did it in the original dia next implies dia now
 -- style (but didn't force the shift to be early) then we could save ourselves work, actually. Just need the "next" lemma,
--- not the "poss" one
+-- not the "poss" one. I think this is just because it's part way towards "just use fixpoints", which saves a lot of work
 
  [_]vas : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
  [_]vas σ ⊡ = ⊡
