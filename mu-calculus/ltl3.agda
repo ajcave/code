@@ -224,7 +224,6 @@ wkn-validsub2 σ = sub-map wkn-unfold σ
 validsub-ext : ∀ {Δ1 Δ2 θ Γ A} -> validsub Δ1 Δ2 θ Γ -> validsub (Δ1 , A) (Δ2 , A) θ Γ
 validsub-ext σ = wkn-validsub2 σ , unfold-top 
 
--- Do a big simultaneous subst for Δ, θ, and Γ all at the same time to achieve weakening stuff?
 mutual
  [_]va : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊢ A - J -> Δ2 , θ , Γ ⊢ A - J
  [_]va σ (▹ x) = ▹ x
@@ -232,13 +231,15 @@ mutual
  [_]va σ (▻ u) | rule Γ' σ' M _ = [ σ' ]t ([ ⊡ ]n M)
  [_]va σ (let-next M N) = let-next ([ σ ]va M) ([ wkn-validsub1 σ ]va N)
  [_]va σ (next M) = next ([ σ ]va M)
- [_]va σ (shift M) = {!!}
+ [_]va σ (shift M) = {!!} -- This is pretty much precisely the lemma we want
  [_]va σ (let-box M N) = let-box ([ σ ]va M) ([ validsub-ext σ ]va N)
  [_]va σ (box M N P) = box {!!} {!!} {!!}
  [_]va σ (dia-rec M N P) = {!!}
  [_]va σ (dia M) = dia ([ σ ]va M)
  [_]va σ (poss-now M) = poss-now ([ σ ]va M)
- [_]va σ (poss-next M) = {!!}
+ [_]va σ (poss-next M) = {!!} -- This is precisely the lemma we want. Hmm if we did it in the original dia next implies dia now
+-- style (but didn't force the shift to be early) then we could save ourselves work, actually. Just need the "next" lemma,
+-- not the "poss" one
 
  [_]vas : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
  [_]vas σ ⊡ = ⊡
