@@ -75,7 +75,7 @@ mutual
   let-box : ∀ {A C J} (M : Δ , θ , Γ ⊢ (□ A) - true) (N : (Δ , A) , θ , Γ ⊢ C - J)
                    -> ---------------------------------------------------------------
                                            Δ , θ , Γ ⊢ C - J
-  box : ∀ {A Γ'} (M : Δ , θ , Γ ⊩ Γ' - true) (N : Δ , ⊡ , Γ' ⊢ A - true) (P : Δ , ⊡ , Γ' ⊩ Γ' - next)
+  box : ∀ {A Γ'} (ρ : Δ , θ , Γ ⊩ Γ' - true) (M : Δ , ⊡ , Γ' ⊢ A - true) (ρ' : Δ , ⊡ , Γ' ⊩ Γ' - next)
               -> -------------------------------------------------------------------------------------
                                            Δ , θ , Γ ⊢ (□ A) - true
   dia-rec : ∀ {A C} (M : Δ , θ , Γ ⊢ (◇ A) - true) (N : Δ , ⊡ , (⊡ , A) ⊢ C - true) (P : Δ , (⊡ , C) , ⊡ ⊢ C - true)
@@ -94,7 +94,7 @@ mutual
  _,_,_⊩_-_ : (Δ : ctx type) (θ : ctx type) (Γ : ctx type) (Γ' : ctx type) -> judgement -> Set
  Δ , θ , Γ ⊩ Γ' - J = sub (λ A → Δ , θ , Γ ⊢ A - J) Γ'
 
-{-mutual
+mutual
  [_]tv : ∀ {Δ θ Γ1 Γ2 A J} -> vsub Γ2 Γ1 -> Δ , θ , Γ1 ⊢ A - J -> Δ , θ , Γ2 ⊢ A - J
  [_]tv σ (▹ x) = ▹ ([ σ ]v x)
  [_]tv σ (▻ u) = ▻ u
@@ -104,8 +104,9 @@ mutual
  [_]tv σ (let-box M N) = let-box ([ σ ]tv M) ([ σ ]tv N)
  [_]tv σ (box M N P) = box ([ σ ]tvs M) N P
  [_]tv σ (dia-rec M N P) = dia-rec ([ σ ]tv M) N P
- [_]tv σ (dia-now M) = dia-now ([ σ ]tv M)
- [_]tv σ (dia-next M) = dia-next M
+ [_]tv σ (dia M) = dia ([ σ ]tv M)
+ [_]tv σ (poss-now M) = poss-now ([ σ ]tv M)
+ [_]tv σ (poss-next M) = poss-next M
 
  [_]tvs : ∀ {Δ θ Γ1 Γ2 Γ' J} -> vsub Γ2 Γ1 -> Δ , θ , Γ1 ⊩ Γ' - J -> Δ , θ , Γ2 ⊩ Γ' - J
  [_]tvs σ ⊡ = ⊡
@@ -119,11 +120,12 @@ mutual
  [_]nv σ (next M) = next ([ σ ]nv M)
  [_]nv σ (shift M) = shift ([ σ ]tv M)
  [_]nv σ (let-box M N) = let-box ([ σ ]nv M) ([ σ ]nv N)
- [_]nv σ (box M N P) = box ([ σ ]nvs M) N P
+ [_]nv σ (box ρ M ρ') = box ([ σ ]nvs ρ) M ρ'
  [_]nv σ (dia-rec M N P) = dia-rec ([ σ ]nv M) N P
- [_]nv σ (dia-now M) = dia-now ([ σ ]nv M)
- [_]nv σ (dia-next M) = dia-next ([ σ ]tv M)
-
+ [_]nv σ (dia M) = dia ([ σ ]nv M)
+ [_]nv σ (poss-now M) = poss-now ([ σ ]nv M)
+ [_]nv σ (poss-next M) = poss-next ([ σ ]tv M)
+ 
  [_]nvs : ∀ {Δ θ1 θ2 Γ A J} -> vsub θ2 θ1 -> Δ , θ1 , Γ ⊩ A - J -> Δ , θ2 , Γ ⊩ A - J
  [_]nvs σ ⊡ = ⊡
  [_]nvs σ (σ' , M) = ([ σ ]nvs σ') , ([ σ ]nv M)
@@ -136,10 +138,11 @@ mutual
  [_]vav σ (next M) = next ([ σ ]vav M)
  [_]vav σ (shift M) = shift ([ σ ]vav M)
  [_]vav σ (let-box M N) = let-box ([ σ ]vav M) ([ vsub-ext σ ]vav N)
- [_]vav σ (box M N P) = box ([ σ ]vavs M) ([ σ ]vav N) ([ σ ]vavs P)
+ [_]vav σ (box ρ M ρ') = box ([ σ ]vavs ρ) ([ σ ]vav M) ([ σ ]vavs ρ')
  [_]vav σ (dia-rec M N P) = dia-rec ([ σ ]vav M) ([ σ ]vav N) ([ σ ]vav P)
- [_]vav σ (dia-now M) = dia-now ([ σ ]vav M)
- [_]vav σ (dia-next M) = dia-next ([ σ ]vav M)
+ [_]vav σ (dia M) = dia ([ σ ]vav M)
+ [_]vav σ (poss-now M) = poss-now ([ σ ]vav M)
+ [_]vav σ (poss-next M) = poss-next ([ σ ]vav M)
 
  [_]vavs : ∀ {Δ1 Δ2 θ Γ A J} -> vsub Δ2 Δ1 -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
  [_]vavs σ ⊡ = ⊡
@@ -162,13 +165,15 @@ mutual
  [_]t σ (let-box M N) = let-box ([ σ ]t M) ([ sub-map [ wkn-vsub ]vav σ ]t N)
  [_]t σ (box M N P) = box ([ σ ]ts M) N P
  [_]t σ (dia-rec M N P) = dia-rec ([ σ ]t M) N P
- [_]t σ (dia-now M) = dia-now ([ σ ]t M)
- [_]t σ (dia-next M) = dia-next M
+ [_]t σ (dia M) = dia ([ σ ]t M)
+ [_]t σ (poss-now M) = poss-now ([ σ ]t M)
+ [_]t σ (poss-next M) = poss-next M
 
  [_]ts : ∀ {Δ θ Γ1 Γ2 Γ' J} -> Δ , θ , Γ2 ⊩ Γ1 - true -> Δ , θ , Γ1 ⊩ Γ' - J -> Δ , θ , Γ2 ⊩ Γ' - J
  [_]ts σ ⊡ = ⊡
  [_]ts σ (σ' , M) = ([ σ ]ts σ') , ([ σ ]t M)
 
+{-
 mutual
  [_]n : ∀ {Δ θ1 θ2 Γ A J} -> Δ , ⊡ , θ2 ⊩ θ1 - true -> Δ , θ1 , Γ ⊢ A - J -> Δ , θ2 , Γ ⊢ A - J
  [_]n σ (▹ x) = ▹ x
