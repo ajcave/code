@@ -48,7 +48,7 @@ data type : Set where
  ⊤ ⊥ : type
 
 data judgement : Set where
- true next : judgement
+ true next poss : judgement
 
 -- Try the system without Δ, so the other elim rule.
 -- I think we can have atomic init rule for this system, but not for the one without Δ
@@ -81,12 +81,15 @@ mutual
   dia-rec : ∀ {A C} (M : Δ , θ , Γ ⊢ (◇ A) - true) (N : Δ , ⊡ , (⊡ , A) ⊢ C - true) (P : Δ , (⊡ , C) , ⊡ ⊢ C - true)
                  -> ------------------------------------------------------------------------------------------------
                                            Δ , θ , Γ ⊢ C - true
-  dia-now : ∀ {A} (M : Δ , θ , Γ ⊢ A - true)
+  dia : ∀ {A} (M : Δ , θ , Γ ⊢ A - poss)
                -> --------------------------
-                    Δ , θ , Γ ⊢ (◇ A) - true
-  dia-next : ∀ {A} (M : Δ , ⊡ , θ ⊢ (◇ A) - true)
+                   Δ , θ , Γ ⊢ (◇ A) - true
+  poss-now : ∀ {A} (M : Δ , θ , Γ ⊢ A - true)
+               -> --------------------------
+                        Δ , θ , Γ ⊢ A - poss
+  poss-next : ∀ {A} (M : Δ , ⊡ , θ ⊢ A - poss)
                -> -------------------------------
-                    Δ , θ , Γ ⊢ (◇ A) - true
+                    Δ , θ , Γ ⊢ A - poss
   
  _,_,_⊩_-_ : (Δ : ctx type) (θ : ctx type) (Γ : ctx type) (Γ' : ctx type) -> judgement -> Set
  Δ , θ , Γ ⊩ Γ' - J = sub (λ A → Δ , θ , Γ ⊢ A - J) Γ'
