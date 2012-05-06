@@ -221,7 +221,7 @@ mutual
  [_]va σ (let-next M N) = let-next ([ σ ]va M) ([ wkn-validsub1 σ ]va N)
  [_]va σ (next M) = next ([ σ ]va M)
  [_]va σ (shift M) = {!!}
- [_]va σ (let-box M N) = let-box ([ σ ]va M) {!!}
+ [_]va σ (let-box M N) = let-box ([ σ ]va M) ([ sub-map (λ x → rule (unfold.Γ' x) (sub-map [ wkn-vsub ]vav (unfold.start x)) ([ wkn-vsub ]vav (unfold.conseq x)) (sub-map [ wkn-vsub ]vav (unfold.preserve x))) σ , rule (⊡ , _) (⊡ , ▻ top) (▻ top) (⊡ , (shift (▻ top))) ]va N)
  [_]va σ (box M N P) = box {!!} {!!} {!!}
  [_]va σ (dia-rec M N P) = {!!}
  [_]va σ (dia M) = dia ([ σ ]va M)
