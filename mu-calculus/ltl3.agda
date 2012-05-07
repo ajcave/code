@@ -4,6 +4,10 @@ data ctx (A : Set) : Set where
  ⊡ : ctx A
  _,_ : (Γ : ctx A) -> (T : A) -> ctx A
 
+_<<_ : ∀ {A : Set} -> ctx A -> ctx A -> ctx A
+Γ1 << ⊡ = Γ1
+Γ1 << (Γ , T) = (Γ1 , T) << Γ
+
 data var {A : Set} : (Γ : ctx A) -> A -> Set where
  top : ∀ {Γ T} -> var (Γ , T) T
  pop : ∀ {Γ S T} -> var Γ T -> var (Γ , S) T
@@ -75,7 +79,7 @@ mutual
   let-box : ∀ {A C J} (M : Δ , θ , Γ ⊢ (□ A) - true) (N : (Δ , A) , θ , Γ ⊢ C - J)
                    -> ---------------------------------------------------------------
                                            Δ , θ , Γ ⊢ C - J
-  box : ∀ {A Γ'} (ρ : Δ , θ , Γ ⊩ Γ' - true) (M : Δ , ⊡ , Γ' ⊢ A - true) (ρ' : Δ , ⊡ , Γ' ⊩ Γ' - next)
+  box : ∀ {A Γ'} (ρ : Δ , θ , Γ ⊢ Γ' - true) (M : Δ , ⊡ , (⊡ , Γ') ⊢ A - true) (ρ' : Δ , ⊡ , (⊡ , Γ') ⊢ Γ' - next)
               -> -------------------------------------------------------------------------------------
                                            Δ , θ , Γ ⊢ (□ A) - true
   dia-rec : ∀ {A C} (M : Δ , θ , Γ ⊢ (◇ A) - true) (N : Δ , ⊡ , (⊡ , A) ⊢ C - true) (P : Δ , (⊡ , C) , ⊡ ⊢ C - true)
@@ -102,7 +106,7 @@ mutual
  [_]tv σ (next M) = next ([ σ ]tv M)
  [_]tv σ (shift M) = shift M
  [_]tv σ (let-box M N) = let-box ([ σ ]tv M) ([ σ ]tv N)
- [_]tv σ (box M N P) = box ([ σ ]tvs M) N P
+ [_]tv σ (box M N P) = box ([ σ ]tv M) N P
  [_]tv σ (dia-rec M N P) = dia-rec ([ σ ]tv M) N P
  [_]tv σ (dia M) = dia ([ σ ]tv M)
  [_]tv σ (poss-now M) = poss-now ([ σ ]tv M)
@@ -120,7 +124,7 @@ mutual
  [_]nv σ (next M) = next ([ σ ]nv M)
  [_]nv σ (shift M) = shift ([ σ ]tv M)
  [_]nv σ (let-box M N) = let-box ([ σ ]nv M) ([ σ ]nv N)
- [_]nv σ (box ρ M ρ') = box ([ σ ]nvs ρ) M ρ'
+ [_]nv σ (box ρ M ρ') = box ([ σ ]nv ρ) M ρ'
  [_]nv σ (dia-rec M N P) = dia-rec ([ σ ]nv M) N P
  [_]nv σ (dia M) = dia ([ σ ]nv M)
  [_]nv σ (poss-now M) = poss-now ([ σ ]nv M)
@@ -138,7 +142,7 @@ mutual
  [_]vav σ (next M) = next ([ σ ]vav M)
  [_]vav σ (shift M) = shift ([ σ ]vav M)
  [_]vav σ (let-box M N) = let-box ([ σ ]vav M) ([ vsub-ext σ ]vav N)
- [_]vav σ (box ρ M ρ') = box ([ σ ]vavs ρ) ([ σ ]vav M) ([ σ ]vavs ρ')
+ [_]vav σ (box ρ M ρ') = box ([ σ ]vav ρ) ([ σ ]vav M) ([ σ ]vav ρ')
  [_]vav σ (dia-rec M N P) = dia-rec ([ σ ]vav M) ([ σ ]vav N) ([ σ ]vav P)
  [_]vav σ (dia M) = dia ([ σ ]vav M)
  [_]vav σ (poss-now M) = poss-now ([ σ ]vav M)
@@ -163,7 +167,7 @@ mutual
  [_]t σ (next M) = next ([ σ ]t M)
  [_]t σ (shift M) = shift M
  [_]t σ (let-box M N) = let-box ([ σ ]t M) ([ sub-map [ wkn-vsub ]vav σ ]t N)
- [_]t σ (box M N P) = box ([ σ ]ts M) N P
+ [_]t σ (box M N P) = box ([ σ ]t M) N P
  [_]t σ (dia-rec M N P) = dia-rec ([ σ ]t M) N P
  [_]t σ (dia M) = dia ([ σ ]t M)
  [_]t σ (poss-now M) = poss-now ([ σ ]t M)
@@ -182,7 +186,7 @@ mutual
  [_]n σ (next M) = next ([ σ ]n M)
  [_]n σ (shift M) = shift ([ σ ]t M) --!
  [_]n σ (let-box M N) = let-box ([ σ ]n M) ([ sub-map [ wkn-vsub ]vav σ ]n N)
- [_]n σ (box M N P) = box ([ σ ]ns M) N P
+ [_]n σ (box M N P) = box ([ σ ]n M) N P
  [_]n σ (dia-rec M N P) = dia-rec ([ σ ]n M) N P
  [_]n σ (dia M) = dia ([ σ ]n M)
  [_]n σ (poss-now M) = poss-now ([ σ ]n M)
@@ -197,6 +201,38 @@ mutual
 〈_/x〉 (let-next M N) N' = let-next M (〈 N /x〉 ([ (wkn (wkn-vsub)) , top ]nv N'))
 〈_/x〉 (shift M) N = [ truesub-id , M ]n N
 〈_/x〉 (let-box M N) N' = let-box M (〈 N /x〉 ([ wkn-vsub ]vav N'))
+
+lem : ∀ {Δ θ Γ Γ' C} -> Δ , θ , Γ ⊢ Γ' - next
+  -> (∀ Δ' θ' -> (Δ << Δ') , ⊡ , (θ << θ') ⊢ Γ' - true -> (Δ << Δ') , ⊡ , (θ << θ') ⊢ C - true)
+  -> Δ , θ , Γ ⊢ C - next
+lem (let-next M N) f = let-next M (lem N (λ Δ' θ' x → f Δ' (θ' , _) x))
+lem (shift M) f = shift (f ⊡ ⊡ M)
+lem (let-box M N) f = let-box M (lem N (λ Δ' θ' x → f (Δ' , _) θ' x ))
+
+lem2 : ∀ {Δ θ Γ Γ' C} -> Δ , θ , Γ ⊢ Γ' - next
+  -> (∀ Δ' θ' -> (Δ << Δ') , ⊡ , (θ << θ') ⊢ Γ' - true -> (Δ << Δ') , ⊡ , (θ << θ') ⊢ C - poss)
+  -> Δ , θ , Γ ⊢ C - poss
+lem2 (let-next M N) f = let-next M (lem2 N (λ Δ' θ' x → f Δ' (θ' , _) x))
+lem2 (shift M) f = poss-next (f ⊡ ⊡ M)
+lem2 (let-box M N) f = let-box M (lem2 N (λ Δ' θ' x → f (Δ' , _) θ' x))
+
+vsub1 : ∀ {Δ A θ Γ Γ' C J} Δ'
+  -> (Δ << Δ') , θ , Γ ⊢ Γ' - true
+  -> (Δ << Δ') , ⊡ , (⊡ , Γ') ⊢ A - true
+  -> (Δ << Δ') , ⊡ , (⊡ , Γ') ⊢ Γ' - next
+  -> ((Δ , A) << Δ') , θ , Γ ⊢ C - J
+  -> (Δ << Δ') , θ , Γ ⊢ C - J
+vsub1 Δ1 M N P (▹ x) = ▹ x
+vsub1 Δ1 M N P (▻ u) = {!!} -- case u is pointing to the A or not
+vsub1 Δ1 M N P (let-next M' N') = let-next (vsub1 Δ1 M N P M') (vsub1 Δ1 ([ wkn-vsub ]nv M) N P N')
+vsub1 Δ1 M N P (next M') = next (vsub1 Δ1 M N P M')
+vsub1 Δ1 M N P (shift M') = lem ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → {!!})
+vsub1 Δ1 M N P (let-box M' N') = {!!}
+vsub1 Δ1 M N P (box ρ M' ρ') = {!!}
+vsub1 Δ1 M N P (dia-rec M' N' P') = {!!}
+vsub1 Δ1 M N P (dia M') = {!!}
+vsub1 Δ1 M N P (poss-now M') = {!!}
+vsub1 Δ1 M N P (poss-next M') = {!!}
 
 record unfold (Δ θ Γ : ctx type) (A : type) : Set where
  constructor rule
