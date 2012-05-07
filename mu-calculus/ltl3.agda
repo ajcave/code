@@ -238,7 +238,7 @@ vsub1 Δ1 M N P (dia M') = dia (vsub1 Δ1 M N P M')
 vsub1 Δ1 M N P (poss-now M') = poss-now (vsub1 Δ1 M N P M')
 vsub1 Δ1 M N P (poss-next M') = lem2 ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → {!!})
 
-record unfold (Δ θ Γ : ctx type) (A : type) : Set where
+{-record unfold (Δ θ Γ : ctx type) (A : type) : Set where
  constructor rule
  field
   Γ' : ctx type
@@ -283,4 +283,4 @@ mutual
 
  [_]vas : ∀ {Δ1 Δ2 θ Γ A J} -> validsub Δ1 Δ2 θ Γ -> Δ1 , θ , Γ ⊩ A - J -> Δ2 , θ , Γ ⊩ A - J
  [_]vas σ ⊡ = ⊡
- [_]vas σ (σ' , M) = ([ σ ]vas σ') , ([ σ ]va M)
+ [_]vas σ (σ' , M) = ([ σ ]vas σ') , ([ σ ]va M) -}
