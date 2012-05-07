@@ -12,6 +12,25 @@ _<<_ : ∀ {A : Set} -> ctx A -> ctx A -> ctx A
 Γ1 << ⊡ = Γ1
 Γ1 << (Γ , T) = (Γ1 , T) << Γ
 
+data _≡_ {A : Set} (x : A) : A -> Set where
+ refl : x ≡ x
+
+trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+trans refl refl = refl
+
+sym : ∀ {A : Set} {x y : A} -> x ≡ y -> y ≡ x
+sym refl = refl
+
+cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+cong f refl = refl
+
+subst : ∀ {A : Set} (B : A -> Set) {x y : A} -> x ≡ y -> B x -> B y
+subst B refl t = t
+
+assoc : ∀ {A} (Γ1 Γ2 Γ3 : ctx A) -> ((Γ1 ++ Γ2) << Γ3) ≡ (Γ1 ++ (Γ2 << Γ3))
+assoc Γ1 Γ2 ⊡ = refl
+assoc Γ1 Γ2 (Γ , T) = assoc Γ1 (Γ2 , T) Γ
+
 data var {A : Set} : (Γ : ctx A) -> A -> Set where
  top : ∀ {Γ T} -> var (Γ , T) T
  pop : ∀ {Γ S T} -> var Γ T -> var (Γ , S) T
@@ -220,6 +239,28 @@ lem2 (let-next M N) f = let-next M (lem2 N (λ Δ' θ' x → f Δ' (θ' , _) x))
 lem2 (shift M) f = poss-next (f ⊡ ⊡ M)
 lem2 (let-box M N) f = let-box M (lem2 N (λ Δ' θ' x → f (Δ' , _) θ' x))
 
+imp<< : ∀ {A : Set} (Γ Γ' : ctx A) -> vsub (Γ << Γ') Γ
+imp<< Γ ⊡ = id-vsub
+imp<< Γ (Γ' , T) with imp<< (Γ , T) Γ'
+imp<< Γ (Γ' , T) | σ , M = σ
+
+importv : ∀ {Δ1 Δ2 θ Γ C J} Δ' -> (Δ1 ++ Δ2) , θ , Γ ⊢ C - J -> (Δ1 ++ (Δ2 << Δ')) , θ , Γ ⊢ C - J
+importv {Δ1} {Δ2} Δ' M = [ subst (λ x → sub (var x) (Δ1 ++ Δ2)) (assoc Δ1 Δ2 Δ') (imp<< (Δ1 ++ Δ2) Δ') ]vav M
+
+importvn : ∀ {Δ1 Δ2 θ Γ C J} Δ' θ' -> (Δ1 ++ Δ2) , θ , Γ ⊢ C - J -> (Δ1 ++ (Δ2 << Δ')) , (θ << θ') , Γ ⊢ C - J
+importvn Δ' θ' M = importv Δ' ([ imp<< _ θ' ]nv M)
+
+importvt : ∀ {Δ1 Δ2 θ Γ C J} Δ' Γ' -> (Δ1 ++ Δ2) , θ , Γ ⊢ C - J -> (Δ1 ++ (Δ2 << Δ')) , θ , (Γ << Γ') ⊢ C - J
+importvt Δ' Γ' M = importv Δ' ([ imp<< _ Γ' ]tv M)
+
+reassoc1 : ∀ {θ Γ C J} Δ1 Δ2 Δ3 -> (Δ1 ++ (Δ2 << Δ3)) , θ , Γ ⊢ C - J -> ((Δ1 ++ Δ2) << Δ3) , θ , Γ ⊢ C - J
+reassoc1 {θ} {Γ} {C} {J} Δ1 Δ2 Δ3 M = subst (λ x → x , θ , Γ ⊢ C - J) (sym (assoc Δ1 Δ2 Δ3)) M 
+
+reassoc2 : ∀ {θ Γ C J} Δ1 Δ2 Δ3 -> ((Δ1 ++ Δ2) << Δ3) , θ , Γ ⊢ C - J -> (Δ1 ++ (Δ2 << Δ3)) , θ , Γ ⊢ C - J
+reassoc2 {θ} {Γ} {C} {J} Δ1 Δ2 Δ3 M = subst (λ x → x , θ , Γ ⊢ C - J) (assoc Δ1 Δ2 Δ3) M
+
+-- Doesn't termination check because we make recursive calls on weakenings of terms
+-- Should terminate, but I don't want to try to convince Agda at the moment
 vsub1 : ∀ {Δ A θ Γ Γ' C J} Δ'
   -> (Δ ++ Δ') , θ , Γ ⊢ Γ' - true
   -> (Δ ++ Δ') , ⊡ , (⊡ , Γ') ⊢ A - true
@@ -230,13 +271,13 @@ vsub1 Δ1 M N P (▹ x) = ▹ x
 vsub1 Δ1 M N P (▻ u) = {!!} -- case u is pointing to the A or not
 vsub1 Δ1 M N P (let-next M' N') = let-next (vsub1 Δ1 M N P M') (vsub1 Δ1 ([ wkn-vsub ]nv M) N P N')
 vsub1 Δ1 M N P (next M') = next (vsub1 Δ1 M N P M')
-vsub1 Δ1 M N P (shift M') = lem ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → {!!})
+vsub1 Δ1 M N P (shift M') = lem ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → reassoc1 _ Δ1 Δ' (vsub1 (Δ1 << Δ') (reassoc2 _ Δ1 Δ' x) (importvn Δ' ⊡ N) (importvn Δ' ⊡ P) (importvt Δ' θ' M')))
 vsub1 Δ1 M N P (let-box M' N') = let-box (vsub1 Δ1 M N P M') (vsub1 (Δ1 , _) ([ wkn-vsub ]vav M) ([ wkn-vsub ]vav N) ([ wkn-vsub ]vav P) N')
 vsub1 Δ1 M N P (box ρ M' ρ') = box {!!} {!!} {!!} -- Need to take conjuction of invariants or both invariants here
 vsub1 Δ1 M N P (dia-rec M' N' P') = {!!} --dia-rec (vsub1 Δ1 M N P M') {!!} {!!} -- ???? This is tough!
 vsub1 Δ1 M N P (dia M') = dia (vsub1 Δ1 M N P M')
 vsub1 Δ1 M N P (poss-now M') = poss-now (vsub1 Δ1 M N P M')
-vsub1 Δ1 M N P (poss-next M') = lem2 ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → {!!})
+vsub1 Δ1 M N P (poss-next M') = lem2 ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → reassoc1 _ Δ1 Δ' (vsub1 (Δ1 << Δ') (reassoc2 _ Δ1 Δ' x) (importvn Δ' ⊡ N) (importvn Δ' ⊡ P) (importvt Δ' θ' M')))
 
 {-record unfold (Δ θ Γ : ctx type) (A : type) : Set where
  constructor rule
