@@ -4,6 +4,10 @@ data ctx (A : Set) : Set where
  ⊡ : ctx A
  _,_ : (Γ : ctx A) -> (T : A) -> ctx A
 
+_++_ : ∀ {A : Set} -> ctx A -> ctx A -> ctx A
+Γ1 ++ ⊡ = Γ1
+Γ1 ++ (Γ , T) = (Γ1 ++ Γ) , T
+
 _<<_ : ∀ {A : Set} -> ctx A -> ctx A -> ctx A
 Γ1 << ⊡ = Γ1
 Γ1 << (Γ , T) = (Γ1 , T) << Γ
@@ -217,22 +221,22 @@ lem2 (shift M) f = poss-next (f ⊡ ⊡ M)
 lem2 (let-box M N) f = let-box M (lem2 N (λ Δ' θ' x → f (Δ' , _) θ' x))
 
 vsub1 : ∀ {Δ A θ Γ Γ' C J} Δ'
-  -> (Δ << Δ') , θ , Γ ⊢ Γ' - true
-  -> (Δ << Δ') , ⊡ , (⊡ , Γ') ⊢ A - true
-  -> (Δ << Δ') , ⊡ , (⊡ , Γ') ⊢ Γ' - next
-  -> ((Δ , A) << Δ') , θ , Γ ⊢ C - J
-  -> (Δ << Δ') , θ , Γ ⊢ C - J
+  -> (Δ ++ Δ') , θ , Γ ⊢ Γ' - true
+  -> (Δ ++ Δ') , ⊡ , (⊡ , Γ') ⊢ A - true
+  -> (Δ ++ Δ') , ⊡ , (⊡ , Γ') ⊢ Γ' - next
+  -> ((Δ , A) ++ Δ') , θ , Γ ⊢ C - J
+  -> (Δ ++ Δ') , θ , Γ ⊢ C - J
 vsub1 Δ1 M N P (▹ x) = ▹ x
 vsub1 Δ1 M N P (▻ u) = {!!} -- case u is pointing to the A or not
 vsub1 Δ1 M N P (let-next M' N') = let-next (vsub1 Δ1 M N P M') (vsub1 Δ1 ([ wkn-vsub ]nv M) N P N')
 vsub1 Δ1 M N P (next M') = next (vsub1 Δ1 M N P M')
 vsub1 Δ1 M N P (shift M') = lem ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → {!!})
-vsub1 Δ1 M N P (let-box M' N') = {!!}
+vsub1 Δ1 M N P (let-box M' N') = let-box (vsub1 Δ1 M N P M') (vsub1 (Δ1 , _) ([ wkn-vsub ]vav M) ([ wkn-vsub ]vav N) ([ wkn-vsub ]vav P) N')
 vsub1 Δ1 M N P (box ρ M' ρ') = {!!}
 vsub1 Δ1 M N P (dia-rec M' N' P') = {!!}
-vsub1 Δ1 M N P (dia M') = {!!}
-vsub1 Δ1 M N P (poss-now M') = {!!}
-vsub1 Δ1 M N P (poss-next M') = {!!}
+vsub1 Δ1 M N P (dia M') = dia (vsub1 Δ1 M N P M')
+vsub1 Δ1 M N P (poss-now M') = poss-now (vsub1 Δ1 M N P M')
+vsub1 Δ1 M N P (poss-next M') = lem2 ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → {!!})
 
 record unfold (Δ θ Γ : ctx type) (A : type) : Set where
  constructor rule
