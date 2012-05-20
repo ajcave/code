@@ -225,6 +225,8 @@ sem-η M1 σ Δ' σ' s' = trans (sem-funct M1 σ σ' s') (sym (eq-sub1 (λ x' �
 sem-β : ∀ {Γ Δ T S} (M : tm (Γ , T) S) (N : tm Γ T) (σ : subst Γ Δ) -> (eval (extend (id ◦ σ) (eval σ N)) M) ≡ (eval σ ([ v ,, N ] M))
 sem-β M N σ = trans (cong1/2 eval (funext-imp (λ T → funext (λ x → {!easy(?)!}))) M) (sym (comp (v ,, N) σ M))
 
+-- If we're feeling ambitious we could try to do this without functional extensionality by defining an equivalence
+-- relation by induction on the type
 soundness : ∀ {Γ Δ T} {M1 M2 : tm Γ T} (σ : subst Γ Δ) -> M1 ≈ M2 -> (eval σ M1) ≡ (eval σ M2)
 soundness σ (v x) = refl
 soundness σ (M · N) = eq-sub2 (λ x y → x _ _ y) (soundness σ M) (soundness σ N) refl
