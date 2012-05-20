@@ -201,7 +201,7 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ (λ x -> (v (s x))) ] M · (v z)))
- η2 : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} -> ([ (λ x -> v (s x)) ] M1 · (v z)) ≈ ([ (λ x -> v (s x)) ] M2 · (v z)) -> M1 ≈ M2
+-- η2 : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} -> ([ (λ x -> v (s x)) ] M1 · (v z)) ≈ ([ (λ x -> v (s x)) ] M2 · (v z)) -> M1 ≈ M2
 
 _•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
 (σ1 • σ2) x = eval σ1 (σ2 x) 
@@ -249,17 +249,10 @@ sem-β M N σ = trans (cong1/2 eval (funext-imp (λ T → funext (λ x → {!eas
 -- relation by induction on the type
 soundness : ∀ {Γ Δ T} {M1 M2 : tm Γ T} (σ : subst Γ Δ) -> M1 ≈ M2 -> (eval σ M1) ≡ (eval σ M2)
 soundness σ (v x) = refl
-soundness σ (M · N) = eq-sub2 (λ x y → x _ _ y) (soundness σ M) (soundness σ N) refl
+soundness {Γ} {Δ} σ (M · N) = cong-app (cong-app1 (cong-app1 (soundness σ M) Δ) id) (soundness σ N)
 soundness σ (ƛ M) = funext (λ Δ → funext (λ wkn → funext (λ x → soundness _ M)))
 soundness σ (β M N) = sem-β M N σ
 soundness {Γ} {Δ} {T ⇝ S} {M1} σ (η .M1) = funext (λ Δ' → funext (λ σ' → funext (λ s' → sem-η M1 σ Δ' _ s')))
-soundness {Γ} {Δ} {T ⇝ S} {M1} {M2} σ (η2 {.T} {.S} {.M1} {.M2} H) = funext (λ Δ' → funext (λ σ' → funext (λ s' → {!!})))
- where f : ∀ {Δ'} (σ' : vsubst Δ Δ') (s' : sem Δ' T) -> eval (extend (σ' ◦ σ) s')
-                                                          ([ (λ {T'} x → v (s x)) ] M1) Δ' id s'
-                                                          ≡
-                                                          eval (extend (σ' ◦ σ) s')
-                                                          ([ (λ {T'} x → v (s x)) ] M2) Δ' id s'
-       f σ' s' = soundness (extend (σ' ◦ σ) s') H
 
 soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
 soundness' H = cong reify (soundness _ H)
