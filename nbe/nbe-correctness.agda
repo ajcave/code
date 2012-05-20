@@ -207,7 +207,7 @@ _•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1
 (σ1 • σ2) x = eval σ1 (σ2 x) 
 
 -- this is functoriality (wrap the M up in extensionality/an equivalence relation)
-comp : ∀ {Γ3 Γ1 Γ2 T} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (λ x -> eval σ2 (σ1 x)) M)
+comp : ∀ {Γ3 Γ1 Γ2 T} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
 comp σ1 σ2 (v y) = refl
 comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (comp σ1 σ2 N) refl
 comp σ1 σ2 (ƛ M) with comp (sub-ext σ1) {!!} M
