@@ -222,8 +222,7 @@ appSubstApp (ƛ M) N σ σ' = {!!}
 grar : ∀ {Γ1 Γ2 Γ3} T (M : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
  -> (appSubst T σ' (eval σ M)) ≡ (eval (σ' ◦ σ) M)
 grar T (v y) σ σ' = refl
-grar T (M · N) σ σ' with cong-app1 (cong-app1 (grar _ M σ σ') _) id | grar _ N σ σ'
-... | q1 | q2 = trans (appSubstApp M N σ σ') {!!}
+grar T (M · N) σ σ' = trans (appSubstApp M N σ σ') (cong-app (cong-app1 (cong-app1 (grar _ M σ σ') _) id) (grar _ N σ σ'))
 grar .(T ⇝ S) (ƛ {T} {S} M) σ σ' = {!easy!}
 
 sem-funct : ∀ {Γ3 Γ1 Γ2 T S} (M : tm Γ1 (T ⇝ S)) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3) (s' : sem Γ3 T)
