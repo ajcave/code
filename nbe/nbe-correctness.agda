@@ -201,6 +201,7 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ (λ x -> (v (s x))) ] M · (v z)))
+ η2 : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} -> ([ (λ x -> v (s x)) ] M1 · (v z)) ≈ ([ (λ x -> v (s x)) ] M2 · (v z)) -> M1 ≈ M2
 
 _•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
 (σ1 • σ2) x = eval σ1 (σ2 x) 
@@ -212,10 +213,23 @@ comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (
 comp σ1 σ2 (ƛ M) with comp (sub-ext σ1) {!!} M
 ... | q = funext (λ Δ → funext (λ wkn → funext (λ x → {!!})))
 
-sem-funct : ∀ {Γ1 Γ2 Γ3 T S} (M : tm Γ1 (T ⇝ S)) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3) (s' : sem Γ3 T)
+appSubstApp : ∀ {Γ1 Γ2 Γ3 T S} (M : tm Γ1 (T ⇝ S)) (N : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
+ -> (appSubst S σ' (eval σ (M · N))) ≡ ((appSubst (T ⇝ S) σ' (eval σ M)) _ id (appSubst T σ' (eval σ N)))
+appSubstApp (v y) N σ σ' = {!crap. the ones in sigma are unconstrained!}
+appSubstApp (M · N1) N2 σ σ' = {!!}
+appSubstApp (ƛ M) N σ σ' = {!!}
+
+grar : ∀ {Γ1 Γ2 Γ3} T (M : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
+ -> (appSubst T σ' (eval σ M)) ≡ (eval (σ' ◦ σ) M)
+grar T (v y) σ σ' = refl
+grar T (M · N) σ σ' with cong-app1 (cong-app1 (grar _ M σ σ') _) id | grar _ N σ σ'
+... | q1 | q2 = trans (appSubstApp M N σ σ') {!!}
+grar .(T ⇝ S) (ƛ {T} {S} M) σ σ' = {!easy!}
+
+sem-funct : ∀ {Γ3 Γ1 Γ2 T S} (M : tm Γ1 (T ⇝ S)) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3) (s' : sem Γ3 T)
  -> (eval σ M Γ3 σ' s') ≡ (eval (σ' ◦ σ) M Γ3 id s')
 sem-funct (v y) σ σ' s' = refl 
-sem-funct (M · N) σ σ' s' = {!??!}
+sem-funct {Γ3} (M · N) σ σ' s' = trans {!!} (cong-app1 (cong-app1 (cong-app1 (sem-funct M σ σ' (eval (σ' ◦ σ) N)) Γ3) id) s')
 sem-funct (ƛ y) σ σ' s' = {!easy!}
 
 sem-η : ∀ {Γ Δ T S} (M1 : tm Γ (T ⇝ S)) (σ : subst Γ Δ) Δ' (σ' : vsubst Δ Δ') (s' : sem Δ' T)
@@ -233,6 +247,13 @@ soundness σ (M · N) = eq-sub2 (λ x y → x _ _ y) (soundness σ M) (soundness
 soundness σ (ƛ M) = funext (λ Δ → funext (λ wkn → funext (λ x → soundness _ M)))
 soundness σ (β M N) = sem-β M N σ
 soundness {Γ} {Δ} {T ⇝ S} {M1} σ (η .M1) = funext (λ Δ' → funext (λ σ' → funext (λ s' → sem-η M1 σ Δ' _ s')))
+soundness {Γ} {Δ} {T ⇝ S} {M1} {M2} σ (η2 {.T} {.S} {.M1} {.M2} H) = funext (λ Δ' → funext (λ σ' → funext (λ s' → {!!})))
+ where f : ∀ {Δ'} (σ' : vsubst Δ Δ') (s' : sem Δ' T) -> eval (extend (σ' ◦ σ) s')
+                                                          ([ (λ {T'} x → v (s x)) ] M1) Δ' id s'
+                                                          ≡
+                                                          eval (extend (σ' ◦ σ) s')
+                                                          ([ (λ {T'} x → v (s x)) ] M2) Δ' id s'
+       f σ' s' = soundness (extend (σ' ◦ σ) s') H
 
 soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
 soundness' H = cong reify (soundness _ H)
