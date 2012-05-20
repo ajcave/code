@@ -225,12 +225,6 @@ grar T (v y) σ σ' = refl
 grar T (M · N) σ σ' = trans (appSubstApp M N σ σ') (cong-app (cong-app1 (cong-app1 (grar _ M σ σ') _) id) (grar _ N σ σ'))
 grar .(T ⇝ S) (ƛ {T} {S} M) σ σ' = {!easy!}
 
-sem-funct : ∀ {Γ3 Γ1 Γ2 T S} (M : tm Γ1 (T ⇝ S)) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3) (s' : sem Γ3 T)
- -> (eval σ M Γ3 σ' s') ≡ (eval (σ' ◦ σ) M Γ3 id s')
-sem-funct (v y) σ σ' s' = refl 
-sem-funct {Γ3} (M · N) σ σ' s' = trans {!!} (cong-app1 (cong-app1 (cong-app1 (sem-funct M σ σ' (eval (σ' ◦ σ) N)) Γ3) id) s')
-sem-funct (ƛ y) σ σ' s' = {!easy!}
-
 sem-η : ∀ {Γ Δ T S} (M1 : tm Γ (T ⇝ S)) (σ : subst Γ Δ) Δ' (σ' : vsubst Δ Δ') (s' : sem Δ' T)
   -> (eval σ M1 Δ' σ' s') ≡ (eval (extend (σ' ◦ σ) s') ([ (λ x -> v (s x)) ] M1) Δ' id s')
 sem-η M1 σ Δ' σ' s' = trans (cong-app1 (cong-app1 (cong-app1 (grar _ M1 σ σ') _) id) s') (sym (eq-sub1 (λ x' → x' Δ' id s') (comp (λ y → v (s y)) (extend (_ ◦ σ) s') M1) refl))
