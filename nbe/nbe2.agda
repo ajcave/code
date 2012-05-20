@@ -96,7 +96,7 @@ extend θ M (s y) = θ y
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) with eval θ M
-eval θ (M · N) | f = f id (eval θ N)
+eval θ (M · N) | f = ? --f id (eval θ N)
 eval θ (ƛ M) = λ σ → λ s → eval (extend (λ x → appSubst _ σ (θ x)) s) M
 
 --reflect : ∀ {Γ T} -> neu Γ T -> sem Γ T

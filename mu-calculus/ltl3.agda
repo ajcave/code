@@ -274,7 +274,8 @@ vsub1 Δ1 M N P (next M') = next (vsub1 Δ1 M N P M')
 vsub1 Δ1 M N P (shift M') = lem ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → reassoc1 _ Δ1 Δ' (vsub1 (Δ1 << Δ') (reassoc2 _ Δ1 Δ' x) (importvn Δ' ⊡ N) (importvn Δ' ⊡ P) (importvt Δ' θ' M')))
 vsub1 Δ1 M N P (let-box M' N') = let-box (vsub1 Δ1 M N P M') (vsub1 (Δ1 , _) ([ wkn-vsub ]vav M) ([ wkn-vsub ]vav N) ([ wkn-vsub ]vav P) N')
 vsub1 Δ1 M N P (box ρ M' ρ') = box {!!} {!!} {!!} -- Need to take conjuction of invariants or both invariants here
-vsub1 Δ1 M N P (dia-rec M' N' P') = {!!} --dia-rec (vsub1 Δ1 M N P M') {!!} {!!} -- ???? This is tough!
+vsub1 Δ1 M N P (dia-rec M' N' P') with vsub1 Δ1 M N P M' | vsub1 Δ1 {!!} {!!} {!!} N' | vsub1 Δ1 {!!} {!!} {!!} P'
+... | w1 | w2 | w3 = {! !} --dia-rec (vsub1 Δ1 M N P M') {!!} {!!} -- ???? This is tough!
 vsub1 Δ1 M N P (dia M') = dia (vsub1 Δ1 M N P M')
 vsub1 Δ1 M N P (poss-now M') = poss-now (vsub1 Δ1 M N P M')
 vsub1 Δ1 M N P (poss-next M') = lem2 ([ ⊡ , M ]t ([ ⊡ ]n P)) (λ Δ' θ' x → reassoc1 _ Δ1 Δ' (vsub1 (Δ1 << Δ') (reassoc2 _ Δ1 Δ' x) (importvn Δ' ⊡ N) (importvn Δ' ⊡ P) (importvt Δ' θ' M')))
