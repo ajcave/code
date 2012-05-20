@@ -207,11 +207,13 @@ _•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1
 (σ1 • σ2) x = eval σ1 (σ2 x) 
 
 -- this is functoriality (wrap the M up in extensionality/an equivalence relation)
-comp : ∀ {Γ3 Γ1 Γ2 T} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
+comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
 comp σ1 σ2 (v y) = refl
 comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (comp σ1 σ2 N) refl
-comp σ1 σ2 (ƛ M) with comp (sub-ext σ1) {!!} M
-... | q = funext (λ Δ → funext (λ wkn → funext (λ x → {!!})))
+comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ σ → funext (λ s' → trans (f (λ {U} -> σ {U}) s') {!!})))
+ where f : ∀ {Δ'} (σ : vsubst Γ3 Δ') (s' : sem Δ' T) -> eval (extend (σ ◦ σ2) s') ([ sub-ext σ1 ] M)
+                                                      ≡ eval (extend (σ ◦ σ2) s' • sub-ext σ1) M
+       f σ s' = comp (sub-ext σ1) (extend (σ ◦ σ2) s') M
 
 appSubstApp : ∀ {Γ1 Γ2 Γ3 T S} (M : tm Γ1 (T ⇝ S)) (N : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
  -> (appSubst S σ' (eval σ (M · N))) ≡ ((appSubst (T ⇝ S) σ' (eval σ M)) _ id (appSubst T σ' (eval σ N)))
