@@ -9,6 +9,45 @@ record _*_ (A B : Set) : Set where
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
+{-# BUILTIN EQUALITY _≡_ #-}
+{-# BUILTIN REFL refl #-}
+
+postulate
+ funext : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
+
+funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
+funext-imp H = {!!}
+
+cong-app1 : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> f ≡ g -> (x : A) -> f x ≡ g x
+cong-app1 refl x = refl
+
+cong-app : ∀ {A B : Set} {f g : A -> B} -> f ≡ g -> {x y : A} -> x ≡ y -> f x ≡ g y
+cong-app refl refl = refl 
+
+cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+cong f refl = refl
+
+cong1/2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> (z : B) -> f x z ≡ f y z
+cong1/2 f refl z = refl 
+
+eq-ind : ∀ {A} (P : A -> Set) -> {x y : A} -> x ≡ y -> P x -> P y
+eq-ind P refl t = t 
+
+eq-ind2 : ∀ {A B} (P : A -> B -> Set) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P x z -> P y w
+eq-ind2 P refl refl t = t
+
+eq-sub1 : ∀ {A C} (P : A -> C) {t} -> {x y : A} -> x ≡ y -> P y ≡ t -> P x ≡ t
+eq-sub1 P refl p = p 
+
+eq-sub2 : ∀ {A B C} (P : A -> B -> C) {t} -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P y w ≡ t -> P x z ≡ t
+eq-sub2 P refl refl p = p
+
+trans : ∀ {A} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+trans refl refl = refl
+
+sym : ∀ {A} {x y : A} -> x ≡ y -> y ≡ x
+sym refl = refl
+
 record Unit : Set where
  constructor tt
 
@@ -122,11 +161,14 @@ complete (v y) = nv y
 complete (M · N) = napp (complete M) (complete N)
 complete (ƛ M) = ƛ (complete M)
 
+_◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
+(σ ◦ θ) = λ x ->  appSubst _ σ (θ x)
+
 -- Traditional nbe
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
-eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
+eval θ (ƛ M) = λ _ σ s -> eval (extend (σ ◦ θ) s) M
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M)
@@ -158,7 +200,40 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 ≈ M2 -> N1 ≈ N2 -> (M1 · N1) ≈ (M2 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ s ]v M · (v z)))
+ η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ (λ x -> (v (s x))) ] M · (v z)))
+
+_•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
+(σ1 • σ2) x = eval σ1 (σ2 x) 
+
+-- this is functoriality (wrap the M up in extensionality/an equivalence relation)
+comp : ∀ {Γ3 Γ1 Γ2 T} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (λ x -> eval σ2 (σ1 x)) M)
+comp σ1 σ2 (v y) = refl
+comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (comp σ1 σ2 N) refl
+comp σ1 σ2 (ƛ M) with comp (sub-ext σ1) {!!} M
+... | q = funext (λ Δ → funext (λ wkn → funext (λ x → {!!})))
+
+sem-funct : ∀ {Γ1 Γ2 Γ3 T S} (M : tm Γ1 (T ⇝ S)) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3) (s' : sem Γ3 T)
+ -> (eval σ M Γ3 σ' s') ≡ (eval (σ' ◦ σ) M Γ3 id s')
+sem-funct (v y) σ σ' s' = refl 
+sem-funct (M · N) σ σ' s' = {!??!}
+sem-funct (ƛ y) σ σ' s' = {!easy!}
+
+sem-η : ∀ {Γ Δ T S} (M1 : tm Γ (T ⇝ S)) (σ : subst Γ Δ) Δ' (σ' : vsubst Δ Δ') (s' : sem Δ' T)
+  -> (eval σ M1 Δ' σ' s') ≡ (eval (extend (σ' ◦ σ) s') ([ (λ x -> v (s x)) ] M1) Δ' id s')
+sem-η M1 σ Δ' σ' s' = trans (sem-funct M1 σ σ' s') (sym (eq-sub1 (λ x' → x' Δ' id s') (comp (λ y → v (s y)) (extend (_ ◦ σ) s') M1) refl))
+
+sem-β : ∀ {Γ Δ T S} (M : tm (Γ , T) S) (N : tm Γ T) (σ : subst Γ Δ) -> (eval (extend (id ◦ σ) (eval σ N)) M) ≡ (eval σ ([ v ,, N ] M))
+sem-β M N σ = trans (cong1/2 eval (funext-imp (λ T → funext (λ x → {!easy(?)!}))) M) (sym (comp (v ,, N) σ M))
+
+soundness : ∀ {Γ Δ T} {M1 M2 : tm Γ T} (σ : subst Γ Δ) -> M1 ≈ M2 -> (eval σ M1) ≡ (eval σ M2)
+soundness σ (v x) = refl
+soundness σ (M · N) = eq-sub2 (λ x y → x _ _ y) (soundness σ M) (soundness σ N) refl
+soundness σ (ƛ M) = funext (λ Δ → funext (λ wkn → funext (λ x → soundness _ M)))
+soundness σ (β M N) = sem-β M N σ
+soundness {Γ} {Δ} {T ⇝ S} {M1} σ (η .M1) = funext (λ Δ' → funext (λ σ' → funext (λ s' → sem-η M1 σ Δ' _ s')))
+
+soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
+soundness' H = cong reify (soundness _ H)
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
