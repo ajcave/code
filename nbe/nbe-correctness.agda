@@ -206,14 +206,25 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 _•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
 (σ1 • σ2) x = eval σ1 (σ2 x) 
 
+blah : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2) {U} (x : var (Γ1 , T) U)
+ -> (((extend σ s) • (sub-ext σ')) x) ≡ (extend (σ • σ') s x)
+blah σ s' σ' z = refl
+blah σ s' σ' (s y) = {!!} --need to do comp for [_]v :(
+
+blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2)
+ -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
+blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
+
 -- this is functoriality (wrap the M up in extensionality/an equivalence relation)
 comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
 comp σ1 σ2 (v y) = refl
 comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (comp σ1 σ2 N) refl
-comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ σ → funext (λ s' → trans (f (λ {U} -> σ {U}) s') {!!})))
+comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ σ → funext (λ s' → trans (f (λ {U} -> σ {U}) s') (cong1/2 eval (trans (g (λ {U} -> σ {U}) s') {!just need to reassociate here!}) M))))
  where f : ∀ {Δ'} (σ : vsubst Γ3 Δ') (s' : sem Δ' T) -> eval (extend (σ ◦ σ2) s') ([ sub-ext σ1 ] M)
                                                       ≡ eval (extend (σ ◦ σ2) s' • sub-ext σ1) M
        f σ s' = comp (sub-ext σ1) (extend (σ ◦ σ2) s') M
+       g :  ∀ {Δ'} (σ : vsubst Γ3 Δ') (s' : sem Δ' T) -> _≡_ {subst (_ , T) Δ'} ((extend (σ ◦ σ2) s') • (sub-ext σ1)) (extend ((σ ◦ σ2) • σ1) s')
+       g σ s' = blah' ((λ {U} -> σ) ◦ σ2) s' σ1
 
 appSubstApp : ∀ {Γ1 Γ2 Γ3 T S} (M : tm Γ1 (T ⇝ S)) (N : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
  -> (appSubst S σ' (eval σ (M · N))) ≡ ((appSubst (T ⇝ S) σ' (eval σ M)) _ id (appSubst T σ' (eval σ N)))
