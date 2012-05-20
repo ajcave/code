@@ -165,6 +165,7 @@ _◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
 (σ ◦ θ) = λ x ->  appSubst _ σ (θ x)
 
 -- Traditional nbe
+-- This is taking tm Γ T into a Yoneda-like Hom space
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
@@ -226,12 +227,21 @@ comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ �
        g :  ∀ {Δ'} (σ : vsubst Γ3 Δ') (s' : sem Δ' T) -> _≡_ {subst (_ , T) Δ'} ((extend (σ ◦ σ2) s') • (sub-ext σ1)) (extend ((σ ◦ σ2) • σ1) s')
        g σ s' = blah' ((λ {U} -> σ) ◦ σ2) s' σ1
 
-appSubstApp : ∀ {Γ1 Γ2 Γ3 T S} (M : tm Γ1 (T ⇝ S)) (N : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
+Pr : (Γ1 : ctx) (T : tp) (t : sem Γ1 T) -> Set
+Pr Γ (atom A) t = {!!}
+Pr Γ (T ⇝ S) t = (Γ' : _) (σ : vsubst Γ Γ') (Γ'' : _) (σ' : vsubst Γ' Γ'')
+                   (x : sem Γ' T) →
+                   appSubst _ σ' (t Γ' σ x) ≡ t Γ'' (σ' ∘ σ) (appSubst _ σ' x)
+
+appSubstApp : ∀ {S Γ1 Γ2 Γ3 T} (M : tm Γ1 (T ⇝ S)) (N : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
  -> (appSubst S σ' (eval σ (M · N))) ≡ ((appSubst (T ⇝ S) σ' (eval σ M)) _ id (appSubst T σ' (eval σ N)))
-appSubstApp (v y) N σ σ' = {!crap. the ones in sigma are unconstrained!}
-appSubstApp (M · N1) N2 σ σ' = trans {!!} {!!}
+appSubstApp (v y) N σ σ' = {!!}
+appSubstApp (M · N1) N2 σ σ' with cong-app1 (cong-app1 (cong-app1 (appSubstApp M N1 σ σ') _) id) (appSubst _ σ' (eval σ N2))
+... | q = trans {!!} (sym q)
 appSubstApp (ƛ M) N σ σ' = {!!}
 
+-- pretty sure this is false because σ can have all kinds of crazy functions in it
+-- [σ'] (f id a1) != f σ' ([σ']a1) for arbitrary f!
 grar : ∀ {Γ1 Γ2 Γ3} T (M : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
  -> (appSubst T σ' (eval σ M)) ≡ (eval (σ' ◦ σ) M)
 grar T (v y) σ σ' = refl
