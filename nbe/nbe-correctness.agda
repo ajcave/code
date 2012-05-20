@@ -216,7 +216,7 @@ comp σ1 σ2 (ƛ M) with comp (sub-ext σ1) {!!} M
 appSubstApp : ∀ {Γ1 Γ2 Γ3 T S} (M : tm Γ1 (T ⇝ S)) (N : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
  -> (appSubst S σ' (eval σ (M · N))) ≡ ((appSubst (T ⇝ S) σ' (eval σ M)) _ id (appSubst T σ' (eval σ N)))
 appSubstApp (v y) N σ σ' = {!crap. the ones in sigma are unconstrained!}
-appSubstApp (M · N1) N2 σ σ' = {!!}
+appSubstApp (M · N1) N2 σ σ' = trans {!!} {!!}
 appSubstApp (ƛ M) N σ σ' = {!!}
 
 grar : ∀ {Γ1 Γ2 Γ3} T (M : tm Γ1 T) (σ : subst Γ1 Γ2) (σ' : vsubst Γ2 Γ3)
@@ -233,7 +233,7 @@ sem-funct (ƛ y) σ σ' s' = {!easy!}
 
 sem-η : ∀ {Γ Δ T S} (M1 : tm Γ (T ⇝ S)) (σ : subst Γ Δ) Δ' (σ' : vsubst Δ Δ') (s' : sem Δ' T)
   -> (eval σ M1 Δ' σ' s') ≡ (eval (extend (σ' ◦ σ) s') ([ (λ x -> v (s x)) ] M1) Δ' id s')
-sem-η M1 σ Δ' σ' s' = trans (sem-funct M1 σ σ' s') (sym (eq-sub1 (λ x' → x' Δ' id s') (comp (λ y → v (s y)) (extend (_ ◦ σ) s') M1) refl))
+sem-η M1 σ Δ' σ' s' = trans (cong-app1 (cong-app1 (cong-app1 (grar _ M1 σ σ') _) id) s') (sym (eq-sub1 (λ x' → x' Δ' id s') (comp (λ y → v (s y)) (extend (_ ◦ σ) s') M1) refl))
 
 sem-β : ∀ {Γ Δ T S} (M : tm (Γ , T) S) (N : tm Γ T) (σ : subst Γ Δ) -> (eval (extend (id ◦ σ) (eval σ N)) M) ≡ (eval σ ([ v ,, N ] M))
 sem-β M N σ = trans (cong1/2 eval (funext-imp (λ T → funext (λ x → {!easy(?)!}))) M) (sym (comp (v ,, N) σ M))
