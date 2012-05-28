@@ -71,7 +71,8 @@ nat-id : ∀ {C D} {F : Functor C D} -> NaturalTransformation F F
 nat-id {C} {Cat Obj _⇒_ id _∘_ assoc idLeft idRight} = record { η = λ X → id; commute = λ f → transitivity (idRight _) (sym (idLeft _)) } 
 
 _∘n_ : ∀ {D C} {F G H : Functor C D} (η : NaturalTransformation G H) (ε : NaturalTransformation F G) -> NaturalTransformation F H
-_∘n_ {D} (Nat η commute1) (Nat ε commute2) = Nat (λ X → D [ η X ∘ ε X ]) (λ f → transitivity (sym (Category.assoc D _ _ _))
+_∘n_ {D} {C} {F} {G} {H} (Nat η commute1) (Nat ε commute2) = Nat {C} {D} {F} {H} (λ X → D [ η X ∘ ε X ]) (λ f →
+  transitivity (sym (Category.assoc D _ _ _))
  (transitivity (cong2 (Category._∘_ D) (commute1 f) refl) (transitivity (Category.assoc D _ _ _) (transitivity (cong2 (Category._∘_ D) refl (commute2 f)) (sym (Category.assoc D _ _ _)))))) 
 
 functor-cat : ∀ (C D : Category) -> Category
@@ -80,6 +81,6 @@ functor-cat C D = record {
                     _⇒_ = NaturalTransformation;
                     id = nat-id;
                     _∘_ = _∘n_;
-                    assoc = {!!};
-                    idLeft = {!!};
-                    idRight = {!!} } 
+                    assoc = λ f g h → {!!};
+                    idLeft = λ f → {!!};
+                    idRight = λ f → {!!} } 
