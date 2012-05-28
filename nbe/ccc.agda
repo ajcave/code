@@ -36,8 +36,18 @@ record Functor (C : Category) (D : Category) : Set where
   .identity : ∀ {A} -> F₁ (C.id {A}) ≡ D.id
   .homomorphism : ∀ {X Y Z} (f : C [ X , Y ]) (g : C [ Y , Z ]) -> F₁ (C [ g ∘ f ]) ≡ D [ F₁ g ∘ F₁ f ]
 
-record NaturalTransform
+record NaturalTransform {C D : Category} (F G : Functor C D) : Set where
+ private module C = Category C
+ private module D = Category D
+ private module F = Functor F
+ private module G = Functor G
+ open F using (F₀; F₁)
+ open G using () renaming (F₀ to G₀; F₁ to G₁)
 
+ field
+  η : ∀ X -> D [ F₀ X , G₀ X ]
+  .commute : ∀ {X Y} (f : C [ X , Y ]) -> D [ (G₁ f) ∘ (η X) ] ≡ D [ (η Y) ∘ (F₁ f) ]
+ 
 set : Category
 set = record {
         Obj = Set;
