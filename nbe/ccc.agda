@@ -180,5 +180,8 @@ FunctorCatIsCCC2 D = record {
   open Functor F using (F₀; F₁)
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
 
- eval' : ∀ {Y Z} → Category._⇒_ (functor-cat D set) (times (arr Y Z) Y) Z
- eval' = {!!}
+ eval' : ∀ {F G : Functor D set} → Category._⇒_ (functor-cat D set) (times (arr F G) F) G
+ eval' {F} {G} = Nat (λ X x → _*_.fst x (Category.id D) (_*_.snd x)) {!!}
+  where
+  open Functor F using (F₀; F₁)
+  open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
