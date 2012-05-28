@@ -84,3 +84,20 @@ functor-cat C D = record {
                     assoc = λ f g h → {!!};
                     idLeft = λ f → {!!};
                     idRight = λ f → {!!} } 
+
+record CCC (C : Category) : Set where
+ private module C = Category C
+ open C
+ 
+ field
+  _×_ : Obj -> Obj -> Obj
+  ⊤ : Obj
+  ! : ∀ {X} -> X ⇒ ⊤ 
+  <_,_> : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> X ⇒ (Y × Z)
+  π₁ : ∀ {X Y} -> (X × Y) ⇒ X
+  π₂ : ∀ {X Y} -> (X × Y) ⇒ Y
+  
+  η-⊤ : ∀ {X} (f : X ⇒ ⊤) -> f ≡ !
+  β₁ : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> (π₁ ∘ < f , g >) ≡ f
+  β₂ : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> (π₂ ∘ < f , g >) ≡ g
+  η-× : ∀ {X Y Z} (f : X ⇒ (Y × Z)) -> f ≡ < π₁ ∘ f , π₂ ∘ f >
