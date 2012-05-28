@@ -5,19 +5,26 @@ module ccc where
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
+transitivity : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+transitivity refl refl = refl
+
+sym : ∀ {A : Set} {x y : A} -> x ≡ y -> y ≡ x
+sym refl = refl
+
+cong2 : ∀ {A B C : Set} (f : A -> B -> C) {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> f x z ≡ f y w
+cong2 f refl refl = refl
+
 record Category : Set where
+ constructor Cat
  infixr 9 _∘_
- 
  field
   Obj : Set
   _⇒_ : Obj -> Obj -> Set
   id : ∀ {A} -> (A ⇒ A)
   _∘_ : ∀ {A B C} -> (B ⇒ C) -> (A ⇒ B) -> (A ⇒ C)
-
- field
-  .assoc : ∀ {A B C D} (f : A ⇒ B) (g : B ⇒ C) (h : C ⇒ D) -> ((h ∘ g) ∘ f) ≡ (h ∘ (g ∘ f))
-  .idLeft : ∀ {A B} (f : A ⇒ B) -> (id ∘ f) ≡ f
-  .idRight : ∀ {A B} (f : A ⇒ B) -> (f ∘ id) ≡ f
+  assoc : ∀ {A B C D} (f : A ⇒ B) (g : B ⇒ C) (h : C ⇒ D) -> ((h ∘ g) ∘ f) ≡ (h ∘ (g ∘ f))
+  idLeft : ∀ {A B} (f : A ⇒ B) -> (id ∘ f) ≡ f
+  idRight : ∀ {A B} (f : A ⇒ B) -> (f ∘ id) ≡ f
 
 _[_,_] : ∀ (C : Category) (A B : Category.Obj C) -> Set
 C [ A , B ] = Category._⇒_ C A B
@@ -36,7 +43,8 @@ record Functor (C : Category) (D : Category) : Set where
   .identity : ∀ {A} -> F₁ (C.id {A}) ≡ D.id
   .homomorphism : ∀ {X Y Z} (f : C [ X , Y ]) (g : C [ Y , Z ]) -> F₁ (C [ g ∘ f ]) ≡ D [ F₁ g ∘ F₁ f ]
 
-record NaturalTransform {C D : Category} (F G : Functor C D) : Set where
+record NaturalTransformation {C D : Category} (F G : Functor C D) : Set where
+ constructor Nat
  private module C = Category C
  private module D = Category D
  private module F = Functor F
@@ -58,7 +66,20 @@ set = record {
         idLeft = λ f → refl;
         idRight = λ f → refl }
 
+-- Need to update my Agda.. no irrelevant projections..
+nat-id : ∀ {C D} {F : Functor C D} -> NaturalTransformation F F
+nat-id {C} {Cat Obj _⇒_ id _∘_ assoc idLeft idRight} = record { η = λ X → id; commute = λ f → transitivity (idRight _) (sym (idLeft _)) } 
 
+_∘n_ : ∀ {D C} {F G H : Functor C D} (η : NaturalTransformation G H) (ε : NaturalTransformation F G) -> NaturalTransformation F H
+_∘n_ {D} (Nat η commute1) (Nat ε commute2) = Nat (λ X → D [ η X ∘ ε X ]) (λ f → transitivity (sym (Category.assoc D _ _ _))
+ (transitivity (cong2 (Category._∘_ D) (commute1 f) refl) (transitivity (Category.assoc D _ _ _) (transitivity (cong2 (Category._∘_ D) refl (commute2 f)) (sym (Category.assoc D _ _ _)))))) 
 
 functor-cat : ∀ (C D : Category) -> Category
-functor-cat C D = {!!} 
+functor-cat C D = record {
+                    Obj = Functor C D;
+                    _⇒_ = NaturalTransformation;
+                    id = nat-id;
+                    _∘_ = _∘n_;
+                    assoc = {!!};
+                    idLeft = {!!};
+                    idRight = {!!} } 
