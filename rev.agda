@@ -25,7 +25,7 @@ _+2_ : nat -> nat -> nat
 z +2 n = n
 (s m) +2 n = m +2 (s n)
 
--- Tail recursive + works great for tail recursive reverse...
+-- Tail recursive + works great for tail recursive reverse...git 
 rev : ∀ {A n m} -> vec A n -> vec A m -> vec A (n +2 m)
 rev nil ys = ys
 rev (cons y y') ys = rev y' (cons y ys)

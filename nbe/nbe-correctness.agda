@@ -227,6 +227,32 @@ comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ �
        g :  ∀ {Δ'} (σ : vsubst Γ3 Δ') (s' : sem Δ' T) -> _≡_ {subst (_ , T) Δ'} ((extend (σ ◦ σ2) s') • (sub-ext σ1)) (extend ((σ ◦ σ2) • σ1) s')
        g σ s' = blah' ((λ {U} -> σ) ◦ σ2) s' σ1
 
+Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
+Pr (atom A) t = Unit
+Pr (T ⇝ S) f = (Δ : _) (σ : vsubst _ Δ) (t : sem Δ T) -> Pr T t -> Pr S (f Δ σ t) *
+ ((Δ' : _) (ρ : vsubst Δ Δ') → appSubst _ ρ (f Δ σ t) ≡ f Δ' (ρ ∘ σ) (appSubst _ ρ t))
+
+niceSubst : (Γ Δ : ctx) (θ : subst Γ Δ) -> Set
+niceSubst Γ Δ θ = ∀ {U} x -> Pr U (θ x)
+
+niceExtend : ∀ {Γ Δ T} {θ : subst Γ Δ} (ρ : niceSubst Γ Δ θ) {M : sem Δ T} -> Pr T M -> niceSubst (Γ , T) Δ (extend θ M)
+niceExtend ρ t z = t
+niceExtend ρ t (s y) = ρ y
+
+PrClosed : ∀ {Γ Δ} U (σ : vsubst Γ Δ) {M : sem Γ U} -> Pr U M -> Pr U (appSubst U σ M)
+PrClosed (atom A) σ t = tt
+PrClosed {Γ} {Δ} (T ⇝ S) σ f = λ Δ' σ' t' x → _*_.fst (f _ _ _ x) , (λ Δ'' ρ → _*_.snd (f _ _ _ x) Δ'' ρ)
+
+_◦n_ : ∀ {Γ1 Γ2 Γ3} (σ : vsubst Γ2 Γ3) {θ : subst Γ1 Γ2} -> niceSubst Γ1 Γ2 θ -> niceSubst Γ1 Γ3 (σ ◦ θ)
+(σ ◦n ρ) x = PrClosed _ σ (ρ x)
+
+nice : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) -> Pr T (eval θ M)
+nice (v y) θ θnice = θnice y
+nice (M · N) θ θnice = _*_.fst (nice M θ θnice _ _ _ (nice N θ θnice))
+nice {Γ} {Δ1} {T ⇝ S} (ƛ M) θ θnice = λ Δ σ t x → (nice M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x))
+ , {!!}
+ where f : ∀ Δ (σ : vsubst Δ1 Δ) (t : sem Δ T) (x : Pr T t) -> {!!}
+       f Δ σ t x = {!!}
 
 -- pretty sure this is false because σ can have all kinds of crazy functions in it
 -- [σ'] (f id a1) != f σ' ([σ']a1) for arbitrary f!
