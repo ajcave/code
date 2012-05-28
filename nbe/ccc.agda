@@ -106,3 +106,7 @@ record CCC (C : Category) : Set where
   η× : ∀ {X Y Z} (f : X ⇒ (Y × Z)) -> f ≡ < π₁ ∘ f , π₂ ∘ f >
   β : ∀ {X Y Z} (g : (X × Y) ⇒ Z) -> (eval ∘ < (ƛ g ∘ π₁) , π₂ >) ≡ g
   η : ∀ {X Y Z} (f : X ⇒ (Y ⇨ Z)) -> f ≡ ƛ (eval ∘ < f ∘ π₁ , π₂ >)
+
+ β2 : ∀ {X Y Z} (f : (X × Y) ⇒ Z) (t : X ⇒ Y) -> (eval ∘ < ƛ f , t >) ≡ (f ∘ < id , t >)
+ β2 f t = transitivity (cong2 _∘_ refl {w = < ƛ f ∘ π₁ , π₂ > ∘ < id , t >} (sym (transitivity (η× _) (cong2 <_,_> (transitivity (sym (assoc _ _ _)) (transitivity (cong2 _∘_ (β×₁ _ _) refl) (transitivity (assoc _ _ _) (transitivity (cong2 _∘_ refl (β×₁ _ _)) (idRight _)))))
+  (transitivity (sym (assoc _ _ _)) (transitivity (cong2 _∘_ (β×₂ _ _) refl) (β×₂ _ _))))))) (transitivity (sym (assoc _ _ _)) (cong2 _∘_ (β _) refl))
