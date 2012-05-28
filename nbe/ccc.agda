@@ -124,6 +124,12 @@ record CCC (C : Category) : Set where
  β2 f t = transitivity (cong2 _∘_ refl {w = < ƛ f ∘ π₁ , π₂ > ∘ < id , t >} (sym (transitivity (η× _) (cong2 <_,_> (transitivity (sym (assoc _ _ _)) (transitivity (cong2 _∘_ (β×₁ _ _) refl) (transitivity (assoc _ _ _) (transitivity (cong2 _∘_ refl (β×₁ _ _)) (idRight _)))))
   (transitivity (sym (assoc _ _ _)) (transitivity (cong2 _∘_ (β×₂ _ _) refl) (β×₂ _ _))))))) (transitivity (sym (assoc _ _ _)) (cong2 _∘_ (β _) refl))
 
+ _⊗_ : ∀ {X1 Y1 X2 Y2} (f : X1 ⇒ Y1) (g : X2 ⇒ Y2) -> (X1 × X2) ⇒ (Y1 × Y2)
+ f ⊗ g = < (f ∘ π₁) , (g ∘ π₂) >
+
+ ⊗id : ∀ {X Y} -> ((id {X}) ⊗ (id {Y})) ≡ id
+ ⊗id = transitivity (cong2 <_,_> (transitivity (idLeft _) (sym (idRight _))) (transitivity (idLeft _) (sym (idRight _)))) (sym (η× _))
+
 SetIsCCC : CCC set
 SetIsCCC = record {
              _×_ = _*_;
@@ -142,9 +148,9 @@ SetIsCCC = record {
              β = λ g → refl;
              η = λ f → refl }
 
-FunctorCatIsCCC2 : ∀ D S -> CCC S -> CCC (functor-cat D S)
-FunctorCatIsCCC2 D S C = record {
-             _×_ = {!!};
+FunctorCatIsCCC2 : ∀ D -> CCC (functor-cat D set)
+FunctorCatIsCCC2 D = record {
+             _×_ = times;
              _⇨_ = {!!};
              ⊤ = {!!};
              ! = {!!};
@@ -159,21 +165,17 @@ FunctorCatIsCCC2 D S C = record {
              η× = {!!};
              β = {!!};
              η = {!!}}
+ where
+ open Category set
+ open CCC SetIsCCC
+ times : Functor D set → Functor D set → Functor D set
+ times F G = record { F₀ = λ x → (F₀ x) × (G₀ x); F₁ = λ x → (F₁ x) ⊗ (G₁ x); identity = {!!}; homomorphism = {!!} }
+  where
+  open Functor F using (F₀; F₁)
+  open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
 
-FunctorCatIsCCC : ∀ D -> CCC (functor-cat D set)
-FunctorCatIsCCC D = record {
-             _×_ = {!!};
-             _⇨_ = {!!};
-             ⊤ = {!!};
-             ! = {!!};
-             <_,_> = {!!};
-             π₁ = {!!};
-             π₂ = {!!};
-             ƛ = {!!};
-             eval = {!!};
-             η⊤ = {!!};
-             β×₁ = {!!};
-             β×₂ = {!!};
-             η× = {!!};
-             β = {!!};
-             η = {!!}}
+ arr : Functor D set → Functor D set → Functor D set
+ arr F G = record { F₀ = λ x → {y : _} → Category._⇒_ D x y → F₀ y → G₀ y; F₁ = λ σ f σ' x → f (D [ σ' ∘ σ ]) x; identity = {!!}; homomorphism = {!!} }
+  where
+  open Functor F using (F₀; F₁)
+  open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
