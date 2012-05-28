@@ -105,4 +105,4 @@ record CCC (C : Category) : Set where
   β×₂ : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> (π₂ ∘ < f , g >) ≡ g
   η× : ∀ {X Y Z} (f : X ⇒ (Y × Z)) -> f ≡ < π₁ ∘ f , π₂ ∘ f >
   β : ∀ {X Y Z} (g : (X × Y) ⇒ Z) -> (eval ∘ < (ƛ g ∘ π₁) , π₂ >) ≡ g
-  η : ∀ {X Y Z} (f : X ⇒ (Y ⇨ Z)) (g : (X × Y) ⇒ Z) -> (eval ∘ < f ∘ π₁ , π₂ >) ≡ g -> f ≡ ƛ g
+  η : ∀ {X Y Z} (f : X ⇒ (Y ⇨ Z)) -> f ≡ ƛ (eval ∘ < f ∘ π₁ , π₂ >)
