@@ -5,6 +5,18 @@ module ccc where
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
+record _*_ (A B : Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B
+
+record Unit : Set where
+ constructor tt
+
+postulate
+ funext : ∀ {A B : Set} (f g : A -> B) -> (∀ x -> f x ≡ g x) -> f ≡ g
+
 transitivity : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
 transitivity refl refl = refl
 
@@ -110,3 +122,21 @@ record CCC (C : Category) : Set where
  β2 : ∀ {X Y Z} (f : (X × Y) ⇒ Z) (t : X ⇒ Y) -> (eval ∘ < ƛ f , t >) ≡ (f ∘ < id , t >)
  β2 f t = transitivity (cong2 _∘_ refl {w = < ƛ f ∘ π₁ , π₂ > ∘ < id , t >} (sym (transitivity (η× _) (cong2 <_,_> (transitivity (sym (assoc _ _ _)) (transitivity (cong2 _∘_ (β×₁ _ _) refl) (transitivity (assoc _ _ _) (transitivity (cong2 _∘_ refl (β×₁ _ _)) (idRight _)))))
   (transitivity (sym (assoc _ _ _)) (transitivity (cong2 _∘_ (β×₂ _ _) refl) (β×₂ _ _))))))) (transitivity (sym (assoc _ _ _)) (cong2 _∘_ (β _) refl))
+
+SetIsCCC : CCC set
+SetIsCCC = record {
+             _×_ = _*_;
+             _⇨_ = λ A B → A → B;
+             ⊤ = Unit;
+             ! = λ x → tt;
+             <_,_> = λ f g x → f x , g x;
+             π₁ = _*_.fst;
+             π₂ = _*_.snd;
+             ƛ = λ f x y → f (x , y);
+             eval = λ fy → _*_.fst fy (_*_.snd fy);
+             η⊤ = λ f → refl;
+             β×₁ = λ f g → refl;
+             β×₂ = λ f g → refl;
+             η× = λ f → refl;
+             β = λ g → refl;
+             η = λ f → refl }
