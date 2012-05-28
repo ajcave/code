@@ -91,13 +91,18 @@ record CCC (C : Category) : Set where
  
  field
   _×_ : Obj -> Obj -> Obj
+  _⇨_ : Obj -> Obj -> Obj
   ⊤ : Obj
   ! : ∀ {X} -> X ⇒ ⊤ 
   <_,_> : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> X ⇒ (Y × Z)
   π₁ : ∀ {X Y} -> (X × Y) ⇒ X
   π₂ : ∀ {X Y} -> (X × Y) ⇒ Y
+  ƛ : ∀ {X Y Z} (f : (X × Y) ⇒ Z) -> X ⇒ (Y ⇨ Z)
+  eval : ∀ {Y Z} -> ((Y ⇨ Z) × Y) ⇒ Z
   
-  η-⊤ : ∀ {X} (f : X ⇒ ⊤) -> f ≡ !
-  β₁ : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> (π₁ ∘ < f , g >) ≡ f
-  β₂ : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> (π₂ ∘ < f , g >) ≡ g
-  η-× : ∀ {X Y Z} (f : X ⇒ (Y × Z)) -> f ≡ < π₁ ∘ f , π₂ ∘ f >
+  η⊤ : ∀ {X} (f : X ⇒ ⊤) -> f ≡ !
+  β×₁ : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> (π₁ ∘ < f , g >) ≡ f
+  β×₂ : ∀ {X Y Z} (f : X ⇒ Y) (g : X ⇒ Z) -> (π₂ ∘ < f , g >) ≡ g
+  η× : ∀ {X Y Z} (f : X ⇒ (Y × Z)) -> f ≡ < π₁ ∘ f , π₂ ∘ f >
+  β : ∀ {X Y Z} (g : (X × Y) ⇒ Z) -> (eval ∘ < (ƛ g ∘ π₁) , π₂ >) ≡ g
+  η : ∀ {X Y Z} (f : X ⇒ (Y ⇨ Z)) (g : (X × Y) ⇒ Z) -> (eval ∘ < f ∘ π₁ , π₂ >) ≡ g -> f ≡ ƛ g
