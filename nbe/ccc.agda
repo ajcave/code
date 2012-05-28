@@ -179,3 +179,6 @@ FunctorCatIsCCC2 D = record {
   where
   open Functor F using (F₀; F₁)
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
+
+ eval' : ∀ {Y Z} → Category._⇒_ (functor-cat D set) (times (arr Y Z) Y) Z
+ eval' = {!!}
