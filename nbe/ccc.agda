@@ -11,6 +11,12 @@ record _*_ (A B : Set) : Set where
   fst : A
   snd : B
 
+record Σ (A : Set) (B : A -> Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B fst
+
 record Unit : Set where
  constructor tt
 
@@ -23,8 +29,17 @@ transitivity refl refl = refl
 sym : ∀ {A : Set} {x y : A} -> x ≡ y -> y ≡ x
 sym refl = refl
 
+cong1 : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+cong1 f refl = refl
+
 cong2 : ∀ {A B C : Set} (f : A -> B -> C) {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> f x z ≡ f y w
 cong2 f refl refl = refl
+
+cong3 : ∀ {A B C D : Set} (f : A -> B -> C -> D) {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> {a b : C} -> a ≡ b -> f x z a ≡ f y w b
+cong3 f refl refl refl = refl
+
+subst : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
+subst P refl t = t
 
 record Category : Set where
  constructor Cat
@@ -158,7 +173,7 @@ FunctorCatIsCCC2 D = record {
              π₁ = {!!};
              π₂ = {!!};
              ƛ = {!!};
-             eval = {!!};
+             eval = eval';
              η⊤ = {!!};
              β×₁ = {!!};
              β×₂ = {!!};
@@ -175,13 +190,18 @@ FunctorCatIsCCC2 D = record {
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
 
  arr : Functor D set → Functor D set → Functor D set
- arr F G = record { F₀ = λ x → {y : _} → Category._⇒_ D x y → F₀ y → G₀ y; F₁ = λ σ f σ' x → f (D [ σ' ∘ σ ]) x; identity = {!!}; homomorphism = λ σ1 σ2 → funext _ _ (λ f → {!!}) }
+ -- This is where we needed set: We needed pi types! What about LCCC?
+ arr F G = record { F₀ = λ x → Σ ({y : _} → Category._⇒_ D x y → F₀ y → G₀ y)
+  (λ f -> ∀ {y z} (σ : Category._⇒_ D x y) (σ' : Category._⇒_ D y z) t -> f (D [ σ' ∘ σ ]) (F₁ σ' t) ≡ G₁ σ' (f σ t));
+  F₁ = λ σ f,p → (λ σ' x → Σ.fst f,p (D [ σ' ∘ σ ]) x) , λ σ' σ0 t → transitivity (cong1 (λ α → Σ.fst f,p α (F₁ σ0 t)) (Category.assoc D _ _ _)) (Σ.snd f,p _ σ0 t);
+  identity = λ {A} → {!!}; homomorphism = {!!}}
   where
   open Functor F using (F₀; F₁)
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
 
  eval' : ∀ {F G : Functor D set} → Category._⇒_ (functor-cat D set) (times (arr F G) F) G
- eval' {F} {G} = Nat (λ X x → _*_.fst x (Category.id D) (_*_.snd x)) {!!}
+ eval' {F} {G} = Nat (λ X x → Σ.fst (_*_.fst x) (Category.id D) (_*_.snd x)) (λ σ → funext _ _ (λ f,p,x → transitivity (sym (Σ.snd (_*_.fst f,p,x) _ _ _)) (cong1 (λ α → Σ.fst (_*_.fst f,p,x) α (F₁ σ (_*_.snd f,p,x))) (transitivity (Category.idRight D _) (sym (Category.idLeft D _))))))
+   --Nat (λ X x → _*_.fst x (Category.id D) (_*_.snd x)) (λ σ → funext _ _ (λ f,x → {!!}))
   where
   open Functor F using (F₀; F₁)
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
