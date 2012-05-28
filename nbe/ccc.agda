@@ -151,7 +151,7 @@ SetIsCCC = record {
 FunctorCatIsCCC2 : ∀ D -> CCC (functor-cat D set)
 FunctorCatIsCCC2 D = record {
              _×_ = times;
-             _⇨_ = {!!};
+             _⇨_ = arr;
              ⊤ = {!!};
              ! = {!!};
              <_,_> = {!!};
@@ -175,7 +175,7 @@ FunctorCatIsCCC2 D = record {
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
 
  arr : Functor D set → Functor D set → Functor D set
- arr F G = record { F₀ = λ x → {y : _} → Category._⇒_ D x y → F₀ y → G₀ y; F₁ = λ σ f σ' x → f (D [ σ' ∘ σ ]) x; identity = {!!}; homomorphism = {!!} }
+ arr F G = record { F₀ = λ x → {y : _} → Category._⇒_ D x y → F₀ y → G₀ y; F₁ = λ σ f σ' x → f (D [ σ' ∘ σ ]) x; identity = {!!}; homomorphism = λ σ1 σ2 → funext _ _ (λ f → {!!}) }
   where
   open Functor F using (F₀; F₁)
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
