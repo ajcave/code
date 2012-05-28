@@ -98,6 +98,7 @@ functor-cat C D = record {
                     idRight = λ f → {!!} } 
 
 record CCC (C : Category) : Set where
+ constructor ccc
  private module C = Category C
  open C
  
@@ -140,3 +141,39 @@ SetIsCCC = record {
              η× = λ f → refl;
              β = λ g → refl;
              η = λ f → refl }
+
+FunctorCatIsCCC2 : ∀ D S -> CCC S -> CCC (functor-cat D S)
+FunctorCatIsCCC2 D S C = record {
+             _×_ = {!!};
+             _⇨_ = {!!};
+             ⊤ = {!!};
+             ! = {!!};
+             <_,_> = {!!};
+             π₁ = {!!};
+             π₂ = {!!};
+             ƛ = {!!};
+             eval = {!!};
+             η⊤ = {!!};
+             β×₁ = {!!};
+             β×₂ = {!!};
+             η× = {!!};
+             β = {!!};
+             η = {!!}}
+
+FunctorCatIsCCC : ∀ D -> CCC (functor-cat D set)
+FunctorCatIsCCC D = record {
+             _×_ = {!!};
+             _⇨_ = {!!};
+             ⊤ = {!!};
+             ! = {!!};
+             <_,_> = {!!};
+             π₁ = {!!};
+             π₂ = {!!};
+             ƛ = {!!};
+             eval = {!!};
+             η⊤ = {!!};
+             β×₁ = {!!};
+             β×₂ = {!!};
+             η× = {!!};
+             β = {!!};
+             η = {!!}}
