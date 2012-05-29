@@ -141,10 +141,16 @@ _◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
 
 -- Traditional nbe
 -- This is taking tm Γ T into a Yoneda-like Hom space
-eval : ∀ {Γ T} -> tm Γ T -> ∀ {Δ} -> subst Γ Δ -> sem Δ T
-eval (v y) θ = θ y
-eval (M · N) θ = Σ.fst (eval M θ) _ id (eval N θ)
-eval (ƛ M) θ = (λ Δ σ x → eval M (extend (σ ◦ θ) x)) , (λ Δ σ x Δ' σ' → {!!})
+mutual
+ eval : ∀ {Γ T} -> tm Γ T -> ∀ {Δ} -> subst Γ Δ -> sem Δ T
+ eval (v y) θ = θ y
+ eval (M · N) θ = Σ.fst (eval M θ) _ id (eval N θ)
+ eval (ƛ M) θ = (λ Δ σ x → eval M (extend (σ ◦ θ) x)) , (λ Δ σ x Δ' σ' → {!!})
+ 
+ grar : ∀ {Γ T} (M : tm Γ T) {Δ} (θ : subst Γ Δ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval M θ) ≡ eval M (σ ◦ θ)
+ grar (v y) θ σ = refl
+ grar (M · N) θ σ = trans (Σ.snd (eval M θ) _ id (eval N θ) _ σ) (trans (cong-app1 (cong-app1 (cong-app1 (cong Σ.fst (grar M θ σ)) _) id) (appSubst _ σ (eval N θ))) (cong (λ α → Σ.fst (eval M (σ ◦ θ)) _ id α) (grar N θ σ)))
+ grar (ƛ M) θ σ = {!!}
 
 {-nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) -}
