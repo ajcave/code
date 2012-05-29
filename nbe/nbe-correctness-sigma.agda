@@ -167,6 +167,9 @@ appFunct2 σ' σ θ = funext-imp (λ x → funext (λ x' → appFunct σ' σ (θ
 
 -- Traditional nbe
 -- This is taking tm Γ T into a Yoneda-like Hom space
+-- Actually it's best to think of it as interpreting the category tm
+-- into the category Set^(Ctx^op) i.e. a term Γ T is interpreted as
+-- natural transformations of the functor subst Γ to the functor sem T 
 mutual
  eval : ∀ {Γ Δ T} -> tm Γ T -> subst Γ Δ -> sem Δ T
  eval (v y) θ = θ y
