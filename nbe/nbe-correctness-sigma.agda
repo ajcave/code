@@ -33,8 +33,12 @@ cong-app refl refl = refl
 cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 cong f refl = refl
 
+
 cong1/2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> (z : B) -> f x z ≡ f y z
 cong1/2 f refl z = refl 
+
+cong2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> f x z ≡ f y w
+cong2 f refl refl = refl 
 
 eq-ind : ∀ {A} (P : A -> Set) -> {x y : A} -> x ≡ y -> P x -> P y
 eq-ind P refl t = t 
@@ -139,13 +143,27 @@ data tm (Γ : ctx) : (T : tp) -> Set where
 _◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
 (σ ◦ θ) = λ x ->  appSubst _ σ (θ x)
 
+blah : ∀ {Γ1 Γ2 Γ3 T} (σ : vsubst Γ2 Γ3) (θ : subst Γ1 Γ2) (t : sem Γ2 T) {U} (x : var (Γ1 , T) U) -> (σ ◦ (extend θ t)) x ≡ (extend (σ ◦ θ) (appSubst _ σ t)) x
+blah σ θ t z = refl
+blah σ θ t (s y) = refl
+
+extend-blagh : ∀ {Γ1 Γ2 T} {θ1 θ2 : subst Γ1 Γ2} -> _≡_ {subst Γ1 Γ2} θ1 θ2 -> ∀ (t : sem Γ2 T) {U} (x : var (Γ1 , T) U) -> extend θ1 t x ≡ extend θ2 t x
+extend-blagh refl t x = refl
+
+appFunct : ∀ {T Γ1 Γ2 Γ3} (σ' : vsubst Γ2 Γ3) (σ : vsubst Γ1 Γ2) (t : sem Γ1 T) -> appSubst T σ' (appSubst T σ t) ≡ appSubst T (σ' ∘ σ) t
+appFunct {atom A} σ' σ t = {!!}
+appFunct {T ⇝ S} σ' σ t = refl
+
+appFunct2 : ∀ {Γ0 Γ1 Γ2 Γ3} (σ' : vsubst Γ2 Γ3) (σ : vsubst Γ1 Γ2) (θ : subst Γ0 Γ1) -> _≡_ {subst Γ0 Γ3} (σ' ◦ (σ ◦ θ)) ((σ' ∘ σ) ◦ θ)
+appFunct2 σ' σ θ = funext-imp (λ x → funext (λ x' → appFunct σ' σ (θ x')))
+
 -- Traditional nbe
 -- This is taking tm Γ T into a Yoneda-like Hom space
 mutual
- eval : ∀ {Γ T} -> tm Γ T -> ∀ {Δ} -> subst Γ Δ -> sem Δ T
+ eval : ∀ {Γ Δ T} -> tm Γ T -> subst Γ Δ -> sem Δ T
  eval (v y) θ = θ y
  eval (M · N) θ = Σ.fst (eval M θ) _ id (eval N θ)
- eval (ƛ M) θ = (λ Δ σ x → eval M (extend (σ ◦ θ) x)) , (λ Δ σ x Δ' σ' → {!!})
+ eval (ƛ M) θ = (λ Δ σ x → eval M (extend (σ ◦ θ) x)) , (λ Δ σ x Δ' σ' → trans (grar M (extend (σ ◦ θ) x) σ') (cong2 eval refl (funext-imp (λ U → funext (λ x' → trans (blah σ' _ x x') (extend-blagh (appFunct2 σ' σ θ) _ x'))))))
  
  grar : ∀ {Γ T} (M : tm Γ T) {Δ} (θ : subst Γ Δ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval M θ) ≡ eval M (σ ◦ θ)
  grar (v y) θ σ = refl
