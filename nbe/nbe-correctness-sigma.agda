@@ -20,9 +20,7 @@ data _≡_ {A : Set} (x : A) : A -> Set where
 
 postulate
  funext : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
-
-funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
-funext-imp H = {!!}
+ funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
 
 cong-app1 : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> f ≡ g -> (x : A) -> f x ≡ g x
 cong-app1 refl x = refl
@@ -43,6 +41,9 @@ cong2 f refl refl = refl
 eq-ind : ∀ {A} (P : A -> Set) -> {x y : A} -> x ≡ y -> P x -> P y
 eq-ind P refl t = t 
 
+eq-indr : ∀ {A} (P : A -> Set) -> {x y : A} -> x ≡ y -> P y -> P x
+eq-indr P refl t = t 
+
 eq-ind2 : ∀ {A B} (P : A -> B -> Set) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P x z -> P y w
 eq-ind2 P refl refl t = t
 
@@ -57,6 +58,12 @@ trans refl refl = refl
 
 sym : ∀ {A} {x y : A} -> x ≡ y -> y ≡ x
 sym refl = refl
+
+cong2dep : ∀ {A : Set} {B : A -> Set} {C : Set} (f : (x : A) -> B x -> C) {x y} (p : x ≡ y) -> {z : B x} {w : B y} -> z ≡ eq-indr B p w -> f x z ≡ f y w 
+cong2dep f refl refl = refl
+
+uip : ∀ {A : Set} {x y : A} (p q : x ≡ y) -> p ≡ q
+uip refl refl = refl
 
 record Unit : Set where
  constructor tt
@@ -157,18 +164,19 @@ appFunct {T ⇝ S} σ' σ t = refl
 appFunct2 : ∀ {Γ0 Γ1 Γ2 Γ3} (σ' : vsubst Γ2 Γ3) (σ : vsubst Γ1 Γ2) (θ : subst Γ0 Γ1) -> _≡_ {subst Γ0 Γ3} (σ' ◦ (σ ◦ θ)) ((σ' ∘ σ) ◦ θ)
 appFunct2 σ' σ θ = funext-imp (λ x → funext (λ x' → appFunct σ' σ (θ x')))
 
+
 -- Traditional nbe
 -- This is taking tm Γ T into a Yoneda-like Hom space
 mutual
  eval : ∀ {Γ Δ T} -> tm Γ T -> subst Γ Δ -> sem Δ T
  eval (v y) θ = θ y
  eval (M · N) θ = Σ.fst (eval M θ) _ id (eval N θ)
- eval (ƛ M) θ = (λ Δ σ x → eval M (extend (σ ◦ θ) x)) , (λ Δ σ x Δ' σ' → trans (grar M (extend (σ ◦ θ) x) σ') (cong2 eval refl (funext-imp (λ U → funext (λ x' → trans (blah σ' _ x x') (extend-blagh (appFunct2 σ' σ θ) _ x'))))))
+ eval (ƛ M) θ = (λ Δ σ x → eval M (extend (σ ◦ θ) x)) , (λ Δ σ x Δ' σ' → trans (grar M (extend (σ ◦ θ) x) σ') (cong (eval M) (funext-imp (λ U → funext (λ x' → trans (blah σ' _ x x') (extend-blagh (appFunct2 σ' σ θ) _ x'))))))
  
  grar : ∀ {Γ T} (M : tm Γ T) {Δ} (θ : subst Γ Δ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval M θ) ≡ eval M (σ ◦ θ)
  grar (v y) θ σ = refl
  grar (M · N) θ σ = trans (Σ.snd (eval M θ) _ id (eval N θ) _ σ) (trans (cong-app1 (cong-app1 (cong-app1 (cong Σ.fst (grar M θ σ)) _) id) (appSubst _ σ (eval N θ))) (cong (λ α → Σ.fst (eval M (σ ◦ θ)) _ id α) (grar N θ σ)))
- grar (ƛ M) θ σ = {!!}
+ grar (ƛ M) θ σ = cong2dep _,_ (funext (λ Δ → funext (λ σ' → funext (λ x → cong (eval M) (funext-imp (λ x' → funext (λ x0 → extend-blagh (sym (appFunct2 _ _ _)) x x0))))))) (funext (λ x → funext (λ x' → funext (λ x0 → funext (λ x1 → funext (λ x2 → uip _ _))))))
 
 {-nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) -}
