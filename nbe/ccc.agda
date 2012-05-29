@@ -29,6 +29,9 @@ transitivity refl refl = refl
 sym : ∀ {A : Set} {x y : A} -> x ≡ y -> y ≡ x
 sym refl = refl
 
+cong-app : ∀ {A B : Set} {f g : A -> B} -> f ≡ g -> (x : A) -> f x ≡ g x
+cong-app refl x = refl
+
 cong1 : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 cong1 f refl = refl
 
@@ -68,7 +71,7 @@ record Functor (C : Category) (D : Category) : Set where
   F₁ : ∀ {A B} -> C [ A , B ] -> D [ F₀ A , F₀ B ]
 
   .identity : ∀ {A} -> F₁ (C.id {A}) ≡ D.id
-  .homomorphism : ∀ {X Y Z} (f : C [ X , Y ]) (g : C [ Y , Z ]) -> F₁ (C [ g ∘ f ]) ≡ D [ F₁ g ∘ F₁ f ]
+  homomorphism : ∀ {X Y Z} (f : C [ X , Y ]) (g : C [ Y , Z ]) -> F₁ (C [ g ∘ f ]) ≡ D [ F₁ g ∘ F₁ f ]
 
 record NaturalTransformation {C D : Category} (F G : Functor C D) : Set where
  constructor Nat
@@ -81,7 +84,7 @@ record NaturalTransformation {C D : Category} (F G : Functor C D) : Set where
 
  field
   η : ∀ X -> D [ F₀ X , G₀ X ]
-  .commute : ∀ {X Y} (f : C [ X , Y ]) -> D [ (G₁ f) ∘ (η X) ] ≡ D [ (η Y) ∘ (F₁ f) ]
+  commute : ∀ {X Y} (f : C [ X , Y ]) -> D [ (G₁ f) ∘ (η X) ] ≡ D [ (η Y) ∘ (F₁ f) ]
  
 set : Category
 set = record {
@@ -202,6 +205,12 @@ FunctorCatIsCCC2 D = record {
  eval' : ∀ {F G : Functor D set} → Category._⇒_ (functor-cat D set) (times (arr F G) F) G
  eval' {F} {G} = Nat (λ X x → Σ.fst (_*_.fst x) (Category.id D) (_*_.snd x)) (λ σ → funext _ _ (λ f,p,x → transitivity (sym (Σ.snd (_*_.fst f,p,x) _ _ _)) (cong1 (λ α → Σ.fst (_*_.fst f,p,x) α (F₁ σ (_*_.snd f,p,x))) (transitivity (Category.idRight D _) (sym (Category.idLeft D _))))))
    --Nat (λ X x → _*_.fst x (Category.id D) (_*_.snd x)) (λ σ → funext _ _ (λ f,x → {!!}))
+  where
+  open Functor F using (F₀; F₁)
+  open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
+
+ lam : ∀ {F G H} (f : Category._⇒_ (functor-cat D set) (times F G) H) → Category._⇒_ (functor-cat D set) F (arr G H)
+ lam {F} {G} {H} (Nat η comm) = Nat (λ X x → (λ σ Gy → η _ ((F₁ σ x) , Gy)) , λ σ σ' t → sym (transitivity (cong-app (comm σ') ((F₁ σ x) , t)) (cong1 (η _) (cong2 _,_ (sym (cong-app (Functor.homomorphism F σ σ') x)) refl)))) (λ f → funext _ _ (λ x → {!✓!}))
   where
   open Functor F using (F₀; F₁)
   open Functor G using () renaming (F₀ to G₀; F₁ to G₁)
