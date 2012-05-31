@@ -131,3 +131,11 @@ example6 = eval example4
 _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 [] ++ ys = ys
 (x ∷ xs) ++ ys = x ∷ xs ++ ys
+
+-- It can get hairy
+rev-acc : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
+rev-acc [] ys = ys
+rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
+
+data _≡_ {A : Set} (x : A) : A -> Set where
+ refl : x ≡ x
