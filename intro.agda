@@ -187,5 +187,3 @@ data exp (Γ : ctx) : tp -> Set where
  _·_ : ∀ {T S} (M : exp Γ (T ⇒ S)) (N : exp Γ T) -> exp Γ S
  ƛ : ∀ {T S} (M : exp (Γ , T) S) -> exp Γ (T ⇒ S)
 
-
-
