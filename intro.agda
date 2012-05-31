@@ -254,7 +254,7 @@ extend σ (pop y) = [ pop ]r (σ y)
 [ σ ] (M · N) = [ σ ] M · [ σ ] N
 [ σ ] (ƛ M) = ƛ ([ extend σ ] M) -- :)
 
-{- Fun exercise (read: "Why Beluga exists") -}
+-- Fun exercise (read: "Why Beluga exists")
 subst-compose-lemma : ∀ {Γ1 Γ2 Γ3 T} (σ1 : subst Γ2 Γ3) (σ2 : subst Γ1 Γ2) (M : exp Γ1 T) -> ([ σ1 ] ([ σ2 ] M)) ≡ ([ [ σ1 ] ∘ σ2 ] M)
 subst-compose-lemma σ1 σ2 M = {!!}
 
