@@ -124,8 +124,6 @@ example6 = eval example4
 -- C-c C-n will let you evaluate a term to *n*ormal form
 -- it will show us that example6 is zero, as expected
 
--- TODO: Talk about termination checking. Possibly with substitution
--- TODO: Talk about proofs! Vector append, vector reversal!
 
 -- We can put computations in types, and they simplify
 _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
@@ -140,7 +138,7 @@ rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
-congruence : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
 
 -- By induction on n
@@ -153,7 +151,7 @@ subst P refl t = t
 
 rev-acc2 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 rev-acc2 [] ys = ys
-rev-acc2 {A} {succ n} {m} (x ∷ xs) ys = subst (vec _) (plus-succ-lemma n m) (rev-acc2 xs (x ∷ ys))
+rev-acc2 {A} {succ n} {m} (x ∷ xs) ys = subst (vec A) (plus-succ-lemma n m) (rev-acc2 xs (x ∷ ys))
 
 -- What if we had defined + differently...
 _+₂_ : nat -> nat -> nat
@@ -165,3 +163,29 @@ rev-acc3 [] ys = ys
 rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
 
 -- But now maybe elsewhere we need to know that n +₂ m = n + m...
+-- Try proving:
+-- plus-zero-lemma : ∀ n -> (n + zero) ≡ n
+-- plus-equiv-lemma : ∀ n m -> (n +₂ m) ≡ (n + m)
+
+-- TODO: Talk about termination checking. Possibly with substitution
+
+data tp : Set where
+ base : tp
+ _⇒_ : (T S : tp) -> tp
+
+-- Just (backwards) lists
+data ctx : Set where
+ ⊡ : ctx
+ _,_ : (Γ : ctx) (T : tp) -> ctx
+
+data var : ctx -> tp -> Set where
+ top : ∀ {Γ T} -> var (Γ , T) T
+ pop : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
+
+data exp (Γ : ctx) : tp -> Set where
+ v : ∀ {T} (x : var Γ T) -> exp Γ T
+ _·_ : ∀ {T S} (M : exp Γ (T ⇒ S)) (N : exp Γ T) -> exp Γ S
+ ƛ : ∀ {T S} (M : exp (Γ , T) S) -> exp Γ (T ⇒ S)
+
+
+
