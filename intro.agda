@@ -282,3 +282,16 @@ mutual
 -}
 
 {- Exercise: Write an evaluator which passes the termination checker (hard!) -}
+
+data _⊎_ (A B : Set) : Set where
+ inl : A -> A ⊎ B
+ inr : B -> A ⊎ B 
+
+postulate
+ A : Set
+ _≤_ : A -> A -> Set
+ _≤?_ : ∀ a b -> (a ≤ b) ⊎ (b ≤ a)
+
+insert : A -> list A -> list A
+insert x xs = {! !}
+  
