@@ -294,13 +294,19 @@ postulate
  reflexive : ∀ {a} -> a ≤ a
  transitive : ∀ {a b c} -> a ≤ b -> b ≤ c -> a ≤ c
  antisym : ∀ {a b} -> a ≤ b -> b ≤ a -> a ≡ b
- _≤?_ : ∀ a b -> (a ≤ b) ⊎ (b ≤ a)
+
+data compare (x y : A) : Set where
+ leq : (x≤y : x ≤ y) -> compare x y
+ geq : (y≤x : y ≤ x) -> compare x y
+
+postulate
+ _≤?_ : ∀ a b -> compare a b
 
 insert : A -> list A -> list A
 insert x [] = x ∷ []
 insert x (x' ∷ xs) with x ≤? x'
-insert x (x' ∷ xs) | inl x≤x' = x ∷ x' ∷ xs
-insert x (x' ∷ xs) | inr x'≤x = x' ∷ insert x xs
+insert x (x' ∷ xs) | leq x≤x' = x ∷ x' ∷ xs
+insert x (x' ∷ xs) | geq x'≤x = x' ∷ insert x xs
 
 insertionSort : list A -> list A
 insertionSort [] = []
@@ -310,20 +316,20 @@ insertionSort (x ∷ xs) = insert x (insertionSort xs)
 -- all of its elements
 data isBoundedSorted : (b : A) (xs : list A) -> Set where
  [] : ∀ {b} -> isBoundedSorted b []
- _∷_ : ∀ {b x} {xs} (px : b ≤ x) (pxs : isBoundedSorted x xs) -> isBoundedSorted b (x ∷ xs)
+ _∷_ : ∀ {b x} {xs} (b≤x : b ≤ x) (pxs : isBoundedSorted x xs) -> isBoundedSorted b (x ∷ xs)
 
 insertLemma : ∀ {b} x -> b ≤ x -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted b (insert x xs)
 insertLemma x b≤x [] p = b≤x ∷ []
 insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
-insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = b≤x ∷ x≤x' ∷ pxs
-insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x = b≤x' ∷ insertLemma x x'≤x xs pxs
+insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | leq x≤x' = b≤x ∷ x≤x' ∷ pxs
+insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | geq x'≤x = b≤x' ∷ insertLemma x x'≤x xs pxs
 
 insertLemma2 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted x (insert x xs)
 insertLemma2 x x≤b [] [] = reflexive ∷ []
 insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
-insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = reflexive ∷ (x≤x' ∷ pxs)
-insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x'≤x (transitive x≤b b≤x')
-insertLemma2 x x≤b (.x ∷ xs) (b≤x  ∷ pxs) | inr x≤x | refl = reflexive ∷ (insertLemma2 x x≤x xs pxs)
+insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | leq x≤x' = reflexive ∷ (x≤x' ∷ pxs)
+insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | geq x'≤x with antisym x'≤x (transitive x≤b b≤x')
+insertLemma2 x x≤b (.x ∷ xs) (b≤x  ∷ pxs) | geq x≤x | refl = reflexive ∷ (insertLemma2 x x≤x xs pxs)
 
 -- xs is sorted if there is some lower bound b such that isBoundedSorted b xs
 data isSorted : (xs : list A) -> Set where
@@ -339,6 +345,35 @@ insertionSortSorted : ∀ xs -> isSorted (insertionSort xs)
 insertionSortSorted [] = yep ⊤ []
 insertionSortSorted (x ∷ xs) with insertionSortSorted xs
 insertionSortSorted (x ∷ xs) | yep b p with x ≤? b
-insertionSortSorted (x ∷ xs) | yep b p | inl x≤b = yep x (insertLemma2 x x≤b (insertionSort xs) p)
-insertionSortSorted (x ∷ xs) | yep b p | inr b≤x = yep b (insertLemma x b≤x (insertionSort xs) p)
-  
+insertionSortSorted (x ∷ xs) | yep b p | leq x≤b = yep x (insertLemma2 x x≤b (insertionSort xs) p)
+insertionSortSorted (x ∷ xs) | yep b p | geq b≤x = yep b (insertLemma x b≤x (insertionSort xs) p)
+
+{- Exercise: Use the following datatype of "intrinsically sorted lists with lower bound"
+   to build an insertion sort function which produces sorted lists simply by construction -}
+data sblist : (b : A) -> Set where
+ [] : ∀ {b} -> sblist b
+ _∷_ : ∀ {x b} (b≤x : b ≤ x) (xs : sblist x) -> sblist b
+
+sinsert-geq : ∀ {b} x -> b ≤ x -> sblist b -> sblist b
+sinsert-geq x b≤x [] = []
+sinsert-geq x b≤x (_∷_ {x'} b≤x' xs) with x ≤? x'
+sinsert-geq x b≤x (b≤x' ∷ xs) | leq x≤x' = b≤x ∷ (x≤x' ∷ xs)
+sinsert-geq x b≤x (b≤x' ∷ xs) | geq x'≤x = b≤x' ∷ sinsert-geq x x'≤x xs
+
+min : A -> A -> A
+min x y with x ≤? y
+min x y | leq x≤y = x
+min x y | geq y≤x = y
+
+sinsert : ∀ {b} x -> sblist b -> sblist (min x b)
+sinsert {b} x xs with x ≤? b
+sinsert x xs | leq x≤b = x≤b ∷ xs
+sinsert x xs | geq b≤x = sinsert-geq x b≤x xs
+
+data slist : Set where
+ _,_ : (b : A) (xs : sblist b) -> slist
+
+insertionSort' : list A -> slist
+insertionSort' [] = ⊤ , []
+insertionSort' (x ∷ xs) with insertionSort' xs
+insertionSort' (x ∷ xs) | b , xs' = (min x b) , (sinsert x xs')
