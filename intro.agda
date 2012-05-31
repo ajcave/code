@@ -162,3 +162,5 @@ succ n +₂ m = n +₂ succ m
 rev-acc3 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n +₂ m)
 rev-acc3 [] ys = ys
 rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
+
+-- But now maybe elsewhere we need to know that n +₂ m = n + m...
