@@ -283,6 +283,7 @@ mutual
 
 {- Exercise: Write an evaluator which passes the termination checker (hard!) -}
 
+{- Exercise: Prove that insertion sort, defined below, produces sorted lists (defined below) -}
 data _⊎_ (A B : Set) : Set where
  inl : A -> A ⊎ B
  inr : B -> A ⊎ B 
