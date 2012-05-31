@@ -173,6 +173,7 @@ rev-acc3 [] ys = ys
 rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
 
 -- But now maybe elsewhere we need to know that n +₂ m = n + m...
+-- Your choice of definitions matters!
 
 {-
 Try proving:
@@ -267,3 +268,17 @@ And lots of lemmas.
 
 You may also find "rewrite" helpful (but not necessary)
 -}
+
+{- Exercise: Define a type of simply-typed lambda calculus values and write an evaluator like before (fairly easy)
+You will probably need to use mutually recursive datatypes and definitions, e.g.
+ 
+mutual
+ data foo : Set where
+  constr1 : foo
+  constr2 : bar -> foo
+ data bar : Set where
+  constr3 : bar -> foo -> bar
+  constr4 : foo -> bar
+-}
+
+{- Exercise: Write an evaluator which passes the termination checker (hard!) -}
