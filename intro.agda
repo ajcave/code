@@ -59,7 +59,8 @@ zipWith2 f [] [] = []
 zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
 
 -- An equivalent, less verbose type signature
--- Try C-c C-a in the holes
+-- Try C-c C-a in the holes ("a" for "auto")
+-- The types are so restrictive that it can find the solution!
 zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
-zipWith3 f [] [] = []
-zipWith3 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith3 f xs xs'
+zipWith3 f [] [] = ?
+zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
