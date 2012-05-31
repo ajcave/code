@@ -130,7 +130,7 @@ _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 [] ++ ys = ys
 (x ∷ xs) ++ ys = x ∷ xs ++ ys
 
--- It can get hairy
+-- But it can get hairy
 rev-acc : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 rev-acc [] ys = ys
 rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
@@ -166,6 +166,7 @@ rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
 -- Try proving:
 -- plus-zero-lemma : ∀ n -> (n + zero) ≡ n
 -- plus-equiv-lemma : ∀ n m -> (n +₂ m) ≡ (n + m)
+-- 
 
 -- TODO: Talk about termination checking. Possibly with substitution
 
