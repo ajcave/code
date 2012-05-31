@@ -11,10 +11,10 @@ data nat : Set where
  zero : nat
  succ : (n : nat) -> nat
 
--- We can have fancy ("mixfix") operators
+-- We can have fancy (infix, later "mixfix") operators
 _+_ : nat -> nat -> nat
 zero + n = n
-succ n + m = succ (n + m)
+(succ n) + m = succ (n + m)
 
 {-
 And unicode! Type \:: to get ∷
