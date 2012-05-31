@@ -351,6 +351,6 @@ insertionSortSorted : ∀ xs -> isSorted (insertionSort xs)
 insertionSortSorted [] = yep ⊤ []
 insertionSortSorted (x ∷ xs) with insertionSortSorted xs
 insertionSortSorted (x ∷ xs) | yep b p with x ≤? b
-insertionSortSorted (x ∷ xs) | yep b p | inl x≤b = eq-elim isSorted (insertLemma2 x x≤b (insertionSort xs) p) (yep x (reflexive ∷ isBoundedSortedLemma x≤b p))
+insertionSortSorted (x ∷ xs) | yep b p | inl x≤b = yep x (insertLemma3 x x≤b (insertionSort xs) p)
 insertionSortSorted (x ∷ xs) | yep b p | inr b≤x = yep b (insertLemma x b≤x (insertionSort xs) p)
   
