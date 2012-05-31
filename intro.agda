@@ -314,9 +314,9 @@ data isBoundedSorted : (b : A) (xs : list A) -> Set where
 
 insertLemma : ∀ {b} x -> b ≤ x -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted b (insert x xs)
 insertLemma x b≤x [] p = b≤x ∷ []
-insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) with x ≤? x'
-insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) | inl x≤x' = b≤x ∷ x≤x' ∷ pxs
-insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) | inr x'≤x = px ∷ insertLemma x x'≤x xs pxs
+insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
+insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = b≤x ∷ x≤x' ∷ pxs
+insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x = b≤x' ∷ insertLemma x x'≤x xs pxs
 
 insertLemma2 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted x (insert x xs)
 insertLemma2 x x≤b [] [] = reflexive ∷ []
