@@ -11,6 +11,9 @@ data nat : Set where
  zero : nat
  succ : nat -> nat
 
+_+_ : nat -> nat -> nat
+m + n = {!!} 
+
 {-
 We can have fancy ("mixfix") operators and unicode
 type \:: to get ∷
@@ -60,3 +63,60 @@ zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
 zipWith3 f [] [] = {!!}
 zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
 
+data type : Set where
+ bool : type
+ natural : type
+
+data expr : type -> Set where
+ zero : expr natural
+ succ : (n : expr natural) -> expr natural 
+ if_then_else_ : ∀ {t} (cond : expr bool) (t1 t2 : expr t) -> expr t
+ true : expr bool
+ false : expr bool
+ _⊕_ : ∀ (n m : expr natural) -> expr natural
+ _==_ : ∀ {t} (a b : expr t) -> expr bool 
+
+example4 : expr natural
+example4 = if ((zero ⊕ succ zero) == (succ zero)) then zero else (succ zero)
+
+{- This is a type error:
+example5 : expr natural
+example5 = if zero then true else false
+-}
+
+data value : type -> Set where
+ zero : value natural
+ succ : value natural -> value natural
+ true : value bool
+ false : value bool
+
+_+v_ : value natural -> value natural -> value natural
+zero +v m = m
+succ n +v m = succ (n +v m)
+
+_=v_ : ∀ {t} -> value t -> value t -> value bool
+zero =v zero = true
+zero =v succ m = false
+succ n =v zero = false
+succ n =v succ m = m =v n
+true =v true = true
+true =v false = false
+false =v true = false
+false =v false = true
+
+eval : ∀ {t} -> expr t -> value t
+eval zero = zero
+eval (succ y) = succ (eval y)
+eval (if cond then t1 else t2) with eval cond
+eval (if cond then t1 else t2) | true = eval t1
+eval (if cond then t1 else t2) | false = eval t2 
+eval true = true
+eval false = false
+eval (n ⊕ m) = (eval n) +v (eval m)
+eval (a == b) = (eval a) =v (eval b)
+-- Notice there are no bad cases: they are ruled out based on their types!
+
+example6 : value natural
+example6 = eval example4
+-- C-c C-n will let you evaluate a term to *n*ormal form
+-- it will show us that example6 is zero, as expected
