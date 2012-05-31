@@ -120,3 +120,6 @@ example6 : value natural
 example6 = eval example4
 -- C-c C-n will let you evaluate a term to *n*ormal form
 -- it will show us that example6 is zero, as expected
+
+-- TODO: Talk about termination checking. Possibly with substitution
+-- TODO: Talk about proofs! Vector append, vector reversal! Computation in types
