@@ -59,11 +59,13 @@ zipWith2 f [] [] = []
 zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
 
 -- An equivalent, less verbose type signature
--- Try C-c C-a in the holes ("a" for "auto")
+-- This time try C-c C-a in the holes ("a" for "auto")
 -- The types are so restrictive that it can find the solution!
 zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
 zipWith3 f [] [] = {!!}
 zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
+
+{-----------------------------------------------------------------------------------------------------}
 
 data type : Set where
  bool : type
@@ -124,6 +126,7 @@ example6 = eval example4
 -- C-c C-n will let you evaluate a term to *n*ormal form
 -- it will show us that example6 is zero, as expected
 
+{-----------------------------------------------------------------------------------------------------}
 
 -- We can put computations in types, and they simplify
 _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
@@ -182,7 +185,7 @@ Arithmetic is boring? Try showing that list append is associative.
 Showing vector append is associative is nasty to even state, I don't recommend it.
 -}
 
--- TODO: Talk about termination checking. Possibly with substitution
+{-----------------------------------------------------------------------------------------------------}
 
 data tp : Set where
  base : tp
