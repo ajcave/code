@@ -269,8 +269,10 @@ And lots of lemmas.
 You may also find "rewrite" helpful (but not necessary)
 -}
 
+{- Exercise: Add the constructs of "expr" (if_then_else, _==_, _⊕_) to exp and extend [_] accordingly  -}
+
 {- Exercise: Define a type of simply-typed lambda calculus values and write an evaluator like before (fairly easy)
-You may need to use mutually recursive datatypes and definitions, e.g.
+If you want to evaluate under binders, you may need to use mutually recursive datatypes and definitions, e.g.
  
 mutual
  data foo : Set where
@@ -370,10 +372,10 @@ sinsert {b} x xs with x ≤? b
 sinsert x xs | leq x≤b = x≤b ∷ xs
 sinsert x xs | geq b≤x = sinsert-geq x b≤x xs
 
-data slist : Set where
- _,_ : (b : A) (xs : sblist b) -> slist
+min-list : list A -> A
+min-list [] = ⊤
+min-list (x ∷ xs) = min x (min-list xs)
 
-insertionSort' : list A -> slist
-insertionSort' [] = ⊤ , []
-insertionSort' (x ∷ xs) with insertionSort' xs
-insertionSort' (x ∷ xs) | b , xs' = (min x b) , (sinsert x xs')
+insertionSort' : (xs : list A) -> sblist (min-list xs)
+insertionSort' [] = []
+insertionSort' (x ∷ xs) = sinsert x (insertionSort' xs)
