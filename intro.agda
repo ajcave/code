@@ -153,3 +153,12 @@ subst P refl t = t
 rev-acc2 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 rev-acc2 [] ys = ys
 rev-acc2 {A} {succ n} {m} (x ∷ xs) ys = subst (vec _) (plus-succ-lemma n m) (rev-acc2 xs (x ∷ ys))
+
+-- What if we had defined + differently...
+_+₂_ : nat -> nat -> nat
+zero +₂ m = m
+succ n +₂ m = n +₂ succ m
+
+rev-acc3 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n +₂ m)
+rev-acc3 [] ys = ys
+rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
