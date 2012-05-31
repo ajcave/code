@@ -26,7 +26,7 @@ infixr 9 _∷_ -- cons should be right associative with some arbitrary precedenc
 example1 : list nat
 example1 = zero ∷ (succ zero) ∷ (succ (succ zero)) ∷ []
 
--- The {}s mean that A, B and C are passed implicitly
+-- The {}s mean that A, B and C are implicit arguments
 -- Place the cursor in the hole and use C-c C-, to see the goal type and context
 -- Use C-c C-c to do a case split
 -- Type in the hole and use C-c C-r to attempt to refine
@@ -35,11 +35,6 @@ zipWith f [] [] = []
 zipWith f [] (x ∷ xs) = {!!} --??? It's an error, not just a warning to delete this case
 zipWith f (x ∷ xs) [] = {!!} --???
 zipWith f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith f xs xs'
-
-{-
-An equivalent way to write this type signature:
-zipWith : ∀ {A B C} -> (A -> B -> C) -> list A -> list B -> list C
--}
 
 data vec A : nat -> Set where
  [] : vec A zero
@@ -62,5 +57,6 @@ zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
 -- Try C-c C-a in the holes ("a" for "auto")
 -- The types are so restrictive that it can find the solution!
 zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
-zipWith3 f [] [] = ?
+zipWith3 f [] [] = {!!}
 zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
+
