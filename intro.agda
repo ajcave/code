@@ -117,7 +117,7 @@ eval true = true
 eval false = false
 eval (n ⊕ m) = (eval n) +v (eval m)
 eval (a == b) = (eval a) =v (eval b)
--- Notice there are no bad cases: they are ruled out based on their types!
+-- Again the ill-typed cases are rules out!
 
 example6 : value natural
 example6 = eval example4
@@ -125,4 +125,9 @@ example6 = eval example4
 -- it will show us that example6 is zero, as expected
 
 -- TODO: Talk about termination checking. Possibly with substitution
--- TODO: Talk about proofs! Vector append, vector reversal! Computation in types
+-- TODO: Talk about proofs! Vector append, vector reversal!
+
+-- We can put computations in types, and they simplify
+_++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
+[] ++ ys = ys
+(x ∷ xs) ++ ys = x ∷ xs ++ ys
