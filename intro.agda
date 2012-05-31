@@ -65,7 +65,7 @@ zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
 zipWith3 f [] [] = {!!}
 zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
 
-{-----------------------------------------------------------------------------------------------------}
+{-======================================================================================-}
 
 data type : Set where
  bool : type
@@ -126,7 +126,7 @@ example6 = eval example4
 -- C-c C-n will let you evaluate a term to *n*ormal form
 -- it will show us that example6 is zero, as expected
 
-{-----------------------------------------------------------------------------------------------------}
+{-======================================================================-}
 
 -- We can put computations in types, and they simplify
 _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
@@ -186,7 +186,7 @@ Arithmetic is boring? Try showing that list append is associative.
 Showing vector append is associative is nasty to even state, I don't recommend it.
 -}
 
-{-----------------------------------------------------------------------------------------------------}
+{-===================================================================================-}
 
 data tp : Set where
  base : tp
@@ -290,8 +290,53 @@ data _⊎_ (A B : Set) : Set where
 postulate
  A : Set
  _≤_ : A -> A -> Set
+ reflexive : ∀ {a} -> a ≤ a
+ transitive : ∀ {a b c} -> a ≤ b -> b ≤ c -> a ≤ c
+ antisym : ∀ {a b} -> a ≤ b -> b ≤ a -> a ≡ b
  _≤?_ : ∀ a b -> (a ≤ b) ⊎ (b ≤ a)
 
 insert : A -> list A -> list A
-insert x xs = {! !}
+insert x [] = x ∷ []
+insert x (x' ∷ xs) with x ≤? x'
+insert x (x' ∷ xs) | inl y = x ∷ x' ∷ xs
+insert x (x' ∷ xs) | inr y = x' ∷ insert x xs
+
+insertionSort : list A -> list A
+insertionSort [] = []
+insertionSort (x ∷ xs) = insert x (insertionSort xs)
+
+data isBoundedSorted : (b : A) (xs : list A) -> Set where
+ [] : ∀ {b} -> isBoundedSorted b []
+ _∷_ : ∀ {a b} {xs} -> a ≤ b -> isBoundedSorted b xs -> isBoundedSorted a (b ∷ xs)
+
+insertLemma : ∀ {b} x -> b ≤ x -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted b (insert x xs)
+insertLemma x b≤x [] p = b≤x ∷ []
+insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) with x ≤? x'
+insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) | inl x≤x' = b≤x ∷ x≤x' ∷ pxs
+insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) | inr x'≤x = px ∷ insertLemma x x'≤x xs pxs
+
+insertLemma2 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> (x ∷ xs) ≡ insert x xs
+insertLemma2 x x≤b [] p = refl
+insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
+insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = refl
+insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x≤b (transitive b≤x' x'≤x) 
+insertLemma2 x x≤x (x' ∷ xs) (x≤x' ∷ pxs) | inr x'≤x | refl with antisym x≤x' x'≤x
+insertLemma2 x x≤x (.x ∷ xs) (_  ∷ pxs) | inr _ | refl | refl = congruence (_∷_ x) (insertLemma2 x reflexive xs pxs)
+
+data isSorted : (xs : list A) -> Set where
+ yep : ∀ b {xs} -> (p : isBoundedSorted b xs) -> isSorted xs
+
+isBoundedSortedLemma : ∀ {a b xs} -> a ≤ b -> isBoundedSorted b xs -> isBoundedSorted a xs
+isBoundedSortedLemma a≤b [] = []
+isBoundedSortedLemma a≤b (px ∷ pxs) = transitive a≤b px ∷ pxs
+
+postulate
+ ⊤ : A
+
+insertionSortSorted : ∀ xs -> isSorted (insertionSort xs)
+insertionSortSorted [] = yep ⊤ []
+insertionSortSorted (x ∷ xs) with insertionSortSorted xs
+insertionSortSorted (x ∷ xs) | yep b p with x ≤? b
+insertionSortSorted (x ∷ xs) | yep b p | inl x≤b = eq-elim isSorted (insertLemma2 x x≤b (insertionSort xs) p) (yep x (reflexive ∷ isBoundedSortedLemma x≤b p))
+insertionSortSorted (x ∷ xs) | yep b p | inr b≤x = yep b (insertLemma x b≤x (insertionSort xs) p)
   
