@@ -146,6 +146,13 @@ plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
 plus-succ-lemma zero m = refl
 plus-succ-lemma (succ n) m = congruence succ (plus-succ-lemma n m)
 
+-- Or we can use a fancy rewrite feature
+{-# BUILTIN EQUALITY _≡_ #-}
+{-# BUILTIN REFL refl #-}
+plus-succ-lemma2 : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
+plus-succ-lemma2 zero m = refl
+plus-succ-lemma2 (succ n) m rewrite plus-succ-lemma2 n m = refl
+
 eq-elim : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
 eq-elim P refl t = t
 
@@ -163,10 +170,16 @@ rev-acc3 [] ys = ys
 rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
 
 -- But now maybe elsewhere we need to know that n +₂ m = n + m...
--- Try proving:
--- plus-zero-lemma : ∀ n -> (n + zero) ≡ n
--- plus-equiv-lemma : ∀ n m -> (n +₂ m) ≡ (n + m)
--- 
+
+{-
+Try proving:
+
+plus-zero-lemma : ∀ n -> (n + zero) ≡ n
+plus-equiv-lemma : ∀ n m -> (n +₂ m) ≡ (n + m)
+
+Arithmetic is boring? Try showing that list append is associative.
+Showing vector append is associative is nasty, I don't recommend it.
+-}
 
 -- TODO: Talk about termination checking. Possibly with substitution
 
@@ -236,6 +249,17 @@ extend σ (pop y) = [ pop ]r (σ y)
 [ σ ] (M · N) = [ σ ] M · [ σ ] N
 [ σ ] (ƛ M) = ƛ ([ extend σ ] M) -- :)
 
--- Fun exercise:
+{- Fun exercise (read: "Why Beluga exists") -}
 subst-compose-lemma : ∀ {Γ1 Γ2 Γ3 T} (σ1 : subst Γ2 Γ3) (σ2 : subst Γ1 Γ2) (M : exp Γ1 T) -> ([ σ1 ] ([ σ2 ] M)) ≡ ([ [ σ1 ] ∘ σ2 ] M)
-subst-compose-lemma σ1 σ2 M = ?
+subst-compose-lemma σ1 σ2 M = {!!}
+
+{- Hint: You will probably need
+trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+trans refl refl = refl
+
+and "congruence" (above)
+
+And lots of lemmas.
+
+You may also find "rewrite" helpful (but not necessary)
+-}
