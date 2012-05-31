@@ -318,28 +318,16 @@ insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) with x ≤? x'
 insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) | inl x≤x' = b≤x ∷ x≤x' ∷ pxs
 insertLemma x b≤x (x' ∷ xs) (px ∷ pxs) | inr x'≤x = px ∷ insertLemma x x'≤x xs pxs
 
-insertLemma2 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> (x ∷ xs) ≡ insert x xs
-insertLemma2 x x≤b [] p = refl
+insertLemma2 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted x (insert x xs)
+insertLemma2 x x≤b [] [] = reflexive ∷ []
 insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
-insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = refl
-insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x≤b (transitive b≤x' x'≤x) 
-insertLemma2 x x≤x (x' ∷ xs) (x≤x' ∷ pxs) | inr x'≤x | refl with antisym x≤x' x'≤x
-insertLemma2 x x≤x (.x ∷ xs) (_  ∷ pxs) | inr _ | refl | refl = congruence (_∷_ x) (insertLemma2 x reflexive xs pxs)
-
-insertLemma3 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted x (insert x xs)
-insertLemma3 x x≤b [] [] = reflexive ∷ []
-insertLemma3 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
-insertLemma3 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = reflexive ∷ (x≤x' ∷ pxs)
-insertLemma3 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x'≤x (transitive x≤b b≤x')
-insertLemma3 x x≤b (.x ∷ xs) (b≤x  ∷ pxs) | inr x≤x | refl = reflexive ∷ (insertLemma3 x x≤x xs pxs)
+insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = reflexive ∷ (x≤x' ∷ pxs)
+insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x'≤x (transitive x≤b b≤x')
+insertLemma2 x x≤b (.x ∷ xs) (b≤x  ∷ pxs) | inr x≤x | refl = reflexive ∷ (insertLemma2 x x≤x xs pxs)
 
 -- xs is sorted if there is some lower bound b such that isBoundedSorted b xs
 data isSorted : (xs : list A) -> Set where
  yep : ∀ b {xs} -> (p : isBoundedSorted b xs) -> isSorted xs
-
-isBoundedSortedLemma : ∀ {a b xs} -> a ≤ b -> isBoundedSorted b xs -> isBoundedSorted a xs
-isBoundedSortedLemma a≤b [] = []
-isBoundedSortedLemma a≤b (px ∷ pxs) = transitive a≤b px ∷ pxs
 
 -- Unfortunately with these definitions we need to assume that there is some element of A
 -- in order to prove that [] is sorted
@@ -351,6 +339,6 @@ insertionSortSorted : ∀ xs -> isSorted (insertionSort xs)
 insertionSortSorted [] = yep ⊤ []
 insertionSortSorted (x ∷ xs) with insertionSortSorted xs
 insertionSortSorted (x ∷ xs) | yep b p with x ≤? b
-insertionSortSorted (x ∷ xs) | yep b p | inl x≤b = yep x (insertLemma3 x x≤b (insertionSort xs) p)
+insertionSortSorted (x ∷ xs) | yep b p | inl x≤b = yep x (insertLemma2 x x≤b (insertionSort xs) p)
 insertionSortSorted (x ∷ xs) | yep b p | inr b≤x = yep b (insertLemma x b≤x (insertionSort xs) p)
   
