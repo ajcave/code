@@ -14,7 +14,7 @@ data nat : Set where
 -- We can have fancy ("mixfix") operators
 _+_ : nat -> nat -> nat
 zero + n = n
-succ n + m = succ (n + m) 
+succ n + m = succ (n + m)
 
 {-
 And unicode! Type \:: to get ∷
@@ -139,3 +139,17 @@ rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
+
+congruence : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+congruence f refl = refl
+
+plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
+plus-succ-lemma zero m = refl
+plus-succ-lemma (succ n) m = congruence succ (plus-succ-lemma n m)
+
+subst : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
+subst P refl t = t
+
+rev-acc2 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
+rev-acc2 [] ys = ys
+rev-acc2 {A} {succ n} {m} (x ∷ xs) ys = subst (vec _) (plus-succ-lemma n m) (rev-acc2 xs (x ∷ ys))
