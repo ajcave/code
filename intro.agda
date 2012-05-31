@@ -9,15 +9,17 @@ http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.UnicodeInput
 datatype nat = Zero | Succ of nat -}
 data nat : Set where
  zero : nat
- succ : nat -> nat
+ succ : (n : nat) -> nat
 
+-- We can have fancy ("mixfix") operators
 _+_ : nat -> nat -> nat
-m + n = {!!} 
+zero + n = n
+succ n + m = succ (n + m) 
 
 {-
-We can have fancy ("mixfix") operators and unicode
-type \:: to get ∷
+And unicode! Type \:: to get ∷
 Place the cursor over ∷ and hit C-u C-x = to find out how to write it
+
 datatype 'a list = Nil | Cons of 'a * 'a list -}
 data list A : Set where
  [] : list A
@@ -103,6 +105,7 @@ true =v true = true
 true =v false = false
 false =v true = false
 false =v false = true
+-- Notice that the ill-typed cases are ruled out!
 
 eval : ∀ {t} -> expr t -> value t
 eval zero = zero
