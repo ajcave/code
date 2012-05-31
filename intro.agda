@@ -310,7 +310,7 @@ insertionSort (x ∷ xs) = insert x (insertionSort xs)
 -- all of its elements
 data isBoundedSorted : (b : A) (xs : list A) -> Set where
  [] : ∀ {b} -> isBoundedSorted b []
- _∷_ : ∀ {a b} {xs} -> a ≤ b -> isBoundedSorted b xs -> isBoundedSorted a (b ∷ xs)
+ _∷_ : ∀ {b x} {xs} (px : b ≤ x) (pxs : isBoundedSorted x xs) -> isBoundedSorted b (x ∷ xs)
 
 insertLemma : ∀ {b} x -> b ≤ x -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted b (insert x xs)
 insertLemma x b≤x [] p = b≤x ∷ []
@@ -325,6 +325,13 @@ insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = refl
 insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x≤b (transitive b≤x' x'≤x) 
 insertLemma2 x x≤x (x' ∷ xs) (x≤x' ∷ pxs) | inr x'≤x | refl with antisym x≤x' x'≤x
 insertLemma2 x x≤x (.x ∷ xs) (_  ∷ pxs) | inr _ | refl | refl = congruence (_∷_ x) (insertLemma2 x reflexive xs pxs)
+
+insertLemma3 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted x (insert x xs)
+insertLemma3 x x≤b [] [] = reflexive ∷ []
+insertLemma3 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
+insertLemma3 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inl x≤x' = reflexive ∷ (x≤x' ∷ pxs)
+insertLemma3 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x'≤x (transitive x≤b b≤x')
+insertLemma3 x x≤b (.x ∷ xs) (b≤x  ∷ pxs) | inr x≤x | refl = reflexive ∷ (insertLemma3 x x≤x xs pxs)
 
 -- xs is sorted if there is some lower bound b such that isBoundedSorted b xs
 data isSorted : (xs : list A) -> Set where
