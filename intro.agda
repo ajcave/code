@@ -176,9 +176,10 @@ Try proving:
 
 plus-zero-lemma : ∀ n -> (n + zero) ≡ n
 plus-equiv-lemma : ∀ n m -> (n +₂ m) ≡ (n + m)
+plus-commutative : ∀ n m -> (n + m) ≡ (m + n)
 
 Arithmetic is boring? Try showing that list append is associative.
-Showing vector append is associative is nasty, I don't recommend it.
+Showing vector append is associative is nasty to even state, I don't recommend it.
 -}
 
 -- TODO: Talk about termination checking. Possibly with substitution
