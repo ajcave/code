@@ -146,12 +146,12 @@ plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
 plus-succ-lemma zero m = refl
 plus-succ-lemma (succ n) m = congruence succ (plus-succ-lemma n m)
 
-subst : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
-subst P refl t = t
+eq-elim : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
+eq-elim P refl t = t
 
 rev-acc2 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 rev-acc2 [] ys = ys
-rev-acc2 {A} {succ n} {m} (x ∷ xs) ys = subst (vec A) (plus-succ-lemma n m) (rev-acc2 xs (x ∷ ys))
+rev-acc2 {A} {succ n} {m} (x ∷ xs) ys = eq-elim (vec A) (plus-succ-lemma n m) (rev-acc2 xs (x ∷ ys))
 
 -- What if we had defined + differently...
 _+₂_ : nat -> nat -> nat
@@ -174,6 +174,8 @@ data tp : Set where
  base : tp
  _⇒_ : (T S : tp) -> tp
 
+infixr 9 _⇒_
+
 -- Just (backwards) lists
 data ctx : Set where
  ⊡ : ctx
@@ -188,3 +190,48 @@ data exp (Γ : ctx) : tp -> Set where
  _·_ : ∀ {T S} (M : exp Γ (T ⇒ S)) (N : exp Γ T) -> exp Γ S
  ƛ : ∀ {T S} (M : exp (Γ , T) S) -> exp Γ (T ⇒ S)
 
+example7 : ∀ {T} -> exp ⊡ (T ⇒ T)
+example7 = ƛ (v top)
+
+example8 : ∀ {T S} -> exp ⊡ ((T ⇒ S) ⇒ T ⇒ S)
+example8 = ƛ (ƛ ((v (pop top)) · (v top)))
+
+subst : ctx -> ctx -> Set
+subst Γ Δ = ∀ {T} -> var Γ T -> exp Δ T
+
+weakening-subst : ∀ {Γ T} -> subst Γ (Γ , T)
+weakening-subst x = v (pop x)
+
+_,,_ : ∀ {Γ Δ T} -> subst Γ Δ -> exp Δ T -> subst (Γ , T) Δ
+(σ ,, M) top = M
+(σ ,, M) (pop y) = σ y
+
+_∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
+(f ∘ g) x = f (g x)
+
+[_]b : ∀ {Γ Δ T} -> subst Γ Δ -> exp Γ T -> exp Δ T
+[ σ ]b (v x) = σ x
+[ σ ]b (M · N) = [ σ ]b M · [ σ ]b N
+[ σ ]b (ƛ M) = ƛ ([ ([ weakening-subst ]b ∘ σ) ,, (v top) ]b M) -- :(
+
+renamer : ctx -> ctx -> Set
+renamer Γ Δ = ∀ {T} -> var Γ T -> var Δ T
+
+-- Extends a substitution σ to become "σ , x/x" 
+extendr : ∀ {Γ Δ T} -> renamer Γ Δ -> renamer (Γ , T) (Δ , T)
+extendr σ top = top
+extendr σ (pop y) = pop (σ y)
+
+[_]r : ∀ {Γ Δ T} -> renamer Γ Δ -> exp Γ T -> exp Δ T
+[ σ ]r (v x) = v (σ x)
+[ σ ]r (M · N) = [ σ ]r M · [ σ ]r N
+[ σ ]r (ƛ M) = ƛ ([ extendr σ ]r M)
+
+extend : ∀ {Γ Δ T} -> subst Γ Δ -> subst (Γ , T) (Δ , T)
+extend σ top = v top
+extend σ (pop y) = [ pop ]r (σ y)
+
+[_] : ∀ {Γ Δ T} -> subst Γ Δ -> exp Γ T -> exp Δ T
+[ σ ] (v x) = σ x
+[ σ ] (M · N) = [ σ ] M · [ σ ] N
+[ σ ] (ƛ M) = ƛ ([ extend σ ] M) -- :)
