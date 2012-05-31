@@ -270,7 +270,7 @@ You may also find "rewrite" helpful (but not necessary)
 -}
 
 {- Exercise: Define a type of simply-typed lambda calculus values and write an evaluator like before (fairly easy)
-You will probably need to use mutually recursive datatypes and definitions, e.g.
+You may need to use mutually recursive datatypes and definitions, e.g.
  
 mutual
  data foo : Set where
@@ -281,7 +281,7 @@ mutual
   constr4 : foo -> bar
 -}
 
-{- Exercise: Write an evaluator which passes the termination checker (hard!) -}
+{- Exercise: Write an evaluator which passes the termination checker (hard!!) -}
 
 {- Exercise: Prove that insertion sort, defined below, produces sorted lists (defined below) -}
 data _⊎_ (A B : Set) : Set where
@@ -299,13 +299,15 @@ postulate
 insert : A -> list A -> list A
 insert x [] = x ∷ []
 insert x (x' ∷ xs) with x ≤? x'
-insert x (x' ∷ xs) | inl y = x ∷ x' ∷ xs
-insert x (x' ∷ xs) | inr y = x' ∷ insert x xs
+insert x (x' ∷ xs) | inl x≤x' = x ∷ x' ∷ xs
+insert x (x' ∷ xs) | inr x'≤x = x' ∷ insert x xs
 
 insertionSort : list A -> list A
 insertionSort [] = []
 insertionSort (x ∷ xs) = insert x (insertionSort xs)
 
+-- isBoundedSorted b xs is inhabited if and only if xs is sorted and b is less than or equal to
+-- all of its elements
 data isBoundedSorted : (b : A) (xs : list A) -> Set where
  [] : ∀ {b} -> isBoundedSorted b []
  _∷_ : ∀ {a b} {xs} -> a ≤ b -> isBoundedSorted b xs -> isBoundedSorted a (b ∷ xs)
@@ -324,6 +326,7 @@ insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | inr x'≤x with antisym x≤
 insertLemma2 x x≤x (x' ∷ xs) (x≤x' ∷ pxs) | inr x'≤x | refl with antisym x≤x' x'≤x
 insertLemma2 x x≤x (.x ∷ xs) (_  ∷ pxs) | inr _ | refl | refl = congruence (_∷_ x) (insertLemma2 x reflexive xs pxs)
 
+-- xs is sorted if there is some lower bound b such that isBoundedSorted b xs
 data isSorted : (xs : list A) -> Set where
  yep : ∀ b {xs} -> (p : isBoundedSorted b xs) -> isSorted xs
 
@@ -331,6 +334,9 @@ isBoundedSortedLemma : ∀ {a b xs} -> a ≤ b -> isBoundedSorted b xs -> isBoun
 isBoundedSortedLemma a≤b [] = []
 isBoundedSortedLemma a≤b (px ∷ pxs) = transitive a≤b px ∷ pxs
 
+-- Unfortunately with these definitions we need to assume that there is some element of A
+-- in order to prove that [] is sorted
+-- Exercise: Try to fix this. Hint: Use the type A ⊎ Unit for bounds, not A
 postulate
  ⊤ : A
 
