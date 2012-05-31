@@ -119,7 +119,7 @@ eval true = true
 eval false = false
 eval (n ⊕ m) = (eval n) +v (eval m)
 eval (a == b) = (eval a) =v (eval b)
--- Again the ill-typed cases are rules out!
+-- Again the ill-typed cases are ruled out!
 
 example6 : value natural
 example6 = eval example4
@@ -173,7 +173,7 @@ rev-acc3 [] ys = ys
 rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
 
 -- But now maybe elsewhere we need to know that n +₂ m = n + m...
--- Your choice of definitions matters!
+-- Moral: Your choice of definitions matters!
 
 {-
 Try proving:
@@ -194,7 +194,7 @@ data tp : Set where
 
 infixr 9 _⇒_
 
--- Just (backwards) lists
+-- Contexts are just (backwards) lists
 data ctx : Set where
  ⊡ : ctx
  _,_ : (Γ : ctx) (T : tp) -> ctx
@@ -254,7 +254,7 @@ extend σ (pop y) = [ pop ]r (σ y)
 [ σ ] (M · N) = [ σ ] M · [ σ ] N
 [ σ ] (ƛ M) = ƛ ([ extend σ ] M) -- :)
 
--- Fun exercise (read: "Why Beluga exists")
+-- Exercise (hard/long! i.e. "Why Beluga exists")
 subst-compose-lemma : ∀ {Γ1 Γ2 Γ3 T} (σ1 : subst Γ2 Γ3) (σ2 : subst Γ1 Γ2) (M : exp Γ1 T) -> ([ σ1 ] ([ σ2 ] M)) ≡ ([ [ σ1 ] ∘ σ2 ] M)
 subst-compose-lemma σ1 σ2 M = {!!}
 
