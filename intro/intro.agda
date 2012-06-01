@@ -122,22 +122,21 @@ rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
-{-
 congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
-congruence f p = ?
+congruence f p = {!!}
 
 -- By induction on n
 plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
-plus-succ-lemma n m = ?
+plus-succ-lemma n m = {!!}
 
 -- Or we can use a fancy rewrite feature
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
 plus-succ-lemma2 : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
-plus-succ-lemma2 n m = ?
+plus-succ-lemma2 n m = {!!}
 
 eq-elim : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
-eq-elim P p t = ? -}
+eq-elim P p t = {!!}
 
 rev-acc2 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 rev-acc2 xs ys = {!!}
