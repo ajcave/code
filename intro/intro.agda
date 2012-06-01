@@ -109,7 +109,7 @@ example6 = eval example4
 
 {-======================================================================-}
 
--- We can put computations in types, and they simplify
+-- We can put computations in types (unlike present-day Beluga), and they simplify
 _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
 xs ++ ys = {!!}
 
