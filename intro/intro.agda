@@ -131,6 +131,7 @@ congruence' f x y p = {!!}
 -- By induction on n
 plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
 plus-succ-lemma n m = {!!}
+-- What happens if you use the induction hypothesis "badly"?
 
 -- Or we can use a fancy rewrite feature
 {-# BUILTIN EQUALITY _≡_ #-}
