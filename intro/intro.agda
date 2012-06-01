@@ -125,6 +125,9 @@ data _≡_ {A : Set} (x : A) : A -> Set where
 congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 congruence f p = {!!}
 
+congruence' : {A B : Set} (f : A -> B) (x y : A) -> x ≡ y -> f x ≡ f y
+congruence' f x y p = {!!}
+
 -- By induction on n
 plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
 plus-succ-lemma n m = {!!}
