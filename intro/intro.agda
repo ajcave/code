@@ -58,7 +58,8 @@ zipWith2 f xs ys = {!!}
 -- This time try C-c C-a in the holes ("a" for "auto")
 -- The types are so restrictive that it can find the solution!
 zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
-zipWith3 f xs ys = {!!}
+zipWith3 f [] [] = {!!}
+zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
 
 {-======================================================================================-}
 
