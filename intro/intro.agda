@@ -11,10 +11,10 @@ data nat : Set where
  zero : nat
  succ : (n : nat) -> nat
 
--- We can have fancy ("mixfix") operators
+-- We can have fancy (infix, later "mixfix") operators
 _+_ : nat -> nat -> nat
 zero + n = n
-succ n + m = succ (n + m)
+(succ n) + m = succ (n + m)
 
 {-
 And unicode! Type \:: to get ∷
@@ -36,10 +36,7 @@ example1 = zero ∷ (succ zero) ∷ (succ (succ zero)) ∷ []
 -- Use C-c C-c to do a case split
 -- Type in the hole and use C-c C-r to attempt to refine
 zipWith : {A B C : Set} -> (A -> B -> C) -> list A -> list B -> list C
-zipWith f [] [] = []
-zipWith f [] (x ∷ xs) = {!!} --??? It's an error, not just a warning to delete this case
-zipWith f (x ∷ xs) [] = {!!} --???
-zipWith f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith f xs xs'
+zipWith f xs ys = {!!}
 
 data vec A : nat -> Set where
  [] : vec A zero
@@ -55,15 +52,13 @@ example3 = zero ∷ zero ∷ zero ∷ []
 
 -- Now it discards the impossible cases for us!
 zipWith2 : {A B C : Set} -> {n : nat} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
-zipWith2 f [] [] = []
-zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
+zipWith2 f xs ys = {!!}
 
 -- An equivalent, less verbose type signature
 -- This time try C-c C-a in the holes ("a" for "auto")
 -- The types are so restrictive that it can find the solution!
 zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
-zipWith3 f [] [] = {!!}
-zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
+zipWith3 f xs ys = {!!}
 
 {-======================================================================================-}
 
@@ -99,26 +94,11 @@ zero +v m = m
 succ n +v m = succ (n +v m)
 
 _=v_ : ∀ {t} -> value t -> value t -> value bool
-zero =v zero = true
-zero =v succ m = false
-succ n =v zero = false
-succ n =v succ m = m =v n
-true =v true = true
-true =v false = false
-false =v true = false
-false =v false = true
+a =v b = {!!}
 -- Notice that the ill-typed cases are ruled out!
 
 eval : ∀ {t} -> expr t -> value t
-eval zero = zero
-eval (succ y) = succ (eval y)
-eval (if cond then t1 else t2) with eval cond
-eval (if cond then t1 else t2) | true = eval t1
-eval (if cond then t1 else t2) | false = eval t2 
-eval true = true
-eval false = false
-eval (n ⊕ m) = (eval n) +v (eval m)
-eval (a == b) = (eval a) =v (eval b)
+eval M = {!!}
 -- Again the ill-typed cases are ruled out!
 
 example6 : value natural
@@ -130,8 +110,7 @@ example6 = eval example4
 
 -- We can put computations in types, and they simplify
 _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
-[] ++ ys = ys
-(x ∷ xs) ++ ys = x ∷ xs ++ ys
+xs ++ ys = {!!}
 
 -- But it can get hairy
 rev-acc : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
@@ -141,27 +120,25 @@ rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
+{-
 congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
-congruence f refl = refl
+congruence f p = ?
 
 -- By induction on n
 plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
-plus-succ-lemma zero m = refl
-plus-succ-lemma (succ n) m = congruence succ (plus-succ-lemma n m)
+plus-succ-lemma n m = ?
 
 -- Or we can use a fancy rewrite feature
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
 plus-succ-lemma2 : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
-plus-succ-lemma2 zero m = refl
-plus-succ-lemma2 (succ n) m rewrite plus-succ-lemma2 n m = refl
+plus-succ-lemma2 n m = ?
 
 eq-elim : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
-eq-elim P refl t = t
+eq-elim P p t = ? -}
 
 rev-acc2 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
-rev-acc2 [] ys = ys
-rev-acc2 {A} {succ n} {m} (x ∷ xs) ys = eq-elim (vec A) (plus-succ-lemma n m) (rev-acc2 xs (x ∷ ys))
+rev-acc2 xs ys = {!!}
 
 -- What if we had defined + differently...
 _+₂_ : nat -> nat -> nat
@@ -169,8 +146,7 @@ zero +₂ m = m
 succ n +₂ m = n +₂ succ m
 
 rev-acc3 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n +₂ m)
-rev-acc3 [] ys = ys
-rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
+rev-acc3 xs ys = {!!}
 
 -- But now maybe elsewhere we need to know that n +₂ m = n + m...
 -- Moral: Your choice of definitions matters!
@@ -210,53 +186,54 @@ data exp (Γ : ctx) : tp -> Set where
 
 example7 : ∀ {T} -> exp ⊡ (T ⇒ T)
 example7 = ƛ (v top)
+-- This represents λ x : T. x
 
 example8 : ∀ {T S} -> exp ⊡ ((T ⇒ S) ⇒ T ⇒ S)
 example8 = ƛ (ƛ ((v (pop top)) · (v top)))
+-- This represents λ x : T → S. λ y : T. x y
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> exp Δ T
 
+{-
 weakening-subst : ∀ {Γ T} -> subst Γ (Γ , T)
-weakening-subst x = v (pop x)
+weakening-subst x = {!!}
 
 _,,_ : ∀ {Γ Δ T} -> subst Γ Δ -> exp Δ T -> subst (Γ , T) Δ
-(σ ,, M) top = M
-(σ ,, M) (pop y) = σ y
+(σ ,, M) x = {!!}
 
 _∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘ g) x = f (g x)
+-}
 
 [_]b : ∀ {Γ Δ T} -> subst Γ Δ -> exp Γ T -> exp Δ T
-[ σ ]b (v x) = σ x
-[ σ ]b (M · N) = [ σ ]b M · [ σ ]b N
-[ σ ]b (ƛ M) = ƛ ([ ([ weakening-subst ]b ∘ σ) ,, (v top) ]b M) -- :(
+[ σ ]b M = {!!}
+-- Highlighted red means the termination checker can't see that it terminates
 
 renamer : ctx -> ctx -> Set
 renamer Γ Δ = ∀ {T} -> var Γ T -> var Δ T
 
+{-
 -- Extends a substitution σ to become "σ , x/x" 
 extendr : ∀ {Γ Δ T} -> renamer Γ Δ -> renamer (Γ , T) (Δ , T)
-extendr σ top = top
-extendr σ (pop y) = pop (σ y)
+extendr σ x = {!!}
+-}
 
 [_]r : ∀ {Γ Δ T} -> renamer Γ Δ -> exp Γ T -> exp Δ T
-[ σ ]r (v x) = v (σ x)
-[ σ ]r (M · N) = [ σ ]r M · [ σ ]r N
-[ σ ]r (ƛ M) = ƛ ([ extendr σ ]r M)
+[ σ ]r M = {!!}
 
+{-
 extend : ∀ {Γ Δ T} -> subst Γ Δ -> subst (Γ , T) (Δ , T)
-extend σ top = v top
-extend σ (pop y) = [ pop ]r (σ y)
+extend σ x = {!!}
+-}
 
 [_] : ∀ {Γ Δ T} -> subst Γ Δ -> exp Γ T -> exp Δ T
-[ σ ] (v x) = σ x
-[ σ ] (M · N) = [ σ ] M · [ σ ] N
-[ σ ] (ƛ M) = ƛ ([ extend σ ] M) -- :)
+[ σ ] M = {!!}
 
--- Exercise (hard/long! i.e. "Why Beluga exists")
+{- Exercise (hard/long! i.e. "Why Beluga exists")
 subst-compose-lemma : ∀ {Γ1 Γ2 Γ3 T} (σ1 : subst Γ2 Γ3) (σ2 : subst Γ1 Γ2) (M : exp Γ1 T) -> ([ σ1 ] ([ σ2 ] M)) ≡ ([ [ σ1 ] ∘ σ2 ] M)
-subst-compose-lemma σ1 σ2 M = {!!}
+subst-compose-lemma σ1 σ2 M = {!!} 
+-}
 
 {- Hint: You will probably need
 trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
@@ -286,6 +263,7 @@ mutual
 {- Exercise: Write an evaluator which passes the termination checker (hard!!) -}
 
 {- Exercise: Prove that insertion sort, defined below, produces sorted lists (defined below) -}
+
 data _⊎_ (A B : Set) : Set where
  inl : A -> A ⊎ B
  inr : B -> A ⊎ B 
@@ -293,16 +271,13 @@ data _⊎_ (A B : Set) : Set where
 postulate
  A : Set
  _≤_ : A -> A -> Set
- reflexive : ∀ {a} -> a ≤ a
- transitive : ∀ {a b c} -> a ≤ b -> b ≤ c -> a ≤ c
- antisym : ∀ {a b} -> a ≤ b -> b ≤ a -> a ≡ b
 
-data compare (x y : A) : Set where
- leq : (x≤y : x ≤ y) -> compare x y
- geq : (y≤x : y ≤ x) -> compare x y
+data comparison (x y : A) : Set where
+ leq : (x≤y : x ≤ y) -> comparison x y
+ geq : (y≤x : y ≤ x) -> comparison x y
 
 postulate
- _≤?_ : ∀ a b -> compare a b
+ _≤?_ : ∀ a b -> comparison a b
 
 insert : A -> list A -> list A
 insert x [] = x ∷ []
@@ -320,18 +295,10 @@ data isBoundedSorted : (b : A) (xs : list A) -> Set where
  [] : ∀ {b} -> isBoundedSorted b []
  _∷_ : ∀ {b x} {xs} (b≤x : b ≤ x) (pxs : isBoundedSorted x xs) -> isBoundedSorted b (x ∷ xs)
 
-insertLemma : ∀ {b} x -> b ≤ x -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted b (insert x xs)
-insertLemma x b≤x [] p = b≤x ∷ []
-insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
-insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | leq x≤x' = b≤x ∷ x≤x' ∷ pxs
-insertLemma x b≤x (x' ∷ xs) (b≤x' ∷ pxs) | geq x'≤x = b≤x' ∷ insertLemma x x'≤x xs pxs
-
-insertLemma2 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted x (insert x xs)
-insertLemma2 x x≤b [] [] = reflexive ∷ []
-insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) with x ≤? x'
-insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | leq x≤x' = reflexive ∷ (x≤x' ∷ pxs)
-insertLemma2 x x≤b (x' ∷ xs) (b≤x' ∷ pxs) | geq x'≤x with antisym x'≤x (transitive x≤b b≤x')
-insertLemma2 x x≤b (.x ∷ xs) (b≤x  ∷ pxs) | geq x≤x | refl = reflexive ∷ (insertLemma2 x x≤x xs pxs)
+postulate
+ reflexive : ∀ {a} -> a ≤ a
+ transitive : ∀ {a b c} -> a ≤ b -> b ≤ c -> a ≤ c
+ antisym : ∀ {a b} -> a ≤ b -> b ≤ a -> a ≡ b
 
 -- xs is sorted if there is some lower bound b such that isBoundedSorted b xs
 data isSorted : (xs : list A) -> Set where
@@ -344,11 +311,15 @@ postulate
  ⊤ : A
 
 insertionSortSorted : ∀ xs -> isSorted (insertionSort xs)
-insertionSortSorted [] = yep ⊤ []
-insertionSortSorted (x ∷ xs) with insertionSortSorted xs
-insertionSortSorted (x ∷ xs) | yep b p with x ≤? b
-insertionSortSorted (x ∷ xs) | yep b p | leq x≤b = yep x (insertLemma2 x x≤b (insertionSort xs) p)
-insertionSortSorted (x ∷ xs) | yep b p | geq b≤x = yep b (insertLemma x b≤x (insertionSort xs) p)
+insertionSortSorted xs = {!!}
+
+{- Hint:
+insertLemma : ∀ {b} x -> b ≤ x -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted b (insert x xs)
+insertLemma x b≤x xs pxs = {!!}
+
+insertLemma2 : ∀ {b} x -> x ≤ b -> ∀ xs -> isBoundedSorted b xs -> isBoundedSorted x (insert x xs)
+insertLemma2 x x≤b xs pxs = {!!}
+-}
 
 {- Exercise: Use the following datatype of "intrinsically sorted lists with lower bound"
    to build an insertion sort function which produces sorted lists simply by construction -}
@@ -357,10 +328,7 @@ data sblist : (b : A) -> Set where
  _∷_ : ∀ {x b} (b≤x : b ≤ x) (xs : sblist x) -> sblist b
 
 sinsert-geq : ∀ {b} x -> b ≤ x -> sblist b -> sblist b
-sinsert-geq x b≤x [] = []
-sinsert-geq x b≤x (_∷_ {x'} b≤x' xs) with x ≤? x'
-sinsert-geq x b≤x (b≤x' ∷ xs) | leq x≤x' = b≤x ∷ (x≤x' ∷ xs)
-sinsert-geq x b≤x (b≤x' ∷ xs) | geq x'≤x = b≤x' ∷ sinsert-geq x x'≤x xs
+sinsert-geq x b≤x xs = {!!}
 
 min : A -> A -> A
 min x y with x ≤? y
@@ -368,14 +336,11 @@ min x y | leq x≤y = x
 min x y | geq y≤x = y
 
 sinsert : ∀ {b} x -> sblist b -> sblist (min x b)
-sinsert {b} x xs with x ≤? b
-sinsert x xs | leq x≤b = x≤b ∷ xs
-sinsert x xs | geq b≤x = sinsert-geq x b≤x xs
+sinsert x xs = {!!}
 
 min-list : list A -> A
 min-list [] = ⊤
 min-list (x ∷ xs) = min x (min-list xs)
 
 insertionSort' : (xs : list A) -> sblist (min-list xs)
-insertionSort' [] = []
-insertionSort' (x ∷ xs) = sinsert x (insertionSort' xs)
+insertionSort' xs = {!!}
