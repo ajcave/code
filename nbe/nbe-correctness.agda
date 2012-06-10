@@ -204,28 +204,9 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ (λ x -> (v (s x))) ] M · (v z)))
 -- η2 : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} -> ([ (λ x -> v (s x)) ] M1 · (v z)) ≈ ([ (λ x -> v (s x)) ] M2 · (v z)) -> M1 ≈ M2
 
-_•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
-(σ1 • σ2) x = eval σ1 (σ2 x) 
 
-blah : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2) {U} (x : var (Γ1 , T) U)
- -> (((extend σ s) • (sub-ext σ')) x) ≡ (extend (σ • σ') s x)
-blah σ s' σ' z = refl
-blah σ s' σ' (s y) = {!!} --need to do comp for [_]v :(
 
-blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2)
- -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
-blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
 
--- this is functoriality (wrap the M up in extensionality/an equivalence relation)
-comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
-comp σ1 σ2 (v y) = refl
-comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (comp σ1 σ2 N) refl
-comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ σ → funext (λ s' → trans (f (λ {U} -> σ {U}) s') (cong1/2 eval (trans (g (λ {U} -> σ {U}) s') {!just need to reassociate here!}) M))))
- where f : ∀ {Δ'} (σ : vsubst Γ3 Δ') (s' : sem Δ' T) -> eval (extend (σ ◦ σ2) s') ([ sub-ext σ1 ] M)
-                                                      ≡ eval (extend (σ ◦ σ2) s' • sub-ext σ1) M
-       f σ s' = comp (sub-ext σ1) (extend (σ ◦ σ2) s') M
-       g :  ∀ {Δ'} (σ : vsubst Γ3 Δ') (s' : sem Δ' T) -> _≡_ {subst (_ , T) Δ'} ((extend (σ ◦ σ2) s') • (sub-ext σ1)) (extend ((σ ◦ σ2) • σ1) s')
-       g σ s' = blah' ((λ {U} -> σ) ◦ σ2) s' σ1
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
@@ -246,20 +227,20 @@ PrClosed {Γ} {Δ} (T ⇝ S) σ f = λ Δ' σ' t' x → _*_.fst (f _ _ _ x) , (�
 _◦n_ : ∀ {Γ1 Γ2 Γ3} (σ : vsubst Γ2 Γ3) {θ : subst Γ1 Γ2} -> niceSubst Γ1 Γ2 θ -> niceSubst Γ1 Γ3 (σ ◦ θ)
 (σ ◦n ρ) x = PrClosed _ σ (ρ x)
 
-grar1 : ∀ {Γ1 Γ2 Γ3} T (M : tm Γ1 T) (θ : subst Γ1 Γ2) (θnice : niceSubst Γ1 Γ2 θ) (σ' : vsubst Γ2 Γ3)
- -> Pr T (eval θ M) -> (appSubst T σ' (eval θ M)) ≡ (eval (σ' ◦ θ) M)
-grar1 (atom A) M θ ρ σ' t = {!!}
-grar1 (T ⇝ S) M θ ρ σ' t = funext (λ Δ → funext (λ σ'' → funext (λ x → {!!})))
+appFunct : ∀ {T Γ1 Γ2 Γ3} (σ : vsubst Γ1 Γ2) (σ' : vsubst Γ2 Γ3) (t : sem Γ1 T) -> appSubst T (σ' ∘ σ) t ≡ appSubst T σ' (appSubst T σ t)
+appFunct {atom A} σ σ' t = {!!}
+appFunct {T ⇝ S} σ σ' t = refl
+
+blah2 : ∀ {Γ1 Γ2 Γ3 T} (σ : vsubst Γ2 Γ3) (θ : subst Γ1 Γ2) (t : sem Γ2 T) {U} (x : var (Γ1 , T) U) -> (σ ◦ (extend θ t)) x ≡ (extend (σ ◦ θ) (appSubst _ σ t)) x
+blah2 σ θ t z = refl
+blah2 σ θ t (s y) = refl
 
 mutual
  nice : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) -> Pr T (eval θ M)
  nice (v y) θ θnice = θnice y
  nice (M · N) θ θnice = _*_.fst (nice M θ θnice _ _ _ (nice N θ θnice))
  nice {Γ} {Δ1} {T ⇝ S} (ƛ M) θ θnice = λ Δ σ t x → (nice M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x))
-  , λ Δ' ρ → {!nice M (extend (σ ◦ θ) t)!}
-  where f : ∀ Δ (σ : vsubst Δ1 Δ) (t : sem Δ T) (x : Pr T t) Δ' (ρ : vsubst Δ Δ') -> {!!}
-        f Δ σ t x Δ' ρ with (nice M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x))
-        ... | q = {!!}
+  , λ Δ' ρ → trans (nice2 M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x) ρ) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ U → funext (λ x0 → trans (blah2 ρ (σ ◦ θ) t x0) (cong (λ (α : subst _ _) → extend α (appSubst T ρ t) x0) (funext-imp (λ U' → funext (λ x' → sym (appFunct σ ρ (θ x'))))))))))
 
  nice2 : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M
  nice2 (v y) θ θnice σ = refl
@@ -267,7 +248,26 @@ mutual
     trans (_*_.snd (nice M θ θnice _ id (eval θ N) (nice N θ θnice)) _ σ)
    (trans (cong (λ α → eval θ M _ σ α) (nice2 N θ θnice σ))
           (cong-app1 (cong-app1 (cong-app1 (nice2 M θ θnice σ) _) id) (eval (σ ◦ θ) N)))
- nice2 (ƛ M) θ θnice σ = {!!}
+ nice2 (ƛ M) θ θnice σ = funext (λ Δ'' → funext (λ σ' → funext (λ t →
+   cong (λ (α : subst _ _) -> eval (extend α t) M) (funext-imp (λ T → funext (λ x → appFunct σ _ (θ x)))))))
+
+_•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
+(σ1 • σ2) x = eval σ1 (σ2 x) 
+
+blah : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2) {U} (x : var (Γ1 , T) U)
+ -> (((extend σ s) • (sub-ext σ')) x) ≡ (extend (σ • σ') s x)
+blah σ s' σ' z = refl
+blah σ s' σ' (s y) = {!!} --need to do comp for [_]v :(
+
+blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2)
+ -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
+blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
+
+-- this is a kind of functoriality (wrap the M up in extensionality/an equivalence relation)
+comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
+comp σ1 σ2 (v y) = refl
+comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (comp σ1 σ2 N) refl
+comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ σ → funext (λ s' → trans (comp (sub-ext σ1) (extend (_ ◦ σ2) s') M) (cong1/2 eval (trans (blah' (_ ◦ σ2) s' σ1) (funext-imp (λ U → funext (λ x → cong (λ (α : subst _ _) → extend α s' x) (funext-imp (λ U' → funext (λ x' → sym (nice2 (σ1 x') σ2 {!!} _)))))))) M))))
 
 
 -- pretty sure this is false because σ can have all kinds of crazy functions in it

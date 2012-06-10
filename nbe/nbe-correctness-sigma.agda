@@ -178,10 +178,14 @@ mutual
  eval (M · N) θ = Σ.fst (eval M θ) _ id (eval N θ)
  eval (ƛ M) θ = (λ Δ σ x → eval M (extend (σ ◦ θ) x)) , (λ Δ σ x Δ' σ' → trans (grar M (extend (σ ◦ θ) x) σ') (cong (eval M) (funext-imp (λ U → funext (λ x' → trans (blah σ' _ x x') (extend-blagh (appFunct2 σ' σ θ) _ x'))))))
  
+ -- Would be nicer if the second component of the sigma was irrelevant
  grar : ∀ {Γ T} (M : tm Γ T) {Δ} (θ : subst Γ Δ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval M θ) ≡ eval M (σ ◦ θ)
  grar (v y) θ σ = refl
  grar (M · N) θ σ = trans (Σ.snd (eval M θ) _ id (eval N θ) _ σ) (trans (cong-app1 (cong-app1 (cong-app1 (cong Σ.fst (grar M θ σ)) _) id) (appSubst _ σ (eval N θ))) (cong (λ α → Σ.fst (eval M (σ ◦ θ)) _ id α) (grar N θ σ)))
- grar (ƛ M) θ σ = cong2dep _,_ (funext (λ Δ → funext (λ σ' → funext (λ x → cong (eval M) (funext-imp (λ x' → funext (λ x0 → extend-blagh (sym (appFunct2 _ _ _)) x x0))))))) (funext (λ x → funext (λ x' → funext (λ x0 → funext (λ x1 → funext (λ x2 → uip _ _))))))
+ grar (ƛ M) θ σ = cong2dep _,_ (funext (λ Δ → funext (λ σ' → funext (λ t → cong (λ (α : subst _ _) → eval M (extend α t)) (funext-imp (λ U → funext (λ x' → sym (appFunct _ _ (θ x')))))))))
+  (funext (λ x → funext (λ x' → funext (λ x0 → funext (λ x1 → funext (λ x2 → uip _ _))))))
+ --cong2dep _,_ (funext (λ Δ → funext (λ σ' → funext (λ x → cong (eval M) (funext-imp (λ x' → funext (λ x0 → extend-blagh (sym (appFunct2 _ _ _)) x x0))))))) (funext (λ x → funext (λ x' → funext (λ x0 → funext (λ x1 → funext (λ x2 → uip _ _))))))
+ -- 
 
 {-nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) -}
