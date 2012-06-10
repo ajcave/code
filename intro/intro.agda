@@ -36,7 +36,10 @@ example1 = zero ∷ (succ zero) ∷ (succ (succ zero)) ∷ []
 -- Use C-c C-c to do a case split
 -- Type in the hole and use C-c C-r to attempt to refine
 zipWith : {A B C : Set} -> (A -> B -> C) -> list A -> list B -> list C
-zipWith f xs ys = {!!}
+zipWith f [] [] = []
+zipWith f [] (x ∷ xs) = {!!}
+zipWith f (x ∷ xs) [] = {!!}
+zipWith f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith f xs xs'
 
 data vec A : nat -> Set where
  [] : vec A zero
@@ -52,14 +55,20 @@ example3 = zero ∷ zero ∷ zero ∷ []
 
 -- Now it discards the impossible cases for us!
 zipWith2 : {A B C : Set} -> {n : nat} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
-zipWith2 f xs ys = {!!}
+zipWith2 f [] [] = []
+zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
+
+zipWith4 : {A B C : Set} -> (n : nat) -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
+zipWith4 .zero f [] ys = {!!}
+zipWith4 .(succ n) f (_∷_ {n} x xs) ys = {!!}
 
 -- An equivalent, less verbose type signature
 -- This time try C-c C-a in the holes ("a" for "auto")
 -- The types are so restrictive that it can find the solution!
 zipWith3 : ∀ {A B C n} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
-zipWith3 f [] [] = {!!}
-zipWith3 f (x ∷ xs) (x' ∷ xs') = {!!}
+zipWith3 f [] [] = []
+zipWith3 f (x ∷ []) (x' ∷ []) = {!!}
+zipWith3 f (x ∷ x' ∷ xs) (x0 ∷ xs') = {!!}
 
 {-======================================================================================-}
 
@@ -95,12 +104,28 @@ zero +v m = m
 succ n +v m = succ (n +v m)
 
 _=v_ : ∀ {t} -> value t -> value t -> value bool
-a =v b = {!!}
+zero =v zero = true
+zero =v succ y = false
+succ y =v zero = false
+succ y =v succ y' = y =v y'
+true =v true = {!!}
+true =v false = {!!}
+false =v true = {!!}
+false =v false = {!!}
 -- Notice that the ill-typed cases are ruled out!
 
 eval : ∀ {t} -> expr t -> value t
-eval M = {!!}
+eval zero = zero
+eval (succ n) = succ (eval n)
+eval (if cond then t1 else t2) = {!!}
+eval true = {!!}
+eval false = {!!}
+eval (n ⊕ m) = {!!}
+eval (a == b) = {!!}
+ where f : nat -> nat
+       f n = n
 -- Again the ill-typed cases are ruled out!
+
 
 example6 : value natural
 example6 = eval example4
@@ -112,7 +137,9 @@ example6 = eval example4
 -- We can put computations in types (unlike present-day Beluga), and they simplify
 -- We'll see that this lets you prove properties of your functions!
 _++_ : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
-xs ++ ys = {!!}
+[] ++ ys = ys
+(x ∷ xs) ++ ys = x ∷ xs ++ ys
+
 
 -- But it can get hairy
 rev-acc : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
@@ -123,27 +150,30 @@ data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
 congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
-congruence f p = {!!}
+congruence f refl = refl
 
 congruence' : {A B : Set} (f : A -> B) (x y : A) -> x ≡ y -> f x ≡ f y
-congruence' f x y p = {!!}
+congruence' f .y y refl = refl
 
 -- By induction on n
 plus-succ-lemma : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
-plus-succ-lemma n m = {!!}
+plus-succ-lemma zero m = refl
+plus-succ-lemma (succ n) m = congruence succ (plus-succ-lemma n m)
 -- What happens if you use the induction hypothesis "badly"?
 
 -- Or we can use a fancy rewrite feature
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
-plus-succ-lemma2 : ∀ n m -> (n + (succ m)) ≡ succ (n + m)
-plus-succ-lemma2 n m = {!!}
+plus-succ-lemma2 : ∀ n m -> succ (n + m) ≡ (n + (succ m))
+plus-succ-lemma2 zero m = refl
+plus-succ-lemma2 (succ n) m rewrite plus-succ-lemma2 n m = refl
 
 eq-elim : ∀ {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
-eq-elim P p t = {!!}
+eq-elim P refl t = t
 
 rev-acc2 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n + m)
-rev-acc2 xs ys = {!!}
+rev-acc2 [] ys = ys
+rev-acc2 {A} {succ n} {m} (x ∷ xs) ys rewrite plus-succ-lemma2 n m = rev-acc2 xs (x ∷ ys)
 
 -- What if we had defined + differently...
 _+₂_ : nat -> nat -> nat
@@ -151,7 +181,8 @@ zero +₂ m = m
 succ n +₂ m = n +₂ succ m
 
 rev-acc3 : ∀ {A n m} -> vec A n -> vec A m -> vec A (n +₂ m)
-rev-acc3 xs ys = {!!}
+rev-acc3 [] ys = ys
+rev-acc3 (x ∷ xs) ys = rev-acc3 xs (x ∷ ys)
 
 -- But now maybe elsewhere we need to know that n +₂ m = n + m...
 -- Moral: Your choice of definitions matters!
@@ -200,45 +231,55 @@ example8 = ƛ (ƛ ((v (pop top)) · (v top)))
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> exp Δ T
 
-{-
+
 weakening-subst : ∀ {Γ T} -> subst Γ (Γ , T)
-weakening-subst x = {!!}
+weakening-subst x = v (pop x)
 
 _,,_ : ∀ {Γ Δ T} -> subst Γ Δ -> exp Δ T -> subst (Γ , T) Δ
-(σ ,, M) x = {!!}
+_,,_ σ M top = M
+_,,_ σ M (pop y) = σ y
 
 _∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘ g) x = f (g x)
--}
+
 
 [_]b : ∀ {Γ Δ T} -> subst Γ Δ -> exp Γ T -> exp Δ T
-[ σ ]b M = {!!}
+[_]b σ (v x) = σ x
+[_]b σ (M · N) = [ σ ]b M · [ σ ]b N
+[_]b σ (ƛ M) = ƛ ([ ([ weakening-subst ]b ∘ σ) ,, v top ]b M)
 -- Highlighted red means the termination checker can't see that it terminates
 
 renamer : ctx -> ctx -> Set
 renamer Γ Δ = ∀ {T} -> var Γ T -> var Δ T
 
-{-
+
 -- Extends a substitution σ to become "σ , x/x" 
 extendr : ∀ {Γ Δ T} -> renamer Γ Δ -> renamer (Γ , T) (Δ , T)
-extendr σ x = {!!}
--}
+extendr σ top = top
+extendr σ (pop y) = pop (σ y)
+
 
 [_]r : ∀ {Γ Δ T} -> renamer Γ Δ -> exp Γ T -> exp Δ T
-[ σ ]r M = {!!}
+[_]r σ (v x) = v (σ x)
+[_]r σ (M · N) = [ σ ]r M · [ σ ]r N
+[_]r σ (ƛ M) = ƛ ([ extendr σ ]r M)
 
-{-
+
 extend : ∀ {Γ Δ T} -> subst Γ Δ -> subst (Γ , T) (Δ , T)
-extend σ x = {!!}
--}
+extend σ top = v top
+extend σ (pop y) = [ pop ]r (σ y)
+
 
 [_] : ∀ {Γ Δ T} -> subst Γ Δ -> exp Γ T -> exp Δ T
-[ σ ] M = {!!}
+[_] σ (v x) = σ x
+[_] σ (M · N) = [ σ ] M · [ σ ] N
+[_] σ (ƛ M) = ƛ ([ extend σ ] M)
 
-{- Exercise (hard/long! i.e. "Why Beluga exists")
-subst-compose-lemma : ∀ {Γ1 Γ2 Γ3 T} (σ1 : subst Γ2 Γ3) (σ2 : subst Γ1 Γ2) (M : exp Γ1 T) -> ([ σ1 ] ([ σ2 ] M)) ≡ ([ [ σ1 ] ∘ σ2 ] M)
+{- Exercise (hard/long! i.e. "Why Beluga exists") -}
+subst-compose-lemma : ∀ {Γ1 Γ2 Γ3 T} (σ1 : subst Γ2 Γ3) (σ2 : subst Γ1 Γ2) (M : exp Γ1 T)
+ -> ([ σ1 ] ([ σ2 ] M)) ≡ ([ [ σ1 ] ∘ σ2 ] M)
 subst-compose-lemma σ1 σ2 M = {!!} 
--}
+
 
 {- Hint: You will probably need
 trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z

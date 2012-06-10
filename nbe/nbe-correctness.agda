@@ -261,6 +261,14 @@ mutual
         f Δ σ t x Δ' ρ with (nice M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x))
         ... | q = {!!}
 
+ nice2 : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M
+ nice2 (v y) θ θnice σ = refl
+ nice2 (M · N) θ θnice σ =
+    trans (_*_.snd (nice M θ θnice _ id (eval θ N) (nice N θ θnice)) _ σ)
+   (trans (cong (λ α → eval θ M _ σ α) (nice2 N θ θnice σ))
+          (cong-app1 (cong-app1 (cong-app1 (nice2 M θ θnice σ) _) id) (eval (σ ◦ θ) N)))
+ nice2 (ƛ M) θ θnice σ = {!!}
+
 
 -- pretty sure this is false because σ can have all kinds of crazy functions in it
 -- [σ'] (f id a1) != f σ' ([σ']a1) for arbitrary f!
