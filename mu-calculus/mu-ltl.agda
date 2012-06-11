@@ -339,5 +339,9 @@ data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set w
                 -> step (let-◦ (◦ M) N) ([ validsub-id , M ]va N)
  rec-red : ∀ {F C} (M : Δ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
                 -> step (rec F (inj M) N) ([ ⊡ , [ ⊡ , M ]t ([ ⊡ ]va map1 F (rec F (▹ top) N)) ]t ([ ⊡ ]va N))
- app-red : ∀ {A B}  (M : Δ , (Γ , A) ⊢ B - true) (N : Δ , Γ ⊢ A - true)
+ app-red : ∀ {A B} (M : Δ , (Γ , A) ⊢ B - true) (N : Δ , Γ ⊢ A - true)
                 -> step ((ƛ M) · N) ([ truesub-id , N ]t M)
+ fst-red : ∀ {A B} (M : Δ , Γ ⊢ A - true) (N : Δ , Γ ⊢ B - true)
+                -> step (fst < M , N >) M
+ snd-red : ∀ {A B} (M : Δ , Γ ⊢ A - true) (N : Δ , Γ ⊢ B - true)
+                -> step (snd < M , N >) N 
