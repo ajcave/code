@@ -209,39 +209,39 @@ record judgement : Set where
  constructor true
 
 mutual
- data _,_⊢_-_ (Δ : ctx prop) (Γ : ctx prop) : prop -> judgement -> Set where
+ data _,_⊢_-_ (θ : ctx prop) (Γ : ctx prop) : prop -> judgement -> Set where
   ▹ : ∀ {A} -> (x : var Γ A)
             -> -------------------
-                Δ , Γ ⊢ A - true
-  ƛ : ∀ {A B} -> (M : Δ , (Γ , A) ⊢ B - true)
+                θ , Γ ⊢ A - true
+  ƛ : ∀ {A B} -> (M : θ , (Γ , A) ⊢ B - true)
               -> ----------------------------------
-                      Δ , Γ ⊢ (A ⊃ B) - true
-  _·_ : ∀ {A B} -> (M : Δ , Γ ⊢ (A ⊃ B) - true) (N : Δ , Γ ⊢ A - true)
+                      θ , Γ ⊢ (A ⊃ B) - true
+  _·_ : ∀ {A B} -> (M : θ , Γ ⊢ (A ⊃ B) - true) (N : θ , Γ ⊢ A - true)
                 -> -----------------------------------------------------------
-                                Δ , Γ ⊢ B - true
-  let-◦ : ∀ {A C J} (M : Δ , Γ ⊢ (○ A) - true) (N : (Δ , A) , Γ ⊢ C - J)
+                                θ , Γ ⊢ B - true
+  let-◦ : ∀ {A C J} (M : θ , Γ ⊢ (○ A) - true) (N : (θ , A) , Γ ⊢ C - J)
                    -> ---------------------------------------------------------------
-                                          Δ , Γ ⊢ C - J
-  ◦ : ∀ {A} -> (M : ⊡ , Δ ⊢ A - true)
+                                          θ , Γ ⊢ C - J
+  ◦ : ∀ {A} -> (M : ⊡ , θ ⊢ A - true)
               -> --------------------------
-                   Δ , Γ ⊢ (○ A) - true
-  inj : ∀ {F} -> (M : Δ , Γ ⊢ ([ μ F /x]p F) - true)
+                   θ , Γ ⊢ (○ A) - true
+  inj : ∀ {F} -> (M : θ , Γ ⊢ ([ μ F /x]p F) - true)
               -> -----------------------------------------------------
-                              Δ , Γ ⊢ μ F - true
-  rec : ∀ F {C} -> (M : Δ , Γ ⊢ μ F - true) -> (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
+                              θ , Γ ⊢ μ F - true
+  rec : ∀ F {C} -> (M : θ , Γ ⊢ μ F - true) -> (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
                 -> -------------------------------------------------------------------
-                                Δ , Γ ⊢ C - true
-  <_,_> : ∀ {A B} -> (M : Δ , Γ ⊢ A - true) (N : Δ , Γ ⊢ B - true)
+                                θ , Γ ⊢ C - true
+  <_,_> : ∀ {A B} -> (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
                   -> ---------------------------------------------
-                                Δ , Γ ⊢ (A ∧ B) - true
-  fst : ∀ {A B} -> (M : Δ , Γ ⊢ (A ∧ B) - true)
+                                θ , Γ ⊢ (A ∧ B) - true
+  fst : ∀ {A B} -> (M : θ , Γ ⊢ (A ∧ B) - true)
                 -> -----------------------------
-                       Δ , Γ ⊢ A - true
-  snd : ∀ {A B} -> (M : Δ , Γ ⊢ (A ∧ B) - true)
+                       θ , Γ ⊢ A - true
+  snd : ∀ {A B} -> (M : θ , Γ ⊢ (A ∧ B) - true)
                 -> -----------------------------
-                       Δ , Γ ⊢ B - true
+                       θ , Γ ⊢ B - true
 
-[_]tv : ∀ {Δ Γ1 Γ2 A J} -> vsub Γ2 Γ1 -> Δ , Γ1 ⊢ A - J -> Δ , Γ2 ⊢ A - J
+[_]tv : ∀ {θ Γ1 Γ2 A J} -> vsub Γ2 Γ1 -> θ , Γ1 ⊢ A - J -> θ , Γ2 ⊢ A - J
 [_]tv σ (▹ x) = ▹ ([ σ ]v x)
 [_]tv σ (ƛ M) = ƛ ([ vsub-ext σ ]tv M)
 [_]tv σ (M · N) = [ σ ]tv M · [ σ ]tv N
@@ -253,7 +253,7 @@ mutual
 [_]tv σ (fst M) = fst ([ σ ]tv M)
 [_]tv σ (snd M) = snd ([ σ ]tv M)
 
-[_]vav : ∀ {Δ1 Δ2 Γ A J} -> vsub Δ2 Δ1 -> Δ1 , Γ ⊢ A - J -> Δ2 , Γ ⊢ A - J
+[_]vav : ∀ {θ1 θ2 Γ A J} -> vsub θ2 θ1 -> θ1 , Γ ⊢ A - J -> θ2 , Γ ⊢ A - J
 [_]vav σ (▹ x) = ▹ x
 [_]vav σ (ƛ M) = ƛ ([ σ ]vav M)
 [_]vav σ (M · N) = [ σ ]vav M · [ σ ]vav N
@@ -265,17 +265,17 @@ mutual
 [_]vav σ (fst M) = fst ([ σ ]vav M)
 [_]vav σ (snd M) = snd ([ σ ]vav M)
 
-truesub : ∀ Δ (Γ1 Γ2 : ctx (prop)) -> Set
-truesub Δ Γ1 Γ2 = sub (λ A -> Δ , Γ1 ⊢ A - true) Γ2
+truesub : ∀ θ (Γ1 Γ2 : ctx (prop)) -> Set
+truesub θ Γ1 Γ2 = sub (λ A -> θ , Γ1 ⊢ A - true) Γ2
 
-truesub-id : ∀ {Δ Γ} -> truesub Δ Γ Γ
-truesub-id {Δ} {⊡} = ⊡
-truesub-id {Δ} {Γ , T} = (sub-map [ wkn-vsub ]tv truesub-id) , (▹ top)
+truesub-id : ∀ {θ Γ} -> truesub θ Γ Γ
+truesub-id {θ} {⊡} = ⊡
+truesub-id {θ} {Γ , T} = (sub-map [ wkn-vsub ]tv truesub-id) , (▹ top)
 
-truesub-ext : ∀ {Δ Γ1 Γ2 T} -> truesub Δ Γ1 Γ2 -> truesub Δ (Γ1 , T) (Γ2 , T)
+truesub-ext : ∀ {θ Γ1 Γ2 T} -> truesub θ Γ1 Γ2 -> truesub θ (Γ1 , T) (Γ2 , T)
 truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 
-[_]t : ∀ {Δ Γ1 Γ2 A J} -> truesub Δ Γ2 Γ1 -> Δ , Γ1 ⊢ A - J -> Δ , Γ2 ⊢ A - J
+[_]t : ∀ {θ Γ1 Γ2 A J} -> truesub θ Γ2 Γ1 -> θ , Γ1 ⊢ A - J -> θ , Γ2 ⊢ A - J
 [_]t σ (▹ x) = [ σ ]v x
 [_]t σ (ƛ M) = ƛ ([ truesub-ext σ ]t M)
 [_]t σ (M · N) = [ σ ]t M · [ σ ]t N
@@ -287,16 +287,16 @@ truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 [_]t σ (fst M) = fst ([ σ ]t M)
 [_]t σ (snd M) = snd ([ σ ]t M)
 
-validsub : ∀ (Δ1 Δ2 : ctx prop) -> Set
-validsub Δ1 Δ2 = truesub ⊡ Δ1 Δ2
+validsub : ∀ (θ1 θ2 : ctx prop) -> Set
+validsub θ1 θ2 = truesub ⊡ θ1 θ2
 
-validsub-ext : ∀ {Δ1 Δ2 T} -> validsub Δ1 Δ2 -> validsub (Δ1 , T) (Δ2 , T)
+validsub-ext : ∀ {θ1 θ2 T} -> validsub θ1 θ2 -> validsub (θ1 , T) (θ2 , T)
 validsub-ext σ = truesub-ext σ
 
-validsub-id : ∀ {Δ} -> validsub Δ Δ
+validsub-id : ∀ {θ} -> validsub θ θ
 validsub-id = truesub-id
 
-[_]va_ : ∀ {Δ1 Δ2 Γ C J} (θ : validsub Δ2 Δ1) (M : Δ1 , Γ ⊢ C - J) ->  Δ2 , Γ ⊢ C - J
+[_]va_ : ∀ {θ1 θ2 Γ C J} (θ : validsub θ2 θ1) (M : θ1 , Γ ⊢ C - J) ->  θ2 , Γ ⊢ C - J
 [ θ ]va ▹ x = ▹ x
 [ θ ]va ƛ M = ƛ ([ θ ]va M)
 [ θ ]va (M · N) = ([ θ ]va M) · ([ θ ]va N)
@@ -332,16 +332,16 @@ map (A ∧ B) θ = < [ ⊡ , (fst (▹ top)) ]t (map A θ) , [ ⊡ , (snd (▹ t
 map1 : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
 map1 F H = map F (⊡ , H)
 
--- Other way to write it maybe concludes Δ;Γ ⊢ F(A) -> Δ;Γ ⊢ F(B) ?
+-- Other way to write it maybe concludes θ;Γ ⊢ F(A) -> θ;Γ ⊢ F(B) ?
 
-data step {Δ Γ} : ∀ {A J} -> Δ , Γ ⊢ A - J -> Δ , Γ ⊢ A - J -> Set where
- box-red : ∀ {A C} (M : ⊡ , Δ ⊢ A - true) (N : (Δ , A) , Γ ⊢ C - true)
+data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set where
+ box-red : ∀ {A C} (M : ⊡ , θ ⊢ A - true) (N : (θ , A) , Γ ⊢ C - true)
                 -> step (let-◦ (◦ M) N) ([ validsub-id , M ]va N)
- rec-red : ∀ {F C} (M : Δ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
+ rec-red : ∀ {F C} (M : θ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
                 -> step (rec F (inj M) N) ([ ⊡ , [ ⊡ , M ]t ([ ⊡ ]va map1 F (rec F (▹ top) N)) ]t ([ ⊡ ]va N))
- app-red : ∀ {A B} (M : Δ , (Γ , A) ⊢ B - true) (N : Δ , Γ ⊢ A - true)
+ app-red : ∀ {A B} (M : θ , (Γ , A) ⊢ B - true) (N : θ , Γ ⊢ A - true)
                 -> step ((ƛ M) · N) ([ truesub-id , N ]t M)
- fst-red : ∀ {A B} (M : Δ , Γ ⊢ A - true) (N : Δ , Γ ⊢ B - true)
+ fst-red : ∀ {A B} (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
                 -> step (fst < M , N >) M
- snd-red : ∀ {A B} (M : Δ , Γ ⊢ A - true) (N : Δ , Γ ⊢ B - true)
+ snd-red : ∀ {A B} (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
                 -> step (snd < M , N >) N 
