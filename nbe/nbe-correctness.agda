@@ -281,7 +281,8 @@ blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
 comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
 comp σ1 σ2 (v y) = refl
 comp {Γ3} σ1 σ2 (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 M) (comp σ1 σ2 N) refl
-comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ σ → funext (λ s' → trans (comp (sub-ext σ1) (extend (_ ◦ σ2) s') M) (cong1/2 eval (trans (blah' (_ ◦ σ2) s' σ1) (funext-imp (λ U → funext (λ x → cong (λ (α : subst _ _) → extend α s' x) (funext-imp (λ U' → funext (λ x' → sym (nice2 (σ1 x') σ2 {!!} _)))))))) M))))
+comp σ1 σ2 (ƛ M) = funext (λ Δ' → funext (λ σ → funext (λ x → trans (comp (sub-ext σ1) (extend (_ ◦ σ2) x) M) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ T → funext (λ x' → trans (blah (_ ◦ σ2) x σ1 x') {!!})))))))
+--comp {Γ3} {.(T ⇝ S)} σ1 σ2 (ƛ {T} {S} M) = funext (λ Δ' → funext (λ σ → funext (λ s' → trans (comp (sub-ext σ1) (extend (_ ◦ σ2) s') M) (cong1/2 eval (trans (blah' (_ ◦ σ2) s' σ1) (funext-imp (λ U → funext (λ x → cong (λ (α : subst _ _) → extend α s' x) (funext-imp (λ U' → funext (λ x' → sym (nice2 (σ1 x') σ2 {!!} _)))))))) M))))
 
 
 -- pretty sure this is false because σ can have all kinds of crazy functions in it
@@ -302,15 +303,15 @@ sem-β M N σ = trans (cong1/2 eval (funext-imp (λ T → funext (λ x → {!eas
 
 -- If we're feeling ambitious we could try to do this without functional extensionality by defining an equivalence
 -- relation by induction on the type
-soundness : ∀ {Γ Δ T} {M1 M2 : tm Γ T} (σ : subst Γ Δ) -> M1 ≈ M2 -> (eval σ M1) ≡ (eval σ M2)
-soundness σ (v x) = refl
-soundness {Γ} {Δ} σ (M · N) = cong-app (cong-app1 (cong-app1 (soundness σ M) Δ) id) (soundness σ N)
-soundness σ (ƛ M) = funext (λ Δ → funext (λ wkn → funext (λ x → soundness _ M)))
-soundness σ (β M N) = sem-β M N σ
-soundness {Γ} {Δ} {T ⇝ S} {M1} σ (η .M1) = funext (λ Δ' → funext (λ σ' → funext (λ s' → sem-η M1 σ Δ' _ s')))
+soundness : ∀ {Γ Δ T} {M1 M2 : tm Γ T} (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ) -> M1 ≈ M2 -> (eval σ M1) ≡ (eval σ M2)
+soundness σ θ (v x) = refl
+soundness {Γ} {Δ} σ θ (M · N) = cong-app (cong-app1 (cong-app1 (soundness σ θ M) Δ) id) (soundness σ θ N)
+soundness σ θ (ƛ M) = funext (λ Δ → funext (λ wkn → funext (λ x → soundness _ (niceExtend (_ ◦n θ) {!!}) M)))
+soundness σ θ (β M N) = sem-β M N σ
+soundness {Γ} {Δ} {T ⇝ S} {M1} σ θ (η .M1) = funext (λ Δ' → funext (λ σ' → funext (λ s' → sem-η M1 σ Δ' _ s')))
 
 soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
-soundness' H = cong reify (soundness _ H)
+soundness' H = cong reify (soundness _ {!!} H)
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
