@@ -84,6 +84,7 @@ mutual
   μ : (F : functor (ζ , #prop)) -> functor ζ
   ○ : (A : functor ζ) -> functor ζ
   _⊃_ : (A : prop) (B : functor ζ) -> functor ζ
+  _∧_ : (A B : functor ζ) -> functor ζ
 
  prop : Set
  prop = functor ⊡
@@ -97,6 +98,7 @@ psub ζ1 ζ2 = sub (const1 (functor ζ1)) ζ2
 [ σ ]pv (μ F) = μ ([ vsub-ext σ ]pv F)
 [ σ ]pv (○ A) = ○ ([ σ ]pv A)
 [ σ ]pv (A ⊃ B) = A ⊃ ([ σ ]pv B)
+[ σ ]pv (A ∧ B) = ([ σ ]pv A) ∧ ([ σ ]pv B)
 
 id-psub : ∀ {ζ} -> psub ζ ζ
 id-psub {⊡} = ⊡
@@ -114,6 +116,7 @@ psub-ext σ = (psub-wkn σ) , ▹ top
 [ σ ]p (μ F) = μ ([ psub-ext σ ]p F)
 [ σ ]p (○ A) = ○ ([ σ ]p A)
 [ σ ]p (A ⊃ B) = A ⊃ ([ σ ]p B)
+[ σ ]p (A ∧ B) = ([ σ ]p A) ∧ ([ σ ]p B)
 
 _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
 σ1 • σ2 = sub-map [ σ1 ]p σ2
@@ -131,11 +134,8 @@ sub-vsub-funct σ1 (σ , M) top = refl
 sub-vsub-funct σ1 (σ , M) (pop y) = sub-vsub-funct σ1 σ y
 
 sub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]pv) ≈ [ σ1 ◦ σ2 ]p
-sub-pvsub-funct σ1 σ2 (▸ P) = refl
-sub-pvsub-funct σ1 σ2 (▹ A) = {!!}
-sub-pvsub-funct σ1 σ2 (μ F) = {!!}
-sub-pvsub-funct σ1 σ2 (○ A) = {!!}
-sub-pvsub-funct σ1 σ2 (A ⊃ B) = {!!}
+sub-pvsub-funct σ1 σ2 P = ?
+
 
 pvsub-vsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]v) ≈ [ σ1 ◆ σ2 ]v
 pvsub-vsub-funct σ1 ⊡ ()
@@ -143,11 +143,7 @@ pvsub-vsub-funct σ1 (σ , M) top = refl
 pvsub-vsub-funct σ1 (σ , M) (pop y) = pvsub-vsub-funct σ1 σ y
 
 pvsub-sub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]p) ≈ [ σ1 ◆ σ2 ]p
-pvsub-sub-funct σ1 σ2 (▸ P) = {!!}
-pvsub-sub-funct σ1 σ2 (▹ A) = {!!}
-pvsub-sub-funct σ1 σ2 (μ F) = {!!}
-pvsub-sub-funct σ1 σ2 (○ A) = {!!}
-pvsub-sub-funct σ1 σ2 (A ⊃ B) = {!!}
+pvsub-sub-funct σ1 σ2 P = {!!}
 
 sub-map-funct : ∀ {A : Set} {exp1 exp2 exp3 : A -> Set} (g : ∀ {T} -> exp2 T -> exp3 T) (f : ∀ {T} -> exp1 T -> exp2 T)
  -> ∀ {Δ} (σ : sub exp1 Δ) -> (((sub-map g) ∘ (sub-map f)) σ) ≡ (sub-map (g ∘ f) σ)
@@ -179,6 +175,7 @@ sub-funct σ1 σ2 (▹ A) = sub-vsub-funct σ1 σ2 A
 sub-funct σ1 σ2 (μ F) = cong μ (trans (sub-funct (psub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct σ1 σ2) F))
 sub-funct σ1 σ2 (○ A) = cong ○ (sub-funct σ1 σ2 A)
 sub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-funct σ1 σ2 B)
+sub-funct σ1 σ2 (A ∧ B) = ?
 
 
 vsub-v-id : ∀ {ζ} (A : var ζ #prop) -> [ id-vsub ]v A ≡ A
@@ -195,6 +192,7 @@ sub-id (▹ A) = sub-v-id A
 sub-id (μ F) = cong μ (sub-id F)
 sub-id (○ A) = cong ○ (sub-id A)
 sub-id (A ⊃ B) = cong (_⊃_ A) (sub-id B)
+sub-id (A ∧ B) = ?
 
 sub-map-id : ∀ {ζ1 ζ2} (σ : psub ζ1 ζ2) -> (id-psub • σ) ≡ σ
 sub-map-id ⊡ = refl
@@ -313,6 +311,7 @@ map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub
   true (map F (θ , ▹ top))))
 map (○ A) θ = let-◦ (▹ top) (◦ (map A θ))
 map (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map B θ))
+map (A ∧ B) θ = ?
 
 map1 : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
 map1 F H = map F (⊡ , H)
