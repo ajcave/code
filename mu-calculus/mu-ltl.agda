@@ -334,6 +334,8 @@ map1 F H = map F (⊡ , H)
 
 -- Other way to write it maybe concludes θ;Γ ⊢ F(A) -> θ;Γ ⊢ F(B) ?
 
+-- Double check that this is the same way Baelde treats fixed points
+-- Is there a slightly nicer way?
 data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set where
  box-red : ∀ {A C} (M : ⊡ , θ ⊢ A - true) (N : (θ , A) , Γ ⊢ C - true)
                 -> step (let-◦ (◦ M) N) ([ validsub-id , M ]va N)
