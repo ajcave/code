@@ -229,7 +229,7 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 ≈ M2 -> N1 ≈ N2 -> (M1 · N1) ≈ (M2 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ (λ x -> (v (s x))) ] M · (v z)))
+ η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ s ]v M · (v z)))
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
@@ -311,8 +311,8 @@ comp {Γ3} σ1 σ2 θ (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 �
 comp σ1 σ2 θ (ƛ M) = funext (λ Δ' → funext (λ σ → funext (λ x → trans (comp (sub-ext σ1) (extend (_ ◦ σ2) x) (niceExtend (_ ◦n θ) {!!}) M) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ T → funext (λ x' → trans (blah (_ ◦ σ2) x σ1 x') (cong (λ (α : subst _ _) → extend α x x') (funext-imp (λ U → funext (λ x1 → sym (nice2 (σ1 x1) σ2 θ _))))))))))))
 
 sem-η : ∀ {Γ Δ T S} (M1 : tm Γ (T ⇝ S)) (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ) Δ' (σ' : vsubst Δ Δ') (s' : sem Δ' T) (nice : Pr _ s')
-  -> (eval σ M1 Δ' σ' s') ≡ (eval (extend (σ' ◦ σ) s') ([ (λ x -> v (s x)) ] M1) Δ' id s')
-sem-η M1 σ θ Δ' σ' s' nice = trans (cong-app1 (cong-app1 (cong-app1 (nice2 M1 σ θ σ') _) id) s') (sym (eq-sub1 (λ x' → x' Δ' id s') (comp (λ y → v (s y)) (extend (_ ◦ σ) s') (niceExtend (_ ◦n θ) nice) M1) refl))
+  -> (eval σ M1 Δ' σ' s') ≡ (eval (extend (σ' ◦ σ) s') ([ s ]v M1) Δ' id s')
+sem-η M1 σ θ Δ' σ' s' nice = trans (cong-app1 (cong-app1 (cong-app1 (nice2 M1 σ θ σ') _) id) s') (sym (eq-sub1 (λ x' → x' Δ' id s') (compv s (extend (_ ◦ σ) s') M1) refl))
 
 eval-extend : ∀ {Γ Δ T} (σ : subst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> extend σ (eval σ N) x ≡ eval σ ((v ,, N) x)
 eval-extend σ N z = refl
