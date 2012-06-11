@@ -80,7 +80,7 @@ mutual
 
 
 sem : (Γ : ctx) -> (T : tp) -> Set
-sem Γ (atom A) = rtm Γ (atom A)
+sem Γ (atom A) = ntm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S
 
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
@@ -98,11 +98,38 @@ mutual
  nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
  nappSubst σ (neut R) = neut (rappSubst σ R)
 
+ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (x : var (Γ1 , U) S) -> ((ext σ1) ∘ (ext σ2)) x ≡ ext (σ1 ∘ σ2) x
+ext-funct σ1 σ2 z = refl
+ext-funct σ1 σ2 (s y) = refl
+
+mutual
+ rappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : rtm Γ1 S)
+  -> rappSubst σ1 (rappSubst σ2 R) ≡ rappSubst (σ1 ∘ σ2) R
+ rappSubst-funct σ1 σ2 (v y) = refl
+ rappSubst-funct σ1 σ2 (R · N) = cong2 _·_ (rappSubst-funct σ1 σ2 R) (nappSubst-funct σ1 σ2 N)
+ nappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (N : ntm Γ1 S)
+  -> nappSubst σ1 (nappSubst σ2 N) ≡ nappSubst (σ1 ∘ σ2) N
+ nappSubst-funct σ1 σ2 (ƛ N) = cong ƛ (trans (nappSubst-funct (ext σ1) (ext σ2) N) (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x' → ext-funct σ1 σ2 x')))))
+ nappSubst-funct σ1 σ2 (neut R) = cong neut (rappSubst-funct σ1 σ2 R)
+
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
+ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> ext id x ≡ x
+ext-id z = refl
+ext-id (s y) = refl
+
+mutual
+ rappSubst-id : ∀ {Γ S} (R : rtm Γ S) -> rappSubst id R ≡ R
+ rappSubst-id (v y) = refl
+ rappSubst-id (R · N) = cong2 _·_ (rappSubst-id R) (nappSubst-id N)
+ nappSubst-id : ∀ {Γ S} (N : ntm Γ S) -> nappSubst id N ≡ N
+ nappSubst-id (ƛ N) = cong ƛ (trans (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x → ext-id x)))) (nappSubst-id N))
+ nappSubst-id (neut R) = cong neut (rappSubst-id R)
+
+
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
-appSubst (atom A) σ M = rappSubst σ M
+appSubst (atom A) σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
@@ -110,11 +137,11 @@ wkn x = s x
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
- reflect {atom A} N = N
+ reflect {atom A} N = neut N
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
 
  reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
- reify {atom A} M = neut M
+ reify {atom A} M = M
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
 
 subst : ctx -> ctx -> Set
@@ -203,11 +230,6 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ (λ x -> (v (s x))) ] M · (v z)))
--- η2 : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} -> ([ (λ x -> v (s x)) ] M1 · (v z)) ≈ ([ (λ x -> v (s x)) ] M2 · (v z)) -> M1 ≈ M2
-
-
-
-
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
@@ -229,11 +251,11 @@ _◦n_ : ∀ {Γ1 Γ2 Γ3} (σ : vsubst Γ2 Γ3) {θ : subst Γ1 Γ2} -> niceSub
 (σ ◦n ρ) x = PrClosed _ σ (ρ x)
 
 appFunct : ∀ {T Γ1 Γ2 Γ3} (σ : vsubst Γ1 Γ2) (σ' : vsubst Γ2 Γ3) (t : sem Γ1 T) -> appSubst T (σ' ∘ σ) t ≡ appSubst T σ' (appSubst T σ t)
-appFunct {atom A} σ σ' t = {!!}
+appFunct {atom A} σ σ' t = sym (nappSubst-funct σ' σ t)
 appFunct {T ⇝ S} σ σ' t = refl
 
 appFunct-id : ∀ {T Γ} (t : sem Γ T) -> appSubst T id t ≡ t
-appFunct-id {atom A} t = {!!}
+appFunct-id {atom A} t = nappSubst-id t
 appFunct-id {T ⇝ S} t = refl 
 
 blah2 : ∀ {Γ1 Γ2 Γ3 T} (σ : vsubst Γ2 Γ3) (θ : subst Γ1 Γ2) (t : sem Γ2 T) {U} (x : var (Γ1 , T) U) -> (σ ◦ (extend θ t)) x ≡ (extend (σ ◦ θ) (appSubst _ σ t)) x
