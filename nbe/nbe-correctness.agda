@@ -14,9 +14,7 @@ data _≡_ {A : Set} (x : A) : A -> Set where
 
 postulate
  funext : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
-
-funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
-funext-imp H = {!!}
+ funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
 
 cong-app1 : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> f ≡ g -> (x : A) -> f x ≡ g x
 cong-app1 refl x = refl
@@ -29,6 +27,9 @@ cong f refl = refl
 
 cong1/2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> (z : B) -> f x z ≡ f y z
 cong1/2 f refl z = refl 
+
+cong2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> f x z ≡ f y w
+cong2 f refl refl = refl
 
 eq-ind : ∀ {A} (P : A -> Set) -> {x y : A} -> x ≡ y -> P x -> P y
 eq-ind P refl t = t 
@@ -251,13 +252,26 @@ mutual
  nice2 (ƛ M) θ θnice σ = funext (λ Δ'' → funext (λ σ' → funext (λ t →
    cong (λ (α : subst _ _) -> eval (extend α t) M) (funext-imp (λ T → funext (λ x → appFunct σ _ (θ x)))))))
 
+_•v_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) -> subst Γ1 Γ3
+(σ1 •v σ2) x = σ1 (σ2 x)
+
+blahv : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : vsubst Γ1 Γ2) {U} (x : var (Γ1 , T) U)
+ -> (((extend σ s) •v (ext σ')) x) ≡ (extend (σ •v σ') s x)
+blahv σ t σ' z = refl
+blahv σ t σ' (s y) = refl
+
+compv : ∀ {Γ3 T Γ1 Γ2} (σ1 : vsubst Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ]v M)) ≡ (eval (σ2 •v σ1) M)
+compv σ1 σ2 (v y) = refl
+compv σ1 σ2 (M · N) = cong2 (λ α β' → α _ id β') (compv σ1 σ2 M) (compv σ1 σ2 N)
+compv σ1 σ2 (ƛ M) = funext (λ Δ' → funext (λ σ → funext (λ t → trans (compv (ext σ1) (extend (_ ◦ σ2) t) M) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ T → funext (λ x → blahv (_ ◦ σ2) t σ1 x)))))))
+
 _•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
 (σ1 • σ2) x = eval σ1 (σ2 x) 
 
 blah : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2) {U} (x : var (Γ1 , T) U)
  -> (((extend σ s) • (sub-ext σ')) x) ≡ (extend (σ • σ') s x)
 blah σ s' σ' z = refl
-blah σ s' σ' (s y) = {!!} --need to do comp for [_]v :(
+blah σ s' σ' (s y) = compv s (extend σ s') (σ' y)
 
 blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2)
  -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
