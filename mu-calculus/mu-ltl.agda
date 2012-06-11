@@ -83,7 +83,6 @@ mutual
   ▹ : (A : var ζ #prop) -> functor ζ
   μ : (F : functor (ζ , #prop)) -> functor ζ
   □ : (A : functor ζ) -> functor ζ
-  ◇ : (A : functor ζ) -> functor ζ
   _⊃_ : (A : prop) (B : functor ζ) -> functor ζ
 
  prop : Set
@@ -97,7 +96,6 @@ psub ζ1 ζ2 = sub (const1 (functor ζ1)) ζ2
 [ σ ]pv (▹ A) = ▹ ([ σ ]v A)
 [ σ ]pv (μ F) = μ ([ vsub-ext σ ]pv F)
 [ σ ]pv (□ A) = □ ([ σ ]pv A)
-[ σ ]pv (◇ A) = ◇ ([ σ ]pv A)
 [ σ ]pv (A ⊃ B) = A ⊃ ([ σ ]pv B)
 
 id-psub : ∀ {ζ} -> psub ζ ζ
@@ -115,7 +113,6 @@ psub-ext σ = (psub-wkn σ) , ▹ top
 [ σ ]p (▹ A) = [ σ ]v A
 [ σ ]p (μ F) = μ ([ psub-ext σ ]p F)
 [ σ ]p (□ A) = □ ([ σ ]p A)
-[ σ ]p (◇ A) = ◇ ([ σ ]p A)
 [ σ ]p (A ⊃ B) = A ⊃ ([ σ ]p B)
 
 _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
@@ -138,7 +135,6 @@ sub-pvsub-funct σ1 σ2 (▸ P) = refl
 sub-pvsub-funct σ1 σ2 (▹ A) = {!!}
 sub-pvsub-funct σ1 σ2 (μ F) = {!!}
 sub-pvsub-funct σ1 σ2 (□ A) = {!!}
-sub-pvsub-funct σ1 σ2 (◇ A) = {!!}
 sub-pvsub-funct σ1 σ2 (A ⊃ B) = {!!}
 
 pvsub-vsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]v) ≈ [ σ1 ◆ σ2 ]v
@@ -151,7 +147,6 @@ pvsub-sub-funct σ1 σ2 (▸ P) = {!!}
 pvsub-sub-funct σ1 σ2 (▹ A) = {!!}
 pvsub-sub-funct σ1 σ2 (μ F) = {!!}
 pvsub-sub-funct σ1 σ2 (□ A) = {!!}
-pvsub-sub-funct σ1 σ2 (◇ A) = {!!}
 pvsub-sub-funct σ1 σ2 (A ⊃ B) = {!!}
 
 sub-map-funct : ∀ {A : Set} {exp1 exp2 exp3 : A -> Set} (g : ∀ {T} -> exp2 T -> exp3 T) (f : ∀ {T} -> exp1 T -> exp2 T)
@@ -183,7 +178,6 @@ sub-funct σ1 σ2 (▸ P) = refl
 sub-funct σ1 σ2 (▹ A) = sub-vsub-funct σ1 σ2 A
 sub-funct σ1 σ2 (μ F) = cong μ (trans (sub-funct (psub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct σ1 σ2) F))
 sub-funct σ1 σ2 (□ A) = cong □ (sub-funct σ1 σ2 A)
-sub-funct σ1 σ2 (◇ A) = cong ◇ (sub-funct σ1 σ2 A)
 sub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-funct σ1 σ2 B)
 
 
@@ -200,7 +194,6 @@ sub-id (▸ P) = refl
 sub-id (▹ A) = sub-v-id A
 sub-id (μ F) = cong μ (sub-id F)
 sub-id (□ A) = cong □ (sub-id A)
-sub-id (◇ A) = cong ◇ (sub-id A)
 sub-id (A ⊃ B) = cong (_⊃_ A) (sub-id B)
 
 sub-map-id : ∀ {ζ1 ζ2} (σ : psub ζ1 ζ2) -> (id-psub • σ) ≡ σ
@@ -234,10 +227,6 @@ mutual
   box : ∀ {A} -> (M : ⊡ , Δ ⊢ A - true)
               -> --------------------------
                    Δ , Γ ⊢ (□ A) - true
--- Read this as saying that when proving a possibility we're allowed to take one possibility along with us, and all necessities.
-  let-dia : ∀ {A C} -> (M : Δ , Γ ⊢ ◇ A - true) -> (N : ⊡ , (Δ , A) ⊢ C - true)
-                    -> --------------------------------------------------------
-                                      Δ , Γ ⊢ ◇ C - true
   inj : ∀ {F} -> (M : Δ , Γ ⊢ ([ μ F /x]p F) - true)
               -> -----------------------------------------------------
                               Δ , Γ ⊢ μ F - true
@@ -251,7 +240,6 @@ mutual
 [_]tv σ (M · N) = [ σ ]tv M · [ σ ]tv N
 [_]tv σ (let-box M N) = let-box ([ σ ]tv M) ([ σ ]tv N)
 [_]tv σ (box M) = box M
-[_]tv σ (let-dia M N) = let-dia ([ σ ]tv M) N
 [_]tv σ (inj M) = inj ([ σ ]tv M)
 [_]tv σ (rec F M N) = rec F ([ σ ]tv M) N
 
@@ -261,7 +249,6 @@ mutual
 [_]vav σ (M · N) = [ σ ]vav M · [ σ ]vav N
 [_]vav σ (let-box M N) = let-box ([ σ ]vav M) ([ vsub-ext σ ]vav N)
 [_]vav σ (box M) = box ([ σ ]tv M)
-[_]vav σ (let-dia M N) = let-dia ([ σ ]vav M) ([ vsub-ext σ ]tv N)
 [_]vav σ (inj M) = inj ([ σ ]vav M)
 [_]vav σ (rec F M N) = rec F ([ σ ]vav M) N
 
@@ -281,7 +268,6 @@ truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 [_]t σ (M · N) = [ σ ]t M · [ σ ]t N
 [_]t σ (let-box M N) = let-box ([ σ ]t M) ([ sub-map [ wkn-vsub ]vav σ ]t N)
 [_]t σ (box M) = box M
-[_]t σ (let-dia M N) = let-dia ([ σ ]t M) N
 [_]t σ (inj M) = inj ([ σ ]t M)
 [_]t σ (rec F M N) = rec F ([ σ ]t M) N
 
@@ -300,7 +286,6 @@ validsub-id = truesub-id
 [ θ ]va (M · N) = ([ θ ]va M) · ([ θ ]va N)
 [ θ ]va let-box M N = let-box ([ θ ]va M) ([ validsub-ext θ ]va N)
 [ θ ]va box M = box ([ θ ]t M)
-[ θ ]va let-dia M N = let-dia ([ θ ]va M) ([ truesub-ext θ ]t N)
 [ θ ]va inj M = inj ([ θ ]va M)
 [ θ ]va rec F M N = rec F ([ θ ]va M) N
 
@@ -327,7 +312,6 @@ map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub
   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
   true (map F (θ , ▹ top))))
 map (□ A) θ = let-box (▹ top) (box (map A θ))
-map (◇ A) θ = let-dia (▹ top) (map A θ)
 map (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map B θ))
 
 map1 : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
