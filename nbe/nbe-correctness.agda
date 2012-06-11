@@ -331,8 +331,22 @@ soundness σ θ (ƛ M) = funext (λ Δ → funext (λ wkn → funext (λ x → s
 soundness σ θ (β M N) = sem-β M N σ θ
 soundness {Γ} {Δ} {T ⇝ S} {M1} σ θ (η .M1) = funext (λ Δ' → funext (λ σ' → funext (λ s' → sem-η M1 σ θ Δ' _ s' {!!})))
 
+reflect-nice : ∀ {T Γ Δ} (ρ : vsubst Γ Δ) (R : rtm Γ T) -> appSubst T ρ (reflect R) ≡ reflect (rappSubst ρ R)
+reflect-nice {atom A} ρ R = refl
+reflect-nice {T ⇝ S} ρ R = funext (λ Δ' → funext (λ σ → funext (λ x → cong (λ α → reflect (α · reify x)) (sym (rappSubst-funct _ ρ R)))))
+
+mutual
+ reify-nice : ∀ {T Γ Δ} (ρ : vsubst Γ Δ) (t : sem Γ T) (p : Pr T t) -> nappSubst ρ (reify t) ≡ reify (appSubst T ρ t)
+ reify-nice {atom A} ρ t p = refl
+ reify-nice {T ⇝ S} ρ t p with p _ wkn (reflect (v z)) (reflect-nice2 (v z))
+ ... | q1 , q2 = cong ƛ (trans (reify-nice (ext ρ) (t (_ , T) wkn (reflect (v z))) q1) (cong reify (trans (q2 (_ , T) (ext ρ)) (cong (λ α → t _ (wkn ∘ ρ) α) (reflect-nice (ext ρ) (v z))))))
+
+ reflect-nice2 : ∀ {T Γ} (R : rtm Γ T) -> Pr T (reflect R)
+ reflect-nice2 {atom A} R = tt
+ reflect-nice2 {T ⇝ S} R = λ Δ σ t x → (reflect-nice2 (rappSubst σ R · reify t)) , (λ Δ' ρ → trans (reflect-nice ρ (rappSubst σ R · reify t)) (cong2 (λ α β' → reflect (α · β')) (rappSubst-funct ρ σ R) (reify-nice ρ t x)))
+
 soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
-soundness' H = cong reify (soundness _ {!!} H)
+soundness' H = cong reify (soundness _ (λ x → reflect-nice2 (v x)) H)
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
