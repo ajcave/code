@@ -304,6 +304,10 @@ blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 
 blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
 
 -- this is a kind of functoriality (wrap the M up in extensionality/an equivalence relation)
+-- Equality is too strong! e.g. Γ ⊢ λ x. x : T -> T gets interpreted as a ∀ Γ' ≥ Γ, sem Γ' T -> sem Γ' T
+-- Then you can feed this thing a "nasty" input which distinguishes based on bad things (say if T is S -> S -> S,
+-- then it can return the first if the context is of even length or the second if it's of odd length...)
+-- Why doesn't this happen in the proof of appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M?
 comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (θ : niceSubst Γ2 Γ3 σ2) (M : tm Γ1 T)
  -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
 comp σ1 σ2 θ (v y) = refl
