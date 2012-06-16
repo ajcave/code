@@ -404,12 +404,26 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 ≈s-refl : ∀ {Γ Δ} (σ : sub Γ Δ) -> σ ≈s σ
 ≈s-refl σ x = ≈-refl
 
+-- What would this whole proof look like if we used explicit substitutions?
+-- We would need to prove more equations about semantic values, but less of this?
+[_]v≈ : ∀ {Γ Δ T} (σ : vsubst Γ Δ) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ ]v M1 ≈ [ σ ]v M2
+[_]v≈ σ (v x) = v (σ x)
+[_]v≈ σ (M · N) = [ σ ]v≈ M · [ σ ]v≈ N
+[_]v≈ σ (ƛ M) = ƛ ([ ext σ ]v≈ M)
+[_]v≈ σ (β M N) = ≈-trans (β _ _) {!!}
+[_]v≈ σ {M1} (η .M1) = ≈-trans (η _) (ƛ ({!!} · (v z)))
+[_]v≈ σ (≈-trans M≈N N≈P) = ≈-trans ([ σ ]v≈ M≈N) ([ σ ]v≈ N≈P)
+
+≈s-ext : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} -> σ1 ≈s σ2 -> (sub-ext {T = T} σ1) ≈s (sub-ext σ2)
+≈s-ext p z = v z
+≈s-ext p (s y) = [ s ]v≈ (p y)
+
 [_]≈ : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} (σ1≈σ2 : σ1 ≈s σ2) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ1 ] M1 ≈ [ σ2 ] M2
 [_]≈ σ1≈σ2 (v x) = σ1≈σ2 x
 [_]≈ σ1≈σ2 (M · N) = ([ σ1≈σ2 ]≈ M) · ([ σ1≈σ2 ]≈ N)
-[_]≈ σ1≈σ2 (ƛ M) = ƛ ([ {!!} ]≈ M)
+[_]≈ σ1≈σ2 (ƛ M) = ƛ ([ ≈s-ext σ1≈σ2 ]≈ M)
 [_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) {!!}
-[_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ {!!})
+[_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ ({!!} · (v z)))
 [_]≈ {σ2 = σ2} σ1≈σ2 (≈-trans M≈N N≈P) = ≈-trans ([ σ1≈σ2 ]≈ M≈N) ([ ≈s-refl σ2 ]≈ N≈P)
 
 mutual
