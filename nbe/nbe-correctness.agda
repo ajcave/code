@@ -374,7 +374,7 @@ soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(M1 · N1) .(M2 · N2) (_·_ {T'} {T} {M1}
    (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N1 N2 N1≈N2)
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} M1≈M2) =
   λ Δ σ t1 t2 prt1 prt2 t1≃t2 → soundness1 (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n θ1) prt1) (niceExtend (σ ◦n θ2) prt2) M1 M2 M1≈M2
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) = {!f!}
 soundness1 {Γ3} σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η {T} {S} .M1) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 →
   eq-ind (λ α → eval σ1 M1 Δ σ t1 ≃ α) (sem-η M1 σ2 θ2 Δ σ t2 prt2) (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 M1 Δ σ t1 t2 prt1 prt2 t1≃t2)
 
