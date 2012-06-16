@@ -197,7 +197,7 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ s ]v M · (v z)))
- tr : ∀ {T} {M N P : tm Γ T} -> M ≈ N -> N ≈ P -> M ≈ P
+ ≈-trans : ∀ {T} {M N P : tm Γ T} -> M ≈ N -> N ≈ P -> M ≈ P
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
@@ -355,7 +355,7 @@ soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) =
           (≃-sym (comp' (v ,, N) σ2 σ1 (≃s-sym σ1≃σ2) θ2 θ1 M))
 soundness1 {Γ3} σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η {T} {S} .M1) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 →
   ≃≡-trans (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 M1 Δ σ t1 t2 prt1 prt2 t1≃t2) (sem-η M1 σ2 θ2 Δ σ t2 prt2)
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M P (tr {N = N} M≃N N≃P) =
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M P (≈-trans {N = N} M≃N N≃P) =
   ≃-trans (soundness1 σ1 σ1 (≃s-blah σ1≃σ2) θ1 θ1 M N M≃N)
           (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N P N≃P)
 
@@ -420,4 +420,5 @@ glExt θ p (s y) = θ y
 allGL : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> GL Δ T (eval σ M)
 allGL σ θ (v y) = θ y
 allGL σ θ (M · N) = _*_.fst (allGL σ θ M _ id (eval σ N) (allGL σ θ N))
-allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M) , {!!}
+allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M) ,
+  ≈-trans (β _ _) {!!}
