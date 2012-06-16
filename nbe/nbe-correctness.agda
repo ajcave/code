@@ -303,12 +303,6 @@ blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 
  -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
 blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
 
--- comp is a kind of functoriality (wrap the M up in extensionality/an equivalence relation)
--- Equality is too strong! e.g. Γ ⊢ λ x. x : T -> T gets interpreted as a ∀ Γ' ≥ Γ, sem Γ' T -> sem Γ' T
--- Then you can feed this thing a "nasty" input which distinguishes based on bad things (say if T is S -> S -> S,
--- then it can return the first if the context is of even length or the second if it's of odd length...)
--- Why doesn't this happen in the proof of appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M? Luck? No recursive call..
-
 -- Oh yay a PER
 _≃_ : ∀ {T Γ} (M N : sem Γ T) -> Set
 _≃_ {atom A} M N = M ≡ N
@@ -354,18 +348,17 @@ _◦≃_ : ∀ {Γ1 Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {σ1 σ2 : subst Γ1 Γ2} (σ
 ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (M · N) = ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M _ id (eval σ1 N) (eval σ2 N) (nice N σ1 σ1n) (nice N σ2 σ2n) (≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n N)
 ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (ƛ M) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → ≃-refl (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n σ1n) prt1) (niceExtend (σ ◦n σ2n) prt2) M
 
+-- comp is a kind of functoriality (wrap the M up in extensionality/an equivalence relation)
+-- Equality is too strong! e.g. Γ ⊢ λ x. x : T -> T gets interpreted as a ∀ Γ' ≥ Γ, sem Γ' T -> sem Γ' T
+-- Then you can feed this thing a "nasty" input which distinguishes based on bad things (say if T is S -> S -> S,
+-- then it can return the first if the context is of even length or the second if it's of odd length...)
+-- Why doesn't this happen in the proof of appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M? Luck? No recursive call..
 comp' : ∀ {Γ3 T Γ1 Γ2} (ρ : sub Γ1 Γ2) (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2)
   (M : tm Γ1 T) -> (eval σ1 ([ ρ ] M)) ≃ (eval (σ2 • ρ) M)
 comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (v y) = ≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 (ρ y)
 comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (M · N) = (comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 M) _ id (eval σ1 ([ ρ ] N)) (eval (σ2 • ρ) N)
   (nice ([ ρ ] N) σ1 θ1) (nice N (σ2 • ρ) (λ x → nice (ρ x) σ2 θ2)) (comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 N)
 comp' {Γ3} ρ σ1 σ2 σ1≃σ2 θ1 θ2 (ƛ {T} {S} M) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → eq-ind (λ (α : subst _ _) -> eval (extend (σ ◦ σ1) t1) ([ sub-ext ρ ] M) ≃ eval α M) (trans (blah' (σ ◦ σ2) t2 ρ) (funext-imp (λ x → funext (λ x' → cong (λ (α : subst _ _) → extend α t2 x') (funext-imp (λ x0 → funext (λ x1 → sym (nice2 (ρ x1) σ2 θ2 σ)))))))) (comp' (sub-ext ρ) (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n θ1) prt1) (niceExtend (σ ◦n θ2) prt2) M)
-
-{-comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (θ : niceSubst Γ2 Γ3 σ2) (M : tm Γ1 T)
- -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
-comp σ1 σ2 θ (v y) = refl
-comp {Γ3} σ1 σ2 θ (M · N) = eq-sub2 (λ x y → x Γ3 id y) (comp σ1 σ2 θ M) (comp σ1 σ2 θ N) refl
-comp σ1 σ2 θ (ƛ M) = funext (λ Δ' → funext (λ σ → funext (λ x → trans (comp (sub-ext σ1) (extend (_ ◦ σ2) x) (niceExtend (_ ◦n θ) {!!}) M) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ T → funext (λ x' → trans (blah (_ ◦ σ2) x σ1 x') (cong (λ (α : subst _ _) → extend α x x') (funext-imp (λ U → funext (λ x1 → sym (nice2 (σ1 x1) σ2 θ _)))))))))))) -}
 
 sem-η : ∀ {Γ Δ T S} (M1 : tm Γ (T ⇝ S)) (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ) Δ' (σ' : vsubst Δ Δ') (s' : sem Δ' T) (nice : Pr _ s')
   -> (eval σ M1 Δ' σ' s') ≡ (eval (extend (σ' ◦ σ) s') ([ s ]v M1) Δ' id s')
