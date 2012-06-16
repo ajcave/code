@@ -443,12 +443,18 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 ≈s-ext p z = v z
 ≈s-ext p (s y) = [ s ]v≈ (p y)
 
+[_]≈c : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} (σ1≈σ2 : σ1 ≈s σ2) (M : tm Γ T) -> [ σ1 ] M ≈ [ σ2 ] M
+[_]≈c p (v y) = p y
+[_]≈c p (M · N) = [ p ]≈c M · [ p ]≈c N
+[_]≈c p (ƛ M) = ƛ ([ ≈s-ext p ]≈c M)
+
+-- TODO: Still don't know if I need this lemma in its full generality...
 [_]≈ : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} (σ1≈σ2 : σ1 ≈s σ2) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ1 ] M1 ≈ [ σ2 ] M2
 [_]≈ σ1≈σ2 (v x) = σ1≈σ2 x
 [_]≈ σ1≈σ2 (M · N) = ([ σ1≈σ2 ]≈ M) · ([ σ1≈σ2 ]≈ N)
 [_]≈ σ1≈σ2 (ƛ M) = ƛ ([ ≈s-ext σ1≈σ2 ]≈ M)
-[_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) (≈≡-trans ([]-funct _ _ M) (≡≈-trans {!!} (sym ([]-funct _ _ M))))
-[_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ (≈≡-trans ([]vn-funct _ _ M1) (≡≈-trans {!!} (sym ([]nv-funct _ _ M1))) · (v z)))
+[_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) (≈≡-trans ([]-funct _ _ M) (≡≈-trans ([ {!!} ]≈c M) (sym ([]-funct _ _ M))))
+[_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ (≈≡-trans ([]vn-funct _ _ M1) (≡≈-trans ([ {!!} ]≈c M1) (sym ([]nv-funct _ _ M1))) · (v z)))
 [_]≈ {σ2 = σ2} σ1≈σ2 (≈-trans M≈N N≈P) = ≈-trans ([ σ1≈σ2 ]≈ M≈N) ([ ≈s-refl σ2 ]≈ N≈P)
 
 mutual
