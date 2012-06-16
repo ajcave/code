@@ -423,7 +423,9 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
-[]v-funct σ1 σ2 R = {!!}
+[]v-funct σ1 σ2 (v y) = refl
+[]v-funct σ1 σ2 (y · y') = cong2 _·_ ([]v-funct σ1 σ2 y) ([]v-funct σ1 σ2 y')
+[]v-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]v-funct (ext σ1) (ext σ2) y) (cong (λ (α : vsubst _ _) → [ α ]v y) (funext-imp (λ x → funext (λ x' → ext-funct σ1 σ2 x')))))
 
 []vn-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ] R) ≡ [ [ σ1 ]v ∘₁ σ2 ] R
@@ -437,8 +439,14 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
   -> [ σ1 ] ([ σ2 ] R) ≡ [ [ σ1 ] ∘₁ σ2 ] R
 []-funct σ1 σ2 R = {!!}
 
+sub-ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> (sub-ext v) x ≡ v x
+sub-ext-id z = refl
+sub-ext-id (s y) = refl
+
 []-id : ∀ {Γ T} {M : tm Γ T} -> [ v ] M ≡ M
-[]-id = {!!}
+[]-id {M = v y} = refl
+[]-id {M = M · N} = cong2 _·_ []-id []-id
+[]-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
 
 vsimp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ((v ,, [ σ ]v N) ∘₁ (ext σ)) x ≡ ([ σ ]v ∘₁ (v ,, N)) x
 vsimp σ N z = refl
