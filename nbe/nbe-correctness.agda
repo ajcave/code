@@ -142,7 +142,7 @@ appSubst (atom A) σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn x = s x
+wkn = s
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
@@ -534,10 +534,6 @@ blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 �
 blagh σ1 σ2 p1 p2 z = p2
 blagh σ1 σ2 p1 p2 (s y) = p1 y
 
-≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
-≈-η-expand {atom A} R = ≈-refl
-≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ {!!})
-
 mutual
  []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
  []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
@@ -545,6 +541,10 @@ mutual
  []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
  []v-comm-rinj σ (v y) = refl
  []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
+
+≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
+≈-η-expand {atom A} R = ≈-refl
+≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans (≈-refl' ([]v-comm-rinj s R) · ≈-η-expand (v z)) (≈-η-expand _)))
 
 completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
 completeness σ θ (v y) = ≈-refl
