@@ -415,8 +415,9 @@ mutual
   cong ƛ (reify-nice2 (t1≃t2 _ wkn (reflect (v z)) (reflect (v z)) (reflect-nice2 (v z)) (reflect-nice2 (v z)) (reflect-nice3 (v z))))
 
 soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
-soundness' H = reify-nice2 (soundness1 _ _
-  (λ x → reflect-nice3 (v x)) (λ {U} x → reflect-nice2 (v x)) (λ {U} x → reflect-nice2 (v x)) _ _ H)
+soundness' H = reify-nice2 (soundness1 _ _ (λ x → reflect-nice3 (v x)) (λ x → reflect-nice2 (v x)) (λ x → reflect-nice2 (v x)) _ _ H)
+
+-- TODO: Now just get rid of funext and funext-imp
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
