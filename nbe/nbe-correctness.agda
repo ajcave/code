@@ -581,3 +581,5 @@ completeness''' : ∀ {Γ T} (M N : tm Γ T) -> nbe M ≡ nbe N -> M ≈ N
 completeness''' M N p = ≈-trans (completeness' M) (≈-sym (eq-ind (λ α → N ≈ ninj α) (sym p) (completeness' N)))
 
 -- TODO: We should be able to get rid of ≈-sym... Check the Dyber paper?
+-- TODO: Try an explicit substitution language for tm. I suspect it's simpler
+-- TODO: Try a more conventional (weak) normalization proof and strong normalization
