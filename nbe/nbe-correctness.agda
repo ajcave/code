@@ -573,9 +573,15 @@ mutual
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
 completeness' M = ≈-trans (≈≡-trans (sym []-id) ([ (λ x → ≈-η-expand (v x)) ]≈c M)) (completeness (reflect ∘₁ v) (λ x → reflect-GL (v x)) (λ x → reflect-nice2 (v x)) M)
 
--- Church-Rosser is actually an easy corollary! (or at least it would be if we didn't include ≈-sym... :( )
+-- This is the form completeness would take if we didn't include ≈-sym
 completeness'' : ∀ {Γ T} (M N : tm Γ T) -> nbe M ≡ nbe N -> Σ (λ (P : tm Γ T) -> (M ≈ P) * (N ≈ P))
 completeness'' M N p = ninj (nbe M) , ((completeness' M) , (eq-ind (λ α → N ≈ ninj α) (sym p) (completeness' N)))
+
+-- Church-Rosser is actually an easy corollary (according to Dyber)! (or at least it would be if we didn't include ≈-sym... :( )
+cr : ∀ {Γ T} (M N P : tm Γ T) -> M ≈ N -> M ≈ P -> Σ (λ (Q : tm Γ T) -> (N ≈ Q) * (P ≈ Q))
+cr M N P p1 p2 = (ninj (nbe M)) ,
+ (eq-ind (λ α → N ≈ ninj α) (sym (soundness' p1)) (completeness' N) ,
+  eq-ind (λ α → P ≈ ninj α) (sym (soundness' p2)) (completeness' P))
 
 completeness''' : ∀ {Γ T} (M N : tm Γ T) -> nbe M ≡ nbe N -> M ≈ N
 completeness''' M N p = ≈-trans (completeness' M) (≈-sym (eq-ind (λ α → N ≈ ninj α) (sym p) (completeness' N)))
