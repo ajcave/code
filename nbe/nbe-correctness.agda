@@ -524,10 +524,19 @@ reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL {atom A} R = tt
 reflect-GL {T ⇝ S} R = λ Δ σ p glp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) {!!})
 
+blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 ∘₁ s) -> (σ1 z) ≈ (σ2 z) -> σ1 ≈s σ2
+blagh σ1 σ2 p1 p2 z = p2
+blagh σ1 σ2 p1 p2 (s y) = p1 y
+
+≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
+≈-η-expand {atom A} R = ≈-refl
+≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ {!!})
+
 completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
 completeness σ θ (v y) = ≈-refl
 completeness σ θ (M · N) = ≈-trans ((completeness σ θ M) · (completeness σ θ N)) (_*_.snd (allGL σ θ M _ id (eval σ N) (allGL σ θ N)))
-completeness σ θ (ƛ M) = ƛ (≈-trans ([ (λ x → {!!}) ]≈c M) (completeness (extend (wkn ◦ σ) (reflect (v z))) (glExt (wkn ◦g θ) (reflect-GL (v z))) M))
+completeness σ θ (ƛ M) = ƛ (≈-trans ([ blagh (sub-ext (ninj ∘₁ (reify ∘₁ σ)))
+                                         (ninj ∘₁ (reify ∘₁ extend (wkn ◦ σ) (reflect (v z)))) (λ x → {!!}) (≈-η-expand (v z)) ]≈c M) (completeness (extend (wkn ◦ σ) (reflect (v z))) (glExt (wkn ◦g θ) (reflect-GL (v z))) M))
 
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
 completeness' M = {!!}
