@@ -345,11 +345,6 @@ _◦≃_ : ∀ {Γ1 Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {σ1 σ2 : subst Γ1 Γ2} (σ
 ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (M · N) = ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M _ id (eval σ1 N) (eval σ2 N) (nice N σ1 σ1n) (nice N σ2 σ2n) (≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n N)
 ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (ƛ M) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → ≃-refl (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n σ1n) prt1) (niceExtend (σ ◦n σ2n) prt2) M
 
-≃-refl' : ∀ {T Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) (σ1≃σ2 : σ1 ≃s σ2) (σ1n : niceSubst Γ1 Γ2 σ1) (σ2n : niceSubst Γ1 Γ2 σ2)
- (M1 M2 : tm Γ1 T) -> (eval σ1 M1) ≡ (eval σ2 M2) -> (eval σ1 M1) ≃ (eval σ2 M2)
-≃-refl' σ1 σ2 σ1≃σ2 σ1n σ2n M1 M2 p with ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M1 | ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M2
-... | q1 | q2 = {!!}
-
 comp' : ∀ {Γ3 T Γ1 Γ2} (ρ : sub Γ1 Γ2) (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2)
   (M : tm Γ1 T) -> (eval σ1 ([ ρ ] M)) ≃ (eval (σ2 • ρ) M)
 comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (v y) = ≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 (ρ y)
@@ -380,7 +375,8 @@ soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(M1 · N1) .(M2 · N2) (_·_ {T'} {T} {M1}
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} M1≈M2) =
   λ Δ σ t1 t2 prt1 prt2 t1≃t2 → soundness1 (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n θ1) prt1) (niceExtend (σ ◦n θ2) prt2) M1 M2 M1≈M2
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) = {!!}
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η .M1) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → {!!}
+soundness1 {Γ3} σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η {T} {S} .M1) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 →
+  eq-ind (λ α → eval σ1 M1 Δ σ t1 ≃ α) (sem-η M1 σ2 θ2 Δ σ t2 prt2) (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 M1 Δ σ t1 t2 prt1 prt2 t1≃t2)
 
 sem-β : ∀ {Γ Δ T S} (M : tm (Γ , T) S) (N : tm Γ T) (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ)
  -> (eval (extend (id ◦ σ) (eval σ N)) M) ≡ (eval σ ([ v ,, N ] M))
