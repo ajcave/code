@@ -549,8 +549,8 @@ allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ
 reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL {atom A} R = tt
 reflect-GL {T ⇝ S} R = λ Δ σ p glp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ (v ,, ninj (reify p)) ]≈c2 (≈-sym (≈-η-expand _))) (eq-ind
-                                                                                                                                                                          (λ α → [ v ,, ninj (reify p) ] (rinj α) ≈ rinj (rappSubst σ R)) (rappSubst-funct wkn σ R) (eq-ind (λ α → [ v ,, ninj (reify p) ] α ≈ rinj (rappSubst σ R)) ([]v-comm-rinj wkn (rappSubst σ R))
-                                                                                                                                                                                                                                                                       (≈-refl' (trans ([]nv-funct _ _ (rinj (rappSubst σ R))) []-id))) · ([ v ,, ninj (reify p) ]≈c2 (≈-sym (≈-η-expand _))))) (≈-η-expand _)))
+     (λ α → [ v ,, ninj (reify p) ] (rinj α) ≈ rinj (rappSubst σ R)) (rappSubst-funct wkn σ R) (eq-ind (λ α → [ v ,, ninj (reify p) ] α ≈ rinj (rappSubst σ R)) ([]v-comm-rinj wkn (rappSubst σ R))
+     (≈-refl' (trans ([]nv-funct _ _ (rinj (rappSubst σ R))) []-id))) · ([ v ,, ninj (reify p) ]≈c2 (≈-sym (≈-η-expand _))))) (≈-η-expand _)))
 
 blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 ∘₁ s) -> (σ1 z) ≈ (σ2 z) -> σ1 ≈s σ2
 blagh σ1 σ2 p1 p2 z = p2
