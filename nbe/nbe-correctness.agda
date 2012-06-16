@@ -303,7 +303,7 @@ blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 
  -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
 blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
 
--- this is a kind of functoriality (wrap the M up in extensionality/an equivalence relation)
+-- comp is a kind of functoriality (wrap the M up in extensionality/an equivalence relation)
 -- Equality is too strong! e.g. Γ ⊢ λ x. x : T -> T gets interpreted as a ∀ Γ' ≥ Γ, sem Γ' T -> sem Γ' T
 -- Then you can feed this thing a "nasty" input which distinguishes based on bad things (say if T is S -> S -> S,
 -- then it can return the first if the context is of even length or the second if it's of odd length...)
@@ -311,7 +311,34 @@ blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
 
 _≃_ : ∀ {T Γ} (M N : sem Γ T) -> Set
 _≃_ {atom A} M N = M ≡ N
-_≃_ {T ⇝ S} M N = ∀ Δ (σ : vsubst _ Δ) t → Pr T t → M Δ σ t ≃ N Δ σ t
+_≃_ {T ⇝ S} M N = ∀ Δ (σ : vsubst _ Δ) t1 t2 → (prt1 : Pr T t1) -> (prt2 : Pr T t2) -> (t1≃t2 : t1 ≃ t2) → M Δ σ t1 ≃ N Δ σ t2
+
+_≃s_ : ∀ {Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) -> Set
+_≃s_ σ1 σ2 = ∀ {U} (x : var _ U) -> σ1 x ≃ σ2 x
+
+extend-≃ : ∀ {Γ1 Γ2 T} {σ1 σ2 : subst Γ1 Γ2} (σ1≃σ2 : σ1 ≃s σ2) {t1 t2 : sem Γ2 T} (t1≃t2 : t1 ≃ t2) -> extend σ1 t1 ≃s extend σ2 t2
+extend-≃ σ1≃σ2 t1≃t2 z = t1≃t2
+extend-≃ σ1≃σ2 t1≃t2 (s y) = σ1≃σ2 y
+
+appSubst-≃ : ∀ {T Γ1 Γ2} (ρ : vsubst Γ1 Γ2) {σ1 σ2 : sem Γ1 T} (σ1≃σ2 : σ1 ≃ σ2) -> (appSubst T ρ σ1) ≃ (appSubst T ρ σ2)
+appSubst-≃ {atom A} ρ refl = refl
+appSubst-≃ {T ⇝ S} ρ σ1≃σ2 = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → σ1≃σ2 _ (σ ∘ ρ) t1 t2 prt1 prt2 t1≃t2
+
+_◦≃_ : ∀ {Γ1 Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {σ1 σ2 : subst Γ1 Γ2} (σ1≃σ2 : σ1 ≃s σ2) -> (ρ ◦ σ1) ≃s (ρ ◦ σ2)
+(ρ ◦≃ (σ1≃σ2)) x = appSubst-≃ ρ (σ1≃σ2 x)
+
+≃-refl : ∀ {T Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) (σ1≃σ2 : σ1 ≃s σ2) (σ1n : niceSubst Γ1 Γ2 σ1) (σ2n : niceSubst Γ1 Γ2 σ2)
+ (M : tm Γ1 T) -> (eval σ1 M) ≃ (eval σ2 M)
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (v y) = σ1≃σ2 y
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (M · N) = ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M _ id (eval σ1 N) (eval σ2 N) (nice N σ1 σ1n) (nice N σ2 σ2n) (≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n N)
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (ƛ M) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → ≃-refl (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n σ1n) prt1) (niceExtend (σ ◦n σ2n) prt2) M
+
+comp' : ∀ {Γ3 T Γ1 Γ2} (ρ : sub Γ1 Γ2) (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2)
+  (M : tm Γ1 T) -> (eval σ1 ([ ρ ] M)) ≃ (eval (σ2 • ρ) M)
+comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (v y) = ≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 (ρ y)
+comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (M · N) with comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 M | comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 N
+... | q1 | q2 = {!q1!}
+comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (ƛ M) = {!!}
 
 comp : ∀ {Γ3 T Γ1 Γ2} (σ1 : sub Γ1 Γ2) (σ2 : subst Γ2 Γ3) (θ : niceSubst Γ2 Γ3 σ2) (M : tm Γ1 T)
  -> (eval σ2 ([ σ1 ] M)) ≡ (eval (σ2 • σ1) M)
