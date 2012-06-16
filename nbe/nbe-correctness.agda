@@ -331,6 +331,12 @@ _≃_ {T ⇝ S} M N = ∀ Δ (σ : vsubst _ Δ) t1 t2 → (prt1 : Pr T t1) -> (p
 _≃s_ : ∀ {Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) -> Set
 _≃s_ σ1 σ2 = ∀ {U} (x : var _ U) -> σ1 x ≃ σ2 x
 
+≃s-sym : ∀ {T Γ} {M N : subst Γ T} -> M ≃s N -> N ≃s M
+≃s-sym p x = ≃-sym (p x)
+
+≃s-blah : ∀ {T Γ} {M N : subst Γ T} -> M ≃s N -> M ≃s M
+≃s-blah p x = ≃-blah (p x)
+
 extend-≃ : ∀ {Γ1 Γ2 T} {σ1 σ2 : subst Γ1 Γ2} (σ1≃σ2 : σ1 ≃s σ2) {t1 t2 : sem Γ2 T} (t1≃t2 : t1 ≃ t2) -> extend σ1 t1 ≃s extend σ2 t2
 extend-≃ σ1≃σ2 t1≃t2 z = t1≃t2
 extend-≃ σ1≃σ2 t1≃t2 (s y) = σ1≃σ2 y
@@ -377,7 +383,15 @@ soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(M1 · N1) .(M2 · N2) (_·_ {T'} {T} {M1}
    (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N1 N2 N1≈N2)
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} M1≈M2) =
   λ Δ σ t1 t2 prt1 prt2 t1≃t2 → soundness1 (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n θ1) prt1) (niceExtend (σ ◦n θ2) prt2) M1 M2 M1≈M2
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) = {!f!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) =
+  ≃-trans (eq-ind
+             (λ (α : subst _ _) →
+                eval (extend (id ◦ σ1) (eval σ1 N)) M ≃ eval α M)
+             (funext-imp (λ x → funext (λ x' → trans (cong (λ (α : subst _ _) → extend α (eval σ1 N) x')
+              (funext-imp (λ x0 → funext (λ x1 → appFunct-id (σ1 x1))))) (eval-extend σ1 N x'))))
+             (≃-blah (≃-refl (extend (id ◦ σ1) (eval σ1 N)) (extend (id ◦ σ2) (eval σ2 N)) (extend-≃ (id ◦≃ σ1≃σ2)
+                     (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 N)) (niceExtend (id ◦n θ1) (nice N σ1 θ1)) (niceExtend (id ◦n θ2) (nice N σ2 θ2)) M)))
+          (≃-sym (comp' (v ,, N) σ2 σ1 (≃s-sym σ1≃σ2) θ2 θ1 M))
 soundness1 {Γ3} σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η {T} {S} .M1) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 →
   ≃≡-trans (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 M1 Δ σ t1 t2 prt1 prt2 t1≃t2) (sem-η M1 σ2 θ2 Δ σ t2 prt2)
 
