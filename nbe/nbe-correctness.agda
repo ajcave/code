@@ -398,6 +398,20 @@ soundness' H = reify-nice2 (soundness1 _ _ (λ x → reflect-nice3 (v x)) (λ x 
 
 -- TODO: Now just get rid of funext and funext-imp
 
+_≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
+σ1 ≈s σ2 = ∀ {U} (x : var _ U) -> (σ1 x) ≈ (σ2 x)
+
+≈s-refl : ∀ {Γ Δ} (σ : sub Γ Δ) -> σ ≈s σ
+≈s-refl σ x = ≈-refl
+
+[_]≈ : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} (σ1≈σ2 : σ1 ≈s σ2) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ1 ] M1 ≈ [ σ2 ] M2
+[_]≈ σ1≈σ2 (v x) = σ1≈σ2 x
+[_]≈ σ1≈σ2 (M · N) = ([ σ1≈σ2 ]≈ M) · ([ σ1≈σ2 ]≈ N)
+[_]≈ σ1≈σ2 (ƛ M) = ƛ ([ {!!} ]≈ M)
+[_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) {!!}
+[_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ {!!})
+[_]≈ {σ2 = σ2} σ1≈σ2 (≈-trans M≈N N≈P) = ≈-trans ([ σ1≈σ2 ]≈ M≈N) ([ ≈s-refl σ2 ]≈ N≈P)
+
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
  ninj (ƛ M) = ƛ (ninj M)
@@ -406,8 +420,24 @@ mutual
  rinj (v x) = v x
  rinj (R · N) = (rinj R) · (ninj N)
 
---mutual
--- ninj-comp : ∀ {Γ Δ T} (σ : sub Γ Δ) (N : ntm Γ T) -> [ σ ] (ninj N) ≈ ninj (
+nsub : (Γ Δ : ctx) -> Set
+nsub Γ Δ = ∀ {U} (x : var Γ U) -> ntm Δ U
+
+mutual
+ srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
+ srSubst θ (v y) = θ y
+ srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
+
+ sSubst : ∀ {Γ Δ T} -> subst Γ Δ -> ntm Γ T -> sem Δ T
+ sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (σ ◦ θ) s) M
+ sSubst θ (neut y) = srSubst θ y
+
+[_]n : ∀ {Γ Δ T} (σ : nsub Γ Δ) (N : ntm Γ T) -> ntm Δ T
+[ σ ]n N = reify (sSubst {!!} N)
+
+mutual
+ ninj-comp : ∀ {Γ Δ T} (σ : nsub Γ Δ) (N : ntm Γ T) -> [ ninj ∘₁ σ ] (ninj N) ≈ ninj ([ σ ]n N)
+ ninj-comp σ N = {!!}
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
@@ -434,10 +464,14 @@ allGL σ θ (M · N) = _*_.fst (allGL σ θ M _ id (eval σ N) (allGL σ θ N))
 allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M) ,
   ≈-trans (β _ _) {!!}
 
+reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
+reflect-GL {atom A} R = tt
+reflect-GL {T ⇝ S} R = λ Δ σ p glp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) {!!})
+
 completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
 completeness σ θ (v y) = ≈-refl
 completeness σ θ (M · N) = ≈-trans ((completeness σ θ M) · (completeness σ θ N)) (_*_.snd (allGL σ θ M _ id (eval σ N) (allGL σ θ N)))
-completeness σ θ (ƛ M) = {!!}
+completeness σ θ (ƛ M) = ƛ (≈-trans {!!} (completeness (extend (wkn ◦ σ) (reflect (v z))) (glExt (wkn ◦g θ) (reflect-GL (v z))) M))
 
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
 completeness' M = {!!}
