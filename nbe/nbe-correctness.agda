@@ -563,7 +563,11 @@ mutual
   ≈-trans (β _ _) (≈-trans (≈-trans (≈-sym ([ v ,, ninj (reify p) ]≈c2 (completeness _ (glExt ((wkn ∘ σ') ◦g θ) (reflect-GL (v z))) M))) (≈≡-trans ([]-funct _ _ M) ([ blagh
      ([ v ,, ninj (reify p) ] ∘₁ (ninj ∘₁ (reify ∘₁ extend ((s ∘ σ') ◦ σ) (reflect (v z)))))
      (ninj ∘₁ (reify ∘₁ extend (σ' ◦ σ) p))
-     (λ x' → {!!})
+     (λ x' → ≈-refl' (eq-ind (λ α → [ v ,, ninj (reify p) ] (ninj (reify α)) ≡ ninj (reify (appSubst _ σ' (σ x'))))
+                        (sym (appFunct σ' s _))
+                        (eq-ind (λ α → [ v ,, ninj (reify p) ] (ninj α) ≡ ninj (reify (appSubst _ σ' (σ x'))))
+                                (reify-nice s (appSubst _ σ' (σ x')) (PrClosed _ σ' {!!}))
+                          (trans (cong [ v ,, ninj (reify p) ] (sym ([]v-comm-ninj s (reify (appSubst _ σ' (σ x')))))) (trans ([]nv-funct _ _ (ninj (reify (appSubst _ σ' (σ x'))))) []-id)))))
      (≈-sym (≈-trans ≈-refl ([ v ,, ninj (reify p) ]≈c2 (≈-η-expand (v z))))) ]≈c M)))
     (completeness (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M))
 
