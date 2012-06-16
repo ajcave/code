@@ -407,6 +407,12 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 ≈-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 ≈ M2
 ≈-refl' refl = ≈-refl
 
+≈≡-trans : ∀ {Γ T} {M N P : tm Γ T} -> M ≡ N -> N ≈ P -> M ≈ P
+≈≡-trans refl p = p
+
+≡≈-trans : ∀ {Γ T} {M N P : tm Γ T} -> M ≈ N -> N ≡ P -> M ≈ P
+≡≈-trans p refl = p
+
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
 []v-funct σ1 σ2 R = {!!}
@@ -441,8 +447,8 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 [_]≈ σ1≈σ2 (v x) = σ1≈σ2 x
 [_]≈ σ1≈σ2 (M · N) = ([ σ1≈σ2 ]≈ M) · ([ σ1≈σ2 ]≈ N)
 [_]≈ σ1≈σ2 (ƛ M) = ƛ ([ ≈s-ext σ1≈σ2 ]≈ M)
-[_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) {!!}
-[_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ ({!!} · (v z)))
+[_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) (≈≡-trans ([]-funct _ _ M) (≡≈-trans {!!} (sym ([]-funct _ _ M))))
+[_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ (≈≡-trans ([]vn-funct _ _ M1) (≡≈-trans {!!} (sym ([]nv-funct _ _ M1))) · (v z)))
 [_]≈ {σ2 = σ2} σ1≈σ2 (≈-trans M≈N N≈P) = ≈-trans ([ σ1≈σ2 ]≈ M≈N) ([ ≈s-refl σ2 ]≈ N≈P)
 
 mutual
