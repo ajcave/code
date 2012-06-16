@@ -355,6 +355,10 @@ eval-extend : ∀ {Γ Δ T} (σ : subst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , 
 eval-extend σ N z = refl
 eval-extend σ N (s y) = refl
 
+soundness1 : ∀ {Γ3 T Γ2} {M1 M2 : tm Γ2 T} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2)
+   -> M1 ≈ M2 -> (eval σ1 M1) ≃ (eval σ2 M2)
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M = {!!}
+
 sem-β : ∀ {Γ Δ T S} (M : tm (Γ , T) S) (N : tm Γ T) (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ)
  -> (eval (extend (id ◦ σ) (eval σ N)) M) ≡ (eval σ ([ v ,, N ] M))
 sem-β M N σ θ = trans (cong1/2 eval (funext-imp (λ T → funext (λ x → trans (cong (λ (α : subst _ _) → extend α (eval σ N) x) (funext-imp (λ U → funext (λ x' → appFunct-id (σ x'))))) (eval-extend σ N x)))) M) (sym {!!}) --(comp (v ,, N) σ θ M))
