@@ -386,7 +386,34 @@ soundness' H = reify-nice2 (soundness1 _ _ (λ x → reflect-nice3 (v x)) (λ x 
 
 -- TODO: Now just get rid of funext and funext-imp
 
-{-GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
-GL Γ (atom A) t = Unit
-GL Γ (T ⇝ S) t = (p : sem Γ T) → GL Γ T p → (GL Γ S (t _ id p) * ((napp (reify t) (reify p)) ≡ (reify (t _ id p)))) -}
+mutual
+ ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
+ ninj (ƛ M) = ƛ (ninj M)
+ ninj (neut R) = rinj R
+ rinj : ∀ {Γ T} -> rtm Γ T -> tm Γ T
+ rinj (v x) = v x
+ rinj (R · N) = (rinj R) · (ninj N)
 
+GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
+GL Γ (atom A) t = Unit
+GL Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (p : sem Δ T) (glp : GL Δ T p) → (GL Δ S (t Δ σ p)
+  * (((ninj (reify (appSubst _ σ t))) · (ninj (reify p))) ≈ ninj (reify (t Δ σ p))))
+
+appSubstGL : ∀ {T Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {t : sem Γ2 T} -> GL Γ2 T t -> GL Γ3 T (appSubst T ρ t)
+appSubstGL {atom A} ρ glt = tt
+appSubstGL {T ⇝ S} ρ glt = λ Δ σ p glp → glt Δ (σ ∘ ρ) p glp
+
+GLs : ∀ {Γ Δ} -> (σ : subst Γ Δ) -> Set
+GLs σ = ∀ {U} (x : var _ U) -> GL _ U (σ x)
+
+_◦g_ : ∀ {Γ1 Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {σ : subst Γ1 Γ2} -> GLs σ -> GLs (ρ ◦ σ)
+(ρ ◦g θ) x = appSubstGL ρ (θ x)
+
+glExt : ∀ {Γ Δ T} {σ : subst Γ Δ} (θ : GLs σ) {t : sem Δ T} -> GL Δ T t -> GLs (extend σ t)
+glExt θ p z = p
+glExt θ p (s y) = θ y
+
+allGL : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> GL Δ T (eval σ M)
+allGL σ θ (v y) = θ y
+allGL σ θ (M · N) = _*_.fst (allGL σ θ M _ id (eval σ N) (allGL σ θ N))
+allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M) , {!!}
