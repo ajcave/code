@@ -429,9 +429,16 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
   -> [ σ1 ] ([ σ2 ] R) ≡ [ [ σ1 ] ∘₁ σ2 ] R
 []-funct σ1 σ2 R = {!!}
 
-simp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ((v ,, [ σ ]v N) ∘₁ (ext σ)) x ≡ ([ σ ]v ∘₁ (v ,, N)) x
+[]-id : ∀ {Γ T} {M : tm Γ T} -> [ v ] M ≡ M
+[]-id = {!!}
+
+vsimp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ((v ,, [ σ ]v N) ∘₁ (ext σ)) x ≡ ([ σ ]v ∘₁ (v ,, N)) x
+vsimp σ N z = refl
+vsimp σ N (s y) = refl
+
+simp : ∀ {Γ Δ T} (σ : sub Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ([ v ,, [ σ ] N ] ∘₁ (sub-ext σ)) x ≡ ([ σ ] ∘₁ (v ,, N)) x
 simp σ N z = refl
-simp σ N (s y) = refl
+simp σ N (s y) = trans ([]nv-funct _ _ (σ y)) []-id
 
 -- What would this whole proof look like if we used explicit substitutions?
 -- We would need to prove more equations about semantic values, but less of this?
@@ -439,7 +446,7 @@ simp σ N (s y) = refl
 [_]v≈ σ (v x) = v (σ x)
 [_]v≈ σ (M · N) = [ σ ]v≈ M · [ σ ]v≈ N
 [_]v≈ σ (ƛ M) = ƛ ([ ext σ ]v≈ M)
-[_]v≈ σ (β M N) = ≈-trans (β _ _) (≈-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → simp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
+[_]v≈ σ (β M N) = ≈-trans (β _ _) (≈-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
 [_]v≈ σ {M1} (η .M1) = ≈-trans (η _) (ƛ (≈-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
 [_]v≈ σ (≈-trans M≈N N≈P) = ≈-trans ([ σ ]v≈ M≈N) ([ σ ]v≈ N≈P)
 
@@ -457,7 +464,7 @@ simp σ N (s y) = refl
 [_]≈ σ1≈σ2 (v x) = σ1≈σ2 x
 [_]≈ σ1≈σ2 (M · N) = ([ σ1≈σ2 ]≈ M) · ([ σ1≈σ2 ]≈ N)
 [_]≈ σ1≈σ2 (ƛ M) = ƛ ([ ≈s-ext σ1≈σ2 ]≈ M)
-[_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) (≈≡-trans ([]-funct _ _ M) (≡≈-trans ([ (λ x → {!!}) ]≈c M) (sym ([]-funct _ _ M))))
+[_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) (≈≡-trans ([]-funct _ _ M) (≡≈-trans ([ (λ x → ≈≡-trans (simp _ N x) ([ σ1≈σ2 ]≈c ((v ,, N) x))) ]≈c M) (sym ([]-funct _ _ M))))
 [_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ (≈≡-trans ([]vn-funct _ _ M1) (≡≈-trans ([ (λ x → [ s ]v≈ (σ1≈σ2 x)) ]≈c M1) (sym ([]nv-funct _ _ M1))) · (v z)))
 [_]≈ {σ2 = σ2} σ1≈σ2 (≈-trans M≈N N≈P) = ≈-trans ([ σ1≈σ2 ]≈ M≈N) ([ ≈s-refl σ2 ]≈ N≈P)
 
