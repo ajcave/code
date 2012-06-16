@@ -404,14 +404,33 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 ≈s-refl : ∀ {Γ Δ} (σ : sub Γ Δ) -> σ ≈s σ
 ≈s-refl σ x = ≈-refl
 
+≈-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 ≈ M2
+≈-refl' refl = ≈-refl
+
+[]v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
+[]v-funct σ1 σ2 R = {!!}
+
+[]vn-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ]v ([ σ2 ] R) ≡ [ [ σ1 ]v ∘₁ σ2 ] R
+[]vn-funct σ1 σ2 R = {!!}
+
+[]nv-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ] ([ σ2 ]v R) ≡ [ σ1 ∘₁ σ2 ] R
+[]nv-funct σ1 σ2 R = {!!}
+
+[]-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ] ([ σ2 ] R) ≡ [ [ σ1 ] ∘₁ σ2 ] R
+[]-funct σ1 σ2 R = {!!}
+
 -- What would this whole proof look like if we used explicit substitutions?
 -- We would need to prove more equations about semantic values, but less of this?
 [_]v≈ : ∀ {Γ Δ T} (σ : vsubst Γ Δ) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ ]v M1 ≈ [ σ ]v M2
 [_]v≈ σ (v x) = v (σ x)
 [_]v≈ σ (M · N) = [ σ ]v≈ M · [ σ ]v≈ N
 [_]v≈ σ (ƛ M) = ƛ ([ ext σ ]v≈ M)
-[_]v≈ σ (β M N) = ≈-trans (β _ _) {!!}
-[_]v≈ σ {M1} (η .M1) = ≈-trans (η _) (ƛ ({!!} · (v z)))
+[_]v≈ σ (β M N) = ≈-trans (β _ _) (≈-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans {!!} (sym ([]vn-funct σ (v ,, N) M)))))
+[_]v≈ σ {M1} (η .M1) = ≈-trans (η _) (ƛ (≈-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
 [_]v≈ σ (≈-trans M≈N N≈P) = ≈-trans ([ σ ]v≈ M≈N) ([ σ ]v≈ N≈P)
 
 ≈s-ext : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} -> σ1 ≈s σ2 -> (sub-ext {T = T} σ1) ≈s (sub-ext σ2)
