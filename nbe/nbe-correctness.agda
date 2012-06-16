@@ -6,6 +6,12 @@ record _*_ (A B : Set) : Set where
   fst : A
   snd : B
 
+record Σ {A : Set} (B : A -> Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B fst
+
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
@@ -548,3 +554,6 @@ completeness σ θ (ƛ M) = ƛ (≈-trans ([ blagh (sub-ext (ninj ∘₁ (reify 
 
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
 completeness' M = ≈-trans (≈≡-trans (sym []-id) ([ (λ x → ≈-η-expand (v x)) ]≈c M)) (completeness (reflect ∘₁ v) (λ x → reflect-GL (v x)) M)
+
+completeness'' : ∀ {Γ T} (M N : tm Γ T) -> nbe M ≡ nbe N -> Σ (λ (P : tm Γ T) -> (M ≈ P) * (N ≈ P))
+completeness'' M N p = ninj (nbe M) , ((completeness' M) , (eq-ind (λ α → N ≈ ninj α) (sym p) (completeness' N)))
