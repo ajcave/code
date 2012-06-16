@@ -86,6 +86,9 @@ sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
 
+_∘₁_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
+(f ∘₁ g) x = f (g x)
+
 ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
@@ -198,6 +201,11 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ s ]v M · (v z)))
  ≈-trans : ∀ {T} {M N P : tm Γ T} -> M ≈ N -> N ≈ P -> M ≈ P
+
+≈-refl : ∀ {Γ T} {M : tm Γ T} -> M ≈ M
+≈-refl {M = v y} = v y
+≈-refl {M = M · N} = ≈-refl · ≈-refl
+≈-refl {M = ƛ M} = ƛ ≈-refl
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
@@ -425,3 +433,11 @@ allGL σ θ (v y) = θ y
 allGL σ θ (M · N) = _*_.fst (allGL σ θ M _ id (eval σ N) (allGL σ θ N))
 allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M) ,
   ≈-trans (β _ _) {!!}
+
+completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
+completeness σ θ (v y) = ≈-refl
+completeness σ θ (M · N) = ≈-trans ((completeness σ θ M) · (completeness σ θ N)) (≈-trans (β _ _) {!!})
+completeness σ θ (ƛ M) = {!!}
+
+completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
+completeness' M = {!!}
