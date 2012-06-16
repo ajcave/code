@@ -432,18 +432,18 @@ vn-ext-funct : ∀ {Γ1 Γ2 Γ3 T U} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) 
 vn-ext-funct σ1 σ2 z = {!!}
 vn-ext-funct σ1 σ2 (s y) = {!!}
 
-var-dom-eq' : ∀ {A : Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
+var-dom-eq' : ∀ {A : tp -> Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A U) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
 var-dom-eq' f g p q z = q
 var-dom-eq' f g p q (s y) = p y
 
-var-dom-eq : ∀ {A : Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> _≡_ { ∀ {U} -> var (Γ , T) U -> A } f g
-var-dom-eq f g p q = funext-imp (λ U -> funext (λ x -> var-dom-eq' f g p q x))
+var-dom-eq : ∀ {A : tp -> Set} {Γ T} {f g : ∀ {U} (x : var (Γ , T) U) -> A U} -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> _≡_ { ∀ {U} -> var (Γ , T) U -> A U } f g
+var-dom-eq p q = funext-imp (λ U -> funext (λ x -> var-dom-eq' _ _ p q x))
 
 []vn-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ] R) ≡ [ [ σ1 ]v ∘₁ σ2 ] R
 []vn-funct σ1 σ2 (v y) = refl
 []vn-funct σ1 σ2 (y · y') = cong2 _·_ ([]vn-funct σ1 σ2 y) ([]vn-funct σ1 σ2 y')
-[]vn-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]vn-funct (ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) ?))
+[]vn-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]vn-funct (ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq {!!} {!!})))
 
 []nv-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ] ([ σ2 ]v R) ≡ [ σ1 ∘₁ σ2 ] R
