@@ -339,7 +339,7 @@ comp' : ∀ {Γ3 T Γ1 Γ2} (ρ : sub Γ1 Γ2) (σ1 σ2 : subst Γ2 Γ3) (σ1≃
 comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (v y) = ≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 (ρ y)
 comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 (M · N) = (comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 M) _ id (eval σ1 ([ ρ ] N)) (eval (σ2 • ρ) N)
   (nice ([ ρ ] N) σ1 θ1) (nice N (σ2 • ρ) (λ x → nice (ρ x) σ2 θ2)) (comp' ρ σ1 σ2 σ1≃σ2 θ1 θ2 N)
-comp' {Γ3} ρ σ1 σ2 σ1≃σ2 θ1 θ2 (ƛ {T} {S} M) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → {!!}
+comp' {Γ3} ρ σ1 σ2 σ1≃σ2 θ1 θ2 (ƛ {T} {S} M) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → eq-ind (λ (α : subst _ _) -> eval (extend (σ ◦ σ1) t1) ([ sub-ext ρ ] M) ≃ eval α M) (trans (blah' (σ ◦ σ2) t2 ρ) {!!}) (f Δ σ t1 t2 prt1 prt2 t1≃t2)
  where f : ∀ Δ (σ : vsubst Γ3 Δ) (t1 t2 : sem Δ T) → (prt1 : Pr T t1) -> (prt2 : Pr T t2) -> (t1≃t2 : t1 ≃ t2)
                   -> eval (extend (σ ◦ σ1) t1) ([ sub-ext ρ ] M) ≃ eval (extend (σ ◦ σ2) t2 • sub-ext ρ) M
        f Δ σ t1 t2 prt1 prt2 t1≃t2 = comp' (sub-ext ρ) (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n θ1) prt1) (niceExtend (σ ◦n θ2) prt2) M
