@@ -398,6 +398,9 @@ mutual
  rinj (v x) = v x
  rinj (R · N) = (rinj R) · (ninj N)
 
+--mutual
+-- ninj-comp : ∀ {Γ Δ T} (σ : sub Γ Δ) (N : ntm Γ T) -> [ σ ] (ninj N) ≈ ninj (
+
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
 GL Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (p : sem Δ T) (glp : GL Δ T p) → (GL Δ S (t Δ σ p)
