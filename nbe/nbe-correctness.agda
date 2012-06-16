@@ -547,4 +547,4 @@ completeness σ θ (ƛ M) = ƛ (≈-trans ([ blagh (sub-ext (ninj ∘₁ (reify 
                                          (ninj ∘₁ (reify ∘₁ extend (wkn ◦ σ) (reflect (v z)))) (λ x → ≈-refl' (trans ([]v-comm-ninj s (reify (σ x))) (cong ninj (reify-nice s (σ x) {!!})))) (≈-η-expand (v z)) ]≈c M) (completeness (extend (wkn ◦ σ) (reflect (v z))) (glExt (wkn ◦g θ) (reflect-GL (v z))) M))
 
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
-completeness' M = ≈-trans {!!} (completeness (reflect ∘₁ v) (λ x → reflect-GL (v x)) M)
+completeness' M = ≈-trans (≈≡-trans (sym []-id) ([ (λ x → ≈-η-expand (v x)) ]≈c M)) (completeness (reflect ∘₁ v) (λ x → reflect-GL (v x)) M)
