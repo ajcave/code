@@ -534,17 +534,17 @@ blagh σ1 σ2 p1 p2 (s y) = p1 y
 
 mutual
  []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
- []v-comm-ninj σ (ƛ M) = {!!}
- []v-comm-ninj σ (neut R) = {!!}
+ []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
+ []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
  []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
- []v-comm-rinj σ (v y) = {!!}
- []v-comm-rinj σ (R · N) = {!!}
+ []v-comm-rinj σ (v y) = refl
+ []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
 
 completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
 completeness σ θ (v y) = ≈-refl
 completeness σ θ (M · N) = ≈-trans ((completeness σ θ M) · (completeness σ θ N)) (_*_.snd (allGL σ θ M _ id (eval σ N) (allGL σ θ N)))
 completeness σ θ (ƛ M) = ƛ (≈-trans ([ blagh (sub-ext (ninj ∘₁ (reify ∘₁ σ)))
-                                         (ninj ∘₁ (reify ∘₁ extend (wkn ◦ σ) (reflect (v z)))) (λ x → {!!}) (≈-η-expand (v z)) ]≈c M) (completeness (extend (wkn ◦ σ) (reflect (v z))) (glExt (wkn ◦g θ) (reflect-GL (v z))) M))
+                                         (ninj ∘₁ (reify ∘₁ extend (wkn ◦ σ) (reflect (v z)))) (λ x → ≈-refl' (trans ([]v-comm-ninj s (reify (σ x))) (cong ninj (reify-nice s (σ x) {!!})))) (≈-η-expand (v z)) ]≈c M) (completeness (extend (wkn ◦ σ) (reflect (v z))) (glExt (wkn ◦g θ) (reflect-GL (v z))) M))
 
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
 completeness' M = {!!}
