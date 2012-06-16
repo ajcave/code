@@ -395,19 +395,6 @@ soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) =
 soundness1 {Γ3} σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η {T} {S} .M1) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 →
   ≃≡-trans (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 M1 Δ σ t1 t2 prt1 prt2 t1≃t2) (sem-η M1 σ2 θ2 Δ σ t2 prt2)
 
-sem-β : ∀ {Γ Δ T S} (M : tm (Γ , T) S) (N : tm Γ T) (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ)
- -> (eval (extend (id ◦ σ) (eval σ N)) M) ≡ (eval σ ([ v ,, N ] M))
-sem-β M N σ θ = trans (cong1/2 eval (funext-imp (λ T → funext (λ x → trans (cong (λ (α : subst _ _) → extend α (eval σ N) x) (funext-imp (λ U → funext (λ x' → appFunct-id (σ x'))))) (eval-extend σ N x)))) M) (sym {!!}) --(comp (v ,, N) σ θ M))
-
--- If we're feeling ambitious we could try to do this without functional extensionality by defining an equivalence
--- relation by induction on the type
-soundness : ∀ {Γ Δ T} {M1 M2 : tm Γ T} (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ) -> M1 ≈ M2 -> (eval σ M1) ≡ (eval σ M2)
-soundness σ θ (v x) = refl
-soundness {Γ} {Δ} σ θ (M · N) = cong-app (cong-app1 (cong-app1 (soundness σ θ M) Δ) id) (soundness σ θ N)
-soundness σ θ (ƛ M) = funext (λ Δ → funext (λ wkn → funext (λ x → soundness _ (niceExtend (_ ◦n θ) {!!}) M)))
-soundness σ θ (β M N) = sem-β M N σ θ
-soundness {Γ} {Δ} {T ⇝ S} {M1} σ θ (η .M1) = funext (λ Δ' → funext (λ σ' → funext (λ s' → sem-η M1 σ θ Δ' _ s' {!!})))
-
 reflect-nice : ∀ {T Γ Δ} (ρ : vsubst Γ Δ) (R : rtm Γ T) -> appSubst T ρ (reflect R) ≡ reflect (rappSubst ρ R)
 reflect-nice {atom A} ρ R = refl
 reflect-nice {T ⇝ S} ρ R = funext (λ Δ' → funext (λ σ → funext (λ x → cong (λ α → reflect (α · reify x)) (sym (rappSubst-funct _ ρ R)))))
@@ -422,8 +409,21 @@ mutual
  reflect-nice2 {atom A} R = tt
  reflect-nice2 {T ⇝ S} R = λ Δ σ t x → (reflect-nice2 (rappSubst σ R · reify t)) , (λ Δ' ρ → trans (reflect-nice ρ (rappSubst σ R · reify t)) (cong2 (λ α β' → reflect (α · β')) (rappSubst-funct ρ σ R) (reify-nice ρ t x)))
 
+mutual
+ reflect-nice3 : ∀ {T Γ} (R : rtm Γ T) -> reflect R ≃ reflect R
+ reflect-nice3 {atom A} R = refl
+ reflect-nice3 {T ⇝ S} R = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → eq-ind
+   (λ α → reflect (rappSubst σ R · reify t1) ≃ reflect (rappSubst σ R · α))
+   (reify-nice2 t1≃t2) (reflect-nice3 (rappSubst σ R · reify t1))
+
+ reify-nice2 : ∀ {T Γ} {t1 t2 : sem Γ T} (t1≃t2 : t1 ≃ t2) -> reify t1 ≡ reify t2
+ reify-nice2 {atom A} t1≃t2 = t1≃t2
+ reify-nice2 {T ⇝ S} t1≃t2 =
+  cong ƛ (reify-nice2 (t1≃t2 _ wkn (reflect (v z)) (reflect (v z)) (reflect-nice2 (v z)) (reflect-nice2 (v z)) (reflect-nice3 (v z))))
+
 soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
-soundness' H = cong reify (soundness _ (λ x → reflect-nice2 (v x)) H)
+soundness' H = reify-nice2 (soundness1 _ _
+  (λ x → reflect-nice3 (v x)) (λ {U} x → reflect-nice2 (v x)) (λ {U} x → reflect-nice2 (v x)) _ _ H)
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
