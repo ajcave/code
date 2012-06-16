@@ -436,7 +436,7 @@ allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ
 
 completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
 completeness σ θ (v y) = ≈-refl
-completeness σ θ (M · N) = ≈-trans ((completeness σ θ M) · (completeness σ θ N)) (≈-trans (β _ _) {!!})
+completeness σ θ (M · N) = ≈-trans ((completeness σ θ M) · (completeness σ θ N)) (_*_.snd (allGL σ θ M _ id (eval σ N) (allGL σ θ N)))
 completeness σ θ (ƛ M) = {!!}
 
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
