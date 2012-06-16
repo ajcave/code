@@ -532,6 +532,14 @@ blagh σ1 σ2 p1 p2 (s y) = p1 y
 ≈-η-expand {atom A} R = ≈-refl
 ≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ {!!})
 
+mutual
+ []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
+ []v-comm-ninj σ (ƛ M) = {!!}
+ []v-comm-ninj σ (neut R) = {!!}
+ []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
+ []v-comm-rinj σ (v y) = {!!}
+ []v-comm-rinj σ (R · N) = {!!}
+
 completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
 completeness σ θ (v y) = ≈-refl
 completeness σ θ (M · N) = ≈-trans ((completeness σ θ M) · (completeness σ θ N)) (_*_.snd (allGL σ θ M _ id (eval σ N) (allGL σ θ N)))
