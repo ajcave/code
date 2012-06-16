@@ -151,43 +151,10 @@ extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
--- Here we have "hereditary substitution"
-mutual
- srSubst : ∀ {Γ Δ T} -> subst Γ Δ -> rtm Γ T -> sem Δ T
- srSubst θ (v y) = θ y
- srSubst θ (R · N) = srSubst θ R _ id (sSubst θ N)
-
- sSubst : ∀ {Γ Δ T} -> subst Γ Δ -> ntm Γ T -> sem Δ T
- sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (λ x → appSubst _ σ (θ x)) s) M
- sSubst θ (neut y) = srSubst θ y
-
-nSubst : ctx -> ctx -> Set
-nSubst Γ Δ = ∀ {S} -> var Γ S -> ntm Δ S
-cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut θ t = reify (sSubst (λ x → sSubst (λ x' → reflect (v x')) (θ x)) t)
-
-nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
-nv x = reify (reflect (v x))
-
-nExtend : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Δ T -> nSubst (Γ , T) Δ
-nExtend θ N z = N
-nExtend θ N (s y) = θ y
-
-nId : ∀ {Γ} -> nSubst Γ Γ
-nId x = nv x
-
-napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
-napp (ƛ N) M = cut (nExtend nId M) N
-
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
-
-complete : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-complete (v y) = nv y
-complete (M · N) = napp (complete M) (complete N)
-complete (ƛ M) = ƛ (complete M)
 
 _◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
 (σ ◦ θ) = λ x ->  appSubst _ σ (θ x)
@@ -419,7 +386,7 @@ soundness' H = reify-nice2 (soundness1 _ _ (λ x → reflect-nice3 (v x)) (λ x 
 
 -- TODO: Now just get rid of funext and funext-imp
 
-GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
+{-GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
-GL Γ (T ⇝ S) t = (p : sem Γ T) → GL Γ T p → (GL Γ S (t _ id p) * ((napp (reify t) (reify p)) ≡ (reify (t _ id p))))
+GL Γ (T ⇝ S) t = (p : sem Γ T) → GL Γ T p → (GL Γ S (t _ id p) * ((napp (reify t) (reify p)) ≡ (reify (t _ id p)))) -}
 
