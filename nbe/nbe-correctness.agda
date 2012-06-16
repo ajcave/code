@@ -494,12 +494,12 @@ mutual
  sSubst θ (ƛ M) = λ Δ σ s → sSubst (extend (σ ◦ θ) s) M
  sSubst θ (neut y) = srSubst θ y
 
-[_]n : ∀ {Γ Δ T} (σ : nsub Γ Δ) (N : ntm Γ T) -> ntm Δ T
+{- [_]n : ∀ {Γ Δ T} (σ : nsub Γ Δ) (N : ntm Γ T) -> ntm Δ T
 [ σ ]n N = reify (sSubst {!!} N)
 
 mutual
  ninj-comp : ∀ {Γ Δ T} (σ : nsub Γ Δ) (N : ntm Γ T) -> [ ninj ∘₁ σ ] (ninj N) ≈ ninj ([ σ ]n N)
- ninj-comp σ N = {!!}
+ ninj-comp σ N = {!!} -}
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
