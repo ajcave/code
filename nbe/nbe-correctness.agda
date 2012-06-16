@@ -561,9 +561,11 @@ mutual
  allGL σ θ (M · N) = _*_.fst (allGL σ θ M _ id (eval σ N) (allGL σ θ N))
  allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M) ,
   ≈-trans (β _ _) (≈-trans (≈-trans (≈-sym ([ v ,, ninj (reify p) ]≈c2 (completeness _ (glExt ((wkn ∘ σ') ◦g θ) (reflect-GL (v z))) M))) (≈≡-trans ([]-funct _ _ M) ([ blagh
-                                                                                                                                                                         ([ v ,, ninj (reify p) ] ∘₁
-                                                                                                                                                                          (ninj ∘₁ (reify ∘₁ extend ((s ∘ σ') ◦ σ) (reflect (v z)))))
-                                                                                                                                                                         (ninj ∘₁ (reify ∘₁ extend (σ' ◦ σ) p)) {!!} (≈-sym (≈-trans ≈-refl ([ v ,, ninj (reify p) ]≈c2 (≈-η-expand (v z))))) ]≈c M))) (completeness (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M))
+     ([ v ,, ninj (reify p) ] ∘₁ (ninj ∘₁ (reify ∘₁ extend ((s ∘ σ') ◦ σ) (reflect (v z)))))
+     (ninj ∘₁ (reify ∘₁ extend (σ' ◦ σ) p))
+     (λ x' → {!!})
+     (≈-sym (≈-trans ≈-refl ([ v ,, ninj (reify p) ]≈c2 (≈-η-expand (v z))))) ]≈c M)))
+    (completeness (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M))
 
  completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
  completeness σ θ (v y) = ≈-refl
