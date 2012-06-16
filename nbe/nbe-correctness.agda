@@ -355,9 +355,16 @@ eval-extend : ∀ {Γ Δ T} (σ : subst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , 
 eval-extend σ N z = refl
 eval-extend σ N (s y) = refl
 
-soundness1 : ∀ {Γ3 T Γ2} {M1 M2 : tm Γ2 T} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2)
+soundness1 : ∀ {Γ3 T Γ2} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2) (M1 M2 : tm Γ2 T)
    -> M1 ≈ M2 -> (eval σ1 M1) ≃ (eval σ2 M2)
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(v x) .(v x) (v x) = σ1≃σ2 x
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(M1 · N1) .(M2 · N2) (_·_ {T'} {T} {M1} {M2} {N1} {N2} M1≈M2 N1≈N2) =
+  soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 M2 M1≈M2 _ id (eval σ1 N1) (eval σ2 N2) (nice N1 σ1 θ1) (nice N2 σ2 θ2)
+   (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N1 N2 N1≈N2)
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} M1≈M2) =
+  λ Δ σ t1 t2 prt1 prt2 t1≃t2 → soundness1 (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n θ1) prt1) (niceExtend (σ ◦n θ2) prt2) M1 M2 M1≈M2
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M · N) .([ v ,, N ] M) (β M N) = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η .M1) = {!!}
 
 sem-β : ∀ {Γ Δ T S} (M : tm (Γ , T) S) (N : tm Γ T) (σ : subst Γ Δ) (θ : niceSubst Γ Δ σ)
  -> (eval (extend (id ◦ σ) (eval σ N)) M) ≡ (eval σ ([ v ,, N ] M))
