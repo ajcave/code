@@ -207,6 +207,7 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ s ]v M · (v z)))
  ≈-trans : ∀ {T} {M N P : tm Γ T} -> M ≈ N -> N ≈ P -> M ≈ P
+ ≈-sym : ∀ {T} {M N : tm Γ T} -> M ≈ N -> N ≈ M
 
 ≈-refl : ∀ {Γ T} {M : tm Γ T} -> M ≈ M
 ≈-refl {M = v y} = v y
@@ -372,6 +373,7 @@ soundness1 {Γ3} σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ s ]v M1 · v z)) (η {T} {
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M P (≈-trans {N = N} M≃N N≃P) =
   ≃-trans (soundness1 σ1 σ1 (≃s-blah σ1≃σ2) θ1 θ1 M N M≃N)
           (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N P N≃P)
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M N (≈-sym M≈N) = ≃-sym (soundness1 σ2 σ1 (λ x → ≃-sym (σ1≃σ2 x)) θ2 θ1 N M M≈N)
 
 reflect-nice : ∀ {T Γ Δ} (ρ : vsubst Γ Δ) (R : rtm Γ T) -> appSubst T ρ (reflect R) ≡ reflect (rappSubst ρ R)
 reflect-nice {atom A} ρ R = refl
@@ -455,6 +457,7 @@ simp σ N (s y) = trans ([]nv-funct _ _ (σ y)) []-id
 [_]v≈ σ (β M N) = ≈-trans (β _ _) (≈-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
 [_]v≈ σ {M1} (η .M1) = ≈-trans (η _) (ƛ (≈-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
 [_]v≈ σ (≈-trans M≈N N≈P) = ≈-trans ([ σ ]v≈ M≈N) ([ σ ]v≈ N≈P)
+[_]v≈ σ (≈-sym M≈N) = ≈-sym ([ σ ]v≈ M≈N)
 
 ≈s-ext : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} -> σ1 ≈s σ2 -> (sub-ext {T = T} σ1) ≈s (sub-ext σ2)
 ≈s-ext p z = v z
@@ -473,6 +476,7 @@ simp σ N (s y) = trans ([]nv-funct _ _ (σ y)) []-id
 [_]≈ σ1≈σ2 (β M N) = ≈-trans (β _ _) (≈≡-trans ([]-funct _ _ M) (≡≈-trans ([ (λ x → ≈≡-trans (simp _ N x) ([ σ1≈σ2 ]≈c ((v ,, N) x))) ]≈c M) (sym ([]-funct _ _ M))))
 [_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ (≈≡-trans ([]vn-funct _ _ M1) (≡≈-trans ([ (λ x → [ s ]v≈ (σ1≈σ2 x)) ]≈c M1) (sym ([]nv-funct _ _ M1))) · (v z)))
 [_]≈ {σ2 = σ2} σ1≈σ2 (≈-trans M≈N N≈P) = ≈-trans ([ σ1≈σ2 ]≈ M≈N) ([ ≈s-refl σ2 ]≈ N≈P)
+[_]≈ σ1≈σ2 (≈-sym M≈N) = ≈-sym ([ (λ x → ≈-sym (σ1≈σ2 x)) ]≈ M≈N)
 
 [_]≈c2 : ∀ {Γ Δ T} (σ : sub Γ Δ) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ ] M1 ≈ [ σ ] M2
 [ σ ]≈c2 p = [ ≈s-refl σ ]≈ p
@@ -516,10 +520,6 @@ glExt : ∀ {Γ Δ T} {σ : subst Γ Δ} (θ : GLs σ) {t : sem Δ T} -> GL Δ T
 glExt θ p z = p
 glExt θ p (s y) = θ y
 
--- This doesn't hold, but I'm curious...
-≈-sym : ∀ {Γ T} {M N : tm Γ T} -> M ≈ N -> N ≈ M
-≈-sym p = {!!}
-
 reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL {atom A} R = tt
 reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ (v ,, ninj (reify p)) ]≈c2 (≈-sym (≈-η-expand _))) (eq-ind
@@ -552,5 +552,11 @@ mutual
 completeness' : ∀ {Γ T} (M : tm Γ T) -> M ≈ (ninj (nbe M))
 completeness' M = ≈-trans (≈≡-trans (sym []-id) ([ (λ x → ≈-η-expand (v x)) ]≈c M)) (completeness (reflect ∘₁ v) (λ x → reflect-GL (v x)) (λ x → reflect-nice2 (v x)) M)
 
+-- This is actually Church-Rosser! (or at least it would be if we didn't include ≈-sym... :( )
 completeness'' : ∀ {Γ T} (M N : tm Γ T) -> nbe M ≡ nbe N -> Σ (λ (P : tm Γ T) -> (M ≈ P) * (N ≈ P))
 completeness'' M N p = ninj (nbe M) , ((completeness' M) , (eq-ind (λ α → N ≈ ninj α) (sym p) (completeness' N)))
+
+completeness''' : ∀ {Γ T} (M N : tm Γ T) -> nbe M ≡ nbe N -> M ≈ N
+completeness''' M N p = ≈-trans (completeness' M) (≈-sym (eq-ind (λ α → N ≈ ninj α) (sym p) (completeness' N)))
+
+-- TODO: We should be able to get rid of ≈-sym... Check the Dyber paper?
