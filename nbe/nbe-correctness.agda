@@ -474,6 +474,9 @@ simp σ N (s y) = trans ([]nv-funct _ _ (σ y)) []-id
 [_]≈ σ1≈σ2 {M1} (η .M1) = ≈-trans (η _) (ƛ (≈≡-trans ([]vn-funct _ _ M1) (≡≈-trans ([ (λ x → [ s ]v≈ (σ1≈σ2 x)) ]≈c M1) (sym ([]nv-funct _ _ M1))) · (v z)))
 [_]≈ {σ2 = σ2} σ1≈σ2 (≈-trans M≈N N≈P) = ≈-trans ([ σ1≈σ2 ]≈ M≈N) ([ ≈s-refl σ2 ]≈ N≈P)
 
+[_]≈c2 : ∀ {Γ Δ T} (σ : sub Γ Δ) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ ] M1 ≈ [ σ ] M2
+[ σ ]≈c2 p = [ ≈s-refl σ ]≈ p
+
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
  ninj (ƛ M) = ƛ (ninj M)
@@ -501,6 +504,19 @@ mutual
  ninj-comp : ∀ {Γ Δ T} (σ : nsub Γ Δ) (N : ntm Γ T) -> [ ninj ∘₁ σ ] (ninj N) ≈ ninj ([ σ ]n N)
  ninj-comp σ N = {!!} -}
 
+
+mutual
+ []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
+ []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
+ []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
+ []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
+ []v-comm-rinj σ (v y) = refl
+ []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
+
+≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
+≈-η-expand {atom A} R = ≈-refl
+≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans (≈-refl' ([]v-comm-rinj s R) · ≈-η-expand (v z)) (≈-η-expand _)))
+
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
 GL Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (p : sem Δ T) (glp : GL Δ T p) → (GL Δ S (t Δ σ p)
@@ -526,25 +542,18 @@ allGL σ θ (M · N) = _*_.fst (allGL σ θ M _ id (eval σ N) (allGL σ θ N))
 allGL σ θ (ƛ M) = λ Δ σ' p x → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) x) M) ,
   ≈-trans (β _ _) {!!}
 
+-- This doesn't hold, but I'm curious...
+≈-sym : ∀ {Γ T} {M N : tm Γ T} -> M ≈ N -> N ≈ M
+≈-sym p = {!!}
+
 reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL {atom A} R = tt
-reflect-GL {T ⇝ S} R = λ Δ σ p glp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) {!!})
+reflect-GL {T ⇝ S} R = λ Δ σ p glp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ (v ,, ninj (reify p)) ]≈c2 (≈-sym (≈-η-expand _))) ({!!} · {!≈-trans!})) (≈-η-expand _)))
 
 blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 ∘₁ s) -> (σ1 z) ≈ (σ2 z) -> σ1 ≈s σ2
 blagh σ1 σ2 p1 p2 z = p2
 blagh σ1 σ2 p1 p2 (s y) = p1 y
 
-mutual
- []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
- []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
- []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
- []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
- []v-comm-rinj σ (v y) = refl
- []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
-
-≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
-≈-η-expand {atom A} R = ≈-refl
-≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans (≈-refl' ([]v-comm-rinj s R) · ≈-η-expand (v z)) (≈-η-expand _)))
 
 completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (M : tm Γ T) -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
 completeness σ θ (v y) = ≈-refl
