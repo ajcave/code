@@ -542,11 +542,13 @@ glExt : ∀ {Γ Δ T} {σ : subst Γ Δ} (θ : GLs σ) {t : sem Δ T} -> GL Δ T
 glExt θ p z = p
 glExt θ p (s y) = θ y
 
-reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
-reflect-GL {atom A} R = tt
-reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ (v ,, ninj (reify p)) ]≈c2 (≈-sym (≈-η-expand _))) (eq-ind
-     (λ α → [ v ,, ninj (reify p) ] (rinj α) ≈ rinj (rappSubst σ R)) (rappSubst-funct wkn σ R) (eq-ind (λ α → [ v ,, ninj (reify p) ] α ≈ rinj (rappSubst σ R)) ([]v-comm-rinj wkn (rappSubst σ R))
-     (≈-refl' (trans ([]nv-funct _ _ (rinj (rappSubst σ R))) []-id))) · ([ v ,, ninj (reify p) ]≈c2 (≈-sym (≈-η-expand _))))) (≈-η-expand _)))
+η-exp : ∀ {T Γ} (M : tm Γ T) -> tm Γ T
+η-exp {atom A} M = M
+η-exp {T ⇝ S} M = ƛ (η-exp (([ s ]v M) · (η-exp {T} (v z))))
+
+zah : ∀ {T Γ Δ} (σ : sub Γ Δ) (R : rtm Γ T) -> [ σ ] (ninj (reify (reflect R))) ≡ η-exp ([ σ ] (rinj R))
+zah {atom A} σ R = refl
+zah {T ⇝ S} σ R = cong ƛ (trans (zah (sub-ext σ) (rappSubst wkn R · reify (reflect (v z)))) (cong η-exp (cong2 _·_ (trans (cong [ sub-ext σ ] (sym ([]v-comm-rinj s R))) (trans ([]nv-funct (sub-ext σ) s (rinj R)) (sym ([]vn-funct s σ (rinj R))))) (zah (sub-ext σ) (v z)))))
 
 reflect-GL' : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL' {atom A} R = tt
