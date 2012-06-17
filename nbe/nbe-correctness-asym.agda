@@ -575,6 +575,7 @@ _↝s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 zah5 : ∀ {T Γ Δ} {σ1 σ2 : sub Γ Δ} -> σ1 ↝s σ2 -> (M : ntm Γ T) -> [ σ2 ] (ninj M) ≈ [ σ1 ] (ninj M)
 zah5 σ (ƛ y) = ƛ (zah5 (↝-ext σ) y)
 zah5 σ (neut y) = {!!} -- Looks like I need a spine form (essentially, a reversal of the neutral term)
+-- Can we work with spine form all along? Is that easier?
 
 zah3 : ∀ {T Γ} (p : sem Γ T) -> η-exp (ninj (reify p)) ≈ ninj (reify p)
 zah3 {atom A} p = ≈-refl
