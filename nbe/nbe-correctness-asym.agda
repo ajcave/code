@@ -107,6 +107,10 @@ mutual
  nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
  nappSubst σ (neut R) = neut (rappSubst σ R)
 
+var-dom-prop : ∀ {Γ T} (P : ∀ {U : tp} (x : var (Γ , T) U) -> Set) -> (∀ {U} (x : var Γ U) -> P (s x)) -> P z -> ∀ {U} (x : var (Γ , T) U) -> P x
+var-dom-prop P p q z = q
+var-dom-prop P p q (s y) = p y
+
 
 var-dom-eq' : ∀ {A : tp -> Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A U) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
 var-dom-eq' f g p q z = q
@@ -563,7 +567,7 @@ zah4 {T ⇝ S} p = ƛ (zah4 (([ s ]v≈ p) · ≈-refl))
 
 data _↝_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  ident : ∀ {T} (M : tm Γ T) -> M ↝ M
- cont : ∀ {T S} {M : tm Γ (T ⇝ S)} {N : tm (Γ , T) T} {M' : tm (Γ , T) S} -> (v z) ↝ N -> (([ s ]v M) · N) ↝ M' -> M ↝ (ƛ (([ s ]v M) · N))
+ cont : ∀ {T S} {M : tm Γ (T ⇝ S)} {N : tm (Γ , T) T} {M' : tm (Γ , T) S} -> (v z) ↝ N -> (([ s ]v M) · N) ↝ M' -> M ↝ (ƛ M')
 
 _↝s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 σ1 ↝s σ2 = ∀ {U} (x : var _ U) -> (σ1 x) ↝ (σ2 x) 
@@ -577,12 +581,16 @@ zah5 σ (ƛ y) = ƛ (zah5 (↝-ext σ) y)
 zah5 σ (neut y) = {!!} -- Looks like I need a spine form (essentially, a reversal of the neutral term)
 -- Can we work with spine form all along? Is that easier?
 
+zah6 : ∀ {T Γ} (M : tm Γ T) -> M ↝ (η-exp M)
+zah6 {atom A} M = ident M
+zah6 {T ⇝ S} M = cont (zah6 {T} {_ , T} (v z)) (zah6 {S} {_ , T} (([ s ]v M) · (η-exp (v z))))
+
 zah3 : ∀ {T Γ} (p : sem Γ T) -> η-exp (ninj (reify p)) ≈ ninj (reify p)
 zah3 {atom A} p = ≈-refl
 zah3 {T ⇝ S} p = ƛ (≈-trans (zah4 (≈-trans (β _ _)
   (≈≡-trans ([]nv-funct (v ,, η-exp (v z)) (ext s) (ninj (reify (p _ wkn (reflect (v z))))))
   (≈≡-trans (cong
-               (λ (α : sub _ _) → [ α ] (ninj (reify (p _ s (reflect (v z)))))) (var-dom-eq {g = (v ∘₁ s) ,, η-exp (v z)} (λ x → refl) refl)) {!!}))))
+               (λ (α : sub _ _) → [ α ] (ninj (reify (p _ s (reflect (v z)))))) (var-dom-eq {g = (v ∘₁ s) ,, η-exp (v z)} (λ x → refl) refl)) (≈-trans (zah5 {σ1 = v} (var-dom-prop (λ x → v x ↝ ((v ∘₁ s) ,, η-exp (v z)) x) (λ x → ident _) (zah6 (v z))) (reify (p _ s (reflect (v z))))) (≈-refl' []-id))))))
   (zah3 (p _ wkn (reflect (v z)))))
 
 reflect-GL' : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
