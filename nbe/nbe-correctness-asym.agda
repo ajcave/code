@@ -561,6 +561,7 @@ zah2 {T ⇝ S} σ R = cong ƛ (trans (zah2 (sub-ext σ) ([ s ]v R · η-exp (v z
 zah : ∀ {T Γ Δ} (σ : sub Γ Δ) (R : rtm Γ T) -> [ σ ] (ninj (reify (reflect R))) ≡ η-exp ([ σ ] (rinj R))
 zah σ R = trans (cong [ σ ] (zah1 R)) (zah2 σ (rinj R))
 
+-- This is the "arrow part" of η-exp as a functor
 zah4 : ∀ {T Γ} {M N : tm Γ T} -> M ≈ N -> η-exp M ≈ η-exp N
 zah4 {atom A} p = p
 zah4 {T ⇝ S} p = ƛ (zah4 (([ s ]v≈ p) · ≈-refl))
