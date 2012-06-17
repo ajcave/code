@@ -561,6 +561,21 @@ zah4 : ∀ {T Γ} {M N : tm Γ T} -> M ≈ N -> η-exp M ≈ η-exp N
 zah4 {atom A} p = p
 zah4 {T ⇝ S} p = ƛ (zah4 (([ s ]v≈ p) · ≈-refl))
 
+data _↝_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
+ ident : ∀ {T} (M : tm Γ T) -> M ↝ M
+ cont : ∀ {T S} {M : tm Γ (T ⇝ S)} {N : tm (Γ , T) T} {M' : tm (Γ , T) S} -> (v z) ↝ N -> (([ s ]v M) · N) ↝ M' -> M ↝ (ƛ (([ s ]v M) · N))
+
+_↝s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
+σ1 ↝s σ2 = ∀ {U} (x : var _ U) -> (σ1 x) ↝ (σ2 x) 
+
+↝-ext : ∀ {Γ Δ T} {σ1 σ2 : sub Γ Δ} -> σ1 ↝s σ2 -> sub-ext {T = T} σ1 ↝s sub-ext σ2
+↝-ext p z = ident (v z)
+↝-ext p (s y) = {!!}
+
+zah5 : ∀ {T Γ Δ} {σ1 σ2 : sub Γ Δ} -> σ1 ↝s σ2 -> (M : ntm Γ T) -> [ σ2 ] (ninj M) ≈ [ σ1 ] (ninj M)
+zah5 σ (ƛ y) = ƛ (zah5 (↝-ext σ) y)
+zah5 σ (neut y) = {!!} -- Looks like I need a spine form (essentially, a reversal of the neutral term)
+
 zah3 : ∀ {T Γ} (p : sem Γ T) -> η-exp (ninj (reify p)) ≈ ninj (reify p)
 zah3 {atom A} p = ≈-refl
 zah3 {T ⇝ S} p = ƛ (≈-trans (zah4 (≈-trans (β _ _)
