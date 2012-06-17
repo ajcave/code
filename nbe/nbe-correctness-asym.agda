@@ -593,12 +593,17 @@ zah3 {T ⇝ S} p = ƛ (≈-trans (zah4 (≈-trans (β _ _)
                (λ (α : sub _ _) → [ α ] (ninj (reify (p _ s (reflect (v z)))))) (var-dom-eq {g = (v ∘₁ s) ,, η-exp (v z)} (λ x → refl) refl)) (≈-trans (zah5 {σ1 = v} (var-dom-prop (λ x → v x ↝ ((v ∘₁ s) ,, η-exp (v z)) x) (λ x → ident _) (zah6 (v z))) (reify (p _ s (reflect (v z))))) (≈-refl' []-id))))))
   (zah3 (p _ wkn (reflect (v z)))))
 
+
 reflect-GL' : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL' {atom A} R = tt
 reflect-GL' {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL' (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈≡-trans
   (zah (v ,, ninj (reify p)) (rappSubst (wkn ∘ σ) R · reify (reflect (v z)))) (≡≈-trans (≈≡-trans (cong η-exp (cong2 _·_ (trans
      (cong [ v ,, ninj (reify p) ] (trans (cong rinj (sym (rappSubst-funct s σ R))) (sym ([]v-comm-rinj s (rappSubst σ R))))) (trans ([]nv-funct (v ,, ninj (reify p)) s (rinj (rappSubst σ R))) ([]-id {M = rinj (rappSubst σ R)})))
       (zah (v ,, ninj (reify p)) (v z)))) (zah4 (≈-refl · (zah3 p)))) (sym (zah1 (rappSubst σ R · reify p))))))
+
+reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
+reflect-GL {atom A} R = tt
+reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , {!!}
 
 {-blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 ∘₁ s) -> (σ1 z) ≈ (σ2 z) -> σ1 ≈s σ2
 blagh σ1 σ2 p1 p2 z = p2
