@@ -34,11 +34,26 @@ mutual
 mutual
  data ctx : Set where
   ⊡ : ctx
-  _,_ : (Γ : ctx) -> (T : 〚 Γ 〛 -> U) -> ctx
+  _,_ : (Γ : ctx) -> (T : 〚 Γ 〛c -> U) -> ctx
 
- 〚_〛 : ctx -> Set
- 〚 ⊡ 〛 = Unit
- 〚 Γ , T 〛 = Σ (λ (x : 〚 Γ 〛) → El (T x))
+ 〚_〛c : ctx -> Set
+ 〚 ⊡ 〛c = Unit
+ 〚 Γ , T 〛c = Σ (λ (x : 〚 Γ 〛c) → El (T x))
+
+_∘_ : ∀ {R : Set} {S : R -> Set} {T : (r : R) -> S r -> Set}
+ -> (∀ {r} (s : S r) -> T r s)
+ -> (g : (r : R) -> S r)
+ -> (r : R) -> T r (g r)
+f ∘ g = λ x -> f (g x)
+
+data var : (Γ : ctx) -> (T : 〚 Γ 〛c -> U) -> Set where
+ top : ∀ {Γ T} -> var (Γ , T) (T ∘ Σ.fst)
+ pop : ∀ {Γ T S} -> var Γ T -> var (Γ , S) (T ∘ Σ.fst)
+
+〚_〛v : ∀ {Γ T} -> var Γ T -> (γ : 〚 Γ 〛c) -> El (T γ)
+〚_〛v {⊡} () tt
+〚_〛v {Γ , T} top (γ , t) = t
+〚_〛v {Γ , T} (pop y) (γ , s) = 〚 y 〛v γ
 
 {-data tp : Set where
  atom : (A : atomic_tp) -> tp
