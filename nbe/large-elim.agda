@@ -55,6 +55,15 @@ data var : (Γ : ctx) -> (T : 〚 Γ 〛c -> U) -> Set where
 〚_〛v {Γ , T} top (γ , t) = t
 〚_〛v {Γ , T} (pop y) (γ , s) = 〚 y 〛v γ
 
+κ : ∀ {Γ : Set} {X : Set} -> X -> Γ -> X 
+κ x γ = x
+
+_s_ : ∀ {Γ : Set} {S : Γ -> Set} {T : (γ : Γ) -> S γ -> Set}
+ -> (f : (γ : Γ) (s : S γ) -> T γ s)
+ -> (s : (γ : Γ) -> S γ)
+ -> (γ : Γ) -> T γ (s γ)
+_s_ = λ f s γ -> f γ (s γ)
+
 {-data tp : Set where
  atom : (A : atomic_tp) -> tp
  _⇝_ : (T : tp) -> (S : tp) -> tp
