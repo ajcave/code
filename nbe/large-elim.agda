@@ -92,6 +92,10 @@ mutual
                -> Γ ⋆ (κ If' ss 〚 b 〛⊢ ss T ss F)
  data _⊢_ (Γ : ctx)  : (T : 〚 Γ 〛c -> U) -> Set where
   var : ∀ {T} -> Γ ∋ T -> Γ ⊢ T 
+  tt : Γ ⊢ κ unit
+  true false : Γ ⊢ κ bool
+  If : ∀ {P} -> (b : Γ ⊢ κ bool) -> (Γ , κ bool) ⋆ P -> Γ ⊢ ((∧ P) ss κ true) -> Γ ⊢ ((∧ P) ss κ false)
+             -> Γ ⊢ ((∧ P) ss 〚 b 〛⊢)
  
  〚_〛⊢ : ∀ {Γ T} -> Γ ⊢ T -> (γ : 〚 Γ 〛c) -> El (T γ)
  〚 M 〛⊢ γ = {!!}
