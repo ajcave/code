@@ -6,7 +6,7 @@ record _*_ (A B : Set) : Set where
   fst : A
   snd : B
 
-record Σ {A : Set} (B : A -> Set) : Set where
+record Σ (A : Set) (B : A -> Set) : Set where
  constructor _,_
  field
   fst : A
@@ -38,7 +38,7 @@ mutual
 
  〚_〛c : ctx -> Set
  〚 ⊡ 〛c = Unit
- 〚 Γ , T 〛c = Σ (λ (x : 〚 Γ 〛c) → El (T x))
+ 〚 Γ , T 〛c = Σ 〚 Γ 〛c (λ γ  → El (T γ))
 
 _∘_ : ∀ {R : Set} {S : R -> Set} {T : (r : R) -> S r -> Set}
  -> (∀ {r} (s : S r) -> T r s)
@@ -58,11 +58,23 @@ data var : (Γ : ctx) -> (T : 〚 Γ 〛c -> U) -> Set where
 κ : ∀ {Γ : Set} {X : Set} -> X -> Γ -> X 
 κ x γ = x
 
-_s_ : ∀ {Γ : Set} {S : Γ -> Set} {T : (γ : Γ) -> S γ -> Set}
+_ss_ : ∀ {Γ : Set} {S : Γ -> Set} {T : (γ : Γ) -> S γ -> Set}
  -> (f : (γ : Γ) (s : S γ) -> T γ s)
  -> (s : (γ : Γ) -> S γ)
  -> (γ : Γ) -> T γ (s γ)
-_s_ = λ f s γ -> f γ (s γ)
+_ss_ = λ f s γ -> f γ (s γ)
+
+∨ : ∀ {S T} {P : Σ S T -> Set}
+ -> (p : (s : S) (t : T s) -> P (s , t))
+ -> ((st : Σ S T) -> P st)
+∨ p (s , t) = p s t
+
+∧ : ∀ {S T} {P : Σ S T -> Set}
+ -> ((st : Σ S T) -> P st)
+ -> (s : S) (t : T s) -> P (s , t)
+∧ p s t = p (s , t)
+
+
 
 {-data tp : Set where
  atom : (A : atomic_tp) -> tp
