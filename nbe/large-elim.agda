@@ -31,6 +31,10 @@ mutual
  El bool = Bool
  El (Π S T) = (s : El S) -> El (T s)
 
+If' : Bool -> U -> U -> U
+If' true T F = T
+If' false T F = F
+
 mutual
  data ctx : Set where
   ⊡ : ctx
@@ -64,6 +68,8 @@ _ss_ : ∀ {Γ : Set} {S : Γ -> Set} {T : (γ : Γ) -> S γ -> Set}
  -> (γ : Γ) -> T γ (s γ)
 _ss_ = λ f s γ -> f γ (s γ)
 
+infixl 9 _ss_
+
 ∨ : ∀ {S T} {P : Σ S T -> Set}
  -> (p : (s : S) (t : T s) -> P (s , t))
  -> ((st : Σ S T) -> P st)
@@ -80,5 +86,11 @@ mutual
   bool : Γ ⋆ κ bool
   Π : ∀ {S T} -> Γ ⋆ S -> (Γ , S) ⋆ T
               ------------------------
-              -> Γ ⋆ ((κ Π ss S) ss (∧ T))
-  
+              -> Γ ⋆ (κ Π ss S ss ∧ T)
+  If : ∀ {T F} -> (b : Γ ⊢ κ bool) -> Γ ⋆ T -> Γ ⋆ F
+               --------------------------------------
+               -> Γ ⋆ (κ If' ss 〚 b 〛⊢ ss T ss F)
+ data _⊢_ (Γ : ctx)  : (T : 〚 Γ 〛c -> U) -> Set where
+ 
+ 〚_〛⊢ : ∀ {Γ T} -> Γ ⊢ T -> (γ : 〚 Γ 〛c) -> El (T γ)
+ 〚 M 〛⊢ γ = {!!}
