@@ -108,5 +108,5 @@ mutual
   where IfHelp : (γ : _) (b : Bool) -> El (P (γ , b))
         IfHelp γ true = 〚 M 〛⊢ γ
         IfHelp γ false = 〚 N 〛⊢ γ
- 〚_〛⊢ (ƛ M) = {!!}
- 〚_〛⊢ (M · N) = {!!}
+ 〚_〛⊢ (ƛ M) = ∧ 〚 M 〛⊢
+ 〚_〛⊢ (M · N) = 〚 M 〛⊢ ss 〚 N 〛⊢
