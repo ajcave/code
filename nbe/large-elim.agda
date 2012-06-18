@@ -111,3 +111,6 @@ mutual
         IfHelp γ false = 〚 N 〛⊢ γ
  〚_〛⊢ (ƛ M) = ∧ 〚 M 〛⊢
  〚_〛⊢ (M · N) = 〚 M 〛⊢ ss 〚 N 〛⊢
+
+-- Can we define "sem" and do NbE? (Which would be a "nicer" NbE than Abel's "NbE for MLTT with one universe")
+-- Also McBride outlines in the appendix how to extend Kipling with a universe. Could we tehn do NbE for it?
