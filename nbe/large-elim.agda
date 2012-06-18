@@ -115,4 +115,4 @@ mutual
 -- Can we define "sem" and do NbE? (Which would be a "nicer" NbE than Abel's "NbE for MLTT with one universe")
 -- Also McBride outlines in the appendix how to extend Kipling with a universe. Could we tehn do NbE for it?
 -- Remember that T is not a type in the same way anymore.. now it's a "section(?)" (display map(?)) (Σ Γ T -> Γ) 
--- So "sem" would take closed types/contexts...
+-- So "sem" would take closed types/contexts... Might we need Σ in the language?
