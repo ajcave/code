@@ -82,6 +82,10 @@ infixl 9 _ss_
 ∧ p s t = p (s , t)
 
 mutual
+ data wf : (Γ : ctx) -> Set where
+  ⊡ : wf ⊡
+  _,_ : ∀ {Γ T} -> wf Γ -> Γ ⋆ T -> wf (Γ , T) 
+
  data _⋆_ (Γ : ctx) : (T : 〚 Γ 〛c -> U) -> Set where
   unit : Γ ⋆ κ unit 
   bool : Γ ⋆ κ bool
@@ -116,3 +120,17 @@ mutual
 -- Also McBride outlines in the appendix how to extend Kipling with a universe. Could we tehn do NbE for it?
 -- Remember that T is not a type in the same way anymore.. now it's a "section(?)" (display map(?)) (Σ Γ T -> Γ) 
 -- So "sem" would take closed types/contexts... Might we need Σ in the language?
+
+mutual
+ sem : ∀ {γ δ : ctx} (Γ : wf γ) (Δ : wf δ) -> Set
+ sem Γ ⊡ = Unit
+ sem Γ (Δ , unit) = {!!}
+ sem Γ (Δ , bool) = {!!}
+ sem Γ (Δ , Π S T) = Σ (sem Γ Δ) (λ x → sem Γ (Δ , S) → sem Γ (Δ , {!!}))
+ sem Γ (Δ , If b y y') = {!!}
+
+ sem2 : ∀ {γ δ : ctx} (Γ : wf γ) (Δ : wf δ) {P} (T : γ ⋆ P) -> sem Δ Γ -> Set
+ sem2 Γ Δ unit p = Unit
+ sem2 Γ Δ bool p = {!rtm Δ bool!}
+ sem2 Γ Δ (Π S T) p = {!∀ (γ : ctx)!}
+ sem2 Γ Δ (If b y y') p = {!!}
