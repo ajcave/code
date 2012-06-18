@@ -100,4 +100,13 @@ mutual
   _·_ : ∀ {S} {T : (γ : 〚 Γ 〛c) -> El (S γ) -> U} -> (Γ ⊢ λ γ → Π (S γ) (λ s → T γ s)) -> (s : Γ ⊢ S) -> Γ ⊢ λ γ → T γ (〚 s 〛⊢ γ) 
 
  〚_〛⊢ : ∀ {Γ T} -> Γ ⊢ T -> (γ : 〚 Γ 〛c) -> El (T γ)
- 〚 M 〛⊢ γ = {!!}
+ 〚_〛⊢ (var y) = 〚 y 〛v
+ 〚_〛⊢ tt = κ tt
+ 〚_〛⊢ true = κ true
+ 〚_〛⊢ false = κ true
+ 〚_〛⊢ (If {P} b _ M N) = IfHelp ss 〚 b 〛⊢
+  where IfHelp : (γ : _) (b : Bool) -> El (P (γ , b))
+        IfHelp γ true = 〚 M 〛⊢ γ
+        IfHelp γ false = 〚 N 〛⊢ γ
+ 〚_〛⊢ (ƛ M) = {!!}
+ 〚_〛⊢ (M · N) = {!!}
