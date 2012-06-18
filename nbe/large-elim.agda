@@ -50,11 +50,11 @@ _∘_ : ∀ {R : Set} {S : R -> Set} {T : (r : R) -> S r -> Set}
  -> (r : R) -> T r (g r)
 f ∘ g = λ x -> f (g x)
 
-data var : (Γ : ctx) -> (T : 〚 Γ 〛c -> U) -> Set where
- top : ∀ {Γ T} -> var (Γ , T) (T ∘ Σ.fst)
- pop : ∀ {Γ T S} -> var Γ T -> var (Γ , S) (T ∘ Σ.fst)
+data _∋_ : (Γ : ctx) -> (T : 〚 Γ 〛c -> U) -> Set where
+ top : ∀ {Γ T} -> (Γ , T) ∋ (T ∘ Σ.fst)
+ pop : ∀ {Γ T S} -> Γ ∋ T -> (Γ , S) ∋ (T ∘ Σ.fst)
 
-〚_〛v : ∀ {Γ T} -> var Γ T -> (γ : 〚 Γ 〛c) -> El (T γ)
+〚_〛v : ∀ {Γ T} -> Γ ∋ T -> (γ : 〚 Γ 〛c) -> El (T γ)
 〚_〛v {⊡} () tt
 〚_〛v {Γ , T} top (γ , t) = t
 〚_〛v {Γ , T} (pop y) (γ , s) = 〚 y 〛v γ
@@ -91,6 +91,7 @@ mutual
                --------------------------------------
                -> Γ ⋆ (κ If' ss 〚 b 〛⊢ ss T ss F)
  data _⊢_ (Γ : ctx)  : (T : 〚 Γ 〛c -> U) -> Set where
+  var : ∀ {T} -> Γ ∋ T -> Γ ⊢ T 
  
  〚_〛⊢ : ∀ {Γ T} -> Γ ⊢ T -> (γ : 〚 Γ 〛c) -> El (T γ)
  〚 M 〛⊢ γ = {!!}
