@@ -1,5 +1,6 @@
 module large-elim where
 
+-- Pretty much a direct transcription of McBride's "Outrageous but Meaningful Coincidences"
 record _*_ (A B : Set) : Set where
  constructor _,_
  field
@@ -96,8 +97,8 @@ mutual
   true false : Γ ⊢ κ bool
   If : ∀ {P} -> (b : Γ ⊢ κ bool) -> (Γ , κ bool) ⋆ P -> Γ ⊢ ((∧ P) ss κ true) -> Γ ⊢ ((∧ P) ss κ false)
              -> Γ ⊢ ((∧ P) ss 〚 b 〛⊢)
-  ƛ : ∀ {S T} -> (Γ , S) ⊢ (∨ T) -> Γ ⊢ λ γ → Π (S γ) (λ s → T γ s)
-  _·_ : ∀ {S} {T : (γ : 〚 Γ 〛c) -> El (S γ) -> U} -> (Γ ⊢ λ γ → Π (S γ) (λ s → T γ s)) -> (s : Γ ⊢ S) -> Γ ⊢ λ γ → T γ (〚 s 〛⊢ γ) 
+  ƛ : ∀ {S T} -> (Γ , S) ⊢ (∨ T) -> Γ ⊢ λ γ → Π (S γ) (T γ)
+  _·_ : ∀ {S} {T : (γ : 〚 Γ 〛c) -> El (S γ) -> U} -> (Γ ⊢ λ γ → Π (S γ) (T γ)) -> (s : Γ ⊢ S) -> Γ ⊢ λ γ → T γ (〚 s 〛⊢ γ) 
 
  〚_〛⊢ : ∀ {Γ T} -> Γ ⊢ T -> (γ : 〚 Γ 〛c) -> El (T γ)
  〚_〛⊢ (var y) = 〚 y 〛v
