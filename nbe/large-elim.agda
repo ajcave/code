@@ -74,6 +74,13 @@ _ss_ = λ f s γ -> f γ (s γ)
  -> (s : S) (t : T s) -> P (s , t)
 ∧ p s t = p (s , t)
 
+mutual
+ data _⋆_ (Γ : ctx) : (T : 〚 Γ 〛c -> U) -> Set where
+  unit : Γ ⋆ κ unit 
+  bool : Γ ⋆ κ bool
+  Π : ∀ {S T} -> Γ ⋆ S -> (Γ , S) ⋆ T
+              ------------------------
+              -> Γ ⋆ ((κ Π ss S) ss (∧ T))
 
 
 {-data tp : Set where
