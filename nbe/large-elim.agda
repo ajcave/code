@@ -96,6 +96,7 @@ mutual
   true false : Γ ⊢ κ bool
   If : ∀ {P} -> (b : Γ ⊢ κ bool) -> (Γ , κ bool) ⋆ P -> Γ ⊢ ((∧ P) ss κ true) -> Γ ⊢ ((∧ P) ss κ false)
              -> Γ ⊢ ((∧ P) ss 〚 b 〛⊢)
- 
+  ƛ : ∀ {S T} -> (Γ , S) ⊢ (∨ T) -> Γ ⊢ (κ Π ss S ss T) 
+
  〚_〛⊢ : ∀ {Γ T} -> Γ ⊢ T -> (γ : 〚 Γ 〛c) -> El (T γ)
  〚 M 〛⊢ γ = {!!}
