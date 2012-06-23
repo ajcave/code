@@ -258,9 +258,6 @@ mutual
 blahgh : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm (Δ , T) S) -> [ σ ] (ƛ M) ≈ ƛ ([ ([ v ∘₁ s ] ∘₁ σ) ,, v z ] M)
 blahgh σ M = ≈-trans (η _) (ƛ {!!})
 
-{-
-
-
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
@@ -296,6 +293,20 @@ blah2 σ θ t (s y) = refl
 mutual
  nice : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) -> Pr T (eval θ M)
  nice (v y) θ θnice = θnice y
+ nice app θ θnice = _*_.fst (θnice (s z) _ id (θ z) (θnice z))
+ nice (ƛ M) θ θnice = λ Δ σ t x → {!!} , {!!}
+ nice ([ σ ] M) θ θnice = {!!}
+
+ nice2 : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M
+ nice2 (v y) θ θnice σ = {!!}
+ nice2 app θ θnice σ = {!!}
+ nice2 (ƛ y) θ θnice σ = {!!}
+ nice2 ([_] y y') θ θnice σ = {!!}
+
+{-
+mutual
+ nice : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) -> Pr T (eval θ M)
+ nice (v y) θ θnice = θnice y
  nice (M · N) θ θnice = _*_.fst (nice M θ θnice _ _ _ (nice N θ θnice))
  nice {Γ} {Δ1} {T ⇝ S} (ƛ M) θ θnice = λ Δ σ t x → (nice M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x))
   , λ Δ' ρ → trans (nice2 M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x) ρ) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ U → funext (λ x0 → trans (blah2 ρ (σ ◦ θ) t x0) (cong (λ (α : subst _ _) → extend α (appSubst T ρ t) x0) (funext-imp (λ U' → funext (λ x' → sym (appFunct σ ρ (θ x'))))))))))
@@ -309,6 +320,9 @@ mutual
  nice2 (ƛ M) θ θnice σ = funext (λ Δ'' → funext (λ σ' → funext (λ t →
    cong (λ (α : subst _ _) -> eval (extend α t) M) (funext-imp (λ T → funext (λ x → appFunct σ _ (θ x)))))))
 
+-} 
+
+{-
 _•v_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) -> subst Γ1 Γ3
 (σ1 •v σ2) x = σ1 (σ2 x)
 
@@ -317,22 +331,26 @@ blahv : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : vsubst �
 blahv σ t σ' z = refl
 blahv σ t σ' (s y) = refl
 
+
+
 compv : ∀ {Γ3 T Γ1 Γ2} (σ1 : vsubst Γ1 Γ2) (σ2 : subst Γ2 Γ3) (M : tm Γ1 T) -> (eval σ2 ([ σ1 ]v M)) ≡ (eval (σ2 •v σ1) M)
 compv σ1 σ2 (v y) = refl
 compv σ1 σ2 (M · N) = cong2 (λ α β' → α _ id β') (compv σ1 σ2 M) (compv σ1 σ2 N)
 compv σ1 σ2 (ƛ M) = funext (λ Δ' → funext (λ σ → funext (λ t → trans (compv (ext σ1) (extend (_ ◦ σ2) t) M) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ T → funext (λ x → blahv (_ ◦ σ2) t σ1 x)))))))
 
+-}
+
 _•_ : ∀ {Γ1 Γ2 Γ3} (σ1 : subst Γ2 Γ3) (σ2 : sub Γ1 Γ2) -> subst Γ1 Γ3
 (σ1 • σ2) x = eval σ1 (σ2 x) 
 
-blah : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2) {U} (x : var (Γ1 , T) U)
+{-blah : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2) {U} (x : var (Γ1 , T) U)
  -> (((extend σ s) • (sub-ext σ')) x) ≡ (extend (σ • σ') s x)
 blah σ s' σ' z = refl
 blah σ s' σ' (s y) = compv s (extend σ s') (σ' y)
 
 blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2)
  -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
-blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
+blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x)) -}
 
 -- Oh yay a PER
 _≃_ : ∀ {T Γ} (M N : sem Γ T) -> Set
@@ -375,6 +393,11 @@ _◦≃_ : ∀ {Γ1 Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {σ1 σ2 : subst Γ1 Γ2} (σ
 
 ≃-refl : ∀ {T Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) (σ1≃σ2 : σ1 ≃s σ2) (σ1n : niceSubst Γ1 Γ2 σ1) (σ2n : niceSubst Γ1 Γ2 σ2)
  (M : tm Γ1 T) -> (eval σ1 M) ≃ (eval σ2 M)
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M = {!!}
+
+{-
+≃-refl : ∀ {T Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) (σ1≃σ2 : σ1 ≃s σ2) (σ1n : niceSubst Γ1 Γ2 σ1) (σ2n : niceSubst Γ1 Γ2 σ2)
+ (M : tm Γ1 T) -> (eval σ1 M) ≃ (eval σ2 M)
 ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (v y) = σ1≃σ2 y
 ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (M · N) = ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M _ id (eval σ1 N) (eval σ2 N) (nice N σ1 σ1n) (nice N σ2 σ2n) (≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n N)
 ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (ƛ M) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → ≃-refl (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n σ1n) prt1) (niceExtend (σ ◦n σ2n) prt2) M
@@ -398,7 +421,22 @@ sem-η M1 σ θ Δ' σ' s' nice = trans (cong-app1 (cong-app1 (cong-app1 (nice2 
 eval-extend : ∀ {Γ Δ T} (σ : subst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> extend σ (eval σ N) x ≡ eval σ ((v ,, N) x)
 eval-extend σ N z = refl
 eval-extend σ N (s y) = refl
+-}
 
+soundness1 : ∀ {Γ3 T Γ2} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2) (M1 M2 : tm Γ2 T)
+   -> M1 ≈ M2 -> (eval σ1 M1) ≃ (eval σ2 M2)
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(v x) .(v x) (v x) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} y) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] M1) .([ σ4 ] M2) ([_] {_} {_} {σ3} {σ4} y {M1} {M2} y') = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ (⊡₁ ,, ƛ M) ,, N ] app) .([ v ,, N ] M) (β M N) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ (⊡₁ ,, [ (v ∘₁ s) ] M1) ,, v z ] app)) (η .M1) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ v ] M2) M2 (idL .M2) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ ] (v x)) .(σ x) (idRπ σ x) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] ([ σ4 ] M)) .([ ([ σ3 ] ∘₁ σ4) ] M) (assoc σ3 σ4 M) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 M2 (≈-trans y y') = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 M2 (≈-sym y) = ?
+
+{-
 soundness1 : ∀ {Γ3 T Γ2} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2) (M1 M2 : tm Γ2 T)
    -> M1 ≈ M2 -> (eval σ1 M1) ≃ (eval σ2 M2)
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(v x) .(v x) (v x) = σ1≃σ2 x
