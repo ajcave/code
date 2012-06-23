@@ -168,10 +168,15 @@ extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
-data tm (Γ : ctx) : (T : tp) -> Set where
- v : ∀ {T} -> var Γ T -> tm Γ T
- _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
- ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
+mutual
+ data tm (Γ : ctx) : (T : tp) -> Set where
+  v : ∀ {T} -> var Γ T -> tm Γ T
+  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
+  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
+  [_] : ∀ {Δ T} -> sub Δ Γ -> tm Δ T -> tm Γ T
+
+ sub : (Γ1 Γ2 : ctx) -> Set
+ sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
 
 _◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
 (σ ◦ θ) = λ x ->  appSubst _ σ (θ x)
@@ -182,17 +187,19 @@ eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
 eval θ (M · N) = eval θ M _ id (eval θ N)
 eval θ (ƛ M) = λ _ σ s -> eval (extend (σ ◦ θ) s) M
+eval θ ([ σ ] M) = eval (λ x → eval θ (σ x)) M
+
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M)
 
+{-
 [_]v : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
 [_]v σ (v y) = v (σ y)
 [_]v σ (M · N) = [ σ ]v M · [ σ ]v N
 [_]v σ (ƛ M) = ƛ ([ ext σ ]v M)
 
-sub : (Γ1 Γ2 : ctx) -> Set
-sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
+
 
 sub-ext : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> sub (Γ1 , T) (Γ2 , T)
 sub-ext σ z = v z
@@ -202,6 +209,8 @@ sub-ext σ (s y) = [ s ]v (σ y)
 [_] σ (v y) = σ y
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
+
+-}
 
 _,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
 (σ ,, M) z = M
@@ -213,9 +222,14 @@ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 ≈ M2 -> N1 ≈ N2 -> (M1 · N1) ≈ (M2 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ s ]v M · (v z)))
+ η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ v ∘₁ s ] M · (v z)))
+ idL : ∀ {T} (M : tm Γ T) -> [ v ] M ≈ M
+ idRπ : ∀ {Δ T} (σ : sub Δ Γ) (x : var Δ T) -> [ σ ] (v x) ≈ (σ x)
+ assoc : ∀ {Γ' Γ'' T} (σ1 : sub Γ' Γ) (σ2 : sub Γ'' Γ') (M : tm Γ'' T) -> [ σ1 ] ([ σ2 ] M) ≈ [ [ σ1 ] ∘₁ σ2 ] M
  ≈-trans : ∀ {T} {M N P : tm Γ T} -> M ≈ N -> N ≈ P -> M ≈ P
  ≈-sym : ∀ {T} {M N : tm Γ T} -> M ≈ N -> N ≈ M
+
+{-
 
 ≈-refl : ∀ {Γ T} {M : tm Γ T} -> M ≈ M
 ≈-refl {M = v y} = v y
@@ -585,6 +599,8 @@ cr M N P p1 p2 = (ninj (nbe M)) ,
 
 completeness''' : ∀ {Γ T} (M N : tm Γ T) -> nbe M ≡ nbe N -> M ≈ N
 completeness''' M N p = ≈-trans (completeness' M) (≈-sym (eq-ind (λ α → N ≈ ninj α) (sym p) (completeness' N)))
+
+-}
 
 -- TODO: We should be able to get rid of ≈-sym... Check the Dyber paper?
 -- TODO: Try an explicit substitution language for tm. I suspect it's simpler
