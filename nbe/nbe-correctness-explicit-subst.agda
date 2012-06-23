@@ -169,11 +169,12 @@ extend θ M z = M
 extend θ M (s y) = θ y
 
 mutual
- data tm (Γ : ctx) : (T : tp) -> Set where
-  v : ∀ {T} -> var Γ T -> tm Γ T
-  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
-  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
-  [_] : ∀ {Δ T} -> sub Δ Γ -> tm Δ T -> tm Γ T
+ data tm : (Γ : ctx) (T : tp) -> Set where
+  v : ∀ {Γ T} -> var Γ T -> tm Γ T
+  --_·_ : ∀ {Γ T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
+  app : ∀ {T S} -> tm ((⊡ , (T ⇝ S)) , T) S
+  ƛ : ∀ {Γ T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
+  [_] : ∀ {Γ Δ T} -> sub Δ Γ -> tm Δ T -> tm Γ T
 
  sub : (Γ1 Γ2 : ctx) -> Set
  sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
@@ -185,7 +186,8 @@ _◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
 -- This is taking tm Γ T into a Yoneda-like Hom space
 eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
 eval θ (v y) = θ y
-eval θ (M · N) = eval θ M _ id (eval θ N)
+--eval θ (M · N) = eval θ M _ id (eval θ N)
+eval θ app = θ (s z) _ id (θ z)
 eval θ (ƛ M) = λ _ σ s -> eval (extend (σ ◦ θ) s) M
 eval θ ([ σ ] M) = eval (λ x → eval θ (σ x)) M
 
@@ -216,25 +218,46 @@ _,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
 (σ ,, M) z = M
 (σ ,, M) (s y) = σ y
 
--- Why not just use an explicit substitution calculus?
-data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
- v : ∀ {T} (x : var Γ T) -> (v x) ≈ (v x)
- _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 ≈ M2 -> N1 ≈ N2 -> (M1 · N1) ≈ (M2 · N2)
- ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
- β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ≈ [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ v ∘₁ s ] M · (v z)))
- idL : ∀ {T} (M : tm Γ T) -> [ v ] M ≈ M
- idRπ : ∀ {Δ T} (σ : sub Δ Γ) (x : var Δ T) -> [ σ ] (v x) ≈ (σ x)
- assoc : ∀ {Γ' Γ'' T} (σ1 : sub Γ' Γ) (σ2 : sub Γ'' Γ') (M : tm Γ'' T) -> [ σ1 ] ([ σ2 ] M) ≈ [ [ σ1 ] ∘₁ σ2 ] M
- ≈-trans : ∀ {T} {M N P : tm Γ T} -> M ≈ N -> N ≈ P -> M ≈ P
- ≈-sym : ∀ {T} {M N : tm Γ T} -> M ≈ N -> N ≈ M
+⊡₁ : ∀ {Γ} -> sub ⊡ Γ
+⊡₁ ()
+
+_·₁_ : ∀ {Γ T S} (M : tm Γ (T ⇝ S)) (N : tm Γ T) -> tm Γ S
+M ·₁ N = [ ((⊡₁ ,, M) ,, N) ] app
+
+mutual
+ data _≈_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
+  v : ∀ {T} (x : var Γ T) -> (v x) ≈ (v x)
+  --_·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 ≈ M2 -> N1 ≈ N2 -> (M1 · N1) ≈ (M2 · N2)
+  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
+  [_] : ∀ {Δ T} {σ1 σ2 : sub Δ Γ} -> (σ1 ≈s σ2) -> {M1 M2 : tm Δ T} -> M1 ≈ M2 -> [ σ1 ] M1 ≈ [ σ2 ] M2
+  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> (ƛ M ·₁ N) ≈ [ v ,, N ] M
+  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M ≈ (ƛ ([ v ∘₁ s ] M ·₁ (v z)))
+  idL : ∀ {T} (M : tm Γ T) -> [ v ] M ≈ M
+  idRπ : ∀ {Δ T} (σ : sub Δ Γ) (x : var Δ T) -> [ σ ] (v x) ≈ (σ x)
+  assoc : ∀ {Γ' Γ'' T} (σ1 : sub Γ' Γ) (σ2 : sub Γ'' Γ') (M : tm Γ'' T) -> [ σ1 ] ([ σ2 ] M) ≈ [ [ σ1 ] ∘₁ σ2 ] M
+  ≈-trans : ∀ {T} {M N P : tm Γ T} -> M ≈ N -> N ≈ P -> M ≈ P
+  ≈-sym : ∀ {T} {M N : tm Γ T} -> M ≈ N -> N ≈ M
+
+ _≈s_ : ∀ {Γ1 Γ2} (σ1 σ2 : sub Γ1 Γ2) -> Set
+ _≈s_ σ1 σ2 = ∀ {U} (x : var _ U) -> σ1 x ≈ σ2 x
+ -- I think we get the η law for products (contexts) automatically?
+
+mutual
+ ≈-refl : ∀ {Γ T} {M : tm Γ T} -> M ≈ M
+ ≈-refl {M = v y} = v y
+ ≈-refl {M = app} = {!!} --≈-refl · ≈-refl
+ ≈-refl {M = ƛ M} = ƛ ≈-refl
+ ≈-refl {M = [ σ ] M} = [ ≈s-refl σ ] ≈-refl
+
+ ≈s-refl : ∀ {Γ1 Γ2} (σ : sub Γ1 Γ2) -> σ ≈s σ
+ ≈s-refl σ x = ≈-refl 
+
+≈-[]-app : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm Δ (T ⇝ S)) (N : tm Δ T) -> [ σ ] (M ·₁ N) ≈ ([ σ ] M ·₁ [ σ ] N)
+≈-[]-app σ M N = ≈-trans (assoc σ ((⊡₁ ,, M) ,, N) app) ([ (λ x → {!!}) ] ≈-refl)
 
 {-
 
-≈-refl : ∀ {Γ T} {M : tm Γ T} -> M ≈ M
-≈-refl {M = v y} = v y
-≈-refl {M = M · N} = ≈-refl · ≈-refl
-≈-refl {M = ƛ M} = ƛ ≈-refl
+
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
