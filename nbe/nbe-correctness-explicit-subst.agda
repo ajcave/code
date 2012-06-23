@@ -400,7 +400,10 @@ _◦≃_ : ∀ {Γ1 Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {σ1 σ2 : subst Γ1 Γ2} (σ
 
 ≃-refl : ∀ {T Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) (σ1≃σ2 : σ1 ≃s σ2) (σ1n : niceSubst Γ1 Γ2 σ1) (σ2n : niceSubst Γ1 Γ2 σ2)
  (M : tm Γ1 T) -> (eval σ1 M) ≃ (eval σ2 M)
-≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n M = {!!}
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (v y) = σ1≃σ2 y
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n app = σ1≃σ2 (s z) _ id (σ1 z) (σ2 z) (σ1n z) (σ2n z) (σ1≃σ2 z)
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (ƛ y) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → ≃-refl (extend (σ ◦ σ1) t1) (extend (σ ◦ σ2) t2) (extend-≃ (σ ◦≃ σ1≃σ2) t1≃t2) (niceExtend (σ ◦n σ1n) prt1) (niceExtend (σ ◦n σ2n) prt2) y
+≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n ([_] y y') = ≃-refl (λ {T} x → eval σ1 (y x)) (λ {T} x → eval σ2 (y x)) (λ x → ≃-refl σ1 σ2 σ1≃σ2 σ1n σ2n (y x)) (λ x → nice (y x) σ1 σ1n) (λ x → nice (y x) σ2 σ2n) y'
 
 {-
 ≃-refl : ∀ {T Γ1 Γ2} (σ1 σ2 : subst Γ1 Γ2) (σ1≃σ2 : σ1 ≃s σ2) (σ1n : niceSubst Γ1 Γ2 σ1) (σ2n : niceSubst Γ1 Γ2 σ2)
