@@ -443,7 +443,9 @@ soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ (⊡₁ ,, [ (v ∘₁ s) ] M1) 
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ v ] M2) M2 (idL .M2) = ≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 M2
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ ] (v x)) .(σ x) (idRπ σ x) = ≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 (σ x)
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] ([ σ4 ] M)) .([ ([ σ3 ] ∘₁ σ4) ] M) (assoc σ3 σ4 M) = ≃-refl (λ {T} x → eval (λ {T'} x' → eval σ1 (σ3 x')) (σ4 x)) (λ {T} x → eval (λ {T'} x' → eval σ2 (σ3 x')) (σ4 x)) (λ x → ≃-refl (λ {T} x' → eval σ1 (σ3 x')) (λ {T} x' → eval σ2 (σ3 x')) (λ x' → ≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 (σ3 x')) (λ x' → nice (σ3 x') σ1 θ1) (λ x' → nice (σ3 x') σ2 θ2) (σ4 x)) (λ x → nice (σ4 x) (λ {T} x' → eval σ1 (σ3 x')) (λ x' → nice (σ3 x') σ1 θ1)) (λ x → nice (σ4 x) (λ {T} x' → eval σ2 (σ3 x')) (λ x' → nice (σ3 x') σ2 θ2)) M
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M P (≈-trans {N = N} M≃N N≃P) = ≃-trans {!!} (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N P N≃P)
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M P (≈-trans {N = N} M≃N N≃P) = 
+  ≃-trans (soundness1 σ1 σ1 (≃s-blah σ1≃σ2) θ1 θ1 M N M≃N)
+          (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N P N≃P)
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M N (≈-sym M≈N) = ≃-sym (soundness1 σ2 σ1 (λ x → ≃-sym (σ1≃σ2 x)) θ2 θ1 N M M≈N)
 
 {-
