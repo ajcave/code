@@ -308,7 +308,7 @@ mutual
 
  nice2 : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M
  nice2 (v y) θ θnice σ = refl
- nice2 app θ θnice σ = {!!}
+ nice2 app θ θnice σ = _*_.snd (θnice (s z) _ id (θ z) (θnice z)) _ σ
  nice2 (ƛ M) θ θnice σ = funext (λ Δ'' → funext (λ σ' → funext (λ t →
    cong (λ (α : subst _ _) -> eval (extend α t) M) (funext-imp (λ T → funext (λ x → appFunct σ _ (θ x)))))))
  nice2 ([_] y y') θ θnice σ = trans (nice2 y' (λ {T} x → eval θ (y x)) (λ x → nice (y x) θ θnice) σ) (cong (λ (α : subst _ _) → eval α y') (funext-imp (λ x → funext (λ x' → nice2 (y x') θ θnice σ))))
