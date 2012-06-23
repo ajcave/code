@@ -249,7 +249,7 @@ mutual
 mutual
  ≈-refl : ∀ {Γ T} {M : tm Γ T} -> M ≈ M
  ≈-refl {M = v y} = v y
- ≈-refl {M = app} = {!!} --≈-refl · ≈-refl
+ ≈-refl {M = app} = app --≈-refl · ≈-refl
  ≈-refl {M = ƛ M} = ƛ ≈-refl
  ≈-refl {M = [ σ ] M} = [ ≈s-refl σ ] ≈-refl
 
@@ -257,7 +257,11 @@ mutual
  ≈s-refl σ x = ≈-refl 
 
 ≈-[]-app : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm Δ (T ⇝ S)) (N : tm Δ T) -> [ σ ] (M ·₁ N) ≈ ([ σ ] M ·₁ [ σ ] N)
-≈-[]-app σ M N = ≈-trans (assoc σ ((⊡₁ ,, M) ,, N) app) ([ (λ x → {!!}) ] ≈-refl)
+≈-[]-app σ M N = ≈-trans (assoc σ ((⊡₁ ,, M) ,, N) app) ([ (λ x → var-dom-prop
+                                                                    (λ x' →
+                                                                       [ σ ] (((⊡₁ ,, M) ,, N) x') ≈ ((⊡₁ ,, [ σ ] M) ,, [ σ ] N) x')
+                                                                    (var-dom-prop (λ x' → [ σ ] ((⊡₁ ,, M) x') ≈ (⊡₁ ,, [ σ ] M) x') (λ ())
+                                                                       ≈-refl) ≈-refl x) ] ≈-refl)
 
 blahgh : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm (Δ , T) S) -> [ σ ] (ƛ M) ≈ ƛ ([ ([ v ∘₁ s ] ∘₁ σ) ,, v z ] M)
 blahgh σ M = ≈-trans (η _) (ƛ {!!})
