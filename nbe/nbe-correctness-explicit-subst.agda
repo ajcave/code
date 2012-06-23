@@ -425,16 +425,16 @@ eval-extend σ N (s y) = refl
 
 soundness1 : ∀ {Γ3 T Γ2} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2) (M1 M2 : tm Γ2 T)
    -> M1 ≈ M2 -> (eval σ1 M1) ≃ (eval σ2 M2)
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(v x) .(v x) (v x) = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} y) = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] M1) .([ σ4 ] M2) ([_] {_} {_} {σ3} {σ4} y {M1} {M2} y') = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ (⊡₁ ,, ƛ M) ,, N ] app) .([ v ,, N ] M) (β M N) = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ (⊡₁ ,, [ (v ∘₁ s) ] M1) ,, v z ] app)) (η .M1) = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ v ] M2) M2 (idL .M2) = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ ] (v x)) .(σ x) (idRπ σ x) = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] ([ σ4 ] M)) .([ ([ σ3 ] ∘₁ σ4) ] M) (assoc σ3 σ4 M) = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 M2 (≈-trans y y') = ?
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 M2 (≈-sym y) = ?
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(v x) .(v x) (v x) = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} y) = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] M1) .([ σ4 ] M2) ([_] {_} {_} {σ3} {σ4} y {M1} {M2} y') = soundness1 (λ x → eval σ1 (σ3 x)) (λ x → eval σ2 (σ4 x)) (λ x → soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 (σ3 x) (σ4 x) (y x)) (λ x → nice (σ3 x) σ1 θ1) (λ x → nice (σ4 x) σ2 θ2) M1 M2 y'
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ (⊡₁ ,, ƛ M) ,, N ] app) .([ v ,, N ] M) (β M N) = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ (⊡₁ ,, [ (v ∘₁ s) ] M1) ,, v z ] app)) (η .M1) = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ v ] M2) M2 (idL .M2) = soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M2 M2 ≈-refl
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ ] (v x)) .(σ x) (idRπ σ x) = soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 (σ x) (σ x) ≈-refl
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] ([ σ4 ] M)) .([ ([ σ3 ] ∘₁ σ4) ] M) (assoc σ3 σ4 M) = soundness1 (λ {T} x → eval (λ {T'} x' → eval σ1 (σ3 x')) (σ4 x)) (λ {T} x → eval (λ {T'} x' → eval σ2 (σ3 x')) (σ4 x)) (λ x → soundness1 (λ {T} x' → eval σ1 (σ3 x')) (λ {T} x' → eval σ2 (σ3 x')) (λ x' → soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 (σ3 x') (σ3 x') ≈-refl) (λ x' → nice (σ3 x') σ1 θ1) (λ x' → nice (σ3 x') σ2 θ2) (σ4 x) (σ4 x) ≈-refl) (λ x → nice (σ4 x) (λ {T} x' → eval σ1 (σ3 x')) (λ x' → nice (σ3 x') σ1 θ1)) (λ x → nice (σ4 x) (λ {T} x' → eval σ2 (σ3 x')) (λ x' → nice (σ3 x') σ2 θ2)) M M ≈-refl
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 M2 (≈-trans y y') = {!!}
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 M2 (≈-sym y) = {!!}
 
 {-
 soundness1 : ∀ {Γ3 T Γ2} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2) (θ1 : niceSubst Γ2 Γ3 σ1) (θ2 : niceSubst Γ2 Γ3 σ2) (M1 M2 : tm Γ2 T)
