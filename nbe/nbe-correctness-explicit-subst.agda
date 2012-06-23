@@ -198,25 +198,6 @@ eval θ ([ σ ] M) = eval (λ x → eval θ (σ x)) M
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M)
 
-{-
-[_]v : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
-[_]v σ (v y) = v (σ y)
-[_]v σ (M · N) = [ σ ]v M · [ σ ]v N
-[_]v σ (ƛ M) = ƛ ([ ext σ ]v M)
-
-
-
-sub-ext : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> sub (Γ1 , T) (Γ2 , T)
-sub-ext σ z = v z
-sub-ext σ (s y) = [ s ]v (σ y)
-
-[_] : ∀ {Γ1 Γ2 T} (σ : sub Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
-[_] σ (v y) = σ y
-[_] σ (M · N) = [ σ ] M · [ σ ] N
-[_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
-
--}
-
 _,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
 (σ ,, M) z = M
 (σ ,, M) (s y) = σ y
@@ -255,19 +236,6 @@ mutual
 
  ≈s-refl : ∀ {Γ1 Γ2} (σ : sub Γ1 Γ2) -> σ ≈s σ
  ≈s-refl σ x = ≈-refl 
-
-{-
-≈-[]-app : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm Δ (T ⇝ S)) (N : tm Δ T) -> [ σ ] (M ·₁ N) ≈ ([ σ ] M ·₁ [ σ ] N)
-≈-[]-app σ M N = ≈-trans (assoc σ ((⊡₁ ,, M) ,, N) app) ([ (λ x → var-dom-prop
-                                                                    (λ x' →
-                                                                       [ σ ] (((⊡₁ ,, M) ,, N) x') ≈ ((⊡₁ ,, [ σ ] M) ,, [ σ ] N) x')
-                                                                    (var-dom-prop (λ x' → [ σ ] ((⊡₁ ,, M) x') ≈ (⊡₁ ,, [ σ ] M) x') (λ ())
-                                                                       ≈-refl) ≈-refl x) ] ≈-refl)
-
-blahgh : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm (Δ , T) S) -> [ σ ] (ƛ M) ≈ ƛ ([ ([ v ∘₁ s ] ∘₁ σ) ,, v z ] M)
-blahgh σ M = ≈-trans (η _) (ƛ {!!})
--}
-
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
 Pr (atom A) t = Unit
@@ -504,24 +472,44 @@ mutual
  rinj (v x) = v x
  rinj (R · N) = (rinj R) ·₁ (ninj N)
 
-{-
+
+hurgh : ∀ {Γ T S} (σ1 σ2 : sub ((⊡ , T) , S) Γ) -> σ1 z ≈ σ2 z -> σ1 (s z) ≈ σ2 (s z) -> σ1 ≈s σ2
+hurgh σ1 σ2 p q z = p
+hurgh σ1 σ2 p q (s z) = q
+hurgh σ1 σ2 p q (s (s ()))
+
+_·₂_ : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} -> M1 ≈ M2 -> {N1 N2 : tm Γ T} -> N1 ≈ N2 -> (M1 ·₁ N1) ≈ (M2 ·₁ N2)
+M ·₂ N = [ hurgh ((⊡₁ ,, _) ,, _) ((⊡₁ ,, _) ,, _) N M ] app 
+
+
+≈-[]-app : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm Δ (T ⇝ S)) (N : tm Δ T) -> [ σ ] (M ·₁ N) ≈ ([ σ ] M ·₁ [ σ ] N)
+≈-[]-app σ M N = ≈-trans (assoc σ ((⊡₁ ,, M) ,, N) app) ([ hurgh ([ σ ] ∘₁ ((⊡₁ ,, M) ,, N)) ((⊡₁ ,, [ σ ] M) ,, [ σ ] N) ≈-refl ≈-refl ] ≈-refl)
+
+blahgh : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm (Δ , T) S) -> [ σ ] (ƛ M) ≈ ƛ ([ ([ v ∘₁ s ] ∘₁ σ) ,, v z ] M)
+blahgh σ M = ≈-trans (η _) (ƛ {!!})
+
+[_]c : ∀ {Δ T Γ} (σ1 : sub Δ Γ) -> {M1 M2 : tm Δ T} -> M1 ≈ M2 -> [ σ1 ] M1 ≈ [ σ1 ] M2
+[ σ ]c p = [ ≈s-refl σ ] p
+
+
 mutual
- []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
- []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
+ []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ v ∘₁ σ ] (ninj N) ≈ ninj (nappSubst σ N)
+ []v-comm-ninj σ (ƛ M) = ≈-trans (blahgh (v ∘₁ σ) _) (ƛ {!!}) --cong ƛ ([]v-comm-ninj (ext σ) M)
  []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
- []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
- []v-comm-rinj σ (v y) = refl
- []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
+ []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ v ∘₁ σ ] (rinj R) ≈ rinj (rappSubst σ R)
+ []v-comm-rinj σ (v y) = idRπ (v ∘₁ σ) y --refl
+ []v-comm-rinj σ (R · N) = ≈-trans (≈-[]-app (v ∘₁ σ) (rinj R) (ninj N)) (([]v-comm-rinj σ R) ·₂ ([]v-comm-ninj σ N))
 
-
+{-
 ≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
 ≈-η-expand {atom A} R = ≈-refl
 ≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans (≈-refl' ([]v-comm-rinj s R) · ≈-η-expand (v z)) (≈-η-expand _)))
 -}
 
+
 ≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
 ≈-η-expand {atom A} R = ≈-refl
-≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans ([ (λ x → {!!}) ] app) (≈-η-expand _)))
+≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans (([]v-comm-rinj s R) ·₂ (≈-η-expand (v z))) (≈-η-expand _)))
 
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
@@ -542,6 +530,11 @@ _◦g_ : ∀ {Γ1 Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {σ : subst Γ1 Γ2} -> GLs σ 
 glExt : ∀ {Γ Δ T} {σ : subst Γ Δ} (θ : GLs σ) {t : sem Δ T} -> GL Δ T t -> GLs (extend σ t)
 glExt θ p z = p
 glExt θ p (s y) = θ y
+
+reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
+reflect-GL {atom A} R = tt
+reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand _))) (≈-[]-app (v ,, ninj (reify p)) (rinj (rappSubst (wkn ∘ σ) R))
+                                                                                                                                                                                   (ninj (reify (reflect (v z)))))) (≈-trans ({!!} ·₂ (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand (v z)))) (idRπ (v ,, ninj (reify p)) z))) (≈-η-expand _))))
 
 {-
 reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
