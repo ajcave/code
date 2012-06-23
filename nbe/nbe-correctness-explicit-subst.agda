@@ -302,8 +302,9 @@ mutual
  nice : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) -> Pr T (eval θ M)
  nice (v y) θ θnice = θnice y
  nice app θ θnice = _*_.fst (θnice (s z) _ id (θ z) (θnice z))
- nice (ƛ M) θ θnice = λ Δ σ t x → {!!} , {!!}
- nice ([ σ ] M) θ θnice = {!!}
+ nice {Γ} {Δ1} {T ⇝ S} (ƛ M) θ θnice = λ Δ σ t x → (nice M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x))
+  , λ Δ' ρ → trans (nice2 M (extend (σ ◦ θ) t) (niceExtend (σ ◦n θnice) x) ρ) (cong (λ (α : subst _ _) → eval α M) (funext-imp (λ U → funext (λ x0 → trans (blah2 ρ (σ ◦ θ) t x0) (cong (λ (α : subst _ _) → extend α (appSubst T ρ t) x0) (funext-imp (λ U' → funext (λ x' → sym (appFunct σ ρ (θ x'))))))))))
+ nice ([ σ ] M) θ θnice = nice M (λ {T} x → eval θ (σ x)) (λ x → nice (σ x) θ θnice)
 
  nice2 : ∀ {Γ Δ T} (M : tm Γ T) (θ : subst Γ Δ) (θnice : niceSubst Γ Δ θ) {Δ'} (σ : vsubst Δ Δ') -> appSubst T σ (eval θ M) ≡ eval (σ ◦ θ) M
  nice2 (v y) θ θnice σ = {!!}
