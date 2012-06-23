@@ -412,12 +412,6 @@ soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
 soundness' H = reify-nice2 (soundness1 _ _ (λ x → reflect-nice3 (v x)) (λ x → reflect-nice2 (v x)) (λ x → reflect-nice2 (v x)) _ _ H)
 
 -- TODO: Now just get rid of funext and funext-imp
-{-
-_≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
-σ1 ≈s σ2 = ∀ {U} (x : var _ U) -> (σ1 x) ≈ (σ2 x)
-
-≈s-refl : ∀ {Γ Δ} (σ : sub Γ Δ) -> σ ≈s σ
-≈s-refl σ x = ≈-refl
 
 ≈-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 ≈ M2
 ≈-refl' refl = ≈-refl
@@ -428,6 +422,7 @@ _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 ≡≈-trans : ∀ {Γ T} {M N P : tm Γ T} -> M ≈ N -> N ≡ P -> M ≈ P
 ≡≈-trans p refl = p
 
+{-
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
 []v-funct σ1 σ2 (v y) = refl
@@ -500,15 +495,16 @@ simp σ N (s y) = trans ([]nv-funct _ _ (σ y)) []-id
 
 [_]≈c2 : ∀ {Γ Δ T} (σ : sub Γ Δ) {M1 M2 : tm Γ T} -> M1 ≈ M2 -> [ σ ] M1 ≈ [ σ ] M2
 [ σ ]≈c2 p = [ ≈s-refl σ ]≈ p
-
+-}
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
  ninj (ƛ M) = ƛ (ninj M)
  ninj (neut R) = rinj R
  rinj : ∀ {Γ T} -> rtm Γ T -> tm Γ T
  rinj (v x) = v x
- rinj (R · N) = (rinj R) · (ninj N)
+ rinj (R · N) = (rinj R) ·₁ (ninj N)
 
+{-
 mutual
  []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
  []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
@@ -517,14 +513,21 @@ mutual
  []v-comm-rinj σ (v y) = refl
  []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
 
+
 ≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
 ≈-η-expand {atom A} R = ≈-refl
 ≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans (≈-refl' ([]v-comm-rinj s R) · ≈-η-expand (v z)) (≈-η-expand _)))
+-}
+
+≈-η-expand : ∀ {T Γ} (R : rtm Γ T) -> (rinj R) ≈ (ninj (reify (reflect R)))
+≈-η-expand {atom A} R = ≈-refl
+≈-η-expand {T ⇝ S} R = ≈-trans (η (rinj R)) (ƛ (≈-trans ([ (λ x → {!!}) ] app) (≈-η-expand _)))
+
 
 GL : (Γ : ctx) (T : tp) (t : sem Γ T) -> Set
 GL Γ (atom A) t = Unit
 GL Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (p : sem Δ T) (glp : GL Δ T p) (prp : Pr T p) → (GL Δ S (t Δ σ p)
-  * (((ninj (reify (appSubst _ σ t))) · (ninj (reify p))) ≈ ninj (reify (t Δ σ p))))
+  * (((ninj (reify (appSubst _ σ t))) ·₁ (ninj (reify p))) ≈ ninj (reify (t Δ σ p))))
 
 appSubstGL : ∀ {T Γ2 Γ3} (ρ : vsubst Γ2 Γ3) {t : sem Γ2 T} -> GL Γ2 T t -> GL Γ3 T (appSubst T ρ t)
 appSubstGL {atom A} ρ glt = tt
@@ -540,6 +543,7 @@ glExt : ∀ {Γ Δ T} {σ : subst Γ Δ} (θ : GLs σ) {t : sem Δ T} -> GL Δ T
 glExt θ p z = p
 glExt θ p (s y) = θ y
 
+{-
 reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL {atom A} R = tt
 reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ (v ,, ninj (reify p)) ]≈c2 (≈-sym (≈-η-expand _))) (eq-ind
