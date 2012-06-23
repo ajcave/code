@@ -371,6 +371,9 @@ _≃_ {T ⇝ S} M N = ∀ Δ (σ : vsubst _ Δ) t1 t2 → (prt1 : Pr T t1) -> (p
 ≃≡-trans : ∀ {T Γ} {M N P : sem Γ T} -> M ≃ N -> N ≡ P -> M ≃ P
 ≃≡-trans p refl = p
 
+≡≃-trans : ∀ {T Γ} {M N P : sem Γ T} -> M ≡ N -> N ≃ P -> M ≃ P
+≡≃-trans refl p = p
+
 ≃-blah : ∀ {T Γ} {M N : sem Γ T} -> M ≃ N -> M ≃ M
 ≃-blah p = ≃-trans p (≃-sym p)
 
@@ -431,7 +434,8 @@ soundness1 : ∀ {Γ3 T Γ2} (σ1 σ2 : subst Γ2 Γ3) (σ1≃σ2 : σ1 ≃s σ2
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(v x) .(v x) (v x) = {!!}
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .(ƛ M1) .(ƛ M2) (ƛ {T} {S} {M1} {M2} y) = {!!}
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ3 ] M1) .([ σ4 ] M2) ([_] {_} {_} {σ3} {σ4} y {M1} {M2} y') = soundness1 (λ x → eval σ1 (σ3 x)) (λ x → eval σ2 (σ4 x)) (λ x → soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 (σ3 x) (σ4 x) (y x)) (λ x → nice (σ3 x) σ1 θ1) (λ x → nice (σ4 x) σ2 θ2) M1 M2 y'
-soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ (⊡₁ ,, ƛ M) ,, N ] app) .([ v ,, N ] M) (β M N) = soundness1 (extend (id ◦ σ1) (eval σ1 N)) (λ {T} x → eval σ2 ((v ,, N) x)) (λ x → {!!}) (niceExtend (id ◦n θ1) (nice N σ1 θ1)) (var-dom-prop (λ x → Pr _ (eval σ2 ((v ,, N) x))) θ2 (nice N σ2 θ2)) M M ≈-refl
+soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ (⊡₁ ,, ƛ M) ,, N ] app) .([ v ,, N ] M) (β M N) = soundness1 (extend (id ◦ σ1) (eval σ1 N)) (λ {T} x → eval σ2 ((v ,, N) x)) (var-dom-prop
+                                                                                                                                                                 (λ x → extend (id ◦ σ1) (eval σ1 N) x ≃ eval σ2 ((v ,, N) x)) (λ x → ≡≃-trans (appFunct-id (σ1 x)) (σ1≃σ2 x)) (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 N)) (niceExtend (id ◦n θ1) (nice N σ1 θ1)) (var-dom-prop (λ x → Pr _ (eval σ2 ((v ,, N) x))) θ2 (nice N σ2 θ2)) M M ≈-refl
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M1 .(ƛ ([ (⊡₁ ,, [ (v ∘₁ s) ] M1) ,, v z ] app)) (η .M1) = λ Δ σ t1 t2 prt1 prt2 t1≃t2 → ≃≡-trans (≃-refl σ1 σ2 σ1≃σ2 θ1 θ2 M1 Δ σ t1 t2 prt1 prt2 t1≃t2) (cong-app1 (cong-app1 (cong-app1 (nice2 M1 σ2 θ2 σ) _) id) t2)
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ v ] M2) M2 (idL .M2) = soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M2 M2 ≈-refl
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 .([ σ ] (v x)) .(σ x) (idRπ σ x) = soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 (σ x) (σ x) ≈-refl
