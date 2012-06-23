@@ -262,9 +262,10 @@ mutual
                                                                        [ σ ] (((⊡₁ ,, M) ,, N) x') ≈ ((⊡₁ ,, [ σ ] M) ,, [ σ ] N) x')
                                                                     (var-dom-prop (λ x' → [ σ ] ((⊡₁ ,, M) x') ≈ (⊡₁ ,, [ σ ] M) x') (λ ())
                                                                        ≈-refl) ≈-refl x) ] ≈-refl)
-
+{-
 blahgh : ∀ {Γ Δ T S} (σ : sub Δ Γ) (M : tm (Δ , T) S) -> [ σ ] (ƛ M) ≈ ƛ ([ ([ v ∘₁ s ] ∘₁ σ) ,, v z ] M)
 blahgh σ M = ≈-trans (η _) (ƛ {!!})
+-}
 
 
 Pr : ∀ {Γ} T (t : sem Γ T) -> Set 
