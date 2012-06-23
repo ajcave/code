@@ -380,7 +380,7 @@ soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M P (≈-trans {N = N} M≃N N≃P) =
           (soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 N P N≃P)
 soundness1 σ1 σ2 σ1≃σ2 θ1 θ2 M N (≈-sym M≈N) = ≃-sym (soundness1 σ2 σ1 (λ x → ≃-sym (σ1≃σ2 x)) θ2 θ1 N M M≈N)
 
-{-
+
 
 reflect-nice : ∀ {T Γ Δ} (ρ : vsubst Γ Δ) (R : rtm Γ T) -> appSubst T ρ (reflect R) ≡ reflect (rappSubst ρ R)
 reflect-nice {atom A} ρ R = refl
@@ -412,7 +412,7 @@ soundness' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (nbe M1) ≡ (nbe M2)
 soundness' H = reify-nice2 (soundness1 _ _ (λ x → reflect-nice3 (v x)) (λ x → reflect-nice2 (v x)) (λ x → reflect-nice2 (v x)) _ _ H)
 
 -- TODO: Now just get rid of funext and funext-imp
-
+{-
 _≈s_ : ∀ {Γ Δ} (σ1 σ2 : sub Γ Δ) -> Set
 σ1 ≈s σ2 = ∀ {U} (x : var _ U) -> (σ1 x) ≈ (σ2 x)
 
