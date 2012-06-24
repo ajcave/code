@@ -539,10 +539,10 @@ reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · r
 
 mutual
  allGL : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T) -> GL Δ T (eval σ M)
- allGL σ θ ρ (v y) = {!!}
+ allGL σ θ ρ (v y) = θ y
  allGL σ θ ρ app = {!!}
  allGL σ θ ρ (ƛ y) = {!!}
- allGL σ θ ρ ([_] y y') = {!!}
+ allGL σ θ ρ ([_] y y') = allGL (λ {T} x → eval σ (y x)) (λ x → allGL σ θ ρ (y x)) (λ x → nice (y x) σ ρ) y'
 
  completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T)
    -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
