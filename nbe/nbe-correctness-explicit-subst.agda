@@ -549,7 +549,7 @@ mutual
  completeness σ θ ρ (v y) = {!!}
  completeness σ θ ρ app = {!!}
  completeness σ θ ρ (ƛ y) = {!!}
- completeness σ θ ρ ([_] y y') = {!!}
+ completeness σ θ ρ ([_] y y') = ≈-trans (assoc _ y y') (≈-trans ([ (λ x → completeness σ θ ρ (y x)) ] ≈-refl) (completeness (λ {T} x → eval σ (y x)) (λ x → allGL σ θ ρ (y x)) (λ x → nice (y x) σ ρ) y'))
 
 {-
 blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 ∘₁ s) -> (σ1 z) ≈ (σ2 z) -> σ1 ≈s σ2
