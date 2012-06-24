@@ -494,7 +494,8 @@ blahgh σ M = ≈-trans (η _) (ƛ {!!})
 
 mutual
  []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ v ∘₁ σ ] (ninj N) ≈ ninj (nappSubst σ N)
- []v-comm-ninj σ (ƛ M) = ≈-trans (blahgh (v ∘₁ σ) _) (ƛ {!!}) --cong ƛ ([]v-comm-ninj (ext σ) M)
+ []v-comm-ninj σ (ƛ M) = ≈-trans (blahgh (v ∘₁ σ) _) (ƛ (≈-trans ([ var-dom-prop
+                                                                      (λ x → (([ v ∘₁ s ] ∘₁ (v ∘₁ σ)) ,, v z) x ≈ v (ext σ x)) (λ x → idRπ (v ∘₁ s) (σ x)) (v z) ] ≈-refl) ([]v-comm-ninj (ext σ) M)))
  []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
  []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ v ∘₁ σ ] (rinj R) ≈ rinj (rappSubst σ R)
  []v-comm-rinj σ (v y) = idRπ (v ∘₁ σ) y --refl
@@ -536,13 +537,15 @@ reflect-GL {atom A} R = tt
 reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand _))) (≈-[]-app (v ,, ninj (reify p)) (rinj (rappSubst (wkn ∘ σ) R))
                                                                                                                                                                                    (ninj (reify (reflect (v z)))))) (≈-trans (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-trans (≈-refl' (cong rinj (sym (rappSubst-funct s σ R)))) (≈-sym ([]v-comm-rinj s (rappSubst σ R))))) (≈-trans (assoc (v ,, ninj (reify p)) (v ∘₁ s) _) (≈-trans ([ (λ x → idRπ (v ,, ninj (reify p)) (s x)) ] ≈-refl) (idL (rinj (rappSubst σ R))))) ·₂ (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand (v z)))) (idRπ (v ,, ninj (reify p)) z))) (≈-η-expand _))))
 
-{-
-reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
-reflect-GL {atom A} R = tt
-reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ (v ,, ninj (reify p)) ]≈c2 (≈-sym (≈-η-expand _))) (eq-ind
-     (λ α → [ v ,, ninj (reify p) ] (rinj α) ≈ rinj (rappSubst σ R)) (rappSubst-funct wkn σ R) (eq-ind (λ α → [ v ,, ninj (reify p) ] α ≈ rinj (rappSubst σ R)) ([]v-comm-rinj wkn (rappSubst σ R))
-     (≈-refl' (trans ([]nv-funct _ _ (rinj (rappSubst σ R))) []-id))) · ([ v ,, ninj (reify p) ]≈c2 (≈-sym (≈-η-expand _))))) (≈-η-expand _)))
+mutual
+ allGL : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T) -> GL Δ T (eval σ M)
+ allGL σ θ ρ M = {!!}
 
+ completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T)
+   -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
+ completeness σ θ ρ M = {!!}
+
+{-
 blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 ∘₁ s) -> (σ1 z) ≈ (σ2 z) -> σ1 ≈s σ2
 blagh σ1 σ2 p1 p2 z = p2
 blagh σ1 σ2 p1 p2 (s y) = p1 y
