@@ -556,7 +556,7 @@ mutual
  allGL : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T) -> GL Δ T (eval σ M)
  allGL σ θ ρ (v y) = θ y
  allGL σ θ ρ app = _*_.fst (θ (s z) _ id (σ z) (θ z) (ρ z))
- allGL σ θ ρ (ƛ y) = {!!}
+ allGL σ θ ρ (ƛ y) = λ Δ σ' p glp prp → (allGL (extend (σ' ◦ σ) p) (glExt (σ' ◦g θ) glp) (niceExtend (σ' ◦n ρ) prp) y) , {!!}
  allGL σ θ ρ ([_] y y') = allGL (λ {T} x → eval σ (y x)) (λ x → allGL σ θ ρ (y x)) (λ x → nice (y x) σ ρ) y'
 
  completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T)
