@@ -545,7 +545,8 @@ expand-sub σ z = ≈-refl
 expand-sub σ (s y) = ≈-refl
 
 _,,₂_ : ∀ {Γ T Δ} {σ1 σ2 : sub Γ Δ} -> σ1 ≈s σ2 -> (M : tm Δ T) -> (σ1 ,, M) ≈s (σ2 ,, M)
-(p ,,₂ M) x = {!!}
+_,,₂_ p M z = ≈-refl
+_,,₂_ p M (s y) = p y
 
 blagh : ∀ {Γ Δ T} (σ1 σ2 : sub (Γ , T) Δ) -> (σ1 ∘₁ s) ≈s (σ2 ∘₁ s) -> (σ1 z) ≈ (σ2 z) -> σ1 ≈s σ2
 blagh σ1 σ2 p1 p2 z = p2
