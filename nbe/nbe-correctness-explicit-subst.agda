@@ -227,6 +227,9 @@ mutual
  _≈s_ σ1 σ2 = ∀ {U} (x : var _ U) -> σ1 x ≈ σ2 x
  -- I think we get the η law for products (contexts) automatically?
 
+≈s-trans : ∀ {T Γ} {M N P : sub Γ T} -> M ≈s N -> N ≈s P -> M ≈s P
+≈s-trans p q x = ≈-trans (p x) (q x)
+
 mutual
  ≈-refl : ∀ {Γ T} {M : tm Γ T} -> M ≈ M
  ≈-refl {M = v y} = v y
@@ -537,6 +540,13 @@ reflect-GL {atom A} R = tt
 reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand _))) (≈-[]-app (v ,, ninj (reify p)) (rinj (rappSubst (wkn ∘ σ) R))
                                                                                                                                                                                    (ninj (reify (reflect (v z)))))) (≈-trans (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-trans (≈-refl' (cong rinj (sym (rappSubst-funct s σ R)))) (≈-sym ([]v-comm-rinj s (rappSubst σ R))))) (≈-trans (assoc (v ,, ninj (reify p)) (v ∘₁ s) _) (≈-trans ([ (λ x → idRπ (v ,, ninj (reify p)) (s x)) ] ≈-refl) (idL (rinj (rappSubst σ R))))) ·₂ (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand (v z)))) (idRπ (v ,, ninj (reify p)) z))) (≈-η-expand _))))
 
+expand-sub : ∀ {Γ Δ T} (σ : sub (Γ , T) Δ) -> σ ≈s ((σ ∘₁ s) ,, σ z)
+expand-sub σ z = ≈-refl
+expand-sub σ (s y) = ≈-refl
+
+_,,₂_ : ∀ {Γ T Δ} {σ1 σ2 : sub Γ Δ} -> σ1 ≈s σ2 -> (M : tm Δ T) -> (σ1 ,, M) ≈s (σ2 ,, M)
+(p ,,₂ M) x = {!!}
+
 mutual
  allGL : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T) -> GL Δ T (eval σ M)
  allGL σ θ ρ (v y) = θ y
@@ -547,7 +557,7 @@ mutual
  completeness : ∀ {Γ Δ T} (σ : subst Γ Δ) (θ : GLs σ) (ρ : niceSubst _ _ σ) (M : tm Γ T)
    -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
  completeness σ θ ρ (v y) = idRπ (λ {T} x → ninj (reify (σ x))) y
- completeness σ θ ρ app = ≈-trans {!!} (_*_.snd (θ (s z) _ id (σ z) (θ z) (ρ z)))
+ completeness σ θ ρ app = ≈-trans (≈-trans ([ expand-sub (ninj ∘₁ (reify ∘₁ σ)) ] app) (≈-trans ([ (≈s-trans (expand-sub (ninj ∘₁ (reify ∘₁ (σ ∘₁ s)))) ((λ ()) ,,₂ _)) ,,₂ ninj (reify (σ z)) ] app) (≈-refl ·₂ ≈-refl))) (_*_.snd (θ (s z) _ id (σ z) (θ z) (ρ z)))
  completeness σ θ ρ (ƛ y) = {!!}
  completeness σ θ ρ ([_] y y') = ≈-trans (assoc _ y y') (≈-trans ([ (λ x → completeness σ θ ρ (y x)) ] ≈-refl) (completeness (λ {T} x → eval σ (y x)) (λ x → allGL σ θ ρ (y x)) (λ x → nice (y x) σ ρ) y'))
 
