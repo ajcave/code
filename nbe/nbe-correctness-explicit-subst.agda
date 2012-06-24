@@ -534,7 +534,7 @@ glExt θ p (s y) = θ y
 reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
 reflect-GL {atom A} R = tt
 reflect-GL {T ⇝ S} R = λ Δ σ p glp prp → (reflect-GL (rappSubst σ R · reify p)) , (≈-trans (β _ _) (≈-trans (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand _))) (≈-[]-app (v ,, ninj (reify p)) (rinj (rappSubst (wkn ∘ σ) R))
-                                                                                                                                                                                   (ninj (reify (reflect (v z)))))) (≈-trans ({!!} ·₂ (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand (v z)))) (idRπ (v ,, ninj (reify p)) z))) (≈-η-expand _))))
+                                                                                                                                                                                   (ninj (reify (reflect (v z)))))) (≈-trans (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-trans (≈-refl' (cong rinj (sym (rappSubst-funct s σ R)))) (≈-sym ([]v-comm-rinj s (rappSubst σ R))))) (≈-trans (assoc (v ,, ninj (reify p)) (v ∘₁ s) _) (≈-trans ([ (λ x → idRπ (v ,, ninj (reify p)) (s x)) ] ≈-refl) (idL (rinj (rappSubst σ R))))) ·₂ (≈-trans ([ ≈s-refl (v ,, ninj (reify p)) ] (≈-sym (≈-η-expand (v z)))) (idRπ (v ,, ninj (reify p)) z))) (≈-η-expand _))))
 
 {-
 reflect-GL : ∀ {T Γ} (R : rtm Γ T) -> GL Γ T (reflect R)
