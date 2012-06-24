@@ -558,7 +558,7 @@ mutual
    -> ([ (ninj ∘₁ (reify ∘₁ σ)) ] M) ≈ ninj (reify (eval σ M))
  completeness σ θ ρ (v y) = idRπ (λ {T} x → ninj (reify (σ x))) y
  completeness σ θ ρ app = ≈-trans (≈-trans ([ expand-sub (ninj ∘₁ (reify ∘₁ σ)) ] app) (≈-trans ([ (≈s-trans (expand-sub (ninj ∘₁ (reify ∘₁ (σ ∘₁ s)))) ((λ ()) ,,₂ _)) ,,₂ ninj (reify (σ z)) ] app) (≈-refl ·₂ ≈-refl))) (_*_.snd (θ (s z) _ id (σ z) (θ z) (ρ z)))
- completeness σ θ ρ (ƛ y) = {!!}
+ completeness σ θ ρ (ƛ y) = ≈-trans (blahgh (λ {T} x → ninj (reify (σ x))) y) (ƛ (≈-trans {!!} (completeness (extend (wkn ◦ σ) (reflect (v z))) (glExt (wkn ◦g θ) (reflect-GL (v z))) (niceExtend (wkn ◦n ρ) (reflect-GL (v z))) y)))
  completeness σ θ ρ ([_] y y') = ≈-trans (assoc _ y y') (≈-trans ([ (λ x → completeness σ θ ρ (y x)) ] ≈-refl) (completeness (λ {T} x → eval σ (y x)) (λ x → allGL σ θ ρ (y x)) (λ x → nice (y x) σ ρ) y'))
 
 {-
