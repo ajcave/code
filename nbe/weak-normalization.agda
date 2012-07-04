@@ -225,3 +225,21 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 →*-refl {M = v y} = v y
 →*-refl {M = M · N} = →*-refl · →*-refl
 →*-refl {M = ƛ M} = ƛ →*-refl
+
+mutual
+ ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
+ ninj (ƛ M) = ƛ (ninj M)
+ ninj (neut R) = rinj R
+ rinj : ∀ {Γ T} -> rtm Γ T -> tm Γ T
+ rinj (v x) = v x
+ rinj (R · N) = (rinj R) · (ninj N)
+
+
+wn : ∀ Γ T -> tm Γ T -> Set
+wn Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
+wn Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> wn Δ T x -> wn Δ S (([ σ ]v t) · x)
+
+thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
+thm σ θ (v y) = θ y
+thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ {!!} refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
+thm σ θ (ƛ M) = λ Δ σ' x x' → {!!}
