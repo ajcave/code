@@ -212,6 +212,48 @@ _,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
 (σ ,, M) z = M
 (σ ,, M) (s y) = σ y
 
+[]v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
+[]v-funct σ1 σ2 (v y) = refl
+[]v-funct σ1 σ2 (y · y') = cong2 _·_ ([]v-funct σ1 σ2 y) ([]v-funct σ1 σ2 y')
+[]v-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]v-funct (ext σ1) (ext σ2) y) (cong (λ (α : vsubst _ _) → [ α ]v y) (var-dom-eq (λ x → refl) refl)))
+
+[]vn-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ]v ([ σ2 ] R) ≡ [ [ σ1 ]v ∘₁ σ2 ] R
+[]vn-funct σ1 σ2 (v y) = refl
+[]vn-funct σ1 σ2 (y · y') = cong2 _·_ ([]vn-funct σ1 σ2 y) ([]vn-funct σ1 σ2 y')
+[]vn-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]vn-funct (ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]v-funct (ext σ1) s (σ2 x)) (sym ([]v-funct s σ1 (σ2 x)))) refl)))
+
+[]nv-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ] ([ σ2 ]v R) ≡ [ σ1 ∘₁ σ2 ] R
+[]nv-funct σ1 σ2 (v y) = refl
+[]nv-funct σ1 σ2 (y · y') = cong2 _·_ ([]nv-funct σ1 σ2 y) ([]nv-funct σ1 σ2 y')
+[]nv-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]nv-funct (sub-ext σ1) (ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl)))
+
+[]-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
+  -> [ σ1 ] ([ σ2 ] R) ≡ [ [ σ1 ] ∘₁ σ2 ] R
+[]-funct σ1 σ2 (v y) = refl
+[]-funct σ1 σ2 (y · y') = cong2 _·_ ([]-funct σ1 σ2 y) ([]-funct σ1 σ2 y')
+[]-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]-funct (sub-ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]nv-funct (sub-ext σ1) s (σ2 x)) (sym ([]vn-funct s σ1 (σ2 x)))) refl)))
+
+sub-ext-idv : ∀ {Γ T U} (x : var (Γ , T) U) -> (ext id) x ≡ x
+sub-ext-idv z = refl
+sub-ext-idv (s y) = refl
+
+[]v-id : ∀ {Γ T} {M : tm Γ T} -> [ id ]v M ≡ M
+[]v-id {M = v y} = refl
+[]v-id {M = M · N} = cong2 _·_ []v-id []v-id
+[]v-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : vsubst _ _) → [ α ]v M) (funext-imp (λ x → funext (λ x' → sub-ext-idv x')))) []v-id)
+
+sub-ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> (sub-ext v) x ≡ v x
+sub-ext-id z = refl
+sub-ext-id (s y) = refl
+
+[]-id : ∀ {Γ T} {M : tm Γ T} -> [ v ] M ≡ M
+[]-id {M = v y} = refl
+[]-id {M = M · N} = cong2 _·_ []-id []-id
+[]-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
+
 -- Why not just use an explicit substitution calculus?
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  v : ∀ {T} (x : var Γ T) -> (v x) →* (v x)
@@ -226,13 +268,19 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 →*-refl {M = M · N} = →*-refl · →*-refl
 →*-refl {M = ƛ M} = ƛ →*-refl
 
+→*-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 →* M2
+→*-refl' refl = →*-refl
+
+vsimp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ((v ,, [ σ ]v N) ∘₁ (ext σ)) x ≡ ([ σ ]v ∘₁ (v ,, N)) x
+vsimp σ N z = refl
+vsimp σ N (s y) = refl
+
 →*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
 →*-subst σ (v x) = →*-refl
 →*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
 →*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
-→*-subst σ (β M N) with β ([ ext σ ]v M) ([ σ ]v N)
-... | q = {!!}
-→*-subst σ {M1} (η .M1) = {!!}
+→*-subst σ (β M N) = →*-trans (β _ _) (→*-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
+→*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
 →*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y')
 
 mutual
@@ -264,7 +312,7 @@ wn-closed {T ⇝ S} p x = λ Δ σ x' x0 → wn-closed (→*-subst σ p · →*-
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
-thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ {!!} refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
+thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
 thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} (thm (([ σ' ]v ∘₁ σ) ,, x) {!!} M))
 
 mutual
@@ -278,4 +326,4 @@ mutual
  reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
-done t = reify t (eq-ind (wn _ _) {!!} (thm v (λ x → reflect (v x)) t))
+done t = reify t (eq-ind (wn _ _) []-id (thm v (λ x → reflect (v x)) t))
