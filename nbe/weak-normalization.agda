@@ -262,17 +262,14 @@ thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ {!!} refl) ((thm σ θ M) _ id 
 thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} (thm (([ σ' ]v ∘₁ σ) ,, x) {!!} M))
 
 mutual
- res1 : ∀ {T Γ} (r : rtm Γ T) -> wn Γ T (rinj r)
- res1 {atom A} r = (neut r) , →*-refl
- res1 {T ⇝ S} r = f
-  where f : ∀ Δ (σ : vsubst _ Δ) (x : tm Δ T) (x' : wn Δ T x) -> wn Δ S ([ σ ]v (rinj r) · x)
-        f Δ σ x x' with res x x'
-        f Δ σ x x' | N , y = wn-closed (→*-refl · y) (eq-ind (wn Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (res1 (rappSubst σ r · N)))
+ reflect : ∀ {T Γ} (r : rtm Γ T) -> wn Γ T (rinj r)
+ reflect {atom A} r = (neut r) , →*-refl
+ reflect {T ⇝ S} r = λ Δ σ x x' -> wn-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (wn Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
 
- res : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
- res {atom A} t p = p
- res {T ⇝ S} t p with res ([ s ]v t · v z) (p (_ , _) s (v z) (res1 (v z)))
- res {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
+ reify : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
+ reify {atom A} t p = p
+ reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
+ reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
-done t = res t (eq-ind (wn _ _) {!!} (thm v (λ x → res1 (v x)) t))
+done t = reify t (eq-ind (wn _ _) {!!} (thm v (λ x → reflect (v x)) t))
