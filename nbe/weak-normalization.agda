@@ -239,12 +239,9 @@ wn : ∀ Γ T -> tm Γ T -> Set
 wn Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
 wn Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> wn Δ T x -> wn Δ S (([ σ ]v t) · x)
 
-wn-closed : ∀ {Γ T} {t t' : tm Γ T} -> (t →* t') -> wn Γ T t' -> wn Γ T t
-wn-closed (v x) x' = x'
-wn-closed (p · q) x = {!!}
-wn-closed (ƛ p) x = {!!}
-wn-closed (β M N) x = {!!}
-wn-closed (→*-trans y y') x = wn-closed y (wn-closed y' x)
+wn-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> wn Γ T t' -> wn Γ T t
+wn-closed {atom A} p (N , q) = N , (→*-trans p q)
+wn-closed {T ⇝ S} p x = {!!}
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
