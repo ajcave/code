@@ -227,7 +227,13 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 →*-refl {M = ƛ M} = ƛ →*-refl
 
 →*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
-→*-subst σ p = {!!}
+→*-subst σ (v x) = →*-refl
+→*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
+→*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
+→*-subst σ (β M N) with β ([ ext σ ]v M) ([ σ ]v N)
+... | q = {!!}
+→*-subst σ {M1} (η .M1) = {!!}
+→*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y')
 
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
