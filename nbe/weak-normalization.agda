@@ -256,4 +256,4 @@ thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} 
 res : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
 res {atom A} t p = p
 res {T ⇝ S} t p with res ([ s ]v t · v z) (p (_ , _) s (v z) {!!})
-res {T ⇝ S} t p | N , q = {!!}
+res {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
