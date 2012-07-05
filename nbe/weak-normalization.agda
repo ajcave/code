@@ -253,7 +253,15 @@ thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ {!!} refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
 thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} (thm (([ σ' ]v ∘₁ σ) ,, x) {!!} M))
 
-res : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
-res {atom A} t p = p
-res {T ⇝ S} t p with res ([ s ]v t · v z) (p (_ , _) s (v z) {!!})
-res {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
+mutual
+ res1 : ∀ {T Γ} (r : rtm Γ T) -> wn Γ T (rinj r)
+ res1 {atom A} r = (neut r) , →*-refl
+ res1 {T ⇝ S} r = λ Δ σ x x' → {!!}
+  where f : ∀ Δ (σ : vsubst _ Δ) (x : tm Δ T) (x' : wn Δ T x) -> wn _ S (rinj (rappSubst σ r · Σ.fst (res x x')))
+        f Δ σ x x' with res x x'
+        f Δ σ x x' | N , y = res1 (rappSubst σ r · N)
+
+ res : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
+ res {atom A} t p = p
+ res {T ⇝ S} t p with res ([ s ]v t · v z) (p (_ , _) s (v z) {!!})
+ res {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
