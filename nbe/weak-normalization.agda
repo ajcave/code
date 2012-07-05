@@ -237,6 +237,8 @@ mutual
  rinj (v x) = v x
  rinj (R · N) = (rinj R) · (ninj N)
 
+halts : ∀ {Γ T} (t : tm Γ T) -> Set
+halts {Γ} {T} t = Σ (λ (n : ntm Γ T) → t →* ninj n)
 
 wn : ∀ Γ T -> tm Γ T -> Set
 wn Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
@@ -250,3 +252,7 @@ thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : 
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ {!!} refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
 thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} (thm (([ σ' ]v ∘₁ σ) ,, x) {!!} M))
+
+res : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
+res {atom A} t p = p
+res {T ⇝ S} t p = {!!}
