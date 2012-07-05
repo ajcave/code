@@ -241,14 +241,12 @@ wn Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> wn Δ T x -> wn 
 
 wn-closed : ∀ {Γ T} {t t' : tm Γ T} -> (t →* t') -> wn Γ T t' -> wn Γ T t
 wn-closed (v x) x' = x'
-wn-closed (y · y') x = {!!}
-wn-closed (ƛ y) x = {!!}
+wn-closed (p · q) x = {!!}
+wn-closed (ƛ p) x = {!!}
 wn-closed (β M N) x = {!!}
-wn-closed (→*-trans y y') x = {!!}
+wn-closed (→*-trans y y') x = wn-closed y (wn-closed y' x)
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ {!!} refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = λ Δ σ' x x' → {!!}
- where f : ∀ Δ (σ' : vsubst _ Δ) (x : tm Δ _) (x' : wn Δ _ x) -> wn Δ _ ([ ([ σ' ]v ∘₁ σ) ,, x ] M)
-       f Δ σ' x x' = thm (([ σ' ]v ∘₁ σ) ,, x) {!!} M
+thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} (thm (([ σ' ]v ∘₁ σ) ,, x) {!!} M))
