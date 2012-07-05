@@ -237,6 +237,14 @@ mutual
  rinj (v x) = v x
  rinj (R · N) = (rinj R) · (ninj N)
 
+mutual
+ []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
+ []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
+ []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
+ []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
+ []v-comm-rinj σ (v y) = refl
+ []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
+
 halts : ∀ {Γ T} (t : tm Γ T) -> Set
 halts {Γ} {T} t = Σ (λ (n : ntm Γ T) → t →* ninj n)
 
@@ -259,8 +267,7 @@ mutual
  res1 {T ⇝ S} r = f
   where f : ∀ Δ (σ : vsubst _ Δ) (x : tm Δ T) (x' : wn Δ T x) -> wn Δ S ([ σ ]v (rinj r) · x)
         f Δ σ x x' with res x x'
-        f Δ σ x x' | N , y with res1 (rappSubst σ r · N)
-        ... | q = wn-closed (→*-refl · y) (eq-ind (wn Δ S) (cong2 _·_ {!!} refl) q)
+        f Δ σ x x' | N , y = wn-closed (→*-refl · y) (eq-ind (wn Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (res1 (rappSubst σ r · N)))
 
  res : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
  res {atom A} t p = p
