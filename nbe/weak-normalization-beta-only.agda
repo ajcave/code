@@ -1,4 +1,4 @@
-module weak-normalization where
+module weak-normalization-beta-only where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -11,6 +11,10 @@ record Σ {A : Set} (B : A -> Set) : Set where
  field
   fst : A
   snd : B fst
+
+data _+_ (A B : Set) : Set where 
+ inl : A -> A + B
+ inr : B -> A + B
 
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
@@ -82,7 +86,7 @@ mutual
   _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
  data ntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
-  neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
+  neut : ∀ {A} -> rtm Γ A -> ntm Γ A
 
 
 {-sem : (Γ : ctx) -> (T : tp) -> Set
@@ -265,7 +269,7 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →* [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
+-- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
  →*-trans : ∀ {T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
 
 →*-refl : ∀ {Γ T} {M : tm Γ T} -> M →* M
@@ -285,7 +289,7 @@ vsimp σ N (s y) = refl
 →*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
 →*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
 →*-subst σ (β M N) = →*-trans (β _ _) (→*-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
-→*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
+--→*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
 →*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y')
 
 mutual
@@ -309,11 +313,11 @@ halts {Γ} {T} t = Σ (λ (n : ntm Γ T) → t →* ninj n)
 
 wn : ∀ Γ T -> tm Γ T -> Set
 wn Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
-wn Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> wn Δ T x -> wn Δ S (([ σ ]v t) · x)
+wn Γ (T ⇝ S) t = (∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> wn Δ T x -> wn Δ S (([ σ ]v t) · x))
 
 wn-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> wn Γ T t' -> wn Γ T t
 wn-closed {atom A} p (N , q) = N , (→*-trans p q)
-wn-closed {T ⇝ S} p x = λ Δ σ x' x0 → wn-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
+wn-closed {T ⇝ S} p x =  λ Δ σ x' x0 → wn-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
 
 wn-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) {T} {t : tm Δ T} (w : wn Δ T t) ->
  ∀ {U} (x : var (Γ , T) U) -> wn Δ U ((σ ,, t) x)
@@ -327,12 +331,30 @@ wn-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (wn Δ S) (cong2 _·_ (sym (
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _)
+thm σ θ (ƛ M) = (λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
     (sym ([]-funct   ((v ,, x) ∘₁ ext σ') (sub-ext σ) M)))
     (sym ([]nv-funct  (v ,, x) (ext σ') ([ sub-ext σ ] M))))
-  (thm (([ σ' ]v ∘₁ σ) ,, x) (wn-ext (λ x0 → wn-funct σ' (θ x0)) x') M))
+  (thm (([ σ' ]v ∘₁ σ) ,, x) (wn-ext (λ x0 → wn-funct σ' (θ x0)) x') M)))
+
+data grar {Γ T S} (t : tm Γ (T ⇝ S)) (u : tm Γ T) : ∀ N -> Set where
+ inl : ∀ {t' u'}   -> t →* t'     -> u →* u' -> grar t u (t' · u')
+ inr : ∀ {t' u' N} -> t →* (ƛ t') -> u →* u' -> ([ v ,, u' ] t') →* N -> grar t u N
+
+blah : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} {u : tm Γ T} {N} -> ((t · u) →* N) -> grar t u N
+blah (y · y') = inl y y'
+blah {Γ} {T} {S} {.(ƛ M)} {u} (β M .u) = inr →*-refl →*-refl →*-refl
+blah (→*-trans y y') with blah y
+blah (→*-trans y y1) | inl y' y0 with blah y1
+blah (→*-trans y0 y1) | inl y2 y3 | inl y y' = inl (→*-trans y2 y) (→*-trans y3 y')
+blah (→*-trans y2 y1) | inl y3 y4 | inr y y' y0 = inr (→*-trans y3 y) (→*-trans y4 y') y0
+blah (→*-trans y y2) | inr y' y0 y1 = inr y' y0 (→*-trans y1 y2)
+
+zah : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} {N} -> ((([ s ]v t) · v z) →* (ninj N))  -> halts {Γ , T} ([ s ]v t)
+zah p with blah p
+zah {N = (neut (R · N))} p | inl y y' = neut R , y
+zah {N = N} p | inr y y' y0 = {!!} , →*-trans y (ƛ {!!})
 
 mutual
  reflect : ∀ {T Γ} (r : rtm Γ T) -> wn Γ T (rinj r)
@@ -342,7 +364,7 @@ mutual
  reify : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
  reify {atom A} t p = p
  reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
- reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
+ reify {T ⇝ S} t p | N , q = {!!} 
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (wn _ _) []-id (thm v (λ x → reflect (v x)) t))
