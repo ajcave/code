@@ -226,6 +226,9 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 →*-refl {M = M · N} = →*-refl · →*-refl
 →*-refl {M = ƛ M} = ƛ →*-refl
 
+→*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
+→*-subst σ p = {!!}
+
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
  ninj (ƛ M) = ƛ (ninj M)
@@ -241,7 +244,7 @@ wn Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> wn Δ T x -> wn 
 
 wn-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> wn Γ T t' -> wn Γ T t
 wn-closed {atom A} p (N , q) = N , (→*-trans p q)
-wn-closed {T ⇝ S} p x = {!!}
+wn-closed {T ⇝ S} p x = λ Δ σ x' x0 → wn-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
