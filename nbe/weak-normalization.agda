@@ -273,3 +273,6 @@ mutual
  res {atom A} t p = p
  res {T ⇝ S} t p with res ([ s ]v t · v z) (p (_ , _) s (v z) (res1 (v z)))
  res {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
+
+done : ∀ {Γ T} (t : tm Γ T) -> halts t
+done t = res t (eq-ind (wn _ _) {!!} (thm v (λ x → res1 (v x)) t))
