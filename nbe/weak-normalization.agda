@@ -218,7 +218,7 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →* [ v ,, N ] M
--- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
+ η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
  →*-trans : ∀ {T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
 
 →*-refl : ∀ {Γ T} {M : tm Γ T} -> M →* M
@@ -255,4 +255,5 @@ thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} 
 
 res : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
 res {atom A} t p = p
-res {T ⇝ S} t p = {!!}
+res {T ⇝ S} t p with res ([ s ]v t · v z) (p (_ , _) s (v z) {!!})
+res {T ⇝ S} t p | N , q = {!!}
