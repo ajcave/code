@@ -310,10 +310,19 @@ wn-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> wn Γ T t' -> wn Γ T 
 wn-closed {atom A} p (N , q) = N , (→*-trans p q)
 wn-closed {T ⇝ S} p x = λ Δ σ x' x0 → wn-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
 
+wn-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) {T} {t : tm Δ T} (w : wn Δ T t) ->
+ ∀ {U} (x : var (Γ , T) U) -> wn Δ U ((σ ,, t) x)
+wn-ext θ w z = w
+wn-ext θ w (s y) = θ y
+
+wn-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : wn Γ T t) -> wn Δ T ([ σ ]v t)
+wn-funct {atom A} σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
+wn-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (wn Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
+
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) {!!} (thm (([ σ' ]v ∘₁ σ) ,, x) {!!} M))
+thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) (trans (trans {!!} (sym ([]-funct ((v ,, x) ∘₁ ext σ') (sub-ext σ) M))) (sym ([]nv-funct (v ,, x) (ext σ') ([ sub-ext σ ] M)))) (thm (([ σ' ]v ∘₁ σ) ,, x) (wn-ext (λ x0 → wn-funct σ' (θ x0)) x') M))
 
 mutual
  reflect : ∀ {T Γ} (r : rtm Γ T) -> wn Γ T (rinj r)
