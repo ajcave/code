@@ -51,6 +51,9 @@ map f (Γ , x) = map f Γ , f x
 gsubst : ∀ {A} (Γ : ctx A) (F : A -> Set) -> Set
 gsubst Γ F = ∀ {U : _} -> (x : var Γ U) -> F U
 
+gksubst : ∀ {A} (Γ : ctx A) (F : Set) -> Set
+gksubst Γ F = gsubst Γ (λ _ -> F)
+
 gvsubst : ∀ {A} (Γ Δ : ctx A) -> Set
 gvsubst Γ Δ = gsubst Γ (var Δ)
 
@@ -63,9 +66,12 @@ tsubst Δ1 Δ2 = gsubst Δ1 (λ _ -> tp Δ2)
 _∘_ : ∀ {A : Set} {B : Set} {C : Set} (g : B -> C) (f : A -> B) -> A -> C
 (g ∘ f) x = g (f x)
 
+extend : ∀ {A Γ} (F : A -> Set) {U} -> gsubst Γ F -> F U -> gsubst (Γ , U) F
+extend F σ x z = x
+extend F σ x (s y) = σ y
+
 _,,_ : ∀ {A} {Δ1 Δ2 : ctx A} {U : A} -> gvsubst Δ1 Δ2 -> var Δ2 U -> gvsubst (Δ1 , U) Δ2
-_,,_ σ x z = x
-_,,_ σ x (s y) = σ y
+_,,_ = extend (λ U -> var _ U)
 
 _×_ : ∀ {Δ1 Δ2 l m} -> tvsubst Δ1 Δ2 -> var (Δ2 , l) m -> tvsubst (Δ1 , m) (Δ2 , l)
 (σ × y) = (s ∘ σ) ,, y
@@ -75,9 +81,8 @@ _×_ : ∀ {Δ1 Δ2 l m} -> tvsubst Δ1 Δ2 -> var (Δ2 , l) m -> tvsubst (Δ1 ,
 [ σ ]tv (T ⇒ S) = [ σ ]tv T ⇒ [ σ ]tv S
 [ σ ]tv (Π T) = Π ([ σ × z ]tv T)
 
-_,,,_ : ∀ {Δ1} {U} {S} -> gsubst Δ1 (λ _ -> S) -> S -> gsubst (Δ1 , U) (λ _ -> S)
-_,,,_ σ x z = x
-_,,,_ σ x (s y) = σ y
+_,,,_ : ∀ {Δ1} {U} {S} -> gksubst Δ1 S -> S -> gksubst (Δ1 , U) S
+_,,,_ {S = S} = extend (λ _ -> S)
 
 _××_ : ∀ {Δ1 Δ2} -> tsubst Δ1 Δ2 -> tp (Δ2 , _) -> tsubst (Δ1 , _) (Δ2 , _)
 (θ ×× y) = ([ s ]tv ∘ θ) ,,, y
@@ -98,9 +103,14 @@ data tm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where
  _$_ : ∀ {T : tp (Δ , _)} -> tm Δ Γ (Π T) -> (S : tp Δ)
          -> tm Δ Γ ([ v ,,, S ]t T)
 
-⟦_⟧t : ∀ {Δ} (T : tp Δ) (θ : var Δ _ -> Set) -> Set
+⟦_⟧t : ∀ {Δ} (T : tp Δ) (θ : gksubst Δ Set) -> Set
 ⟦_⟧t (v y) θ = θ y
 ⟦_⟧t (T ⇒ S) θ = ⟦ T ⟧t θ → ⟦ S ⟧t θ
 ⟦_⟧t (Π T) θ = (S : _) → ⟦ T ⟧t (θ ,,, S)
 
---⟦_⟧ : ∀ {Δ Γ T} (t : tm Δ Γ T) (θ : ∀ (x : gvar Δ _) -> Set) -> 
+⟦_⟧ : ∀ {Δ Γ T} (t : tm Δ Γ T) (θ : gksubst Δ Set) -> (σ : gsubst Γ (λ U -> ⟦ U ⟧t θ)) -> ⟦ T ⟧t θ
+⟦_⟧ (v y) θ σ = σ y
+⟦_⟧ (ƛ M) θ σ = λ x → ⟦ M ⟧ θ (extend (λ U → ⟦ U ⟧t θ) σ x)
+⟦_⟧ (Λ M) θ σ = λ A → ⟦ M ⟧ (θ ,,, A) (λ x → {!!})
+⟦_⟧ (M · N) θ σ = {!!}
+⟦_⟧ (M $ S) θ σ = {!!} 
