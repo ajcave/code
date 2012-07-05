@@ -254,6 +254,11 @@ sub-ext-id (s y) = refl
 []-id {M = M · N} = cong2 _·_ []-id []-id
 []-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
 
+[]v-eq-[] : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (t : tm Γ T) -> [ σ ]v t ≡ [ v ∘₁ σ ] t
+[]v-eq-[] σ (v y) = refl
+[]v-eq-[] σ (y · y') = cong2 _·_ ([]v-eq-[] σ y) ([]v-eq-[] σ y')
+[]v-eq-[] σ (ƛ y) = cong ƛ (trans ([]v-eq-[] (ext σ) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl))) 
+
 -- Why not just use an explicit substitution calculus?
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  v : ∀ {T} (x : var Γ T) -> (v x) →* (v x)
@@ -322,7 +327,12 @@ wn-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (wn Δ S) (cong2 _·_ (sym (
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _) (trans (trans {!!} (sym ([]-funct ((v ,, x) ∘₁ ext σ') (sub-ext σ) M))) (sym ([]nv-funct (v ,, x) (ext σ') ([ sub-ext σ ] M)))) (thm (([ σ' ]v ∘₁ σ) ,, x) (wn-ext (λ x0 → wn-funct σ' (θ x0)) x') M))
+thm σ θ (ƛ M) = λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _)
+  (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
+    (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
+    (sym ([]-funct   ((v ,, x) ∘₁ ext σ') (sub-ext σ) M)))
+    (sym ([]nv-funct  (v ,, x) (ext σ') ([ sub-ext σ ] M))))
+  (thm (([ σ' ]v ∘₁ σ) ,, x) (wn-ext (λ x0 → wn-funct σ' (θ x0)) x') M))
 
 mutual
  reflect : ∀ {T Γ} (r : rtm Γ T) -> wn Γ T (rinj r)
