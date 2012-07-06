@@ -115,3 +115,9 @@ data tm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where
 ⟦_⟧ (M · N) θ σ = ⟦ M ⟧ θ σ (⟦ N ⟧ θ σ)
 ⟦_⟧ (M $ S) θ σ with ⟦ M ⟧ θ σ (⟦ S ⟧t θ)
 ... | q = {!!}
+
+-- Bleh
+-- Two alternative approaches:
+-- 1) No zoning (more like a dependent type system. Gonna need Outrageous Coincidences style to get type substitution when we need it?)
+-- 2) Don't semantically interpret terms (or rather, semantically interpret them as themselves, up to βη). Then relations
+-- are must respect equivalence
