@@ -227,6 +227,7 @@ thm'' {m} {T} M = thm' {⊡} {m} {T} blah (λ ()) M
 
 test : ∀ {m} -> ⊡ , ⊡ ⊢ m ∶ (Π ((v z) ⇒ (v z))) -> (n : _) → (m · n) ≈ n
 test d n = _*_.fst (thm'' d (λ x x' → (x ≈ n) * (x' ≈ n)) (isgood (λ M1≈M2 N1≈N2 x0 → (≈-trans M1≈M2 (_*_.fst x0)) , (≈-trans N1≈N2 (_*_.snd x0)))) (≈-refl , ≈-refl))
+-- TODO: Literate Agda this file. Then you can accidentally write a paper
 
 --Ah, the advantage of doing it for a general set-theoretic model is that we could interpret
 --system F functions in Agda, and get the Agda-level theorem about them
