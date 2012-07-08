@@ -191,9 +191,9 @@ goodR = ∃ good
 ⟦_⟧t-good (Π T) θ θgood = isgood (λ M1≈M2 N1≈N2 x0 R Rgood → good.respect (⟦ T ⟧t-good (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood)) M1≈M2 N1≈N2 (x0 R Rgood))
 
 thm : ∀ {Δ γ M T} {Γ : tpctx Δ γ} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
- -> (σ : sub γ ⊡) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ ] M) ([ σ ] M)
-thm θ θgood σ (v x) = {!!}
-thm θ θgood σ (ƛ y) = {!!}
-thm θ θgood σ (Λ y) = {!!}
-thm θ θgood σ (y · y') = {!!}
-thm θ θgood σ (y $ S) = {!!}
+ -> (σ : sub γ ⊡) -> (σgood : (x : var γ _) -> ⟦ lookup Γ x ⟧t θ (σ x) (σ x)) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ ] M) ([ σ ] M)
+thm θ θgood σ σgood (v x) = σgood x
+thm θ θgood σ σgood (ƛ y) = λ x → {!!}
+thm θ θgood σ σgood (Λ y) = {!!}
+thm θ θgood σ σgood (y · y') = thm θ θgood σ σgood y (thm θ θgood σ σgood y')
+thm θ θgood σ σgood (y $ S) = {!!}
