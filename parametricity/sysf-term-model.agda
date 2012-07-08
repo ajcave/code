@@ -184,6 +184,19 @@ goodR = ∃ good
 ⟦_⟧t (T ⇒ S) θ M1 M2 = ∀ {N1 N2} → ⟦ T ⟧t θ N1 N2 → ⟦ S ⟧t θ (M1 · N1) (M2 · N2)
 ⟦_⟧t (Π T) θ M1 M2 = (R : _) → good R → ⟦ T ⟧t (θ ,,, R) M1 M2
 
+mutual
+ ⟦⟧t-subst-fwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
+  -> (⟦ [ σ ]t T ⟧t θ) M1 M2 -> (⟦ T ⟧t (λ x -> ⟦ σ x ⟧t θ)) M1 M2
+ ⟦⟧t-subst-fwd σ (v y) θ t = t
+ ⟦⟧t-subst-fwd σ (T ⇒ S) θ t = λ x → ⟦⟧t-subst-fwd σ S θ (t (⟦⟧t-subst-bwd σ T θ x))
+ ⟦⟧t-subst-fwd σ (Π T) θ t = λ R x → {!!}
+
+ ⟦⟧t-subst-bwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2} 
+  -> (⟦ T ⟧t (λ x -> ⟦ σ x ⟧t θ)) M1 M2 -> (⟦ [ σ ]t T ⟧t θ) M1 M2
+ ⟦⟧t-subst-bwd σ (v y) θ t = t
+ ⟦⟧t-subst-bwd σ (T ⇒ S) θ t = λ x → ⟦⟧t-subst-bwd σ S θ (t (⟦⟧t-subst-fwd σ T θ x))
+ ⟦⟧t-subst-bwd σ (Π T) θ t = λ R x → {!!} 
+
 ⟦_⟧t-good : ∀ {Δ} (T : tp Δ) (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x)) -> good (⟦ T ⟧t θ)
 ⟦_⟧t-good (v y) θ θgood = θgood y
 ⟦_⟧t-good (T ⇒ S) θ θgood with ⟦ T ⟧t-good θ θgood | ⟦ S ⟧t-good θ θgood
@@ -199,4 +212,5 @@ thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.
   (thm θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ lookup (Γ , T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
 thm θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 {!!} M
 thm θ θgood σ1 σ2 σgood (M · N) = thm θ θgood σ1 σ2 σgood M (thm θ θgood σ1 σ2 σgood N)
-thm θ θgood σ1 σ2 σgood (M $ S) = {!!}
+thm θ θgood σ1 σ2 σgood (_$_ {T} M S) with thm θ θgood σ1 σ2 σgood M (⟦ S ⟧t θ) (⟦ S ⟧t-good θ θgood)
+... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ {!!} -- ⟦⟧t-subst-bwd (v ,,, S) {!!} {!!} {!!}
