@@ -230,4 +230,11 @@ test d n = _*_.fst (thm'' d (λ x x' → (x ≈ n) * (x' ≈ n)) (isgood (λ M1�
 
 --Ah, the advantage of doing it for a general set-theoretic model is that we could interpret
 --system F functions in Agda, and get the Agda-level theorem about them
---Then it really is "theorems for free"!
+-- Try it for rank-1 polymorphism (actually no quantifiers, just type variables)
+-- (Then we don't need set-in-set)
+-- Try also with recursive types (stay predicative)
+--Then it really is a DSL for "theorems for free"!
+--Is there an alternate route to this? 
+-- Show parametricity for the term model, then show soundness of the interpretation into Agda
+-- Try to do the same thing that those online "calculate my free theorem" tools do
+-- automatically with type-level computation (reduce it, instantiating all relations to be functions -- map)
