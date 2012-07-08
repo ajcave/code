@@ -151,13 +151,18 @@ data _,_⊢_∶_ (Δ : lctx) {γ : ctx unit} (Γ : tpctx Δ γ) : tm γ -> tp Δ
  _$_ : ∀ {T : tp (Δ , _)} {M} -> Δ , Γ ⊢ M ∶ (Π T) -> (S : tp Δ)
          -> Δ , Γ ⊢ M ∶ ([ v ,,, S ]t T)
 
-record good (R : tm ⊡ -> tm ⊡ -> Set) : Set where
+rtype : Set₁
+rtype = tm ⊡ -> tm ⊡ -> Set
+
+record good (R : rtype) : Set where
  constructor isgood
  field
   respect : ∀ {M1 M2 N1 N2} -> M1 ≈ M2 -> N1 ≈ N2 -> R M1 N1 -> R M2 N2
 
 -- The Church encoding of *weak* existentials
--- because we
+-- because strong impredicative existentials (record) are inconsistent
+-- This should allow the proof to be fairly directly translated into
+-- Coq --impredicative-set
 ∃ : ∀ {R : Set₁} (P : R -> Set) -> Set
 ∃ P = ∀ C -> (∀ A -> P A -> C) -> C
 
@@ -169,3 +174,8 @@ record good (R : tm ⊡ -> tm ⊡ -> Set) : Set where
 
 goodR : Set₁
 goodR = ∃ good
+
+⟦_⟧t : ∀ {Δ} (T : tp Δ) (θ : gksubst Δ rtype) -> rtype
+⟦_⟧t (v y) θ M1 M2 = θ y M1 M2
+⟦_⟧t (T ⇒ S) θ M1 M2 = ∀ {N1 N2} → ⟦ T ⟧t θ N1 N2 → ⟦ S ⟧t θ (M1 · N1) (M2 · N2)
+⟦_⟧t (Π T) θ M1 M2 = (R : _) → good R → ⟦ T ⟧t (θ ,,, R) M1 M2
