@@ -193,8 +193,10 @@ goodR = ∃ good
 thm : ∀ {Δ γ M T} {Γ : tpctx Δ γ} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
  -> (σ1 σ2 : sub γ ⊡) -> (σgood : (x : var γ _) -> ⟦ lookup Γ x ⟧t θ (σ1 x) (σ2 x)) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ1 ] M) ([ σ2 ] M)
 thm θ θgood σ1 σ2 σgood (v x) = σgood x
-thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect (⟦ S ⟧t-good θ θgood) (≈-trans (β _ _) {!≈-refl'!}) {!!} (thm θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend'
-        (λ x' → ⟦ lookup (Γ , T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
+thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect (⟦ S ⟧t-good θ θgood)
+  (≈-trans (β _ _) {!≈-refl'!})
+  {!!}
+  (thm θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ lookup (Γ , T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
 thm θ θgood σ1 σ2 σgood (Λ y) = {!!}
 thm θ θgood σ1 σ2 σgood (y · y') = thm θ θgood σ1 σ2 σgood y (thm θ θgood σ1 σ2 σgood y')
 thm θ θgood σ1 σ2 σgood (y $ S) = {!!}
