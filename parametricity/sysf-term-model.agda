@@ -161,7 +161,7 @@ rtype = tm ⊡ -> tm ⊡ -> Set
 record good (R : rtype) : Set where
  constructor isgood
  field
-  respect : ∀ {M1 M2 N1 N2} -> M1 ≈ M2 -> N1 ≈ N2 -> R M1 N1 -> R M2 N2
+  respect : ∀ {M1 M2 N1 N2} -> M1 ≈ M2 -> N1 ≈ N2 -> R M2 N2 -> R M1 N1
 
 -- The Church encoding of *weak* existentials
 -- because strong impredicative existentials (record) are inconsistent
@@ -191,9 +191,10 @@ goodR = ∃ good
 ⟦_⟧t-good (Π T) θ θgood = isgood (λ M1≈M2 N1≈N2 x0 R Rgood → good.respect (⟦ T ⟧t-good (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood)) M1≈M2 N1≈N2 (x0 R Rgood))
 
 thm : ∀ {Δ γ M T} {Γ : tpctx Δ γ} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
- -> (σ : sub γ ⊡) -> (σgood : (x : var γ _) -> ⟦ lookup Γ x ⟧t θ (σ x) (σ x)) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ ] M) ([ σ ] M)
-thm θ θgood σ σgood (v x) = σgood x
-thm θ θgood σ σgood (ƛ y) = λ x → {!!}
-thm θ θgood σ σgood (Λ y) = {!!}
-thm θ θgood σ σgood (y · y') = thm θ θgood σ σgood y (thm θ θgood σ σgood y')
-thm θ θgood σ σgood (y $ S) = {!!}
+ -> (σ1 σ2 : sub γ ⊡) -> (σgood : (x : var γ _) -> ⟦ lookup Γ x ⟧t θ (σ1 x) (σ2 x)) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ1 ] M) ([ σ2 ] M)
+thm θ θgood σ1 σ2 σgood (v x) = σgood x
+thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect (⟦ S ⟧t-good θ θgood) (≈-trans (β _ _) {!≈-refl'!}) {!!} (thm θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend'
+        (λ x' → ⟦ lookup (Γ , T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
+thm θ θgood σ1 σ2 σgood (Λ y) = {!!}
+thm θ θgood σ1 σ2 σgood (y · y') = thm θ θgood σ1 σ2 σgood y (thm θ θgood σ1 σ2 σgood y')
+thm θ θgood σ1 σ2 σgood (y $ S) = {!!}
