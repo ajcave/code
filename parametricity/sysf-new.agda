@@ -121,3 +121,4 @@ data tm (Δ : lctx) (Γ : tctx Δ) : tp Δ -> Set where
 -- 1) No zoning (more like a dependent type system. Gonna need Outrageous Coincidences style to get type substitution when we need it?)
 -- 2) Don't semantically interpret terms (or rather, semantically interpret them as themselves, up to βη). Then relations
 -- are must respect equivalence
+-- Could also try not the full system F, just with some abstract types (as in the intro to Reynold's original paper)
