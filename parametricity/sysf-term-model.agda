@@ -99,6 +99,37 @@ data tm (Γ : ctx unit) : Set where
  ƛ : tm (Γ , tt) -> tm Γ
  _·_ : tm Γ -> tm Γ -> tm Γ
 
+[_]v : ∀ {Γ1 Γ2} (σ : gvsubst Γ1 Γ2) -> (M : tm Γ1) -> tm Γ2
+[_]v σ (v y) = v (σ y)
+[_]v σ (M · N) = [ σ ]v M · [ σ ]v N
+[_]v σ (ƛ M) = ƛ ([ (s ∘ σ) ,, z ]v M)
+
+sub : ∀ Γ1 Γ2 -> Set
+sub Γ1 Γ2 = var Γ1 tt -> tm Γ2
+
+sub-ext : ∀ {Γ1 Γ2} -> sub Γ1 Γ2 -> sub (Γ1 , tt) (Γ2 , tt)
+sub-ext σ z = v z
+sub-ext σ (s y) = [ s ]v (σ y)
+
+[_] : ∀ {Γ1 Γ2} (σ : sub Γ1 Γ2) -> (M : tm Γ1) -> tm Γ2
+[_] σ (v y) = σ y
+[_] σ (M · N) = [ σ ] M · [ σ ] N
+[_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
+
+data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
+ v : ∀ (x : var Γ _) -> (v x) ≈ (v x)
+ _·_ : ∀ {M1 M2} {N1 N2} -> M1 ≈ M2 -> N1 ≈ N2 -> (M1 · N1) ≈ (M2 · N2)
+ ƛ : ∀ {M1 M2} -> M1 ≈ M2 -> (ƛ M1) ≈ (ƛ M2)
+ β : ∀ M N -> ((ƛ M) · N) ≈ [ v ,,, N ] M
+ η : ∀ M -> M ≈ (ƛ ([ s ]v M · (v z)))
+ ≈-trans : ∀ {M N P} -> M ≈ N -> N ≈ P -> M ≈ P
+ ≈-sym : ∀ {M N} -> M ≈ N -> N ≈ M
+
+≈-refl : ∀ {Γ} {M : tm Γ} -> M ≈ M
+≈-refl {M = v y} = v y
+≈-refl {M = M · N} = ≈-refl · ≈-refl
+≈-refl {M = ƛ M} = ƛ ≈-refl
+
 
 data tpctx (Δ : lctx) : (γ : ctx unit) -> Set where
  ⊡ : tpctx Δ ⊡
