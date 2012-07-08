@@ -4,6 +4,18 @@ module sysf-term-model where
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
+cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+cong f refl = refl
+
+cong2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> f x z ≡ f y w
+cong2 f refl refl = refl
+
+eq-ind : ∀ {A} (P : A -> Set) -> {x y : A} -> x ≡ y -> P x -> P y
+eq-ind P refl t = t 
+
+eq-ind2 : ∀ {A B} (P : A -> B -> Set) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P x z -> P y w
+eq-ind2 P refl refl t = t
+
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
 
@@ -120,6 +132,9 @@ sub-ext σ (s y) = [ s ]v (σ y)
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
 
+[]-id : ∀ {Γ} {M : tm Γ} -> [ v ] M ≡ M
+[]-id {M} = {!!}
+
 data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
  v : ∀ (x : var Γ _) -> (v x) ≈ (v x)
  _·_ : ∀ {M1 M2} {N1 N2} -> M1 ≈ M2 -> N1 ≈ N2 -> (M1 · N1) ≈ (M2 · N2)
@@ -163,22 +178,6 @@ record good (R : rtype) : Set where
  field
   respect : ∀ {M1 M2 N1 N2} -> M1 ≈ M2 -> N1 ≈ N2 -> R M2 N2 -> R M1 N1
 
--- The Church encoding of *weak* existentials
--- because strong impredicative existentials (record) are inconsistent
--- This should allow the proof to be fairly directly translated into
--- Coq --impredicative-set
-∃ : ∀ {R : Set₁} (P : R -> Set) -> Set
-∃ P = ∀ C -> (∀ A -> P A -> C) -> C
-
-∃-intro : ∀ {R} {P : R -> Set} -> (A : R) -> P A -> ∃ P
-∃-intro A p = λ C x → x A p
-
-∃-elim : ∀ {R} {P : R -> Set} -> ∃ P -> ∀ (C : Set) -> (∀ A -> P A -> C) -> C
-∃-elim p C f = p C f
-
-goodR : Set₁
-goodR = ∃ good
-
 ⟦_⟧t : ∀ {Δ} (T : tp Δ) (θ : gksubst Δ rtype) -> rtype
 ⟦_⟧t (v y) θ M1 M2 = θ y M1 M2
 ⟦_⟧t (T ⇒ S) θ M1 M2 = ∀ {N1 N2} → ⟦ T ⟧t θ N1 N2 → ⟦ S ⟧t θ (M1 · N1) (M2 · N2)
@@ -213,4 +212,18 @@ thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.
 thm θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 {!!} M
 thm θ θgood σ1 σ2 σgood (M · N) = thm θ θgood σ1 σ2 σgood M (thm θ θgood σ1 σ2 σgood N)
 thm θ θgood σ1 σ2 σgood (_$_ {T} M S) with thm θ θgood σ1 σ2 σgood M (⟦ S ⟧t θ) (⟦ S ⟧t-good θ θgood)
-... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ {!!} -- ⟦⟧t-subst-bwd (v ,,, S) {!!} {!!} {!!}
+... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ {!!}
+
+-- TODO: Try generalizing to open term, presheaf style
+thm' : ∀ {Δ M T} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
+ -> Δ , ⊡ ⊢ M ∶ T -> ⟦ T ⟧t θ M M
+thm' {T = T} θ θgood M = eq-ind2 (⟦ T ⟧t θ) []-id []-id (thm θ θgood v v (λ ()) M)
+
+blah : gksubst ⊡ rtype
+blah ()
+
+thm'' : ∀ {m T} -> ⊡ , ⊡ ⊢ m ∶ T -> ⟦ T ⟧t blah m m
+thm'' {m} {T} M = thm' {⊡} {m} {T} blah (λ ()) M
+
+test : ∀ {m} -> ⊡ , ⊡ ⊢ m ∶ (Π ((v z) ⇒ (v z))) -> (n : _) → (m · n) ≈ n
+test d n = _*_.fst (thm'' d (λ x x' → (x ≈ n) * (x' ≈ n)) (isgood (λ M1≈M2 N1≈N2 x0 → (≈-trans M1≈M2 (_*_.fst x0)) , (≈-trans N1≈N2 (_*_.snd x0)))) (≈-refl , ≈-refl))
