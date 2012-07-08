@@ -65,6 +65,10 @@ tsubst Δ1 Δ2 = gsubst Δ1 (λ _ -> tp Δ2)
 _∘_ : ∀ {A : Set} {B : Set} {C : Set} (g : B -> C) (f : A -> B) -> A -> C
 (g ∘ f) x = g (f x)
 
+extend' : ∀ {A} {Γ T} (P : ∀ {U : A} (x : var (Γ , T) U) -> Set) -> (∀ {U} (x : var Γ U) -> P (s x)) -> P z -> ∀ {U} (x : var (Γ , T) U) -> P x
+extend' P p q z = q
+extend' P p q (s y) = p y
+
 extend : ∀ {A Γ} (F : A -> Set) {U} -> gsubst Γ F -> F U -> gsubst (Γ , U) F
 extend F σ x z = x
 extend F σ x (s y) = σ y
@@ -179,3 +183,10 @@ goodR = ∃ good
 ⟦_⟧t (v y) θ M1 M2 = θ y M1 M2
 ⟦_⟧t (T ⇒ S) θ M1 M2 = ∀ {N1 N2} → ⟦ T ⟧t θ N1 N2 → ⟦ S ⟧t θ (M1 · N1) (M2 · N2)
 ⟦_⟧t (Π T) θ M1 M2 = (R : _) → good R → ⟦ T ⟧t (θ ,,, R) M1 M2
+
+⟦_⟧t-good : ∀ {Δ} (T : tp Δ) (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x)) -> good (⟦ T ⟧t θ)
+⟦_⟧t-good (v y) θ θgood = θgood y
+⟦_⟧t-good (T ⇒ S) θ θgood with ⟦ T ⟧t-good θ θgood | ⟦ S ⟧t-good θ θgood
+⟦_⟧t-good (T ⇒ S) θ θgood | isgood y | isgood y' = isgood (λ x x' x0 x1 → y' (x · ≈-refl) (x' · ≈-refl) (x0 x1))
+⟦_⟧t-good (Π T) θ θgood = isgood (λ M1≈M2 N1≈N2 x0 R Rgood → good.respect (⟦ T ⟧t-good (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood)) M1≈M2 N1≈N2 (x0 R Rgood))
+
