@@ -130,7 +130,6 @@ data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
 ≈-refl {M = M · N} = ≈-refl · ≈-refl
 ≈-refl {M = ƛ M} = ƛ ≈-refl
 
-
 data tpctx (Δ : lctx) : (γ : ctx unit) -> Set where
  ⊡ : tpctx Δ ⊡
  _,_ : ∀ {γ} (Γ : tpctx Δ γ) -> (T : tp Δ) -> tpctx Δ (γ , tt)
@@ -151,3 +150,22 @@ data _,_⊢_∶_ (Δ : lctx) {γ : ctx unit} (Γ : tpctx Δ γ) : tm γ -> tp Δ
  _·_ : ∀ {T S M N} -> Δ , Γ ⊢ M ∶ (T ⇒ S) -> Δ , Γ ⊢ N ∶ T -> Δ , Γ ⊢ (M · N) ∶ S
  _$_ : ∀ {T : tp (Δ , _)} {M} -> Δ , Γ ⊢ M ∶ (Π T) -> (S : tp Δ)
          -> Δ , Γ ⊢ M ∶ ([ v ,,, S ]t T)
+
+record good (R : tm ⊡ -> tm ⊡ -> Set) : Set where
+ constructor isgood
+ field
+  respect : ∀ {M1 M2 N1 N2} -> M1 ≈ M2 -> N1 ≈ N2 -> R M1 N1 -> R M2 N2
+
+-- The Church encoding of *weak* existentials
+-- because we
+∃ : ∀ {R : Set₁} (P : R -> Set) -> Set
+∃ P = ∀ C -> (∀ A -> P A -> C) -> C
+
+∃-intro : ∀ {R} {P : R -> Set} -> (A : R) -> P A -> ∃ P
+∃-intro A p = λ C x → x A p
+
+∃-elim : ∀ {R} {P : R -> Set} -> ∃ P -> ∀ (C : Set) -> (∀ A -> P A -> C) -> C
+∃-elim p C f = p C f
+
+goodR : Set₁
+goodR = ∃ good
