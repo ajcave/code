@@ -109,7 +109,7 @@ data tm (Γ : ctx unit) : Set where
 [_]v σ (ƛ M) = ƛ ([ (s ∘ σ) ,, z ]v M)
 
 sub : ∀ Γ1 Γ2 -> Set
-sub Γ1 Γ2 = var Γ1 tt -> tm Γ2
+sub Γ1 Γ2 = gksubst Γ1 (tm Γ2)
 
 sub-ext : ∀ {Γ1 Γ2} -> sub Γ1 Γ2 -> sub (Γ1 , tt) (Γ2 , tt)
 sub-ext σ z = v z
@@ -190,3 +190,10 @@ goodR = ∃ good
 ⟦_⟧t-good (T ⇒ S) θ θgood | isgood y | isgood y' = isgood (λ x x' x0 x1 → y' (x · ≈-refl) (x' · ≈-refl) (x0 x1))
 ⟦_⟧t-good (Π T) θ θgood = isgood (λ M1≈M2 N1≈N2 x0 R Rgood → good.respect (⟦ T ⟧t-good (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood)) M1≈M2 N1≈N2 (x0 R Rgood))
 
+thm : ∀ {Δ γ M T} {Γ : tpctx Δ γ} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
+ -> (σ : sub γ ⊡) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ ] M) ([ σ ] M)
+thm θ θgood σ (v x) = {!!}
+thm θ θgood σ (ƛ y) = {!!}
+thm θ θgood σ (Λ y) = {!!}
+thm θ θgood σ (y · y') = {!!}
+thm θ θgood σ (y $ S) = {!!}
