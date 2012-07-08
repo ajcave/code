@@ -197,6 +197,6 @@ thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.
   (≈-trans (β _ _) {!≈-refl'!})
   {!!}
   (thm θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ lookup (Γ , T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
-thm θ θgood σ1 σ2 σgood (Λ y) = {!!}
-thm θ θgood σ1 σ2 σgood (y · y') = thm θ θgood σ1 σ2 σgood y (thm θ θgood σ1 σ2 σgood y')
-thm θ θgood σ1 σ2 σgood (y $ S) = {!!}
+thm θ θgood σ1 σ2 σgood (Λ M) = {!!}
+thm θ θgood σ1 σ2 σgood (M · N) = thm θ θgood σ1 σ2 σgood M (thm θ θgood σ1 σ2 σgood N)
+thm θ θgood σ1 σ2 σgood (M $ S) = {!!}
