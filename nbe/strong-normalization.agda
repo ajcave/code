@@ -227,17 +227,23 @@ data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 
 -- Why not just use an explicit substitution calculus?
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
+ →*-refl : ∀ {T} {M : tm Γ T} -> M →* M
+ one : ∀ {T} {M N : tm Γ T} -> M →₁ N -> M →* N
+ →*-trans : ∀ {T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
+
+_·₁_ : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
+p ·₁ q = ?
+
+ƛ₁ : ∀ {Γ T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
+ƛ₁ p = ?
+
+{-
  v : ∀ {T} (x : var Γ T) -> (v x) →* (v x)
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →* [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
- →*-trans : ∀ {T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
-
-→*-refl : ∀ {Γ T} {M : tm Γ T} -> M →* M
-→*-refl {M = v y} = v y
-→*-refl {M = M · N} = →*-refl · →*-refl
-→*-refl {M = ƛ M} = ƛ →*-refl
+-}
 
 →*-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 →* M2
 →*-refl' refl = →*-refl
@@ -247,12 +253,13 @@ vsimp σ N z = refl
 vsimp σ N (s y) = refl
 
 →*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
-→*-subst σ (v x) = →*-refl
+→*-subst σ p = ?
+{-→*-subst σ (v x) = →*-refl
 →*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
 →*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
 →*-subst σ (β M N) = →*-trans (β _ _) (→*-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
 →*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
-→*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y')
+→*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y') -}
 
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
@@ -279,7 +286,7 @@ reduce Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T 
 
 reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
 reduce-closed {atom A} p (N , q) = N , (→*-trans p q)
-reduce-closed {T ⇝ S} p x = λ Δ σ x' x0 → reduce-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
+reduce-closed {T ⇝ S} p x = λ Δ σ x' x0 → reduce-closed (→*-subst σ p ·₁ →*-refl) (x Δ σ x' x0)
 
 reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) {T} {t : tm Δ T} (w : reduce Δ T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce Δ U ((σ ,, t) x)
@@ -293,7 +300,7 @@ reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = λ Δ σ' x x' → reduce-closed (β _ _) (eq-ind (reduce Δ _)
+thm σ θ (ƛ M) = λ Δ σ' x x' → reduce-closed (one (β _ _)) (eq-ind (reduce Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
     (sym ([]-funct   ((v ,, x) ∘₁ ext σ') (sub-ext σ) M)))
@@ -303,12 +310,12 @@ thm σ θ (ƛ M) = λ Δ σ' x x' → reduce-closed (β _ _) (eq-ind (reduce Δ 
 mutual
  reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
  reflect {atom A} r = (neut r) , →*-refl
- reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
+ reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl ·₁ (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
 
  reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
  reify {atom A} t p = p
  reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
- reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
+ reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans ? (ƛ₁ q))
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
