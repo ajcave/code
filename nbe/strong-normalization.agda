@@ -336,17 +336,21 @@ mutual
  reify {atom A} t r = r
  reify {T ⇝ S} t r = sn-app t (reify ([ s ]v t · v z) (r _ s (v z) (reflect (v z) (v z) (λ ()))))
 
+ -- Ah, this comes from sticking "reduce" in for "sn" in the definition of sn..
+ -- It looks a little like the standard technique for showing accessibility?
  reflect : ∀ {T Γ} (t : tm Γ T) -> neutral t -> (∀ {t'} -> t →₁ t' -> reduce Γ T t') -> reduce Γ T t
  reflect {atom A} t n f = sn-intro f
  reflect {T ⇝ S} t n f = λ Δ σ u red-u → h Δ σ u (reify u red-u) red-u
   where h : ∀ Δ (σ : vsubst _ Δ) u -> sn u -> reduce _ T u -> reduce _ S ([ σ ]v t · u)
         h Δ σ u (sn-intro y) red-u = reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → g (neutral-funct σ t n) u x (reduce Δ S) (λ t'' p → grar σ p (λ s' → reduce Δ S (s' · u)) (λ t0 p2 → f p2 Δ σ u red-u)) (λ u' p → h Δ σ u' (y p) (reduce-closed p red-u)))
 
-
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = λ Δ σ' x x' → {!!}
+thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → {!!}
+ where f : ∀ Δ (σ' : vsubst _ Δ) (x : tm Δ T) (x' : reduce Δ T x) -> {!!}
+       f Δ σ' x x' with thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 -> reduce-funct σ' (θ x0)) x') M
+       ... | q = {!!}
  {-λ Δ σ' x x' → reduce-closed (one (β _ _)) (eq-ind (reduce Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
