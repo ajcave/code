@@ -314,8 +314,8 @@ thm Γ θ θgood σ1 σ2 σgood (ƛ {T} {S} {m} y) = λ {N1} {N2} x → good.res
        refl) m)))
   (≈≡-trans (β _ _) (trans ([]-funct (v ,,, N2) (sub-ext σ2) m) ([]-cong ([ v ,,, N2 ] ∘ sub-ext σ2) (σ2 ,,, N2)
      (extend' (λ x' → ([ v ,,, N2 ] ∘ sub-ext σ2) x' ≡ (σ2 ,,, N2) x')
-        (λ x' → trans ([]nv-funct (v ,,, N2) s (σ2 x')) []-id)
-        refl) m)))
+       (λ x' → trans ([]nv-funct (v ,,, N2) s (σ2 x')) []-id)
+       refl) m)))
   (thm (Γ ,,, T) θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ (Γ ,,, T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
 thm Γ θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm ([ s ]tv ∘ Γ) (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 (λ x → _*_.snd (⟦⟧tv-subst s (Γ x) (θ ,,, R)) (σgood x)) M
 thm Γ θ θgood σ1 σ2 σgood (M · N) = thm Γ θ θgood σ1 σ2 σgood M (thm Γ θ θgood σ1 σ2 σgood N)
