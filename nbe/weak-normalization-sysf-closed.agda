@@ -210,7 +210,7 @@ data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
  β : ∀ M N -> ((ƛ M) · N) ≈ [ v ,,, N ] M
  η : ∀ M -> M ≈ (ƛ ([ s ]v M · (v z)))
  ≈-trans : ∀ {M N P} -> M ≈ N -> N ≈ P -> M ≈ P
- ≈-sym : ∀ {M N} -> M ≈ N -> N ≈ M
+-- ≈-sym : ∀ {M N} -> M ≈ N -> N ≈ M
 
 ≈-refl : ∀ {Γ} {M : tm Γ} -> M ≈ M
 ≈-refl {M = v y} = v y
