@@ -255,7 +255,7 @@ thm Γ θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect
   (≈-trans (β _ _) {!≈-refl'!})
   {!!}
   (thm (Γ ,,, T) θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ (Γ ,,, T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
-thm Γ θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm ([ s ]tv ∘ Γ) (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 {!!} M
+thm Γ θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm ([ s ]tv ∘ Γ) (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 (λ x → ⟦⟧tv-subst-bwd s (Γ x) (θ ,,, R) (σgood x)) M
 thm Γ θ θgood σ1 σ2 σgood (M · N) = thm Γ θ θgood σ1 σ2 σgood M (thm Γ θ θgood σ1 σ2 σgood N)
 thm Γ θ θgood σ1 σ2 σgood (_$_ {T} {m} M S) with thm Γ θ θgood σ1 σ2 σgood M (⟦ S ⟧t θ) (⟦ S ⟧t-good θ θgood)
 ... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ (_*_.snd (⟦ T ⟧t-cong (λ x -> ⟦ (v ,,, S) x ⟧t θ) (θ ,,, (⟦ S ⟧t θ))
