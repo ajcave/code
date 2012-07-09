@@ -229,8 +229,7 @@ data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 -- Why not just use an explicit substitution calculus?
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  →*-refl : ∀ {T} {M : tm Γ T} -> M →* M
- one : ∀ {T} {M N : tm Γ T} -> M →₁ N -> M →* N
- →*-trans : ∀ {T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
+ →₁*-trans : ∀ {T} {M N P : tm Γ T} -> M →₁ N -> N →* P -> M →* P
 
 _·₁_ : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
 p ·₁ q = {!!}
@@ -302,10 +301,25 @@ reduce-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : reduce Γ T 
 reduce-funct {atom A} σ q = {!!} --(nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
 reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
 
+data neutral {Γ} : ∀ {T} -> tm Γ T -> Set where
+ v : ∀ {T} (x : var Γ T) -> neutral (v x)
+ _·_ : ∀ {T S} (M : tm Γ (T ⇝ S)) (N : tm Γ T) -> neutral (M · N)
+
+mutual
+ reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> sn t
+ reify {atom A} t r = r
+ reify {T ⇝ S} t r with reify ([ s ]v t · v z) (r _ s (v z) (reflect (v z) (v z) (λ ())))
+ ... | q = {!!}
+
+ reflect : ∀ {T Γ} (t : tm Γ T) -> neutral t -> (∀ {t'} -> t →₁ t' -> reduce Γ T t') -> reduce Γ T t
+ reflect {atom A} t n f = sn-intro f
+ reflect {T ⇝ S} t n f = λ Δ σ x red-x → {!!} 
+
+
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = {!!}
+thm σ θ (ƛ M) = λ Δ σ' x x' → {!!}
  {-λ Δ σ' x x' → reduce-closed (one (β _ _)) (eq-ind (reduce Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
