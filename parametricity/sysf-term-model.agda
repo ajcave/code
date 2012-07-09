@@ -146,6 +146,11 @@ sub-ext σ (s y) = [ s ]v (σ y)
 []v-cong σ1 σ2 p (ƛ y) = cong ƛ ([]v-cong (ext σ1) (ext σ2) (extend' (λ x → ext σ1 x ≡ ext σ2 x) (λ x → cong s (p x)) refl) y)
 []v-cong σ1 σ2 p (y · y') = cong2 _·_ ([]v-cong σ1 σ2 p y) ([]v-cong σ1 σ2 p y')
 
+[]-cong : ∀ {Γ1 Γ2} (σ1 σ2 : sub Γ1 Γ2) (p : (x : var Γ1 tt) -> σ1 x ≡ σ2 x) (M : tm Γ1) -> [ σ1 ] M ≡ [ σ2 ] M
+[]-cong σ1 σ2 p (v y) = p y
+[]-cong σ1 σ2 p (ƛ y) = cong ƛ ([]-cong (sub-ext σ1) (sub-ext σ2) (extend' (λ x → sub-ext σ1 x ≡ sub-ext σ2 x) (λ x → cong [ s ]v (p x)) refl) y)
+[]-cong σ1 σ2 p (y · y') = cong2 _·_ ([]-cong σ1 σ2 p y) ([]-cong σ1 σ2 p y')
+
 ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : gvsubst Γ2 Γ3) (σ2 : gvsubst Γ1 Γ2) (x : var (Γ1 , U) S) -> ((ext σ1) ∘ (ext σ2)) x ≡ ext (σ1 ∘ σ2) x
 ext-funct σ1 σ2 z = refl
 ext-funct σ1 σ2 (s y) = refl
