@@ -205,15 +205,17 @@ mutual
 mutual
  ⟦⟧tv-subst-fwd : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
   -> (⟦ [ σ ]tv T ⟧t θ) M1 M2 -> (⟦ T ⟧t (θ ∘ σ)) M1 M2
- ⟦⟧tv-subst-fwd σ (v y) θ t = {!!}
- ⟦⟧tv-subst-fwd σ (T ⇒ S) θ t = {!!}
- ⟦⟧tv-subst-fwd σ (Π T) θ t = {!!}
+ ⟦⟧tv-subst-fwd σ (v y) θ t = t
+ ⟦⟧tv-subst-fwd σ (T ⇒ S) θ t = λ x → ⟦⟧tv-subst-fwd σ S θ (t (⟦⟧tv-subst-bwd σ T θ x))
+ ⟦⟧tv-subst-fwd σ (Π T) θ t = λ R x → {!!}
 
  ⟦⟧tv-subst-bwd : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2} 
   -> (⟦ T ⟧t (θ ∘ σ)) M1 M2 -> (⟦ [ σ ]tv T ⟧t θ) M1 M2
- ⟦⟧tv-subst-bwd σ (v y) θ t = ?
- ⟦⟧tv-subst-bwd σ (T ⇒ S) θ t = ?
- ⟦⟧tv-subst-bwd σ (Π T) θ t = ?
+ ⟦⟧tv-subst-bwd σ (v y) θ t = t
+ ⟦⟧tv-subst-bwd σ (T ⇒ S) θ t = λ x → ⟦⟧tv-subst-bwd σ S θ (t (⟦⟧tv-subst-fwd σ T θ x))
+ ⟦⟧tv-subst-bwd σ (Π T) θ t = λ R x → ⟦⟧tv-subst-bwd (σ × z) T (θ ,,, R) (_*_.fst (⟦ T ⟧t-cong ((θ ∘ σ) ,,, R) ((θ ,,, R) ∘ (σ × z))
+   (extend' (λ x' → (M1 M2 : _) → ((θ ∘ σ) ,,, R) x' M1 M2 <-> ((θ ,,, R) ∘ (σ × z)) x' M1 M2)
+      (λ x' M1 M2 → <->-refl) (λ M1 M2 → <->-refl)) _ _) (t R x))
 
 mutual
  ⟦⟧t-subst-fwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
