@@ -211,13 +211,8 @@ mutual
  ⟦_⟧t-cong : ∀ {Δ} (T : tp Δ) (θ1 θ2 : gksubst Δ rtype) -> (∀ x -> θ1 x ≃ θ2 x) -> ⟦ T ⟧t θ1 ≃ ⟦ T ⟧t θ2
  ⟦_⟧t-cong (v y) θ1 θ2 f = f y
  ⟦_⟧t-cong (T ⇒ S) θ1 θ2 f = <->-cong-impl (λ N1 → <->-cong-impl (λ N2 → ⟦ T ⟧t-cong θ1 θ2 f <->-cong-→ ⟦ S ⟧t-cong θ1 θ2 f))
- ⟦_⟧t-cong (Π T) θ1 θ2 f =
-     (λ x R x' → _*_.fst (⟦ T ⟧t-cong (θ1 ,,, R) (θ2 ,,, R)
-      (extend' (λ x0 → (θ1 ,,, R) x0 ≃ (θ2 ,,, R) x0)
-               f <->-refl)) (x R x'))
-   , (λ x R x' → _*_.snd (⟦ T ⟧t-cong (θ1 ,,, R) (θ2 ,,, R)
-      (extend' (λ x0 → (θ1 ,,, R) x0 ≃ (θ2 ,,, R) x0)
-               f <->-refl)) (x R x')) 
+ ⟦_⟧t-cong (Π T) θ1 θ2 f = <->-cong-expl (λ R → <->-cong-expl (λ Rgood → ⟦ T ⟧t-cong (θ1 ,,, R) (θ2 ,,, R)
+    (extend' (λ x → (θ1 ,,, R) x ≃ (θ2 ,,, R) x) f <->-refl)))
 
 f1 : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ ∘ σ) ,,, R) ≃s ((θ ,,, R) ∘ (σ × z)) 
 f1 σ θ R z = <->-refl
