@@ -239,7 +239,9 @@ thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.
 thm θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 {!!} M
 thm θ θgood σ1 σ2 σgood (M · N) = thm θ θgood σ1 σ2 σgood M (thm θ θgood σ1 σ2 σgood N)
 thm θ θgood σ1 σ2 σgood (_$_ {T} {m} M S) with thm θ θgood σ1 σ2 σgood M (⟦ S ⟧t θ) (⟦ S ⟧t-good θ θgood)
-... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ (_*_.snd (⟦ T ⟧t-cong (λ x -> ⟦ (v ,,, S) x ⟧t θ) (θ ,,, (⟦ S ⟧t θ)) {!!} ([ σ1 ] m) ([ σ2 ] m)) q)
+... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ (_*_.snd (⟦ T ⟧t-cong (λ x -> ⟦ (v ,,, S) x ⟧t θ) (θ ,,, (⟦ S ⟧t θ))
+  (extend' (λ x → (M1 M2 : _) → ⟦ (v ,,, S) x ⟧t θ M1 M2 <-> (θ ,,, ⟦ S ⟧t θ) x M1 M2)
+           (λ x M1 M2 → <->-refl) (λ M1 M2 → <->-refl)) ([ σ1 ] m) ([ σ2 ] m)) q)
 
 -- TODO: Try generalizing to open term, presheaf style
 thm' : ∀ {Δ M T} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
