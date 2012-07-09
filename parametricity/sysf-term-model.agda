@@ -16,6 +16,12 @@ eq-ind P refl t = t
 eq-ind2 : ∀ {A B} (P : A -> B -> Set) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P x z -> P y w
 eq-ind2 P refl refl t = t
 
+trans : ∀ {A} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+trans refl refl = refl
+
+sym : ∀ {A} {x y : A} -> x ≡ y -> y ≡ x
+sym refl = refl
+
 {-# BUILTIN EQUALITY _≡_ #-}
 {-# BUILTIN REFL refl #-}
 
@@ -115,6 +121,9 @@ data tm (Γ : ctx unit) : Set where
  ƛ : tm (Γ , tt) -> tm Γ
  _·_ : tm Γ -> tm Γ -> tm Γ
 
+ext : ∀ {Γ Δ T} -> gvsubst Γ Δ -> gvsubst (Γ , T) (Δ , T)
+ext σ = extend (var (_ , tt)) (s ∘ σ) z
+
 [_]v : ∀ {Γ1 Γ2} (σ : gvsubst Γ1 Γ2) -> (M : tm Γ1) -> tm Γ2
 [_]v σ (v y) = v (σ y)
 [_]v σ (M · N) = [ σ ]v M · [ σ ]v N
@@ -132,8 +141,64 @@ sub-ext σ (s y) = [ s ]v (σ y)
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
 
+
+postulate
+ funext : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
+ funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
+
+var-dom-eq' : ∀ {A : Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
+var-dom-eq' f g p q z = q
+var-dom-eq' f g p q (s y) = p y
+
+var-dom-eq : ∀ {A : Set} {Γ T} {f g : ∀ {U} (x : var (Γ , T) U) -> A} -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> _≡_ { ∀ {U} -> var (Γ , T) U -> A } f g
+var-dom-eq {f = f} {g = g} p q = funext-imp (λ U -> funext (λ x -> var-dom-eq' f g p q x))
+
+ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : gvsubst Γ2 Γ3) (σ2 : gvsubst Γ1 Γ2) (x : var (Γ1 , U) S) -> ((ext σ1) ∘ (ext σ2)) x ≡ ext (σ1 ∘ σ2) x
+ext-funct σ1 σ2 z = refl
+ext-funct σ1 σ2 (s y) = refl
+
+[]v-funct : ∀ {Γ1 Γ2 Γ3} (σ1 : gvsubst Γ2 Γ3) (σ2 : gvsubst Γ1 Γ2) (R : tm Γ1)
+  -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
+[]v-funct σ1 σ2 (v y) = refl
+[]v-funct σ1 σ2 (y · y') = cong2 _·_ ([]v-funct σ1 σ2 y) ([]v-funct σ1 σ2 y')
+[]v-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]v-funct (ext σ1) (ext σ2) y) (cong (λ (α : gvsubst _ _) → [ α ]v y) (var-dom-eq (λ x → refl) refl)))
+
+[]vn-funct : ∀ {Γ1 Γ2 Γ3} (σ1 : gvsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1)
+  -> [ σ1 ]v ([ σ2 ] R) ≡ [ [ σ1 ]v ∘ σ2 ] R
+[]vn-funct σ1 σ2 (v y) = refl
+[]vn-funct σ1 σ2 (y · y') = cong2 _·_ ([]vn-funct σ1 σ2 y) ([]vn-funct σ1 σ2 y')
+[]vn-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]vn-funct (ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]v-funct (ext σ1) s (σ2 x)) (sym ([]v-funct s σ1 (σ2 x)))) refl)))
+
+[]nv-funct : ∀ {Γ1 Γ2 Γ3} (σ1 : sub Γ2 Γ3) (σ2 : gvsubst Γ1 Γ2) (R : tm Γ1)
+  -> [ σ1 ] ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ] R
+[]nv-funct σ1 σ2 (v y) = refl
+[]nv-funct σ1 σ2 (y · y') = cong2 _·_ ([]nv-funct σ1 σ2 y) ([]nv-funct σ1 σ2 y')
+[]nv-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]nv-funct (sub-ext σ1) (ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl)))
+
+[]-funct : ∀ {Γ1 Γ2 Γ3} (σ1 : sub Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1)
+  -> [ σ1 ] ([ σ2 ] R) ≡ [ [ σ1 ] ∘ σ2 ] R
+[]-funct σ1 σ2 (v y) = refl
+[]-funct σ1 σ2 (y · y') = cong2 _·_ ([]-funct σ1 σ2 y) ([]-funct σ1 σ2 y')
+[]-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]-funct (sub-ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]nv-funct (sub-ext σ1) s (σ2 x)) (sym ([]vn-funct s σ1 (σ2 x)))) refl)))
+
+sub-ext-idv : ∀ {Γ T U} (x : var (Γ , T) U) -> (ext id) x ≡ x
+sub-ext-idv z = refl
+sub-ext-idv (s y) = refl
+
+[]v-id : ∀ {Γ} {M : tm Γ} -> [ id ]v M ≡ M
+[]v-id {M = v y} = refl
+[]v-id {M = M · N} = cong2 _·_ []v-id []v-id
+[]v-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : gvsubst _ _) → [ α ]v M) (funext-imp (λ x → funext (λ x' → sub-ext-idv x')))) []v-id)
+
+sub-ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> (sub-ext v) x ≡ v x
+sub-ext-id z = refl
+sub-ext-id (s y) = refl
+
 []-id : ∀ {Γ} {M : tm Γ} -> [ v ] M ≡ M
-[]-id {M = M} = {!!}
+[]-id {M = v y} = refl
+[]-id {M = M · N} = cong2 _·_ []-id []-id
+[]-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
+
 
 data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
  v : ∀ (x : var Γ _) -> (v x) ≈ (v x)

@@ -144,52 +144,13 @@ mutual
  nappSubst-id (ƛ N) = cong ƛ (trans (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x → ext-id x)))) (nappSubst-id N))
  nappSubst-id (neut R) = cong neut (rappSubst-id R)
 
-{-
-appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
-appSubst (atom A) σ M = nappSubst σ M
-appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s -}
-
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn = s
 
-{-
-mutual
- reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
- reflect {atom A} N = neut N
- reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
-
- reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
- reify {atom A} M = M
- reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
-
-subst : ctx -> ctx -> Set
-subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
-
-extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
-extend θ M z = M
-extend θ M (s y) = θ y
--}
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
-
-{-
-_◦_ : ∀ {Γ1 Γ2 Γ3} -> vsubst Γ2 Γ3 -> subst Γ1 Γ2 -> subst Γ1 Γ3
-(σ ◦ θ) = λ x ->  appSubst _ σ (θ x)
-
-
--- Traditional nbe
--- This is taking tm Γ T into a Yoneda-like Hom space
-eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
-eval θ (v y) = θ y
-eval θ (M · N) = eval θ M _ id (eval θ N)
-eval θ (ƛ M) = λ _ σ s -> eval (extend (σ ◦ θ) s) M
-
-
-nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe M = reify (eval (λ x → reflect (v x)) M)
--}
 
 [_]v : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
 [_]v σ (v y) = v (σ y)
