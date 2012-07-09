@@ -217,6 +217,9 @@ data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
 ≈-refl {M = M · N} = ≈-refl · ≈-refl
 ≈-refl {M = ƛ M} = ƛ ≈-refl
 
+≈≡-trans : ∀ {Γ} {M N P : tm Γ} -> M ≈ N -> N ≡ P -> M ≈ P
+≈≡-trans p refl = p
+
 data _,_⊢_∶_ (Δ : lctx) {γ : ctx unit} (Γ : gksubst γ (tp Δ)) : tm γ -> tp Δ -> Set where
  v : (x : var γ _) -> Δ , Γ ⊢ (v x) ∶ (Γ x)
  ƛ : ∀ {T S M} -> Δ , (Γ ,,, T) ⊢ M ∶ S -> Δ , Γ ⊢ ƛ M ∶ (T ⇒ S)
@@ -304,9 +307,15 @@ f2' σ θ R (s y) = ⟦⟧tv-subst s (σ y) (θ ,,, R)
 thm : ∀ {γ Δ M T} (Γ : gksubst γ (tp Δ)) (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
  -> (σ1 σ2 : sub γ ⊡) -> (σgood : (x : var γ _) -> ⟦ Γ x ⟧t θ (σ1 x) (σ2 x)) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ1 ] M) ([ σ2 ] M)
 thm Γ θ θgood σ1 σ2 σgood (v x) = σgood x
-thm Γ θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect (⟦ S ⟧t-good θ θgood)
-  (≈-trans (β _ _) {!≈-refl'!})
-  {!!}
+thm Γ θ θgood σ1 σ2 σgood (ƛ {T} {S} {m} y) = λ {N1} {N2} x → good.respect (⟦ S ⟧t-good θ θgood)
+  (≈≡-trans (β _ _) (trans ([]-funct (v ,,, N1) (sub-ext σ1) m) ([]-cong ([ v ,,, N1 ] ∘ sub-ext σ1) (σ1 ,,, N1)
+    (extend' (λ x' → ([ v ,,, N1 ] ∘ sub-ext σ1) x' ≡ (σ1 ,,, N1) x')
+       (λ x' → trans ([]nv-funct (v ,,, N1) s (σ1 x')) []-id)
+       refl) m)))
+  (≈≡-trans (β _ _) (trans ([]-funct (v ,,, N2) (sub-ext σ2) m) ([]-cong ([ v ,,, N2 ] ∘ sub-ext σ2) (σ2 ,,, N2)
+     (extend' (λ x' → ([ v ,,, N2 ] ∘ sub-ext σ2) x' ≡ (σ2 ,,, N2) x')
+        (λ x' → trans ([]nv-funct (v ,,, N2) s (σ2 x')) []-id)
+        refl) m)))
   (thm (Γ ,,, T) θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ (Γ ,,, T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
 thm Γ θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm ([ s ]tv ∘ Γ) (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 (λ x → _*_.snd (⟦⟧tv-subst s (Γ x) (θ ,,, R)) (σgood x)) M
 thm Γ θ θgood σ1 σ2 σgood (M · N) = thm Γ θ θgood σ1 σ2 σgood M (thm Γ θ θgood σ1 σ2 σgood N)
