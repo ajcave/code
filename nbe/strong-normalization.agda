@@ -362,11 +362,15 @@ mutual
  abs2 {Γ} {T} {S} {M} sn-m (sn-intro y') ru f (.(ƛ M) ·r y) = abs sn-m (y' y) (reduce-closed y ru) f
  abs2 {Γ} {T} {S} {M} {u} sn-m sn-n ru f (β .M .u) = f ru
 
+abs4 : ∀ {Γ T S} {M : tm (Γ , T) S} {u} -> reduce Γ T u -> (∀ {u} -> reduce Γ T u -> reduce Γ S ([ v ,, u ] M)) -> reduce Γ S ((ƛ M) · u)
+abs4 r f = abs (reify _ {!!}) (reify _ r) r f
+
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
 thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x) (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x)
-   (λ x0 → {!!})
+   (λ x0 → reduce-closed x0 (abs4 x' (λ {u} x1 → eq-ind (reduce Δ S) {!!} (thm (([ σ' ]v ∘₁ σ) ,, u)
+                                                                             (reduce-ext (λ x2 → reduce-funct σ' (θ x2)) x1) M))))
  where f : ∀ Δ (σ' : vsubst _ Δ) (x : tm Δ T) (x' : reduce Δ T x) -> {!!}
        f Δ σ' x x' with thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 -> reduce-funct σ' (θ x0)) x') M
        ... | q = {!!}
