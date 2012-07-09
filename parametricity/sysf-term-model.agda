@@ -149,7 +149,7 @@ data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
 ≈-refl {M = M · N} = ≈-refl · ≈-refl
 ≈-refl {M = ƛ M} = ƛ ≈-refl
 
-data tpctx (Δ : lctx) : (γ : ctx unit) -> Set where
+{-data tpctx (Δ : lctx) : (γ : ctx unit) -> Set where
  ⊡ : tpctx Δ ⊡
  _,_ : ∀ {γ} (Γ : tpctx Δ γ) -> (T : tp Δ) -> tpctx Δ (γ , tt)
 
@@ -160,12 +160,12 @@ lookup (Γ , T) (s y) = lookup Γ y
 
 tpmap : ∀ {Δ1 Δ2 : lctx} {γ : ctx unit} -> (f : tp Δ1 -> tp Δ2) -> tpctx Δ1 γ  -> tpctx Δ2 γ
 tpmap f ⊡ = ⊡
-tpmap f (Γ , T) = (tpmap f Γ) , (f T)
+tpmap f (Γ , T) = (tpmap f Γ) , (f T) -}
 
-data _,_⊢_∶_ (Δ : lctx) {γ : ctx unit} (Γ : tpctx Δ γ) : tm γ -> tp Δ -> Set where
- v : (x : var γ _) -> Δ , Γ ⊢ (v x) ∶ (lookup Γ x)
- ƛ : ∀ {T S M} -> Δ , (Γ , T) ⊢ M ∶ S -> Δ , Γ ⊢ ƛ M ∶ (T ⇒ S)
- Λ : ∀ {T : tp (Δ , _)} {M} -> (Δ , tt) , (tpmap [ s ]tv Γ) ⊢ M ∶ T -> Δ , Γ ⊢ M ∶ (Π T)
+data _,_⊢_∶_ (Δ : lctx) {γ : ctx unit} (Γ : gksubst γ (tp Δ)) : tm γ -> tp Δ -> Set where
+ v : (x : var γ _) -> Δ , Γ ⊢ (v x) ∶ (Γ x)
+ ƛ : ∀ {T S M} -> Δ , (Γ ,,, T) ⊢ M ∶ S -> Δ , Γ ⊢ ƛ M ∶ (T ⇒ S)
+ Λ : ∀ {T : tp (Δ , _)} {M} -> (Δ , tt) , ([ s ]tv ∘ Γ) ⊢ M ∶ T -> Δ , Γ ⊢ M ∶ (Π T)
  _·_ : ∀ {T S M N} -> Δ , Γ ⊢ M ∶ (T ⇒ S) -> Δ , Γ ⊢ N ∶ T -> Δ , Γ ⊢ (M · N) ∶ S
  _$_ : ∀ {T : tp (Δ , _)} {M} -> Δ , Γ ⊢ M ∶ (Π T) -> (S : tp Δ)
          -> Δ , Γ ⊢ M ∶ ([ v ,,, S ]t T)
@@ -229,32 +229,32 @@ mutual
 ⟦_⟧t-good (T ⇒ S) θ θgood | isgood y | isgood y' = isgood (λ x x' x0 x1 → y' (x · ≈-refl) (x' · ≈-refl) (x0 x1))
 ⟦_⟧t-good (Π T) θ θgood = isgood (λ M1≈M2 N1≈N2 x0 R Rgood → good.respect (⟦ T ⟧t-good (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood)) M1≈M2 N1≈N2 (x0 R Rgood))
 
-thm : ∀ {Δ γ M T} {Γ : tpctx Δ γ} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
- -> (σ1 σ2 : sub γ ⊡) -> (σgood : (x : var γ _) -> ⟦ lookup Γ x ⟧t θ (σ1 x) (σ2 x)) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ1 ] M) ([ σ2 ] M)
-thm θ θgood σ1 σ2 σgood (v x) = σgood x
-thm {Γ = Γ} θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect (⟦ S ⟧t-good θ θgood)
+thm : ∀ {γ Δ M T} (Γ : gksubst γ (tp Δ)) (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
+ -> (σ1 σ2 : sub γ ⊡) -> (σgood : (x : var γ _) -> ⟦ Γ x ⟧t θ (σ1 x) (σ2 x)) -> Δ , Γ ⊢ M ∶ T -> ⟦ T ⟧t θ ([ σ1 ] M) ([ σ2 ] M)
+thm Γ θ θgood σ1 σ2 σgood (v x) = σgood x
+thm Γ θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect (⟦ S ⟧t-good θ θgood)
   (≈-trans (β _ _) {!≈-refl'!})
   {!!}
-  (thm θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ lookup (Γ , T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
-thm θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 {!!} M
-thm θ θgood σ1 σ2 σgood (M · N) = thm θ θgood σ1 σ2 σgood M (thm θ θgood σ1 σ2 σgood N)
-thm θ θgood σ1 σ2 σgood (_$_ {T} {m} M S) with thm θ θgood σ1 σ2 σgood M (⟦ S ⟧t θ) (⟦ S ⟧t-good θ θgood)
+  (thm (Γ ,,, T) θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ (Γ ,,, T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
+thm Γ θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm ([ s ]tv ∘ Γ) (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 {!!} M
+thm Γ θ θgood σ1 σ2 σgood (M · N) = thm Γ θ θgood σ1 σ2 σgood M (thm Γ θ θgood σ1 σ2 σgood N)
+thm Γ θ θgood σ1 σ2 σgood (_$_ {T} {m} M S) with thm Γ θ θgood σ1 σ2 σgood M (⟦ S ⟧t θ) (⟦ S ⟧t-good θ θgood)
 ... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ (_*_.snd (⟦ T ⟧t-cong (λ x -> ⟦ (v ,,, S) x ⟧t θ) (θ ,,, (⟦ S ⟧t θ))
   (extend' (λ x → (M1 M2 : _) → ⟦ (v ,,, S) x ⟧t θ M1 M2 <-> (θ ,,, ⟦ S ⟧t θ) x M1 M2)
            (λ x M1 M2 → <->-refl) (λ M1 M2 → <->-refl)) ([ σ1 ] m) ([ σ2 ] m)) q)
 
+⊡s : ∀ {A B : Set} -> gksubst (⊡ {B}) A
+⊡s ()
+
 -- TODO: Try generalizing to open term, presheaf style
 thm' : ∀ {Δ M T} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
- -> Δ , ⊡ ⊢ M ∶ T -> ⟦ T ⟧t θ M M
-thm' {T = T} θ θgood M = eq-ind2 (⟦ T ⟧t θ) []-id []-id (thm θ θgood v v (λ ()) M)
+ -> Δ , ⊡s ⊢ M ∶ T -> ⟦ T ⟧t θ M M
+thm' {T = T} θ θgood M = eq-ind2 (⟦ T ⟧t θ) []-id []-id (thm ⊡s θ θgood v v (λ ()) M)
 
-blah : gksubst ⊡ rtype
-blah ()
+thm'' : ∀ {m T} -> ⊡ , ⊡s ⊢ m ∶ T -> ⟦ T ⟧t ⊡s m m
+thm'' {m} {T} M = thm' {⊡} {m} {T} ⊡s (λ ()) M
 
-thm'' : ∀ {m T} -> ⊡ , ⊡ ⊢ m ∶ T -> ⟦ T ⟧t blah m m
-thm'' {m} {T} M = thm' {⊡} {m} {T} blah (λ ()) M
-
-test : ∀ {m} -> ⊡ , ⊡ ⊢ m ∶ (Π ((v z) ⇒ (v z))) -> (n : _) → (m · n) ≈ n
+test : ∀ {m} -> ⊡ , ⊡s ⊢ m ∶ (Π ((v z) ⇒ (v z))) -> (n : _) → (m · n) ≈ n
 test d n = _*_.fst (thm'' d (λ x x' → (x ≈ n) * (x' ≈ n)) (isgood (λ M1≈M2 N1≈N2 x0 → (≈-trans M1≈M2 (_*_.fst x0)) , (≈-trans N1≈N2 (_*_.snd x0)))) (≈-refl , ≈-refl))
 -- TODO: Literate Agda this file. Then you can accidentally write a paper
 
