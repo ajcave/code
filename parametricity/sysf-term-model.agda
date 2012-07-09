@@ -217,10 +217,6 @@ mutual
  ⟦_⟧t-cong (Π T) θ1 θ2 f = <->-cong-expl (λ R → <->-cong-expl (λ Rgood → ⟦ T ⟧t-cong (θ1 ,,, R) (θ2 ,,, R)
     (extend' (λ x → (θ1 ,,, R) x ≃ (θ2 ,,, R) x) f <->-refl)))
 
-f1 : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ ∘ σ) ,,, R) ≃s ((θ ,,, R) ∘ (σ × z)) 
-f1 σ θ R z = <->-refl
-f1 σ θ R (s y) = <->-refl
-
 f1' : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ ,,, R) ∘ (σ × z)) ≃s ((θ ∘ σ) ,,, R)
 f1' σ θ R z = <->-refl
 f1' σ θ R (s y) = <->-refl
@@ -231,27 +227,8 @@ f1' σ θ R (s y) = <->-refl
 ⟦⟧tv-subst σ (T ⇒ S) θ = <->-cong-impl (λ N1 → <->-cong-impl (λ N2 → (⟦⟧tv-subst σ T θ) <->-cong-→ (⟦⟧tv-subst σ S θ)))
 ⟦⟧tv-subst σ (Π T) θ = <->-cong-expl (λ R → <->-cong-expl (λ Rgood → <->-trans (⟦⟧tv-subst (σ × z) T (θ ,,, R)) (⟦ T ⟧t-cong ((θ ,,, R) ∘ (σ × z)) ((θ ∘ σ) ,,, R) (f1' σ θ R))))
 
-mutual
- ⟦⟧tv-subst-fwd : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
-  -> (⟦ [ σ ]tv T ⟧t θ) M1 M2 -> (⟦ T ⟧t (θ ∘ σ)) M1 M2
- ⟦⟧tv-subst-fwd σ (v y) θ t = t
- ⟦⟧tv-subst-fwd σ (T ⇒ S) θ t = λ x → ⟦⟧tv-subst-fwd σ S θ (t (⟦⟧tv-subst-bwd σ T θ x))
- ⟦⟧tv-subst-fwd σ (Π T) θ t = λ R x → _*_.snd (⟦ T ⟧t-cong ((θ ∘ σ) ,,, R) ((θ ,,, R) ∘ (σ × z)) (f1 σ θ R))
-  (⟦⟧tv-subst-fwd (σ × z) T (θ ,,, R) (t R x))
-
- ⟦⟧tv-subst-bwd : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2} 
-  -> (⟦ T ⟧t (θ ∘ σ)) M1 M2 -> (⟦ [ σ ]tv T ⟧t θ) M1 M2
- ⟦⟧tv-subst-bwd σ (v y) θ t = t
- ⟦⟧tv-subst-bwd σ (T ⇒ S) θ t = λ x → ⟦⟧tv-subst-bwd σ S θ (t (⟦⟧tv-subst-fwd σ T θ x))
- ⟦⟧tv-subst-bwd σ (Π T) θ t = λ R x → ⟦⟧tv-subst-bwd (σ × z) T (θ ,,, R) (_*_.fst (⟦ T ⟧t-cong ((θ ∘ σ) ,,, R) ((θ ,,, R) ∘ (σ × z))
-   (f1 σ θ R)) (t R x))
-
 _•_ : ∀ {Δ1 Δ2} (θ : gksubst Δ2 rtype) (σ : tsubst Δ1 Δ2) -> gksubst Δ1 rtype
 (θ • σ) x = ⟦ σ x ⟧t θ
-
-f2 : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ • σ) ,,, R) ≃s ((θ ,,, R) • (σ ×× (v z)))
-f2 σ θ R z = <->-refl
-f2 σ θ R (s y) = (λ x → ⟦⟧tv-subst-bwd s (σ y) (θ ,,, R) x) , (λ x → ⟦⟧tv-subst-fwd s (σ y) (θ ,,, R) x)
 
 f2' : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ ,,, R) • (σ ×× (v z))) ≃s ((θ • σ) ,,, R)
 f2' σ θ R z = <->-refl
@@ -262,20 +239,6 @@ f2' σ θ R (s y) = ⟦⟧tv-subst s (σ y) (θ ,,, R)
 ⟦⟧t-subst σ (v y) θ = <->-refl
 ⟦⟧t-subst σ (T ⇒ S) θ = <->-cong-impl (λ N1 → <->-cong-impl (λ N2 → (⟦⟧t-subst σ T θ) <->-cong-→ (⟦⟧t-subst σ S θ)))
 ⟦⟧t-subst σ (Π T) θ = <->-cong-expl (λ R → <->-cong-expl (λ Rgood → <->-trans (⟦⟧t-subst (σ ×× v z) T (θ ,,, R)) (⟦ T ⟧t-cong ((θ ,,, R) • (σ ×× v z)) ((θ • σ) ,,, R) (f2' σ θ R))))
-
-
-mutual
- ⟦⟧t-subst-fwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
-  -> (⟦ [ σ ]t T ⟧t θ) M1 M2 -> (⟦ T ⟧t (λ x -> ⟦ σ x ⟧t θ)) M1 M2
- ⟦⟧t-subst-fwd σ (v y) θ t = t
- ⟦⟧t-subst-fwd σ (T ⇒ S) θ t = λ x → ⟦⟧t-subst-fwd σ S θ (t (⟦⟧t-subst-bwd σ T θ x))
- ⟦⟧t-subst-fwd σ (Π T) θ t = λ R x → _*_.snd (⟦ T ⟧t-cong ((θ • σ) ,,, R) ((θ ,,, R) • (σ ×× v z)) (f2 σ θ R)) (⟦⟧t-subst-fwd (σ ×× v z) T (θ ,,, R) (t R x))
-
- ⟦⟧t-subst-bwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2} 
-  -> (⟦ T ⟧t (λ x -> ⟦ σ x ⟧t θ)) M1 M2 -> (⟦ [ σ ]t T ⟧t θ) M1 M2
- ⟦⟧t-subst-bwd σ (v y) θ t = t
- ⟦⟧t-subst-bwd σ (T ⇒ S) θ t = λ x → {!!} --⟦⟧t-subst-bwd σ S θ (t (⟦⟧t-subst-fwd σ T θ x))
- ⟦⟧t-subst-bwd {Δ1} {Δ2} σ (Π T) θ {M1} {M2} t = λ R x → ⟦⟧t-subst-bwd (σ ×× v z) T (θ ,,, R) (_*_.fst (⟦ T ⟧t-cong ((θ • σ) ,,, R) ((θ ,,, R) • (σ ×× v z)) (f2 σ θ R)) (t R x))
 
 ⟦_⟧t-good : ∀ {Δ} (T : tp Δ) (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x)) -> good (⟦ T ⟧t θ)
 ⟦_⟧t-good (v y) θ θgood = θgood y
@@ -290,17 +253,17 @@ thm Γ θ θgood σ1 σ2 σgood (ƛ {T} {S} y) = λ {N1} {N2} x → good.respect
   (≈-trans (β _ _) {!≈-refl'!})
   {!!}
   (thm (Γ ,,, T) θ θgood (σ1 ,,, N1) (σ2 ,,, N2) (extend' (λ x' → ⟦ (Γ ,,, T) x' ⟧t θ ((σ1 ,,, N1) x') ((σ2 ,,, N2) x')) σgood x) y)
-thm Γ θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm ([ s ]tv ∘ Γ) (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 (λ x → ⟦⟧tv-subst-bwd s (Γ x) (θ ,,, R) (σgood x)) M
+thm Γ θ θgood σ1 σ2 σgood (Λ M) = λ R Rgood → thm ([ s ]tv ∘ Γ) (θ ,,, R) (extend' (good ∘ (θ ,,, R)) θgood Rgood) σ1 σ2 (λ x → _*_.snd (⟦⟧tv-subst s (Γ x) (θ ,,, R)) (σgood x)) M
 thm Γ θ θgood σ1 σ2 σgood (M · N) = thm Γ θ θgood σ1 σ2 σgood M (thm Γ θ θgood σ1 σ2 σgood N)
 thm Γ θ θgood σ1 σ2 σgood (_$_ {T} {m} M S) with thm Γ θ θgood σ1 σ2 σgood M (⟦ S ⟧t θ) (⟦ S ⟧t-good θ θgood)
-... | q = ⟦⟧t-subst-bwd (v ,,, S) T θ (_*_.snd (⟦ T ⟧t-cong (λ x -> ⟦ (v ,,, S) x ⟧t θ) (θ ,,, (⟦ S ⟧t θ))
-  (extend' (λ x → ⟦ (v ,,, S) x ⟧t θ ≃ (θ ,,, ⟦ S ⟧t θ) x)
+... | q = _*_.snd (⟦⟧t-subst (v ,,, S) T θ) (_*_.snd (⟦ T ⟧t-cong (λ x -> ⟦ (v ,,, S) x ⟧t θ) (θ ,,, (⟦ S ⟧t θ))
+  (extend' (λ x → (θ • (v ,,, S)) x ≃ (θ ,,, ⟦ S ⟧t θ) x)
            (λ x → <->-refl) <->-refl)) q)
 
 ⊡s : ∀ {A B : Set} -> gksubst (⊡ {B}) A
 ⊡s ()
 
--- TODO: Try generalizing to open term, presheaf style
+-- TODO: Try generalizing to open terms, presheaf style
 thm' : ∀ {Δ M T} (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x))
  -> Δ , ⊡s ⊢ M ∶ T -> ⟦ T ⟧t θ M M
 thm' {T = T} θ θgood M = eq-ind2 (⟦ T ⟧t θ) []-id []-id (thm ⊡s θ θgood v v (λ ()) M)
