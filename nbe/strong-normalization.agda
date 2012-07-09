@@ -222,11 +222,13 @@ sub-ext-id (s y) = refl
 []v-eq-[] σ (ƛ y) = cong ƛ (trans ([]v-eq-[] (ext σ) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl))) 
 
 data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
- _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →₁ M2 -> N1 →₁ N2 -> (M1 · N1) →₁ (M2 · N2)
+ _·l_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} -> M1 →₁ M2 -> (N1 : tm Γ T) -> (M1 · N1) →₁ (M2 · N1)
+ _·r_ : ∀ {T S} (M1 : tm Γ (T ⇝ S)) {N1 N2 : tm Γ T} -> N1 →₁ N2 -> (M1 · N1) →₁ (M1 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →₁ M2 -> (ƛ M1) →₁ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →₁ [ v ,, N ] M
 
 -- Why not just use an explicit substitution calculus?
+{-
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  →*-refl : ∀ {T} {M : tm Γ T} -> M →* M
  →₁*-trans : ∀ {T} {M N P : tm Γ T} -> M →₁ N -> N →* P -> M →* P
@@ -235,7 +237,7 @@ _·₁_ : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2
 p ·₁ q = {!!}
 
 ƛ₁ : ∀ {Γ T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
-ƛ₁ p = {!!}
+ƛ₁ p = {!!} -}
 
 {-
  v : ∀ {T} (x : var Γ T) -> (v x) →* (v x)
@@ -245,15 +247,19 @@ p ·₁ q = {!!}
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
 -}
 
+{-
 →*-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 →* M2
-→*-refl' refl = →*-refl
+→*-refl' refl = →*-refl -}
 
 vsimp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ((v ,, [ σ ]v N) ∘₁ (ext σ)) x ≡ ([ σ ]v ∘₁ (v ,, N)) x
 vsimp σ N z = refl
 vsimp σ N (s y) = refl
 
-→*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
-→*-subst σ p = {!!}
+→₁-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →₁ M2 -> [ σ ]v M1 →₁ [ σ ]v M2
+→₁-subst σ p = {!!}
+
+{-→*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
+→*-subst σ p = {!!} -}
 {-→*-subst σ (v x) = →*-refl
 →*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
 →*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
@@ -305,6 +311,17 @@ data neutral {Γ} : ∀ {T} -> tm Γ T -> Set where
  v : ∀ {T} (x : var Γ T) -> neutral (v x)
  _·_ : ∀ {T S} (M : tm Γ (T ⇝ S)) (N : tm Γ T) -> neutral (M · N)
 
+reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →₁ t') -> reduce Γ T t -> reduce Γ T t'
+reduce-closed {atom A} q (sn-intro y) = y q
+reduce-closed {T ⇝ S} q r = λ Δ σ x x' → reduce-closed (→₁-subst σ q ·l x) (r Δ σ x x')
+
+g : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} (p : neutral t) x {s} (x' : (t · x) →₁ s) {C : Set} (f1 : ∀ t' -> t →₁ t' -> C) (f2 : ∀ x' -> x →₁ x' -> C) -> C
+g p x (y ·l .x) f1 f2 = f1 _ y
+g {Γ} {T'} {S'} {t'} p x (.t' ·r y) f1 f2 = f2 _ y
+g () x (β M .x) f1 f2
+
+
+
 mutual
  reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> sn t
  reify {atom A} t r = r
@@ -313,7 +330,7 @@ mutual
 
  reflect : ∀ {T Γ} (t : tm Γ T) -> neutral t -> (∀ {t'} -> t →₁ t' -> reduce Γ T t') -> reduce Γ T t
  reflect {atom A} t n f = sn-intro f
- reflect {T ⇝ S} t n f = λ Δ σ x red-x → reflect ([ σ ]v t · x) ([ σ ]v t · x) (λ x' → {!!})
+ reflect {T ⇝ S} t n f = λ Δ σ x red-x → reflect ([ σ ]v t · x) ([ σ ]v t · x) (λ x' → g {!!} x x' (λ t' q → {!!}) (λ x0 q → {!!}))
 
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
