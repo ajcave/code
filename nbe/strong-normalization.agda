@@ -369,11 +369,12 @@ thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : 
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
 thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x) (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x)
-   (λ x0 → reduce-closed x0 (abs4 x' (λ {u} x1 → eq-ind (reduce Δ S) {!!} (thm (([ σ' ]v ∘₁ σ) ,, u)
-                                                                             (reduce-ext (λ x2 → reduce-funct σ' (θ x2)) x1) M))))
- where f : ∀ Δ (σ' : vsubst _ Δ) (x : tm Δ T) (x' : reduce Δ T x) -> {!!}
-       f Δ σ' x x' with thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 -> reduce-funct σ' (θ x0)) x') M
-       ... | q = {!!}
+   (λ x0 → reduce-closed x0 (abs4 x' (λ {u} x1 → eq-ind (reduce Δ S)
+   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x2 → trans ([]v-eq-[] σ' (σ x2))
+     (sym ([]nv-funct ((v ,, u) ∘₁ ext σ') s (σ x2)))) refl))
+     (sym ([]-funct   ((v ,, u) ∘₁ ext σ') (sub-ext σ) M)))
+     (sym ([]nv-funct (v ,, u) (ext σ') ([ sub-ext σ ] M))))
+  (thm (([ σ' ]v ∘₁ σ) ,, u) (reduce-ext (λ x2 → reduce-funct σ' (θ x2)) x1) M))))
  {-λ Δ σ' x x' → reduce-closed (one (β _ _)) (eq-ind (reduce Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
