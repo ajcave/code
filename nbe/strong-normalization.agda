@@ -1,4 +1,4 @@
-module weak-normalization where
+module strong-normalization where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -220,12 +220,10 @@ sub-ext-id (s y) = refl
 []v-eq-[] σ (y · y') = cong2 _·_ ([]v-eq-[] σ y) ([]v-eq-[] σ y')
 []v-eq-[] σ (ƛ y) = cong ƛ (trans ([]v-eq-[] (ext σ) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl))) 
 
-
 data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →₁ M2 -> N1 →₁ N2 -> (M1 · N1) →₁ (M2 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →₁ M2 -> (ƛ M1) →₁ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →₁ [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →₁ (ƛ ([ s ]v M · (v z)))
 
 -- Why not just use an explicit substitution calculus?
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
