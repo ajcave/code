@@ -189,6 +189,9 @@ A <-> B = (A -> B) * (B -> A)
 <->-refl : ∀ {A} -> A <-> A
 <->-refl = id , id
 
+<->-cong-→ : ∀ {T1 T2 S1 S2} -> T1 <-> T2 -> S1 <-> S2 -> (T1 → S1) <-> (T2 → S2)
+<->-cong-→ (y , y') (y0 , y1) = (λ x x' → y0 (x (y' x'))) , (λ x x' → y1 (x (y x')))
+
 mutual
  ⟦_⟧t-cong : ∀ {Δ} (T : tp Δ) (θ1 θ2 : gksubst Δ rtype) -> (∀ x M1 M2 -> (θ1 x M1 M2 <-> θ2 x M1 M2)) -> ∀ M1 M2 -> (⟦ T ⟧t θ1 M1 M2 <-> ⟦ T ⟧t θ2 M1 M2)
  ⟦_⟧t-cong (v y) θ1 θ2 f M1 M2 = f y M1 M2
@@ -241,7 +244,7 @@ mutual
  ⟦⟧t-subst-bwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2} 
   -> (⟦ T ⟧t (λ x -> ⟦ σ x ⟧t θ)) M1 M2 -> (⟦ [ σ ]t T ⟧t θ) M1 M2
  ⟦⟧t-subst-bwd σ (v y) θ t = t
- ⟦⟧t-subst-bwd σ (T ⇒ S) θ t = λ x → ⟦⟧t-subst-bwd σ S θ (t (⟦⟧t-subst-fwd σ T θ x))
+ ⟦⟧t-subst-bwd σ (T ⇒ S) θ t = λ x → {!!} --⟦⟧t-subst-bwd σ S θ (t (⟦⟧t-subst-fwd σ T θ x))
  ⟦⟧t-subst-bwd {Δ1} {Δ2} σ (Π T) θ {M1} {M2} t = λ R x → ⟦⟧t-subst-bwd (σ ×× v z) T (θ ,,, R) (_*_.fst (⟦ T ⟧t-cong ((θ • σ) ,,, R) ((θ ,,, R) • (σ ×× v z)) (f2 σ θ R) M1 M2) (t R x))
 
 ⟦_⟧t-good : ∀ {Δ} (T : tp Δ) (θ : gksubst Δ rtype) (θgood : (x : var Δ _) -> good (θ x)) -> good (⟦ T ⟧t θ)
