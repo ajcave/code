@@ -228,11 +228,12 @@ data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →₁ [ v ,, N ] M
 
 -- Why not just use an explicit substitution calculus?
-{-
+
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  →*-refl : ∀ {T} {M : tm Γ T} -> M →* M
  →₁*-trans : ∀ {T} {M N P : tm Γ T} -> M →₁ N -> N →* P -> M →* P
 
+{-
 _·₁_ : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
 p ·₁ q = {!!}
 
@@ -257,6 +258,9 @@ vsimp σ N (s y) = refl
 
 →₁-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →₁ M2 -> [ σ ]v M1 →₁ [ σ ]v M2
 →₁-subst σ p = {!!}
+
+→*-subst : ∀ {Γ1 Γ2 T} (σ : sub Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →₁ M2 -> [ σ ] M1 →* [ σ ] M2
+→*-subst σ p = {!!}
 
 {-→*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
 →*-subst σ p = {!!} -}
@@ -320,6 +324,10 @@ reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →₁ t') -> reduce Γ T t ->
 reduce-closed {atom A} q (sn-intro y) = y q
 reduce-closed {T ⇝ S} q r = λ Δ σ x x' → reduce-closed (→₁-subst σ q ·l x) (r Δ σ x x')
 
+reduce-closed* : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t -> reduce Γ T t'
+reduce-closed* →*-refl r = r
+reduce-closed* (→₁*-trans y y') r = reduce-closed* y' (reduce-closed y r)
+
 g : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} (p : neutral t) x {s} (x' : (t · x) →₁ s) (C : (s' : _) -> Set) (f1 : ∀ t' -> t →₁ t' -> C (t' · x)) (f2 : ∀ x' -> x →₁ x' -> C (t · x')) -> C s
 g p x (y ·l .x) C f1 f2 = f1 _ y
 g {Γ} {T'} {S'} {t'} p x (.t' ·r y) C f1 f2 = f2 _ y
@@ -344,6 +352,15 @@ mutual
   where h : ∀ Δ (σ : vsubst _ Δ) u -> sn u -> reduce _ T u -> reduce _ S ([ σ ]v t · u)
         h Δ σ u (sn-intro y) red-u = reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → g (neutral-funct σ t n) u x (reduce Δ S) (λ t'' p → grar σ p (λ s' → reduce Δ S (s' · u)) (λ t0 p2 → f p2 Δ σ u red-u)) (λ u' p → h Δ σ u' (y p) (reduce-closed p red-u)))
 
+
+mutual
+ abs : ∀ {Γ T S} {M : tm (Γ , T) S} {u} -> sn M -> sn u -> reduce Γ T u -> (∀ {u} -> reduce Γ T u -> reduce Γ S ([ v ,, u ] M)) -> reduce Γ S ((ƛ M) · u)
+ abs sn-m sn-n ru f = reflect _ (_ · _) (λ x → abs2 sn-m sn-n ru f x)
+
+ abs2 : ∀ {Γ T S} {M : tm (Γ , T) S} {u} -> sn M -> sn u -> reduce Γ T u -> (∀ {u} -> reduce Γ T u -> reduce Γ S ([ v ,, u ] M)) -> ∀ {t'} -> ((ƛ M) · u) →₁ t' -> reduce Γ S t'
+ abs2 {Γ} {T} {S} {M} {u} (sn-intro y) sn-n ru f (ƛ y' ·l .u) = abs (y y') sn-n ru (λ x → reduce-closed* (→*-subst (v ,, _) y') (f x))
+ abs2 {Γ} {T} {S} {M} sn-m (sn-intro y') ru f (.(ƛ M) ·r y) = abs sn-m (y' y) (reduce-closed y ru) f
+ abs2 {Γ} {T} {S} {M} {u} sn-m sn-n ru f (β .M .u) = f ru
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
