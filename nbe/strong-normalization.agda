@@ -330,7 +330,9 @@ mutual
 
  reflect : ∀ {T Γ} (t : tm Γ T) -> neutral t -> (∀ {t'} -> t →₁ t' -> reduce Γ T t') -> reduce Γ T t
  reflect {atom A} t n f = sn-intro f
- reflect {T ⇝ S} t n f = λ Δ σ x red-x → reflect ([ σ ]v t · x) ([ σ ]v t · x) (λ x' → g {!!} x x' (λ t' q → {!!}) (λ x0 q → {!!}))
+ reflect {T ⇝ S} t n f = λ Δ σ u red-u → reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → reduce-closed x (h Δ σ u (reify u red-u) red-u))
+  where h : ∀ Δ (σ : vsubst _ Δ) u -> sn u -> reduce _ T u -> reduce _ S ([ σ ]v t · u)
+        h Δ σ u (sn-intro y) red-u = {!!}
 
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
