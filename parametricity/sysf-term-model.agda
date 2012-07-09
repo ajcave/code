@@ -149,19 +149,6 @@ data _≈_ {Γ} : tm Γ -> tm Γ -> Set where
 ≈-refl {M = M · N} = ≈-refl · ≈-refl
 ≈-refl {M = ƛ M} = ƛ ≈-refl
 
-{-data tpctx (Δ : lctx) : (γ : ctx unit) -> Set where
- ⊡ : tpctx Δ ⊡
- _,_ : ∀ {γ} (Γ : tpctx Δ γ) -> (T : tp Δ) -> tpctx Δ (γ , tt)
-
-lookup : ∀ {Δ} {γ : ctx unit} -> (Γ : tpctx Δ γ) -> var γ tt -> tp Δ
-lookup ⊡ ()
-lookup (Γ , T) z = T
-lookup (Γ , T) (s y) = lookup Γ y
-
-tpmap : ∀ {Δ1 Δ2 : lctx} {γ : ctx unit} -> (f : tp Δ1 -> tp Δ2) -> tpctx Δ1 γ  -> tpctx Δ2 γ
-tpmap f ⊡ = ⊡
-tpmap f (Γ , T) = (tpmap f Γ) , (f T) -}
-
 data _,_⊢_∶_ (Δ : lctx) {γ : ctx unit} (Γ : gksubst γ (tp Δ)) : tm γ -> tp Δ -> Set where
  v : (x : var γ _) -> Δ , Γ ⊢ (v x) ∶ (Γ x)
  ƛ : ∀ {T S M} -> Δ , (Γ ,,, T) ⊢ M ∶ S -> Δ , Γ ⊢ ƛ M ∶ (T ⇒ S)
