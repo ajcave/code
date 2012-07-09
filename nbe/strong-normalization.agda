@@ -311,6 +311,11 @@ data neutral {Γ} : ∀ {T} -> tm Γ T -> Set where
  v : ∀ {T} (x : var Γ T) -> neutral (v x)
  _·_ : ∀ {T S} (M : tm Γ (T ⇝ S)) (N : tm Γ T) -> neutral (M · N)
 
+neutral-funct : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) (t : tm Γ1 T) -> neutral t -> neutral ([ σ ]v t)
+neutral-funct σ (v y) r = v (σ y)
+neutral-funct σ (y · y') r = [ σ ]v y · [ σ ]v y'
+neutral-funct σ (ƛ y) ()
+
 reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →₁ t') -> reduce Γ T t -> reduce Γ T t'
 reduce-closed {atom A} q (sn-intro y) = y q
 reduce-closed {T ⇝ S} q r = λ Δ σ x x' → reduce-closed (→₁-subst σ q ·l x) (r Δ σ x x')
@@ -320,6 +325,8 @@ g p x (y ·l .x) C f1 f2 = f1 _ y
 g {Γ} {T'} {S'} {t'} p x (.t' ·r y) C f1 f2 = f2 _ y
 g () x (β M .x) C f1 f2
 
+grar : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {t : tm Γ1 T} {t'} -> [ σ ]v t →₁ t' -> (C : (t'' : _) -> Set) -> (∀ t'' -> t →₁ t'' -> C ([ σ ]v t'')) -> C t'
+grar σ p C f = {!!}
 
 
 mutual
@@ -332,7 +339,7 @@ mutual
  reflect {atom A} t n f = sn-intro f
  reflect {T ⇝ S} t n f = λ Δ σ u red-u → h Δ σ u (reify u red-u) red-u
   where h : ∀ Δ (σ : vsubst _ Δ) u -> sn u -> reduce _ T u -> reduce _ S ([ σ ]v t · u)
-        h Δ σ u (sn-intro y) red-u = reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → g {!!} u x (reduce Δ S) (λ t'' p → {!!}) (λ u' p → h Δ σ u' (y p) (reduce-closed p red-u)))
+        h Δ σ u (sn-intro y) red-u = reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → g (neutral-funct σ t n) u x (reduce Δ S) (λ t'' p → grar σ p (λ s' → reduce Δ S (s' · u)) (λ t0 p2 → f p2 Δ σ u red-u)) (λ u' p → h Δ σ u' (y p) (reduce-closed p red-u)))
 
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
