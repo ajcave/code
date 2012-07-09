@@ -141,6 +141,11 @@ sub-ext σ (s y) = [ s ]v (σ y)
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
 
+[]v-cong : ∀ {Γ1 Γ2} (σ1 σ2 : gvsubst Γ1 Γ2) (p : (x : var Γ1 tt) -> σ1 x ≡ σ2 x) (M : tm Γ1) -> [ σ1 ]v M ≡ [ σ2 ]v M
+[]v-cong σ1 σ2 p (v y) = cong v (p y)
+[]v-cong σ1 σ2 p (ƛ y) = cong ƛ ([]v-cong (ext σ1) (ext σ2) (extend' (λ x → ext σ1 x ≡ ext σ2 x) (λ x → cong s (p x)) refl) y)
+[]v-cong σ1 σ2 p (y · y') = cong2 _·_ ([]v-cong σ1 σ2 p y) ([]v-cong σ1 σ2 p y')
+
 ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : gvsubst Γ2 Γ3) (σ2 : gvsubst Γ1 Γ2) (x : var (Γ1 , U) S) -> ((ext σ1) ∘ (ext σ2)) x ≡ ext (σ1 ∘ σ2) x
 ext-funct σ1 σ2 z = refl
 ext-funct σ1 σ2 (s y) = refl
@@ -148,7 +153,7 @@ ext-funct σ1 σ2 (s y) = refl
 []v-funct : ∀ {Γ1 Γ2 Γ3} (σ1 : gvsubst Γ2 Γ3) (σ2 : gvsubst Γ1 Γ2) (R : tm Γ1)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
 []v-funct σ1 σ2 (v y) = refl
-[]v-funct σ1 σ2 (ƛ y) = {!!}
+[]v-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]v-funct (ext σ1) (ext σ2) y) {!!})
 []v-funct σ1 σ2 (y · y') = cong2 _·_ ([]v-funct σ1 σ2 y) ([]v-funct σ1 σ2 y')
 
 []vn-funct : ∀ {Γ1 Γ2 Γ3} (σ1 : gvsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1)
