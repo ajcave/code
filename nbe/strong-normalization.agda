@@ -76,6 +76,7 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
 vsubst : ctx -> ctx -> Set 
 vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
 
+{-
 mutual 
  data rtm (Γ : ctx) : (T : tp) -> Set where
   v : ∀ {T} -> var Γ T -> rtm Γ T
@@ -83,11 +84,7 @@ mutual
  data ntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
   neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
-
-
-{-sem : (Γ : ctx) -> (T : tp) -> Set
-sem Γ (atom A) = ntm Γ (atom A)
-sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S -}
+-}
 
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
@@ -99,6 +96,7 @@ ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
 
+{-
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
  rappSubst σ (v y) = v (σ y)
@@ -106,7 +104,7 @@ mutual
  nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
  nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
  nappSubst σ (neut R) = neut (rappSubst σ R)
-
+-}
 
 var-dom-eq' : ∀ {A : tp -> Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A U) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
 var-dom-eq' f g p q z = q
@@ -119,6 +117,7 @@ ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) 
 ext-funct σ1 σ2 z = refl
 ext-funct σ1 σ2 (s y) = refl
 
+{-
 mutual
  rappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : rtm Γ1 S)
   -> rappSubst σ1 (rappSubst σ2 R) ≡ rappSubst (σ1 ∘ σ2) R
@@ -128,6 +127,7 @@ mutual
   -> nappSubst σ1 (nappSubst σ2 N) ≡ nappSubst (σ1 ∘ σ2) N
  nappSubst-funct σ1 σ2 (ƛ N) = cong ƛ (trans (nappSubst-funct (ext σ1) (ext σ2) N) (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x' → ext-funct σ1 σ2 x')))))
  nappSubst-funct σ1 σ2 (neut R) = cong neut (rappSubst-funct σ1 σ2 R)
+-}
 
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
@@ -136,13 +136,14 @@ ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> ext id x ≡ x
 ext-id z = refl
 ext-id (s y) = refl
 
+{-
 mutual
  rappSubst-id : ∀ {Γ S} (R : rtm Γ S) -> rappSubst id R ≡ R
  rappSubst-id (v y) = refl
  rappSubst-id (R · N) = cong2 _·_ (rappSubst-id R) (nappSubst-id N)
  nappSubst-id : ∀ {Γ S} (N : ntm Γ S) -> nappSubst id N ≡ N
  nappSubst-id (ƛ N) = cong ƛ (trans (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x → ext-id x)))) (nappSubst-id N))
- nappSubst-id (neut R) = cong neut (rappSubst-id R)
+ nappSubst-id (neut R) = cong neut (rappSubst-id R) -}
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn = s
@@ -232,10 +233,10 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  →*-trans : ∀ {T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
 
 _·₁_ : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
-p ·₁ q = ?
+p ·₁ q = {!!}
 
 ƛ₁ : ∀ {Γ T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
-ƛ₁ p = ?
+ƛ₁ p = {!!}
 
 {-
  v : ∀ {T} (x : var Γ T) -> (v x) →* (v x)
@@ -253,7 +254,7 @@ vsimp σ N z = refl
 vsimp σ N (s y) = refl
 
 →*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
-→*-subst σ p = ?
+→*-subst σ p = {!!}
 {-→*-subst σ (v x) = →*-refl
 →*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
 →*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
@@ -261,6 +262,7 @@ vsimp σ N (s y) = refl
 →*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
 →*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y') -}
 
+{-
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
  ninj (ƛ M) = ƛ (ninj M)
@@ -277,16 +279,19 @@ mutual
  []v-comm-rinj σ (v y) = refl
  []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
 
-halts : ∀ {Γ T} (t : tm Γ T) -> Set
-halts {Γ} {T} t = Σ (λ (n : ntm Γ T) → t →* ninj n)
+-}
+
+data sn {Γ T} (M : tm Γ T) : Set where
+ sn-intro : (∀ {M'} -> M →₁ M' -> sn M') -> sn M 
 
 reduce : ∀ Γ T -> tm Γ T -> Set
-reduce Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
+reduce Γ (atom A) t = sn t
 reduce Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T x -> reduce Δ S (([ σ ]v t) · x)
 
-reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
-reduce-closed {atom A} p (N , q) = N , (→*-trans p q)
+{-reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
+reduce-closed {atom A} p q = {!!}
 reduce-closed {T ⇝ S} p x = λ Δ σ x' x0 → reduce-closed (→*-subst σ p ·₁ →*-refl) (x Δ σ x' x0)
+-}
 
 reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) {T} {t : tm Δ T} (w : reduce Δ T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce Δ U ((σ ,, t) x)
@@ -294,19 +299,21 @@ reduce-ext θ w z = w
 reduce-ext θ w (s y) = θ y
 
 reduce-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : reduce Γ T t) -> reduce Δ T ([ σ ]v t)
-reduce-funct {atom A} σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
+reduce-funct {atom A} σ q = {!!} --(nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
 reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = λ Δ σ' x x' → reduce-closed (one (β _ _)) (eq-ind (reduce Δ _)
+thm σ θ (ƛ M) = {!!}
+ {-λ Δ σ' x x' → reduce-closed (one (β _ _)) (eq-ind (reduce Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
     (sym ([]-funct   ((v ,, x) ∘₁ ext σ') (sub-ext σ) M)))
     (sym ([]nv-funct  (v ,, x) (ext σ') ([ sub-ext σ ] M))))
-  (thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 → reduce-funct σ' (θ x0)) x') M))
+  (thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 → reduce-funct σ' (θ x0)) x') M)) -}
 
+{-
 mutual
  reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
  reflect {atom A} r = (neut r) , →*-refl
@@ -315,7 +322,8 @@ mutual
  reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
  reify {atom A} t p = p
  reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
- reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans ? (ƛ₁ q))
+ reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans {!!} (ƛ₁ q))
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
+-}
