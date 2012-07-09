@@ -253,6 +253,17 @@ f2 : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ • 
 f2 σ θ R z = <->-refl
 f2 σ θ R (s y) = (λ x → ⟦⟧tv-subst-bwd s (σ y) (θ ,,, R) x) , (λ x → ⟦⟧tv-subst-fwd s (σ y) (θ ,,, R) x)
 
+f2' : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ ,,, R) • (σ ×× (v z))) ≃s ((θ • σ) ,,, R)
+f2' σ θ R z = <->-refl
+f2' σ θ R (s y) = ⟦⟧tv-subst s (σ y) (θ ,,, R)
+
+⟦⟧t-subst : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype)
+  -> (⟦ [ σ ]t T ⟧t θ) ≃ (⟦ T ⟧t (θ • σ))
+⟦⟧t-subst σ (v y) θ = <->-refl
+⟦⟧t-subst σ (T ⇒ S) θ = <->-cong-impl (λ N1 → <->-cong-impl (λ N2 → (⟦⟧t-subst σ T θ) <->-cong-→ (⟦⟧t-subst σ S θ)))
+⟦⟧t-subst σ (Π T) θ = <->-cong-expl (λ R → <->-cong-expl (λ Rgood → <->-trans (⟦⟧t-subst (σ ×× v z) T (θ ,,, R)) (⟦ T ⟧t-cong ((θ ,,, R) • (σ ×× v z)) ((θ • σ) ,,, R) (f2' σ θ R))))
+
+
 mutual
  ⟦⟧t-subst-fwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
   -> (⟦ [ σ ]t T ⟧t θ) M1 M2 -> (⟦ T ⟧t (λ x -> ⟦ σ x ⟧t θ)) M1 M2
