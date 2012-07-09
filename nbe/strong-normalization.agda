@@ -315,10 +315,10 @@ reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →₁ t') -> reduce Γ T t ->
 reduce-closed {atom A} q (sn-intro y) = y q
 reduce-closed {T ⇝ S} q r = λ Δ σ x x' → reduce-closed (→₁-subst σ q ·l x) (r Δ σ x x')
 
-g : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} (p : neutral t) x {s} (x' : (t · x) →₁ s) {C : Set} (f1 : ∀ t' -> t →₁ t' -> C) (f2 : ∀ x' -> x →₁ x' -> C) -> C
-g p x (y ·l .x) f1 f2 = f1 _ y
-g {Γ} {T'} {S'} {t'} p x (.t' ·r y) f1 f2 = f2 _ y
-g () x (β M .x) f1 f2
+g : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} (p : neutral t) x {s} (x' : (t · x) →₁ s) (C : (s' : _) -> Set) (f1 : ∀ t' -> t →₁ t' -> C (t' · x)) (f2 : ∀ x' -> x →₁ x' -> C (t · x')) -> C s
+g p x (y ·l .x) C f1 f2 = f1 _ y
+g {Γ} {T'} {S'} {t'} p x (.t' ·r y) C f1 f2 = f2 _ y
+g () x (β M .x) C f1 f2
 
 
 
@@ -330,9 +330,9 @@ mutual
 
  reflect : ∀ {T Γ} (t : tm Γ T) -> neutral t -> (∀ {t'} -> t →₁ t' -> reduce Γ T t') -> reduce Γ T t
  reflect {atom A} t n f = sn-intro f
- reflect {T ⇝ S} t n f = λ Δ σ u red-u → reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → reduce-closed x (h Δ σ u (reify u red-u) red-u))
+ reflect {T ⇝ S} t n f = λ Δ σ u red-u → h Δ σ u (reify u red-u) red-u
   where h : ∀ Δ (σ : vsubst _ Δ) u -> sn u -> reduce _ T u -> reduce _ S ([ σ ]v t · u)
-        h Δ σ u (sn-intro y) red-u = {!!}
+        h Δ σ u (sn-intro y) red-u = reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → g {!!} u x (reduce Δ S) (λ t'' p → {!!}) (λ u' p → h Δ σ u' (y p) (reduce-closed p red-u)))
 
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
