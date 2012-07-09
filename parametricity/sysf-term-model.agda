@@ -203,6 +203,19 @@ mutual
                f (λ M3 M4 → id , id)) M1 M2) (x R x')) 
 
 mutual
+ ⟦⟧tv-subst-fwd : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
+  -> (⟦ [ σ ]tv T ⟧t θ) M1 M2 -> (⟦ T ⟧t (θ ∘ σ)) M1 M2
+ ⟦⟧tv-subst-fwd σ (v y) θ t = {!!}
+ ⟦⟧tv-subst-fwd σ (T ⇒ S) θ t = {!!}
+ ⟦⟧tv-subst-fwd σ (Π T) θ t = {!!}
+
+ ⟦⟧tv-subst-bwd : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2} 
+  -> (⟦ T ⟧t (θ ∘ σ)) M1 M2 -> (⟦ [ σ ]tv T ⟧t θ) M1 M2
+ ⟦⟧tv-subst-bwd σ (v y) θ t = ?
+ ⟦⟧tv-subst-bwd σ (T ⇒ S) θ t = ?
+ ⟦⟧tv-subst-bwd σ (Π T) θ t = ?
+
+mutual
  ⟦⟧t-subst-fwd : ∀ {Δ1 Δ2} (σ : tsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
   -> (⟦ [ σ ]t T ⟧t θ) M1 M2 -> (⟦ T ⟧t (λ x -> ⟦ σ x ⟧t θ)) M1 M2
  ⟦⟧t-subst-fwd σ (v y) θ t = t
