@@ -344,10 +344,12 @@ mutual
   where h : ∀ Δ (σ : vsubst _ Δ) u -> sn u -> reduce _ T u -> reduce _ S ([ σ ]v t · u)
         h Δ σ u (sn-intro y) red-u = reflect ([ σ ]v t · u) ([ σ ]v t · u) (λ x → g (neutral-funct σ t n) u x (reduce Δ S) (λ t'' p → grar σ p (λ s' → reduce Δ S (s' · u)) (λ t0 p2 → f p2 Δ σ u red-u)) (λ u' p → h Δ σ u' (y p) (reduce-closed p red-u)))
 
+
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → {!!}
+thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x) (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x)
+   (λ x0 → {!!})
  where f : ∀ Δ (σ' : vsubst _ Δ) (x : tm Δ T) (x' : reduce Δ T x) -> {!!}
        f Δ σ' x x' with thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 -> reduce-funct σ' (θ x0)) x') M
        ... | q = {!!}
