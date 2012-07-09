@@ -189,6 +189,9 @@ A <-> B = (A -> B) * (B -> A)
 <->-refl : ∀ {A} -> A <-> A
 <->-refl = id , id
 
+<->-trans : ∀ {A B C} -> A <-> B -> B <-> C -> A <-> C
+<->-trans (y , y') (y0 , y1) = (λ x → y0 (y x)) , (λ x → y' (y1 x))
+
 _<->-cong-→_ : ∀ {T1 T2 S1 S2} -> T1 <-> T2 -> S1 <-> S2 -> (T1 → S1) <-> (T2 → S2)
 _<->-cong-→_ (y , y') (y0 , y1) = (λ x x' → y0 (x (y' x'))) , (λ x x' → y1 (x (y x')))
 
@@ -218,14 +221,15 @@ f1 : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ ∘
 f1 σ θ R z = <->-refl
 f1 σ θ R (s y) = <->-refl
 
+f1' : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) (θ : gksubst Δ2 rtype) R -> ((θ ,,, R) ∘ (σ × z)) ≃s ((θ ∘ σ) ,,, R)
+f1' σ θ R z = <->-refl
+f1' σ θ R (s y) = <->-refl
+
 ⟦⟧tv-subst : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype)
   -> (⟦ [ σ ]tv T ⟧t θ) ≃ (⟦ T ⟧t (θ ∘ σ))
 ⟦⟧tv-subst σ (v y) θ = <->-refl
 ⟦⟧tv-subst σ (T ⇒ S) θ = <->-cong-impl (λ N1 → <->-cong-impl (λ N2 → (⟦⟧tv-subst σ T θ) <->-cong-→ (⟦⟧tv-subst σ S θ)))
-⟦⟧tv-subst σ (Π T) θ = <->-cong-expl (λ R → <->-cong-expl (λ Rgood → {!!}))
- where f : ∀ R -> good R -> {!!}
-       f R Rgood with (⟦ T ⟧t-cong ((θ ∘ σ) ,,, R) ((θ ,,, R) ∘ (σ × z)) (f1 σ θ R))
-       ... | q = {!!}
+⟦⟧tv-subst σ (Π T) θ = <->-cong-expl (λ R → <->-cong-expl (λ Rgood → <->-trans (⟦⟧tv-subst (σ × z) T (θ ,,, R)) (⟦ T ⟧t-cong ((θ ,,, R) ∘ (σ × z)) ((θ ∘ σ) ,,, R) (f1' σ θ R))))
 
 mutual
  ⟦⟧tv-subst-fwd : ∀ {Δ1 Δ2} (σ : tvsubst Δ1 Δ2) T (θ : gksubst Δ2 rtype) {M1 M2}
