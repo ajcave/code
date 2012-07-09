@@ -328,12 +328,13 @@ g () x (β M .x) C f1 f2
 grar : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {t : tm Γ1 T} {t'} -> [ σ ]v t →₁ t' -> (C : (t'' : _) -> Set) -> (∀ t'' -> t →₁ t'' -> C ([ σ ]v t'')) -> C t'
 grar σ p C f = {!!}
 
+sn-app : ∀ {Γ T S} (t : tm Γ (T ⇝ S)) -> sn ([ s ]v t · v z) -> sn t
+sn-app t (sn-intro y) = sn-intro (λ x → sn-app _ (y (→₁-subst s x ·l (v z))))
 
 mutual
  reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> sn t
  reify {atom A} t r = r
- reify {T ⇝ S} t r with reify ([ s ]v t · v z) (r _ s (v z) (reflect (v z) (v z) (λ ())))
- ... | q = {!!}
+ reify {T ⇝ S} t r = sn-app t (reify ([ s ]v t · v z) (r _ s (v z) (reflect (v z) (v z) (λ ()))))
 
  reflect : ∀ {T Γ} (t : tm Γ T) -> neutral t -> (∀ {t'} -> t →₁ t' -> reduce Γ T t') -> reduce Γ T t
  reflect {atom A} t n f = sn-intro f
