@@ -217,47 +217,13 @@ sub-ext-id (s y) = refl
 []-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
 
 []v-eq-[] : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (t : tm Γ T) -> [ σ ]v t ≡ [ v ∘₁ σ ] t
-[]v-eq-[] σ (v y) = refl
-[]v-eq-[] σ (y · y') = cong2 _·_ ([]v-eq-[] σ y) ([]v-eq-[] σ y')
-[]v-eq-[] σ (ƛ y) = cong ƛ (trans ([]v-eq-[] (ext σ) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl))) 
+[]v-eq-[] σ M = trans (sym []-id) ([]nv-funct v σ M)
 
 data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  _·l_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} -> M1 →₁ M2 -> (N1 : tm Γ T) -> (M1 · N1) →₁ (M2 · N1)
  _·r_ : ∀ {T S} (M1 : tm Γ (T ⇝ S)) {N1 N2 : tm Γ T} -> N1 →₁ N2 -> (M1 · N1) →₁ (M1 · N2)
  ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →₁ M2 -> (ƛ M1) →₁ (ƛ M2)
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →₁ [ v ,, N ] M
-
--- Why not just use an explicit substitution calculus?
-{-
-data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
- →*-refl : ∀ {T} {M : tm Γ T} -> M →* M
- →₁*-trans : ∀ {T} {M N P : tm Γ T} -> M →₁ N -> N →* P -> M →* P
-
-→*-trans : ∀ {Γ T} {M N P : tm Γ T} -> M →₁ N -> N →* P -> M →* P
-→*-trans p q = {!!}
-
-
-_·₁_ : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
-p ·₁ q = {!!}
-
-ƛ₁ : ∀ {Γ T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
-ƛ₁ p = {!!}
--}
-{-
- v : ∀ {T} (x : var Γ T) -> (v x) →* (v x)
- _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
- ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →* M2 -> (ƛ M1) →* (ƛ M2)
- β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →* [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
--}
-
-{-
-→*-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 →* M2
-→*-refl' refl = →*-refl -}
-
-vsimp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ((v ,, [ σ ]v N) ∘₁ (ext σ)) x ≡ ([ σ ]v ∘₁ (v ,, N)) x
-vsimp σ N z = refl
-vsimp σ N (s y) = refl
 
 →₁≡-trans : ∀ {Γ T} {M N P : tm Γ T} -> M →₁ N -> N ≡ P -> M →₁ P
 →₁≡-trans p refl = p
@@ -274,51 +240,12 @@ vsimp σ N (s y) = refl
 →₁-subst2 σ (ƛ y) = ƛ (→₁-subst2 (sub-ext σ) y)
 →₁-subst2 σ (β M N) = →₁≡-trans (β _ _) (trans ([]-funct (v ,, [ σ ] N) (sub-ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x → trans ([]nv-funct (v ,, [ σ ] N) s (σ x)) []-id) refl)) (sym ([]-funct σ (v ,, N) M))))
 
-{-→*-subst : ∀ {Γ1 Γ2 T} (σ : sub Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →₁ M2 -> [ σ ] M1 →* [ σ ] M2
-→*-subst σ (y ·l N1) = (→*-subst σ y) ·₁ →*-refl
-→*-subst σ (M1 ·r y) = →*-refl ·₁ (→*-subst σ y)
-→*-subst σ (ƛ y) = ƛ₁ (→*-subst (sub-ext σ) y)
-→*-subst σ (β M N) = →₁*-trans (→₁≡-trans (β _ _) {!!}) →*-refl -}
-
-{-→*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
-→*-subst σ p = {!!} -}
-{-→*-subst σ (v x) = →*-refl
-→*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
-→*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
-→*-subst σ (β M N) = →*-trans (β _ _) (→*-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
-→*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
-→*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y') -}
-
-{-
-mutual
- ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
- ninj (ƛ M) = ƛ (ninj M)
- ninj (neut R) = rinj R
- rinj : ∀ {Γ T} -> rtm Γ T -> tm Γ T
- rinj (v x) = v x
- rinj (R · N) = (rinj R) · (ninj N)
-
-mutual
- []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
- []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
- []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
- []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
- []v-comm-rinj σ (v y) = refl
- []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
-
--}
-
 data sn {Γ T} (M : tm Γ T) : Set where
  sn-intro : (∀ {M'} -> M →₁ M' -> sn M') -> sn M 
 
 reduce : ∀ Γ T -> tm Γ T -> Set
 reduce Γ (atom A) t = sn t
 reduce Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T x -> reduce Δ S (([ σ ]v t) · x)
-
-{-reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
-reduce-closed {atom A} p q = {!!}
-reduce-closed {T ⇝ S} p x = λ Δ σ x' x0 → reduce-closed (→*-subst σ p ·₁ →*-refl) (x Δ σ x' x0)
--}
 
 reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) {T} {t : tm Δ T} (w : reduce Δ T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce Δ U ((σ ,, t) x)
@@ -347,7 +274,6 @@ data neutral {Γ} : ∀ {T} -> tm Γ T -> Set where
  v : ∀ {T} (x : var Γ T) -> neutral (v x)
  _·_ : ∀ {T S} (M : tm Γ (T ⇝ S)) (N : tm Γ T) -> neutral (M · N)
 
-
 neutral-funct : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) (t : tm Γ1 T) -> neutral t -> neutral ([ σ ]v t)
 neutral-funct σ (v y) r = v (σ y)
 neutral-funct σ (y · y') r = [ σ ]v y · [ σ ]v y'
@@ -357,11 +283,6 @@ reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →₁ t') -> reduce Γ T t ->
 reduce-closed {atom A} q (sn-intro y) = y q
 reduce-closed {T ⇝ S} q r = λ Δ σ x x' → reduce-closed (→₁-subst σ q ·l x) (r Δ σ x x')
 
-{-
-reduce-closed* : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t -> reduce Γ T t'
-reduce-closed* →*-refl r = r
-reduce-closed* (→₁*-trans y y') r = reduce-closed* y' (reduce-closed y r)
--}
 g : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} (p : neutral t) x {s} (x' : (t · x) →₁ s) (C : (s' : _) -> Set) (f1 : ∀ t' -> t →₁ t' -> C (t' · x)) (f2 : ∀ x' -> x →₁ x' -> C (t · x')) -> C s
 g p x (y ·l .x) C f1 f2 = f1 _ y
 g {Γ} {T'} {S'} {t'} p x (.t' ·r y) C f1 f2 = f2 _ y
