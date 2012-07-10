@@ -364,10 +364,14 @@ zah2 σ t u p = {!!}
 zah4 : ∀ {Γ S T} (t u : tm Γ T) -> ([_]v {Γ} {Γ , S} s) t →* [ s ]v u -> t →* u
 zah4 t u = {!!}  
 
+zah5 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Δ T) (r : tm Γ T) -> rinj R ≡ [ σ ]v r -> Σ (λ R' -> r ≡ rinj R')
+zah5 σ R r p = {!!}
+
 zah : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} {N} -> ((([ s ]v t) · v z) →* (ninj N))  -> halts t
 zah p with blah p
 zah {N = (neut (R · N))} p | inl y y' with zah2 s _ (rinj R) y
-zah {N = neut (R · N)} p | inl y y0 | r' , y' = {!!} --neut R , y
+zah {N = neut (R · N)} p | inl y y0 | r' , y' with zah5 s R r' y'
+zah {N = neut (R · N)} p | inl y0 y1 | .(rinj r'') , y' | r'' , refl = (neut r'') , (zah4 _ (rinj r'') (→*≡-trans y0 y'))
 zah {N = N} p | inr y y' y0 with lem z _ y'
 zah p | inr y y' y0 | refl with zah2 s _ _ y
 zah p | inr y y1 y2 | refl | v y' , ()
