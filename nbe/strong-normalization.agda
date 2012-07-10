@@ -256,8 +256,14 @@ vsimp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U)
 vsimp σ N z = refl
 vsimp σ N (s y) = refl
 
+→₁≡-trans : ∀ {Γ T} {M N P : tm Γ T} -> M →₁ N -> N ≡ P -> M →₁ P
+→₁≡-trans p refl = p
+
 →₁-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →₁ M2 -> [ σ ]v M1 →₁ [ σ ]v M2
-→₁-subst σ p = {!!}
+→₁-subst σ (y ·l N1) = →₁-subst σ y ·l [ σ ]v N1
+→₁-subst σ (M1 ·r y) = [ σ ]v M1 ·r →₁-subst σ y
+→₁-subst σ (ƛ y) = ƛ (→₁-subst (ext σ) y)
+→₁-subst σ (β M N) = →₁≡-trans (β _ _) (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x → refl) refl)) (sym ([]vn-funct σ (v ,, N) M))))
 
 →*-subst : ∀ {Γ1 Γ2 T} (σ : sub Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →₁ M2 -> [ σ ] M1 →* [ σ ] M2
 →*-subst σ p = {!!}
