@@ -329,11 +329,11 @@ grar : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {t : tm Γ1 T} {t'} -> [ σ ]v t �
 grar σ {v y} () C f
 grar σ {v y · y'} (() ·l .([ σ ]v y')) C f
 grar σ {v y · y'} (.(v (σ y)) ·r y0) C f = grar σ {y'} y0 (λ t'' → C (v (σ y) · t'')) (λ t'' x → f (v y · t'') ((v y) ·r x))
-grar σ {(y · y') · y0} (y1 ·l .([ σ ]v y0)) C f = {!!}
+grar σ {(y · y') · y0} (y1 ·l .([ σ ]v y0)) C f = grar σ {y · y'} y1 (λ t'' → C (t'' · [ σ ]v y0)) (λ t'' x → f (t'' · y0) (x ·l y0))
 grar σ {(y · y') · y0} (.([ σ ]v y · [ σ ]v y') ·r y1) C f = grar σ {y0} y1 (λ t'' → C (([ σ ]v y · [ σ ]v y') · t'')) (λ t'' x → f ((y · y') · t'') ((y · y') ·r x))
-grar σ {ƛ y · y'} (y0 ·l .([ σ ]v y')) C f = ?
-grar σ {ƛ y · y'} (.(ƛ ([ ext σ ]v y)) ·r y0) C f = ?
-grar σ {ƛ y · y'} (β .([ ext σ ]v y) .([ σ ]v y')) C f = ?
+grar σ {ƛ y · y'} (y0 ·l .([ σ ]v y')) C f = {!!}
+grar σ {ƛ y · y'} (.(ƛ ([ ext σ ]v y)) ·r y0) C f = {!!}
+grar σ {ƛ y · y'} (β .([ ext σ ]v y) .([ σ ]v y')) C f = {!!}
 grar σ {ƛ y} p C f = {!!}
 
 sn-vsubst : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : sn t) -> sn ([ σ ]v t)
