@@ -361,8 +361,9 @@ lem x u p = {!!}
 zah2 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (t : tm Γ T) u -> [ σ ]v t →* u -> Σ (λ u' -> u ≡ [ σ ]v u')
 zah2 σ t u p = {!!}
 
+-- Seems easier with multi-step built from one-step. Same with lem above
 zah4 : ∀ {Γ S T} (t u : tm Γ T) -> ([_]v {Γ} {Γ , S} s) t →* [ s ]v u -> t →* u
-zah4 t u = {!!}  
+zah4 t u p = {!t!}  
 
 zah8 : ∀ {Γ T1 T2 S} {M1 : tm Γ (T1 ⇝ S)} {M2 : tm Γ (T2 ⇝ S)} {N1} {N2} -> _≡_ {tm Γ S} (M1 · N1) (M2 · N2) -> T1 ≡ T2
 zah8 refl = refl
@@ -380,7 +381,7 @@ mutual
  zah5 σ (v y) (y' · y0) ()
  zah5 σ (y · y') (y0 · y1) p with zah8 p
  zah5 σ (_·_ {T} y y') (_·_ {.T} y0 y1) p | refl with zah5 σ y y0 (zah6 p) | zah9 σ y' y1 (zah7 p)
- ... | (R' , q1) | (N' , q2) = {!_!} , {!!}
+ ... | (R' , q1) | (N' , q2) = (R' · N') , cong2 _·_ q1 q2
  zah5 σ (v y) (ƛ y') ()
  zah5 σ (y · y') (ƛ y0) ()
 
