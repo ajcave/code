@@ -311,32 +311,32 @@ mutual
 halts : ∀ {Γ T} (t : tm Γ T) -> Set
 halts {Γ} {T} t = Σ (λ (n : ntm Γ T) → t →* ninj n)
 
-wn : ∀ Γ T -> tm Γ T -> Set
-wn Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
-wn Γ (T ⇝ S) t = (∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> wn Δ T x -> wn Δ S (([ σ ]v t) · x))
+reduce : ∀ Γ T -> tm Γ T -> Set
+reduce Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
+reduce Γ (T ⇝ S) t = (∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T x -> reduce Δ S (([ σ ]v t) · x))
 
-wn-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> wn Γ T t' -> wn Γ T t
-wn-closed {atom A} p (N , q) = N , (→*-trans p q)
-wn-closed {T ⇝ S} p x =  λ Δ σ x' x0 → wn-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
+reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
+reduce-closed {atom A} p (N , q) = N , (→*-trans p q)
+reduce-closed {T ⇝ S} p x =  λ Δ σ x' x0 → reduce-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
 
-wn-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) {T} {t : tm Δ T} (w : wn Δ T t) ->
- ∀ {U} (x : var (Γ , T) U) -> wn Δ U ((σ ,, t) x)
-wn-ext θ w z = w
-wn-ext θ w (s y) = θ y
+reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) {T} {t : tm Δ T} (w : reduce Δ T t) ->
+ ∀ {U} (x : var (Γ , T) U) -> reduce Δ U ((σ ,, t) x)
+reduce-ext θ w z = w
+reduce-ext θ w (s y) = θ y
 
-wn-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : wn Γ T t) -> wn Δ T ([ σ ]v t)
-wn-funct {atom A} σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
-wn-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (wn Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
+reduce-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : reduce Γ T t) -> reduce Δ T ([ σ ]v t)
+reduce-funct {atom A} σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
+reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
 
-thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> wn Δ U (σ x)) (t : tm Γ T) -> wn Δ T ([ σ ] t)
+thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
-thm σ θ (M · N) = eq-ind (wn _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) = (λ Δ σ' x x' → wn-closed (β _ _) (eq-ind (wn Δ _)
+thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
+thm σ θ (ƛ M) = (λ Δ σ' x x' → reduce-closed (β _ _) (eq-ind (reduce Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
     (sym ([]-funct   ((v ,, x) ∘₁ ext σ') (sub-ext σ) M)))
     (sym ([]nv-funct  (v ,, x) (ext σ') ([ sub-ext σ ] M))))
-  (thm (([ σ' ]v ∘₁ σ) ,, x) (wn-ext (λ x0 → wn-funct σ' (θ x0)) x') M)))
+  (thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 → reduce-funct σ' (θ x0)) x') M)))
 
 data grar {Γ T S} (t : tm Γ (T ⇝ S)) (u : tm Γ T) : ∀ N -> Set where
  inl : ∀ {t' u'}   -> t →* t'     -> u →* u' -> grar t u (t' · u')
@@ -357,14 +357,14 @@ zah {N = (neut (R · N))} p | inl y y' = neut R , y
 zah {N = N} p | inr y y' y0 = {!!} , →*-trans y (ƛ {!!})
 
 mutual
- reflect : ∀ {T Γ} (r : rtm Γ T) -> wn Γ T (rinj r)
+ reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
  reflect {atom A} r = (neut r) , →*-refl
- reflect {T ⇝ S} r = λ Δ σ x x' -> wn-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (wn Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
+ reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
 
- reify : ∀ {T Γ} (t : tm Γ T) -> wn Γ T t -> halts t
+ reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
  reify {atom A} t p = p
  reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
  reify {T ⇝ S} t p | N , q = {!!} 
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
-done t = reify t (eq-ind (wn _ _) []-id (thm v (λ x → reflect (v x)) t))
+done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
