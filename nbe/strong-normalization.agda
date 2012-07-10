@@ -307,13 +307,20 @@ reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} 
 reduce-ext θ w z = w
 reduce-ext θ w (s y) = θ y
 
+grar : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {t : tm Γ1 T} {t'} -> [ σ ]v t →₁ t' -> (C : (t'' : _) -> Set) -> (∀ t'' -> t →₁ t'' -> C ([ σ ]v t'')) -> C t'
+grar σ p C f = {!!}
+
+sn-vsubst : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : sn t) -> sn ([ σ ]v t)
+sn-vsubst σ (sn-intro y) = sn-intro (λ x → grar σ x sn (λ t'' x' → sn-vsubst σ (y x'))) 
+
 reduce-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : reduce Γ T t) -> reduce Δ T ([ σ ]v t)
-reduce-funct {atom A} σ q = {!!} --(nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
+reduce-funct {atom A} σ q = sn-vsubst σ q 
 reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
 
 data neutral {Γ} : ∀ {T} -> tm Γ T -> Set where
  v : ∀ {T} (x : var Γ T) -> neutral (v x)
  _·_ : ∀ {T S} (M : tm Γ (T ⇝ S)) (N : tm Γ T) -> neutral (M · N)
+
 
 neutral-funct : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) (t : tm Γ1 T) -> neutral t -> neutral ([ σ ]v t)
 neutral-funct σ (v y) r = v (σ y)
@@ -332,9 +339,6 @@ g : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} (p : neutral t) x {s} (x' : (t · x) →�
 g p x (y ·l .x) C f1 f2 = f1 _ y
 g {Γ} {T'} {S'} {t'} p x (.t' ·r y) C f1 f2 = f2 _ y
 g () x (β M .x) C f1 f2
-
-grar : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {t : tm Γ1 T} {t'} -> [ σ ]v t →₁ t' -> (C : (t'' : _) -> Set) -> (∀ t'' -> t →₁ t'' -> C ([ σ ]v t'')) -> C t'
-grar σ p C f = {!!}
 
 sn-app : ∀ {Γ T S} (t : tm Γ (T ⇝ S)) -> sn ([ s ]v t · v z) -> sn t
 sn-app t (sn-intro y) = sn-intro (λ x → sn-app _ (y (→₁-subst s x ·l (v z))))
