@@ -192,6 +192,7 @@ reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} 
 reduce-ext θ w z = w
 reduce-ext θ w (s y) = θ y
 
+-- For some reason I started doing this in CPS style. Really it says ∃ t'' s.t. [ σ ]v t'' ≡ t (and also substitutes this into the →₁)
 grar : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {t : tm Γ1 T} {t'} -> [ σ ]v t →₁ t' -> (C : (t'' : _) -> Set) -> (∀ t'' -> t →₁ t'' -> C ([ σ ]v t'')) -> C t'
 grar σ {v y} () C f
 grar σ {v y · y'} (() ·l .([ σ ]v y')) C f
