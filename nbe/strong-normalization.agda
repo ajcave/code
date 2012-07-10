@@ -275,6 +275,5 @@ thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-e
      (sym ([]nv-funct (v ,, u) (ext σ') ([ sub-ext σ ] M))))
   (thm (([ σ' ]v ∘₁ σ) ,, u) (reduce-ext (λ x2 → reduce-funct σ' (θ x2)) x1) M))))
 
-
 done : ∀ {Γ T} (t : tm Γ T) -> sn t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x) (v x) (λ ())) t))
