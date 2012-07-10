@@ -364,8 +364,29 @@ zah2 σ t u p = {!!}
 zah4 : ∀ {Γ S T} (t u : tm Γ T) -> ([_]v {Γ} {Γ , S} s) t →* [ s ]v u -> t →* u
 zah4 t u = {!!}  
 
-zah5 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Δ T) (r : tm Γ T) -> rinj R ≡ [ σ ]v r -> Σ (λ R' -> r ≡ rinj R')
-zah5 σ R r p = {!!}
+zah8 : ∀ {Γ T1 T2 S} {M1 : tm Γ (T1 ⇝ S)} {M2 : tm Γ (T2 ⇝ S)} {N1} {N2} -> _≡_ {tm Γ S} (M1 · N1) (M2 · N2) -> T1 ≡ T2
+zah8 refl = refl
+
+zah6 : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> _≡_ {tm Γ S} (M1 · N1) (M2 · N2) -> M1 ≡ M2
+zah6 refl = refl
+
+zah7 : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> _≡_ {tm Γ S} (M1 · N1) (M2 · N2) -> N1 ≡ N2
+zah7 refl = refl
+
+mutual
+ zah5 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Δ T) (r : tm Γ T) -> rinj R ≡ [ σ ]v r -> Σ (λ R' -> r ≡ rinj R')
+ zah5 σ (v .(σ y')) (v y') refl = (v y') , refl
+ zah5 σ (y · y') (v y0) ()
+ zah5 σ (v y) (y' · y0) ()
+ zah5 σ (y · y') (y0 · y1) p with zah8 p
+ zah5 σ (_·_ {T} y y') (_·_ {.T} y0 y1) p | refl with zah5 σ y y0 (zah6 p) | zah9 σ y' y1 (zah7 p)
+ ... | (R' , q1) | (N' , q2) = {!_!} , {!!}
+ zah5 σ (v y) (ƛ y') ()
+ zah5 σ (y · y') (ƛ y0) ()
+
+ zah9 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Δ T) (n : tm Γ T) -> ninj N ≡ [ σ ]v n -> Σ (λ N' -> n ≡ ninj N')
+ zah9 σ N n p = {!!}
+ 
 
 zah : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} {N} -> ((([ s ]v t) · v z) →* (ninj N))  -> halts t
 zah p with blah p
