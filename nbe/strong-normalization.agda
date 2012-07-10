@@ -22,17 +22,8 @@ postulate
  funext : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
  funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
 
-cong-app1 : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> f ≡ g -> (x : A) -> f x ≡ g x
-cong-app1 refl x = refl
-
-cong-app : ∀ {A B : Set} {f g : A -> B} -> f ≡ g -> {x y : A} -> x ≡ y -> f x ≡ g y
-cong-app refl refl = refl 
-
 cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 cong f refl = refl
-
-cong1/2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> (z : B) -> f x z ≡ f y z
-cong1/2 f refl z = refl 
 
 cong2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> f x z ≡ f y w
 cong2 f refl refl = refl
@@ -42,12 +33,6 @@ eq-ind P refl t = t
 
 eq-ind2 : ∀ {A B} (P : A -> B -> Set) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P x z -> P y w
 eq-ind2 P refl refl t = t
-
-eq-sub1 : ∀ {A C} (P : A -> C) {t} -> {x y : A} -> x ≡ y -> P y ≡ t -> P x ≡ t
-eq-sub1 P refl p = p 
-
-eq-sub2 : ∀ {A B C} (P : A -> B -> C) {t} -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P y w ≡ t -> P x z ≡ t
-eq-sub2 P refl refl p = p
 
 trans : ∀ {A} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
 trans refl refl = refl
@@ -76,16 +61,6 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
 vsubst : ctx -> ctx -> Set 
 vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
 
-{-
-mutual 
- data rtm (Γ : ctx) : (T : tp) -> Set where
-  v : ∀ {T} -> var Γ T -> rtm Γ T
-  _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
- data ntm (Γ : ctx) : (T : tp) -> Set where
-  ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
-  neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
--}
-
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
 
@@ -95,16 +70,6 @@ _∘₁_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
-
-{-
-mutual
- rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
- rappSubst σ (v y) = v (σ y)
- rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
- nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
- nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
- nappSubst σ (neut R) = neut (rappSubst σ R)
--}
 
 var-dom-eq' : ∀ {A : tp -> Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A U) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
 var-dom-eq' f g p q z = q
@@ -117,36 +82,12 @@ ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) 
 ext-funct σ1 σ2 z = refl
 ext-funct σ1 σ2 (s y) = refl
 
-{-
-mutual
- rappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : rtm Γ1 S)
-  -> rappSubst σ1 (rappSubst σ2 R) ≡ rappSubst (σ1 ∘ σ2) R
- rappSubst-funct σ1 σ2 (v y) = refl
- rappSubst-funct σ1 σ2 (R · N) = cong2 _·_ (rappSubst-funct σ1 σ2 R) (nappSubst-funct σ1 σ2 N)
- nappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (N : ntm Γ1 S)
-  -> nappSubst σ1 (nappSubst σ2 N) ≡ nappSubst (σ1 ∘ σ2) N
- nappSubst-funct σ1 σ2 (ƛ N) = cong ƛ (trans (nappSubst-funct (ext σ1) (ext σ2) N) (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x' → ext-funct σ1 σ2 x')))))
- nappSubst-funct σ1 σ2 (neut R) = cong neut (rappSubst-funct σ1 σ2 R)
--}
-
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
 ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> ext id x ≡ x
 ext-id z = refl
 ext-id (s y) = refl
-
-{-
-mutual
- rappSubst-id : ∀ {Γ S} (R : rtm Γ S) -> rappSubst id R ≡ R
- rappSubst-id (v y) = refl
- rappSubst-id (R · N) = cong2 _·_ (rappSubst-id R) (nappSubst-id N)
- nappSubst-id : ∀ {Γ S} (N : ntm Γ S) -> nappSubst id N ≡ N
- nappSubst-id (ƛ N) = cong ƛ (trans (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x → ext-id x)))) (nappSubst-id N))
- nappSubst-id (neut R) = cong neut (rappSubst-id R) -}
-
-wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn = s
 
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
@@ -172,7 +113,6 @@ sub-ext σ = ([ s ]v ∘₁ σ) ,, v z
 [_] σ (v y) = σ y
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
-
 
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
