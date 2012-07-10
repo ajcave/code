@@ -398,7 +398,11 @@ thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
 thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x) (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x)
    (λ x0 → reduce-closed x0 (abs (reify _
-   (eq-ind (reduce (Δ , T) S) (sym (trans ([]vn-funct (ext σ') (sub-ext σ) M) (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x1 → trans ([]v-funct (ext σ') s (σ x1)) (sym ([]v-funct s σ' (σ x1)))) refl))))
+   (eq-ind (reduce (Δ , T) S)
+    (sym (trans ([]vn-funct (ext σ') (sub-ext σ) M)
+     (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x1 →
+     trans ([]v-funct (ext σ') s (σ x1))
+      (sym ([]v-funct s σ' (σ x1)))) refl))))
    (thm (sub-ext ([ σ' ]v ∘₁ σ)) (reduce-ext (λ x1 → reduce-funct s (reduce-funct σ' (θ x1))) (reflect (v z) (v z) (λ ()))) M)))
    (reify _ x') x'
    (λ {u} x1 →
@@ -409,17 +413,6 @@ thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-e
      (sym ([]nv-funct (v ,, u) (ext σ') ([ sub-ext σ ] M))))
   (thm (([ σ' ]v ∘₁ σ) ,, u) (reduce-ext (λ x2 → reduce-funct σ' (θ x2)) x1) M))))
 
-{-
-mutual
- reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
- reflect {atom A} r = (neut r) , →*-refl
- reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl ·₁ (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
 
- reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
- reify {atom A} t p = p
- reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
- reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans {!!} (ƛ₁ q))
-
-done : ∀ {Γ T} (t : tm Γ T) -> halts t
-done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
--}
+done : ∀ {Γ T} (t : tm Γ T) -> sn t
+done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x) (v x) (λ ())) t))
