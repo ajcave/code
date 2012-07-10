@@ -161,18 +161,18 @@ data tm (Γ : ctx) : (T : tp) -> Set where
 sub : (Γ1 Γ2 : ctx) -> Set
 sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
 
+_,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
+(σ ,, M) z = M
+(σ ,, M) (s y) = σ y
+
 sub-ext : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> sub (Γ1 , T) (Γ2 , T)
-sub-ext σ z = v z
-sub-ext σ (s y) = [ s ]v (σ y)
+sub-ext σ = ([ s ]v ∘₁ σ) ,, v z
 
 [_] : ∀ {Γ1 Γ2 T} (σ : sub Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
 [_] σ (v y) = σ y
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
 
-_,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
-(σ ,, M) z = M
-(σ ,, M) (s y) = σ y
 
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
@@ -362,14 +362,16 @@ mutual
  abs2 {Γ} {T} {S} {M} sn-m (sn-intro y') ru f (.(ƛ M) ·r y) = abs sn-m (y' y) (reduce-closed y ru) f
  abs2 {Γ} {T} {S} {M} {u} sn-m sn-n ru f (β .M .u) = f ru
 
-abs4 : ∀ {Γ T S} {M : tm (Γ , T) S} {u} -> reduce Γ T u -> (∀ {u} -> reduce Γ T u -> reduce Γ S ([ v ,, u ] M)) -> reduce Γ S ((ƛ M) · u)
-abs4 r f = abs (reify _ {!!}) (reify _ r) r f
-
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
 thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x) (ƛ ([ ext σ' ]v ([ sub-ext σ ] M)) · x)
-   (λ x0 → reduce-closed x0 (abs4 x' (λ {u} x1 → eq-ind (reduce Δ S)
+   (λ x0 → reduce-closed x0 (abs (reify _
+   (eq-ind (reduce (Δ , T) S) (sym (trans ([]vn-funct (ext σ') (sub-ext σ) M) (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x1 → trans ([]v-funct (ext σ') s (σ x1)) (sym ([]v-funct s σ' (σ x1)))) refl))))
+   (thm (sub-ext ([ σ' ]v ∘₁ σ)) (reduce-ext (λ x1 → reduce-funct s (reduce-funct σ' (θ x1))) (reflect (v z) (v z) (λ ()))) M)))
+   (reify _ x') x'
+   (λ {u} x1 →
+   eq-ind (reduce Δ S)
    (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x2 → trans ([]v-eq-[] σ' (σ x2))
      (sym ([]nv-funct ((v ,, u) ∘₁ ext σ') s (σ x2)))) refl))
      (sym ([]-funct   ((v ,, u) ∘₁ ext σ') (sub-ext σ) M)))
