@@ -277,3 +277,6 @@ thm σ θ (ƛ {T} {S} M) = λ Δ σ' x x' → reflect (ƛ ([ ext σ' ]v ([ sub-e
 
 done : ∀ {Γ T} (t : tm Γ T) -> sn t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x) (v x) (λ ())) t))
+
+-- Cool, now we could write an evaluator using any strategy (cbv, cbn...) with an "irrelevant" sn argument
+-- which witnesses its termination (well-founded induction on the step relation)
