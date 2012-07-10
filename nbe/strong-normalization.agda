@@ -333,8 +333,8 @@ grar σ {(y · y') · y0} (y1 ·l .([ σ ]v y0)) C f = grar σ {y · y'} y1 (λ 
 grar σ {(y · y') · y0} (.([ σ ]v y · [ σ ]v y') ·r y1) C f = grar σ {y0} y1 (λ t'' → C (([ σ ]v y · [ σ ]v y') · t'')) (λ t'' x → f ((y · y') · t'') ((y · y') ·r x))
 grar σ {ƛ y · y'} (y0 ·l .([ σ ]v y')) C f = grar σ y0 (λ t'' → C (t'' · [ σ ]v y')) (λ t'' x → f (t'' · y') (x ·l y'))
 grar σ {ƛ y · y'} (.(ƛ ([ ext σ ]v y)) ·r y0) C f = grar σ y0 (λ t'' → C ([ σ ]v (ƛ y) · t'')) (λ t'' x → f (ƛ y · t'') ((ƛ y) ·r x))
-grar σ {ƛ y · y'} (β .([ ext σ ]v y) .([ σ ]v y')) C f = {!!}
-grar σ {ƛ y} p C f = {!!}
+grar σ {ƛ y · y'} (β .([ ext σ ]v y) .([ σ ]v y')) C f = eq-ind C (trans ([]vn-funct σ (v ,, y') y) (trans (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl)) (sym ([]nv-funct (v ,, [ σ ]v y') (ext σ) y)))) (f _ (β _ _))
+grar σ {ƛ y} (ƛ y') C f = grar (ext σ) y' (λ t'' → C (ƛ t'')) (λ t'' x → f (ƛ t'') (ƛ x))
 
 sn-vsubst : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : sn t) -> sn ([ σ ]v t)
 sn-vsubst σ (sn-intro y) = sn-intro (λ x → grar σ x sn (λ t'' x' → sn-vsubst σ (y x'))) 
