@@ -60,48 +60,9 @@ mutual
   case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
   abort : ∀ {T} (M : rtm Γ ⊥) -> ntm Γ T
 
--- BAD: Currently using Set : Set here...
--- How to fix this? Impredicative set? Lift this definition to Set₁?
-data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
- base : Γ ◃ (λ Δ -> vsubst Γ Δ)
- step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
- step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
-
-monotone : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ P
-monotone base σ = {!!}
-monotone (step y y' y0) σ = {!!}
-monotone (step2 r) σ = {!!}
-
-{- lem2 : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ (λ Δ' -> P Δ' * vsubst Δ Δ')
-lem2 base σ = {!!}
-lem2 (step y y' y0) σ = {!!} -}
-
-union : ∀ {Γ P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
-union base f = f _ (λ x → x)
-union (step y y' y0) f = {!!}
-union (step2 r) f = {!!}
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
-
-paste : ∀ {Γ P T} -> Γ ◃ P -> (∀ Δ -> P Δ -> ntm Δ T) -> ntm Γ T
-paste base f = f _ (λ x → x)
-paste (step y y' y0) f = case y of (paste y' (λ Δ x → f _ (inl x))) - paste y0 (λ Δ x → f _ (inr x))
-paste (step2 r) f = abort r
-
-sem : (Γ : ctx) -> (T : tp) -> Set
-sem Γ (atom A) = rtm Γ (atom A)
-sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
-sem Γ (T × S) = sem Γ T * sem Γ S
-sem Γ unit = Unit
-sem Γ (T + S) = Σ (λ P -> (Γ ◃ P) * (∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S))
-sem Γ ⊥ = Γ ◃ (λ _ -> False)
-
-paste2 : ∀ {Γ P T} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
-paste2 base f = f _ (λ x → x)
-paste2 (step y y' y0) f = {!!}
-paste2 (step2 r) f = {!!}
-
 
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
@@ -126,11 +87,46 @@ mutual
  nappSubst σ (case M of N1 - N2) = case (rappSubst σ M) of (nappSubst (ext σ) N1) - (nappSubst (ext σ) N2)
  nappSubst σ (abort R) = abort (rappSubst σ R)
 
+-- BAD: Currently using Set : Set here...
+-- How to fix this? Impredicative set? Lift this definition to Set₁?
+
+data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
+ base : Γ ◃ (λ Δ -> vsubst Γ Δ)
+ step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
+ step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
+ monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
+ union : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
+
+sem : (Γ : ctx) -> (T : tp) -> Set
+sem Γ (atom A) = ntm Γ (atom A)
+sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
+sem Γ (T × S) = sem Γ T * sem Γ S
+sem Γ unit = Unit
+sem Γ (T + S) = Σ (λ P -> (Γ ◃ P) * (∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S))
+sem Γ ⊥ = Γ ◃ (λ _ -> False)
+
+paste : ∀ {Γ P T} -> Γ ◃ P -> (∀ Δ -> P Δ -> ntm Δ T) -> ntm Γ T
+paste base f = f _ (λ x → x)
+paste (step y y' y0) f = case y of (paste y' (λ Δ x → f _ (inl x))) - paste y0 (λ Δ x → f _ (inr x))
+paste (step2 r) f = abort r
+paste (monotone t σ) f = nappSubst σ (paste t f)
+paste (union p q) f with paste p (λ Δ x → f _ {!!})
+... | p' = {!!}
+
+paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
+paste2 {atom A} t p = paste t p
+paste2 {T ⇝ S} t p = {!!}
+paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
+paste2 {T + S} t p = {!!}
+paste2 {⊥} t p = {!!}
+paste2 {unit} t p = {!!}
+
+
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
-appSubst (atom A) σ M = rappSubst σ M
+appSubst (atom A) σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
 appSubst unit σ tt = tt
@@ -139,7 +135,7 @@ appSubst ⊥ σ M = monotone M σ
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
- reflect {atom A} N = N
+ reflect {atom A} N = neut N
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
@@ -150,7 +146,7 @@ mutual
  reflect {⊥} M = step2 M
 
  reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
- reify {atom A} M = neut M
+ reify {atom A} M = M
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
  reify {unit} tt = tt
@@ -159,6 +155,8 @@ mutual
         f Δ x (inl y) = inl (reify y)
         f Δ x (inr y) = inr (reify y)
  reify {⊥} M = paste M (λ Δ ())
+
+
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
