@@ -72,11 +72,11 @@ monotone (step y y' y0) σ = {!!}
 
 {- lem2 : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ (λ Δ' -> P Δ' * vsubst Δ Δ')
 lem2 base σ = {!!}
-lem2 (step y y' y0) σ = {!!}
+lem2 (step y y' y0) σ = {!!} -}
 
 union : ∀ {Γ P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
 union base f = f _ (λ x → x)
-union (step y y' y0) f = {!!} -}
+union (step y y' y0) f = {!!}
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -183,8 +183,11 @@ eval θ < M , N > = eval θ M , eval θ N
 eval θ tt = tt
 eval θ (inl M) = _ , (base , λ Δ σ → inl (eval (λ x → appSubst _ σ (θ x)) M))
 eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ x)) M))
-eval θ (case M of N1 - N2) with eval θ M
-eval θ (case M of N1 - N2) | q = {!!}
+eval θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
+eval θ (case_of_-_ {T} {S} {C} M N1 N2) | P , (p1 , p2) = {!!}
+ where f : ∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S -> sem Δ C
+       f Δ x (inl y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N1
+       f Δ x (inr y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N2
 eval θ (abort R) with eval θ R
 eval _ (abort R) | ()
 
