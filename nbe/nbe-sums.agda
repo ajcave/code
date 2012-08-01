@@ -114,8 +114,9 @@ mutual
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
  reify {unit} tt = tt
- reify {T + S} M = {!!}
- reify {⊥} M = {!!}
+ reify {T + S} (inl y) = inl (reify y)
+ reify {T + S} (inr y) = inr (reify y)
+ reify {⊥} ()
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
