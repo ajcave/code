@@ -110,20 +110,7 @@ paste base f = f _ (λ x → x)
 paste (step y y' y0) f = case y of (paste y' (λ Δ x → f _ (inl x))) - paste y0 (λ Δ x → f _ (inr x))
 paste (step2 r) f = abort r
 paste (monotone t σ) f = nappSubst σ (paste t f)
-paste (union p q) f with paste p (λ Δ x → f _ {!!})
-... | p' = {!!}
-
-paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
-paste2 {atom A} t p = paste t p
-paste2 {T ⇝ S} t p = {!!}
-paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
-paste2 {T + S} t p = {!!}
-paste2 {⊥} t p = union t p
-paste2 {unit} t p = tt
-
-
-id : ∀ {Γ} -> vsubst Γ Γ
-id x = x
+paste (union p q) f = paste p (λ Δ x → paste (q _ x) f)
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = nappSubst σ M
@@ -132,6 +119,19 @@ appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
 appSubst unit σ tt = tt
 appSubst (T + S) σ (fst , (y , y')) = fst , (monotone y σ , y')
 appSubst ⊥ σ M = monotone M σ
+
+paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
+paste2 {atom A} t p = paste t p
+paste2 {T ⇝ S} t p = λ Δ x x' → paste2 {!!} (λ Δ' x0 → p _ x0 _ {!!} {!!})
+paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
+paste2 {T + S} t p = {!(λ x → .P x)!} , (t , (λ Δ x → {!!}))
+paste2 {⊥} t p = union t p
+paste2 {unit} t p = tt
+
+
+id : ∀ {Γ} -> vsubst Γ Γ
+id x = x
+
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
