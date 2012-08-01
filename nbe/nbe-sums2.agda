@@ -181,8 +181,8 @@ eval θ (π₁ M) = _*_.fst (eval θ M)
 eval θ (π₂ N) = _*_.snd (eval θ N)
 eval θ < M , N > = eval θ M , eval θ N
 eval θ tt = tt
-eval θ (inl M) = {!!}
-eval θ (inr M) = {!!}
+eval θ (inl M) = _ , (base , λ Δ σ → inl (eval (λ x → appSubst _ σ (θ x)) M))
+eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ x)) M))
 eval θ (case M of N1 - N2) with eval θ M
 eval θ (case M of N1 - N2) | q = {!!}
 eval θ (abort R) with eval θ R
