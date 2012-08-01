@@ -98,6 +98,23 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
  union : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
 
+blah1 : ∀ {Γ P} -> Γ ◃ P -> Σ (λ Δ -> P Δ)
+blah1 base = _ , (λ x → x)
+blah1 (step y y' y0) = (Σ.fst (blah1 y')) , (inl (Σ.snd (blah1 y')))
+blah1 (step2 y) = {!!}
+blah1 (monotone y y') = blah1 y
+blah1 (union y y') with blah1 y
+... | q1 , q2 = blah1 (y' q1 q2)
+
+blah : ∀ {Γ P Δ} -> Γ ◃ P -> P Δ -> vsubst Γ Δ
+blah base p = p
+blah (step y y' y0) (inl y1) = λ x → blah y' y1 (s x)
+blah (step y y' y0) (inr y1) = λ x → blah y0 y1 (s x)
+blah (step2 y) p = {!!}
+blah (monotone y y') p = {!!}
+blah {Γ} {Q} {Δ} (union {P} y y') p with blah1 y
+... | q1 , q2 = (blah (y' q1 q2) p) ∘ (blah y q2)
+
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
