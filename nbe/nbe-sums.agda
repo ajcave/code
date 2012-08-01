@@ -50,7 +50,7 @@ mutual
   tt : ntm Γ unit
   inl : ∀ {T S} (M : ntm Γ T) -> ntm Γ (T + S)
   inr : ∀ {T S} (M : ntm Γ S) -> ntm Γ (T + S)
-  case_of_-_ : ∀ {T S C} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
+  case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
   abort : ∀ {T} (M : rtm Γ ⊥) -> ntm Γ T
 
 
@@ -106,8 +106,10 @@ mutual
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
- reflect {T + S} N = {!!}
- reflect {⊥} M = {!!}
+ reflect {T + S} N with case_of_-_ {C = T + S} N (reify (inl (reflect (v z)))) (reify (inr (reflect (v z))))
+ reflect {T + S} N | q = ?
+ reflect {⊥} M with abort M
+ ... | q = {!!}
 
  reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
  reify {atom A} M = neut M
