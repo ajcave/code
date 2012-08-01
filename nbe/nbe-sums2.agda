@@ -1,4 +1,5 @@
-module nbe-sums where
+{-# OPTIONS --type-in-type #-}
+module nbe-sums2 where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -9,6 +10,12 @@ record _*_ (A B : Set) : Set where
 data _⊎_ (A B : Set) : Set where
  inl : A -> A ⊎ B
  inr : B -> A ⊎ B
+
+record Σ {A : Set} (B : A -> Set) : Set where
+ constructor _,_
+ field
+  fst : A
+  snd : B fst
 
 data False : Set where
 
@@ -53,13 +60,18 @@ mutual
   case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
   abort : ∀ {T} (M : rtm Γ ⊥) -> ntm Γ T
 
+-- BAD: Currently using Set : Set here...
+-- How to fix this? Impredicative set? Lift this definition to Set₁?
+data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
+ base : Γ ◃ (λ Δ -> vsubst Γ Δ)
+ step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
 
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = rtm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
 sem Γ (T × S) = sem Γ T * sem Γ S
 sem Γ unit = Unit
-sem Γ (T + S) = sem Γ T ⊎ sem Γ S
+sem Γ (T + S) = Σ (λ P -> (Γ ◃ P) * (∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S))
 sem Γ ⊥ = False
 
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
@@ -93,8 +105,7 @@ appSubst (atom A) σ M = rappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
 appSubst unit σ tt = tt
-appSubst (T + S) σ (inl y) = inl (appSubst T σ y)
-appSubst (T + S) σ (inr y) = inr (appSubst S σ y)
+appSubst (T + S) σ M = {!!}
 appSubst ⊥ σ ()
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
@@ -106,8 +117,7 @@ mutual
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
- reflect {T + S} N with case_of_-_ {C = T + S} N (reify (inl (reflect (v z)))) (reify (inr (reflect (v z))))
- reflect {T + S} N | q = {!!}
+ reflect {T + S} N = {!!}
  reflect {⊥} M with abort M
  ... | q = {!!}
 
@@ -116,8 +126,7 @@ mutual
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
  reify {unit} tt = tt
- reify {T + S} (inl y) = inl (reify y)
- reify {T + S} (inr y) = inr (reify y)
+ reify {T + S} M = {!!}
  reify {⊥} ()
 
 subst : ctx -> ctx -> Set
@@ -150,11 +159,10 @@ eval θ (π₁ M) = _*_.fst (eval θ M)
 eval θ (π₂ N) = _*_.snd (eval θ N)
 eval θ < M , N > = eval θ M , eval θ N
 eval θ tt = tt
-eval θ (inl M) = inl (eval θ M)
-eval θ (inr M) = inr (eval θ M)
+eval θ (inl M) = {!!}
+eval θ (inr M) = {!!}
 eval θ (case M of N1 - N2) with eval θ M
-eval θ (case M of N1 - N2) | inl y = eval (extend θ y) N1
-eval θ (case M of N1 - N2) | inr y = eval (extend θ y) N2
+eval θ (case M of N1 - N2) | q = {!!}
 eval θ (abort R) with eval θ R
 eval _ (abort R) | ()
 
