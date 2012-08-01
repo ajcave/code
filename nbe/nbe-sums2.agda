@@ -118,8 +118,8 @@ paste2 {atom A} t p = paste t p
 paste2 {T ⇝ S} t p = {!!}
 paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
 paste2 {T + S} t p = {!!}
-paste2 {⊥} t p = {!!}
-paste2 {unit} t p = {!!}
+paste2 {⊥} t p = union t p
+paste2 {unit} t p = tt
 
 
 id : ∀ {Γ} -> vsubst Γ Γ
