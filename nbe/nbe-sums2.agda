@@ -66,6 +66,25 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  base : Γ ◃ (λ Δ -> vsubst Γ Δ)
  step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
 
+monotone : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ P
+monotone base σ = {!!}
+monotone (step y y' y0) σ = {!!}
+
+{-lem2 : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ (λ Δ' -> P Δ' * vsubst Δ Δ')
+lem2 base σ = {!!}
+lem2 (step y y' y0) σ = {!!} -}
+
+union : ∀ {Γ P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
+union base f = f _ (λ x → x)
+union (step y y' y0) f = {!!}
+
+wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
+wkn x = s x
+
+paste : ∀ {Γ P T} -> Γ ◃ P -> (∀ Δ -> P Δ -> ntm Δ T) -> ntm Γ T
+paste base f = f _ (λ x → x)
+paste (step y y' y0) f = case y of (paste y' (λ Δ x → f _ (inl x))) - paste y0 (λ Δ x → f _ (inr x))
+
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = rtm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
@@ -105,11 +124,8 @@ appSubst (atom A) σ M = rappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
 appSubst unit σ tt = tt
-appSubst (T + S) σ M = {!!}
+appSubst (T + S) σ (fst , (y , y')) = fst , (monotone y σ , y')
 appSubst ⊥ σ ()
-
-wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn x = s x
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
@@ -117,7 +133,7 @@ mutual
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
- reflect {T + S} N = {!!}
+ reflect {T + S} {Γ} N = (λ x → sem Γ T ⊎ sem Γ S) , ({!!} , {!!})
  reflect {⊥} M with abort M
  ... | q = {!!}
 
