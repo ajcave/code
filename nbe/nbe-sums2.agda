@@ -70,13 +70,13 @@ monotone : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ P
 monotone base σ = {!!}
 monotone (step y y' y0) σ = {!!}
 
-lem2 : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ (λ Δ' -> P Δ' * vsubst Δ Δ')
+{- lem2 : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ (λ Δ' -> P Δ' * vsubst Δ Δ')
 lem2 base σ = {!!}
 lem2 (step y y' y0) σ = {!!}
 
 union : ∀ {Γ P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
 union base f = f _ (λ x → x)
-union (step y y' y0) f = {!!}
+union (step y y' y0) f = {!!} -}
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -133,7 +133,10 @@ mutual
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
- reflect {T + S} {Γ} N = (λ Δ → vsubst (Γ , T) Δ ⊎ vsubst (Γ , S) Δ) , ((step N base base) , (λ Δ x → {!!}))
+ reflect {T + S} {Γ} N = (λ Δ → vsubst (Γ , T) Δ ⊎ vsubst (Γ , S) Δ) , ((step N base base) , f)
+  where f : ∀ Δ -> (x : vsubst (Γ , T) Δ ⊎ vsubst (Γ , S) Δ) -> sem Δ T ⊎ sem Δ S
+        f Δ (inl y) = inl (reflect (v (y z)))
+        f Δ (inr y) = inr (reflect (v (y z)))
  reflect {⊥} M with abort M
  ... | q = {!!}
 
