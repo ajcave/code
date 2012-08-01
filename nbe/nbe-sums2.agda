@@ -91,7 +91,7 @@ mutual
 -- How to fix this? Impredicative set? Lift this definition to Set₁?
 
 data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
- base : Γ ◃ (λ Δ -> vsubst Γ Δ)
+ base : Γ ◃ (vsubst Γ)
  step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
  step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
@@ -124,7 +124,7 @@ paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
 paste2 {T ⇝ S} t p = λ Δ x x' → paste2 {!!} (λ Δ' x0 → p _ x0 _ {!!} {!!})
 paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
-paste2 {T + S} t p = {!(λ x → .P x)!} , (t , (λ Δ x → {!!}))
+paste2 {T + S} t p = {!!}
 paste2 {⊥} t p = union t p
 paste2 {unit} t p = tt
 
@@ -189,8 +189,8 @@ eval θ < M , N > = eval θ M , eval θ N
 eval θ tt = tt
 eval θ (inl M) = _ , (base , λ Δ σ → inl (eval (λ x → appSubst _ σ (θ x)) M))
 eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ x)) M))
-eval θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
-eval θ (case_of_-_ {T} {S} {C} M N1 N2) | P , (p1 , p2) = paste2 p1 (λ Δ x → f _ x (p2 Δ x))
+eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
+eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | P , (p1 , p2) = paste2 p1 (λ Δ x → f _ x (p2 Δ x))
  where f : ∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S -> sem Δ C
        f Δ x (inl y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N1
        f Δ x (inr y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N2
