@@ -6,6 +6,12 @@ record _*_ (A B : Set) : Set where
   fst : A
   snd : B
 
+data _⊎_ (A B : Set) : Set where
+ inl : A -> A ⊎ B
+ inr : B -> A ⊎ B
+
+data False : Set where
+
 record Unit : Set where
  constructor tt
 
@@ -53,8 +59,8 @@ sem Γ (atom A) = rtm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
 sem Γ (T × S) = sem Γ T * sem Γ S
 sem Γ unit = Unit
-sem Γ (T + S) = {!!}
-sem Γ ⊥ = {!!}
+sem Γ (T + S) = sem Γ T ⊎ sem Γ S
+sem Γ ⊥ = False
 
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
@@ -87,8 +93,9 @@ appSubst (atom A) σ M = rappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
 appSubst unit σ tt = tt
-appSubst (T + S) σ M = {!!}
-appSubst ⊥ σ M = {!!}
+appSubst (T + S) σ (inl y) = inl (appSubst T σ y)
+appSubst (T + S) σ (inr y) = inr (appSubst S σ y)
+appSubst ⊥ σ ()
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
