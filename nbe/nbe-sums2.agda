@@ -70,9 +70,9 @@ monotone : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ P
 monotone base σ = {!!}
 monotone (step y y' y0) σ = {!!}
 
-{-lem2 : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ (λ Δ' -> P Δ' * vsubst Δ Δ')
+lem2 : ∀ {Γ Δ P} -> Γ ◃ P -> vsubst Γ Δ -> Δ ◃ (λ Δ' -> P Δ' * vsubst Δ Δ')
 lem2 base σ = {!!}
-lem2 (step y y' y0) σ = {!!} -}
+lem2 (step y y' y0) σ = {!!}
 
 union : ∀ {Γ P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
 union base f = f _ (λ x → x)
@@ -142,7 +142,10 @@ mutual
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
  reify {unit} tt = tt
- reify {T + S} M = {!!}
+ reify {T + S} (P , (p1 , p2)) = paste p1 (λ Δ x -> f Δ x (p2 Δ x))
+  where f : ∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S -> ntm Δ (T + S)
+        f Δ x (inl y) = inl (reify y)
+        f Δ x (inr y) = inr (reify y)
  reify {⊥} ()
 
 subst : ctx -> ctx -> Set
