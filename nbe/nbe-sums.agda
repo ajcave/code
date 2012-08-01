@@ -133,6 +133,10 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  π₂ : ∀ {T S} -> tm Γ (T × S) -> tm Γ S
  <_,_> : ∀ {T S} -> tm Γ T -> tm Γ S -> tm Γ (T × S)
  tt : tm Γ unit
+ inl : ∀ {T S} (M : tm Γ T) -> tm Γ (T + S)
+ inr : ∀ {T S} (M : tm Γ S) -> tm Γ (T + S)
+ case_of_-_ : ∀ {T S C} (M : tm Γ (T + S)) (N1 : tm (Γ , T) C) (N2 : tm (Γ , S) C) -> tm Γ C
+ abort : ∀ {T} (M : tm Γ ⊥) -> tm Γ T
 
 
 -- Traditional nbe
@@ -144,6 +148,13 @@ eval θ (π₁ M) = _*_.fst (eval θ M)
 eval θ (π₂ N) = _*_.snd (eval θ N)
 eval θ < M , N > = eval θ M , eval θ N
 eval θ tt = tt
+eval θ (inl M) = inl (eval θ M)
+eval θ (inr M) = inr (eval θ M)
+eval θ (case M of N1 - N2) with eval θ M
+eval θ (case M of N1 - N2) | inl y = eval (extend θ y) N1
+eval θ (case M of N1 - N2) | inr y = eval (extend θ y) N2
+eval θ (abort R) with eval θ R
+eval _ (abort R) | ()
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) 
