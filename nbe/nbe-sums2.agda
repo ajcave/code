@@ -133,7 +133,7 @@ mutual
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
- reflect {T + S} {Γ} N = (λ x → sem Γ T ⊎ sem Γ S) , ({!!} , {!!})
+ reflect {T + S} {Γ} N = (λ Δ → vsubst (Γ , T) Δ ⊎ vsubst (Γ , S) Δ) , ({!!} , {!!})
  reflect {⊥} M with abort M
  ... | q = {!!}
 
