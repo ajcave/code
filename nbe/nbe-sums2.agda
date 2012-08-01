@@ -191,9 +191,9 @@ eval θ (inl M) = _ , (base , λ Δ σ → inl (eval (λ x → appSubst _ σ (θ
 eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ x)) M))
 eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
 eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | P , (p1 , p2) = paste2 p1 (λ Δ x → f _ x (p2 Δ x))
- where f : ∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S -> sem Δ C
-       f Δ x (inl y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N1
-       f Δ x (inr y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N2
+ where f : ∀ Δ' -> P Δ' -> sem Δ' T ⊎ sem Δ' S -> sem Δ' C
+       f Δ' x (inl y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N1
+       f Δ' x (inr y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N2
 eval θ (abort R) with eval θ R
 eval _ (abort R) | M = paste2 M (λ Δ ())
 
