@@ -90,6 +90,7 @@ mutual
 -- BAD: Currently using Set : Set here...
 -- How to fix this? Impredicative set? Lift this definition to Set₁?
 
+-- Γ ◃ P means P is a set of contexts, such that no matter which path we take, we must eventually hit one of the Ps
 data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  base : Γ ◃ (vsubst Γ)
  step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
@@ -120,11 +121,12 @@ appSubst unit σ tt = tt
 appSubst (T + S) σ (fst , (y , y')) = fst , (monotone y σ , y')
 appSubst ⊥ σ M = monotone M σ
 
+
 paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
 paste2 {T ⇝ S} t p = λ Δ x x' → paste2 {!!} (λ Δ' x0 → p _ x0 _ {!!} {!!})
 paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
-paste2 {T + S} {Γ} {P} t p = {!!} , {!!}
+paste2 {T + S} {Γ} {P} t p = {!!}
 paste2 {⊥} t p = union t p
 paste2 {unit} t p = tt
 
@@ -156,7 +158,14 @@ mutual
         f Δ x (inr y) = inr (reify y)
  reify {⊥} M = paste M (λ Δ ())
 
-
+{-
+paste3 : ∀ {Γ P T} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
+paste3 base p = p _ (λ x → x)
+paste3 (step y y' y0) p with reflect y
+... | Q , (q1 , q2) = {!!}
+paste3 (step2 y) p = {!!}
+paste3 (monotone y y') p = {!!}
+paste3 (union y y') p = {!!} -}
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
