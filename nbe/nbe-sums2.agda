@@ -141,7 +141,7 @@ appSubst ⊥ σ M = monotone M σ
 
 paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
-paste2 {T ⇝ S} t p = λ Δ x x' → paste2 {!!} (λ Δ' x0 → p _ x0 _ {!!} {!!})
+paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} (monotone {!!} x) (λ Δ' x0 → p _ (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
 paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
 paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p Δ' x) Δ))) , (union t (λ Δ x → {!!}) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst x) (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
 paste2 {⊥} t p = union t p
