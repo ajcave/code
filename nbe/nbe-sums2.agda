@@ -96,7 +96,7 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
  step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
- union : ∀ {P} {Q : ∀ {Δ} -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ {Δ} (x : P Δ) -> Δ ◃ (Q x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q x Δ)))
+ union : ∀ {P} {Q : ∀ {Δ} -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ {Δ} (x : P Δ) -> Δ ◃ (Q x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q {Δ'} x Δ)))
  extensional : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q
 
 sem : (Γ : ctx) -> (T : tp) -> Set
