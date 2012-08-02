@@ -108,6 +108,13 @@ blah (monotone y y') p = {!!}
 blah {Γ} {Q} {Δ} (union {P} y y') p with blah1 y
 ... | q1 , q2 = (blah (y' q1 q2) p) ∘ (blah y q2) -}
 
+blah : ∀ {Γ P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q
+blah base f = {!!}
+blah (step y y' y0) f = {!!}
+blah (step2 y) f = step2 y
+blah (monotone y y') f = monotone (blah y f) y'
+blah (union y y') f = union y (λ Δ x → blah (y' Δ x) f)
+
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
@@ -136,7 +143,7 @@ paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
 paste2 {T ⇝ S} t p = λ Δ x x' → paste2 {!!} (λ Δ' x0 → p _ x0 _ {!!} {!!})
 paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
-paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p Δ' x) Δ))) , {!!}
+paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p Δ' x) Δ))) , (union t (λ Δ x → {!!}) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst x) (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
 paste2 {⊥} t p = union t p
 paste2 {unit} t p = tt
 
