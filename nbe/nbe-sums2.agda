@@ -174,7 +174,7 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  tt : tm Γ unit
  inl : ∀ {T S} (M : tm Γ T) -> tm Γ (T + S)
  inr : ∀ {T S} (M : tm Γ S) -> tm Γ (T + S)
- case_of_-_ : ∀ {T S C} (M : tm Γ (T + S)) (N1 : tm (Γ , T) C) (N2 : tm (Γ , S) C) -> tm Γ C
+ case_of_-_ : ∀ {T S C} (M : tm Γ (T + S)) (N1 : tm (⊡ , T) C) (N2 : tm (⊡ , S) C) -> tm Γ C
  abort : ∀ {T} (M : tm Γ ⊥) -> tm Γ T
 
 -- Traditional nbe
@@ -191,10 +191,38 @@ eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ
 eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
 eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | R = paste2 (_*_.fst (Σ.snd R)) (λ Δ x → f _ x (_*_.snd (Σ.snd R) Δ x))
  where f : ∀ Δ' -> Σ.fst R Δ' -> sem Δ' T ⊎ sem Δ' S -> sem Δ' C
-       f Δ' x (inl y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N1
-       f Δ' x (inr y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N2
+       f Δ' x (inl y) = eval (extend (λ ()) y) N1
+       f Δ' x (inr y) = eval (extend (λ ()) y) N2
 eval θ (abort R) with eval θ R
 eval _ (abort R) | M = paste2 M (λ Δ ())
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) 
+
+data tm' (Γ : ctx) : (T : tp) -> Set where
+ v : ∀ {T} -> var Γ T -> tm' Γ T
+ _·_ : ∀ {T S} -> tm' Γ (T ⇝ S) -> tm' Γ T -> tm' Γ S
+ ƛ : ∀ {T S} -> tm' (Γ , T) S -> tm' Γ (T ⇝ S)
+ π₁ : ∀ {T S} -> tm' Γ (T × S) -> tm' Γ T
+ π₂ : ∀ {T S} -> tm' Γ (T × S) -> tm' Γ S
+ <_,_> : ∀ {T S} -> tm' Γ T -> tm' Γ S -> tm' Γ (T × S)
+ tt : tm' Γ unit
+ inl : ∀ {T S} (M : tm' Γ T) -> tm' Γ (T + S)
+ inr : ∀ {T S} (M : tm' Γ S) -> tm' Γ (T + S)
+ case_of_-_ : ∀ {T S C} (M : tm' Γ (T + S)) (N1 : tm' (Γ , T) C) (N2 : tm' (Γ , S) C) -> tm' Γ C
+ abort : ∀ {T} (M : tm' Γ ⊥) -> tm' Γ T
+
+translate : ∀ {Γ T} -> tm' Γ T -> tm Γ T
+translate (v y) = v y
+translate (y · y') = translate y · translate y'
+translate (ƛ y) = ƛ (translate y)
+translate (π₁ y) = π₁ (translate y)
+translate (π₂ y) = π₂ (translate y)
+translate < y , y' > = < (translate y) , (translate y') >
+translate tt = tt
+translate (inl M) = inl (translate M)
+translate (inr M) = inr (translate M)
+translate (case M of N1 - N2) with translate M | translate N1 | translate N2
+... | m | n1 | n2 = {!!}
+translate (abort M) = abort (translate M)
+-- Actually, I should be able to directly implement the analog of "case" directly on the semantic interpretation that will effectively do the same thing...
