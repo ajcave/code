@@ -98,14 +98,7 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
  union : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
 
-blah1 : ∀ {Γ P} -> Γ ◃ P -> Σ (λ Δ -> P Δ)
-blah1 base = _ , (λ x → x)
-blah1 (step y y' y0) = (Σ.fst (blah1 y')) , (inl (Σ.snd (blah1 y')))
-blah1 (step2 y) = {!!}
-blah1 (monotone y y') = blah1 y
-blah1 (union y y') with blah1 y
-... | q1 , q2 = blah1 (y' q1 q2)
-
+{-
 blah : ∀ {Γ P Δ} -> Γ ◃ P -> P Δ -> vsubst Γ Δ
 blah base p = p
 blah (step y y' y0) (inl y1) = λ x → blah y' y1 (s x)
@@ -113,7 +106,7 @@ blah (step y y' y0) (inr y1) = λ x → blah y0 y1 (s x)
 blah (step2 y) p = {!!}
 blah (monotone y y') p = {!!}
 blah {Γ} {Q} {Δ} (union {P} y y') p with blah1 y
-... | q1 , q2 = (blah (y' q1 q2) p) ∘ (blah y q2)
+... | q1 , q2 = (blah (y' q1 q2) p) ∘ (blah y q2) -}
 
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
@@ -133,9 +126,9 @@ paste (union p q) f = paste p (λ Δ x → paste (q _ x) f)
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
-appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
-appSubst unit σ tt = tt
-appSubst (T + S) σ (fst , (y , y')) = fst , (monotone y σ , y')
+appSubst (T × S) σ M = (appSubst T σ (_*_.fst M)) , (appSubst S σ (_*_.snd M))
+appSubst unit σ M = tt
+appSubst (T + S) σ M = (Σ.fst M) , (monotone (_*_.fst (Σ.snd M)) σ , (_*_.snd (Σ.snd M)))
 appSubst ⊥ σ M = monotone M σ
 
 
@@ -143,10 +136,9 @@ paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
 paste2 {T ⇝ S} t p = λ Δ x x' → paste2 {!!} (λ Δ' x0 → p _ x0 _ {!!} {!!})
 paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
-paste2 {T + S} {Γ} {P} t p = {!!}
+paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p Δ' x) Δ))) , {!!}
 paste2 {⊥} t p = union t p
 paste2 {unit} t p = tt
-
 
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
@@ -168,9 +160,9 @@ mutual
  reify {atom A} M = M
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
- reify {unit} tt = tt
- reify {T + S} (P , (p1 , p2)) = paste p1 (λ Δ x -> f Δ x (p2 Δ x))
-  where f : ∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S -> ntm Δ (T + S)
+ reify {unit} _ = tt
+ reify {T + S} M = paste (_*_.fst (Σ.snd M)) (λ Δ x -> f Δ x (_*_.snd (Σ.snd M) Δ x))
+  where f : ∀ Δ -> Σ.fst M Δ -> sem Δ T ⊎ sem Δ S -> ntm Δ (T + S)
         f Δ x (inl y) = inl (reify y)
         f Δ x (inr y) = inr (reify y)
  reify {⊥} M = paste M (λ Δ ())
@@ -216,8 +208,8 @@ eval θ tt = tt
 eval θ (inl M) = _ , (base , λ Δ σ → inl (eval (λ x → appSubst _ σ (θ x)) M))
 eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ x)) M))
 eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
-eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | P , (p1 , p2) = paste2 p1 (λ Δ x → f _ x (p2 Δ x))
- where f : ∀ Δ' -> P Δ' -> sem Δ' T ⊎ sem Δ' S -> sem Δ' C
+eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | R = paste2 (_*_.fst (Σ.snd R)) (λ Δ x → f _ x (_*_.snd (Σ.snd R) Δ x))
+ where f : ∀ Δ' -> Σ.fst R Δ' -> sem Δ' T ⊎ sem Δ' S -> sem Δ' C
        f Δ' x (inl y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N1
        f Δ' x (inr y) = eval (extend (λ x' → appSubst _ {!!} (θ x')) y) N2
 eval θ (abort R) with eval θ R
