@@ -96,6 +96,7 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
  step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
+-- monotone2 : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ (λ Δ' -> P Δ' * vsubst Γ Δ') -- This is bad and false!
  union : ∀ {P} {Q : ∀ {Δ} -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ {Δ} (x : P Δ) -> Δ ◃ (Q x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q {Δ'} x Δ)))
  extensional : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q -- We don't seem to need the full generality of this.. We only seem to use it to exchange two different representations of the False predicate
 
@@ -126,11 +127,10 @@ appSubst ⊥ σ M = monotone M σ
 
 paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
-paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!!} (λ x0 → p (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
+paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → {!!} --λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!!} (λ x0 → p (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
 paste2 {T × S} t p = (paste2 t (λ x → _*_.fst (p x))) , (paste2 t (λ x → _*_.snd (p x)))
 paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p x) Δ))) , (union t (λ x → _*_.fst (Σ.snd (p x))) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
-paste2 {⊥} t p with union t p
-... | q = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
+paste2 {⊥} t p = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
 paste2 {unit} t p = tt
 
 id : ∀ {Γ} -> vsubst Γ Γ
