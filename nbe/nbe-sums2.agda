@@ -96,7 +96,8 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
  step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
- union : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
+ union : ∀ {P} {Q : ∀ Δ -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ Δ (x : P Δ) -> Δ ◃ (Q Δ x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q Δ' x Δ)))
+ extensional : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q
 
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
@@ -111,7 +112,8 @@ paste base f = f _ (λ x → x)
 paste (step y y' y0) f = case y of (paste y' (λ Δ x → f _ (inl x))) - paste y0 (λ Δ x → f _ (inr x))
 paste (step2 r) f = abort r
 paste (monotone t σ) f = nappSubst σ (paste t f)
-paste (union p q) f = paste p (λ Δ x → paste (q _ x) f)
+paste (union p q) f = paste p (λ Δ x → paste (q _ x) (λ Δ' x' → f _ (_ , (x , x'))))
+paste (extensional p q) f = paste p (λ Δ x → f _ (q _ x))
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = nappSubst σ M
@@ -126,8 +128,9 @@ paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
 paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!monotone + intersection?!} (λ Δ' x0 → p _ (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
 paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
-paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p Δ' x) Δ))) , (union t (λ Δ x → {!arbitrary unions?!}) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst x) (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
-paste2 {⊥} t p = union t p
+paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p Δ' x) Δ))) , (union t (λ Δ x → _*_.fst (Σ.snd (p Δ x))) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst x) (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
+paste2 {⊥} t p with union t p
+... | q = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
 paste2 {unit} t p = tt
 
 id : ∀ {Γ} -> vsubst Γ Γ
@@ -223,6 +226,6 @@ translate tt = tt
 translate (inl M) = inl (translate M)
 translate (inr M) = inr (translate M)
 translate (case M of N1 - N2) with translate M | translate N1 | translate N2
-... | m | n1 | n2 = {!!}
+... | m | n1 | n2 = {!produce Γ -> C by case analysis, then apply!}
 translate (abort M) = abort (translate M)
 -- Actually, it's *definitely* possible to directly implement the analog of "case" directly on the semantic interpretation that will effectively do the same thing... Since the derivation of the derived form works in any BiCCC. Don't bother doing it at syntax, do it at semantics
