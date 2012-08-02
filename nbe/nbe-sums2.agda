@@ -96,7 +96,7 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
  step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
- union : ∀ {P} {Q : ∀ Δ -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ Δ (x : P Δ) -> Δ ◃ (Q Δ x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q Δ' x Δ)))
+ union : ∀ {P} {Q : ∀ {Δ} -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ {Δ} (x : P Δ) -> Δ ◃ (Q x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q x Δ)))
  extensional : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q
 
 sem : (Γ : ctx) -> (T : tp) -> Set
@@ -107,13 +107,13 @@ sem Γ unit = Unit
 sem Γ (T + S) = Σ (λ P -> (Γ ◃ P) * (∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S))
 sem Γ ⊥ = Γ ◃ (λ _ -> False)
 
-paste : ∀ {Γ P T} -> Γ ◃ P -> (∀ Δ -> P Δ -> ntm Δ T) -> ntm Γ T
-paste base f = f _ (λ x → x)
-paste (step y y' y0) f = case y of (paste y' (λ Δ x → f _ (inl x))) - paste y0 (λ Δ x → f _ (inr x))
+paste : ∀ {Γ P T} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> ntm Δ T) -> ntm Γ T
+paste base f = f (λ x → x)
+paste (step y y' y0) f = case y of (paste y' (λ x → f (inl x))) - paste y0 (λ x → f (inr x))
 paste (step2 r) f = abort r
 paste (monotone t σ) f = nappSubst σ (paste t f)
-paste (union p q) f = paste p (λ Δ x → paste (q _ x) (λ Δ' x' → f _ (_ , (x , x'))))
-paste (extensional p q) f = paste p (λ Δ x → f _ (q _ x))
+paste (union p q) f = paste p (λ x → paste (q x) (λ x' → f (_ , (x , x'))))
+paste (extensional p q) f = paste p (λ x → f (q _ x))
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = nappSubst σ M
@@ -124,11 +124,11 @@ appSubst (T + S) σ M = (Σ.fst M) , (monotone (_*_.fst (Σ.snd M)) σ , (_*_.sn
 appSubst ⊥ σ M = monotone M σ
 
 
-paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
+paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
-paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!monotone + intersection?!} (λ Δ' x0 → p _ (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
-paste2 {T × S} t p = (paste2 t (λ Δ x → _*_.fst (p _ x))) , (paste2 t (λ Δ x → _*_.snd (p _ x)))
-paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p Δ' x) Δ))) , (union t (λ Δ x → _*_.fst (Σ.snd (p Δ x))) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst x) (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
+paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!monotone + intersection?!} (λ x0 → p (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
+paste2 {T × S} t p = (paste2 t (λ x → _*_.fst (p x))) , (paste2 t (λ x → _*_.snd (p x)))
+paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p x) Δ))) , (union t (λ x → _*_.fst (Σ.snd (p x))) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
 paste2 {⊥} t p with union t p
 ... | q = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
 paste2 {unit} t p = tt
@@ -154,11 +154,11 @@ mutual
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
  reify {unit} _ = tt
- reify {T + S} M = paste (_*_.fst (Σ.snd M)) (λ Δ x -> f Δ x (_*_.snd (Σ.snd M) Δ x))
-  where f : ∀ Δ -> Σ.fst M Δ -> sem Δ T ⊎ sem Δ S -> ntm Δ (T + S)
-        f Δ x (inl y) = inl (reify y)
-        f Δ x (inr y) = inr (reify y)
- reify {⊥} M = paste M (λ Δ ())
+ reify {T + S} M = paste (_*_.fst (Σ.snd M)) (λ x -> f x (_*_.snd (Σ.snd M) _ x))
+  where f : ∀ {Δ} -> Σ.fst M Δ -> sem Δ T ⊎ sem Δ S -> ntm Δ (T + S)
+        f x (inl y) = inl (reify y)
+        f x (inr y) = inr (reify y)
+ reify {⊥} M = paste M (λ ())
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
@@ -192,12 +192,12 @@ eval θ tt = tt
 eval θ (inl M) = _ , (base , λ Δ σ → inl (eval (λ x → appSubst _ σ (θ x)) M))
 eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ x)) M))
 eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
-eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | R = paste2 (_*_.fst (Σ.snd R)) (λ Δ x → f _ x (_*_.snd (Σ.snd R) Δ x))
- where f : ∀ Δ' -> Σ.fst R Δ' -> sem Δ' T ⊎ sem Δ' S -> sem Δ' C
-       f Δ' x (inl y) = eval (extend (λ ()) y) N1
-       f Δ' x (inr y) = eval (extend (λ ()) y) N2
+eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | R = paste2 (_*_.fst (Σ.snd R)) (λ x → f x (_*_.snd (Σ.snd R) _ x))
+ where f : ∀ {Δ'} -> Σ.fst R Δ' -> sem Δ' T ⊎ sem Δ' S -> sem Δ' C
+       f x (inl y) = eval (extend (λ ()) y) N1
+       f x (inr y) = eval (extend (λ ()) y) N2
 eval θ (abort R) with eval θ R
-eval _ (abort R) | M = paste2 M (λ Δ ())
+eval _ (abort R) | M = paste2 M (λ ())
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) 
