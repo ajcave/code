@@ -98,23 +98,6 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
  union : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Δ ◃ Q) -> Γ ◃ Q
 
-{-
-blah : ∀ {Γ P Δ} -> Γ ◃ P -> P Δ -> vsubst Γ Δ
-blah base p = p
-blah (step y y' y0) (inl y1) = λ x → blah y' y1 (s x)
-blah (step y y' y0) (inr y1) = λ x → blah y0 y1 (s x)
-blah (step2 y) p = {!!}
-blah (monotone y y') p = {!!}
-blah {Γ} {Q} {Δ} (union {P} y y') p with blah1 y
-... | q1 , q2 = (blah (y' q1 q2) p) ∘ (blah y q2) -}
-
-blah : ∀ {Γ P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q
-blah base f = {!!}
-blah (step y y' y0) f = {!!}
-blah (step2 y) f = step2 y
-blah (monotone y y') f = monotone (blah y f) y'
-blah (union y y') f = union y (λ Δ x → blah (y' Δ x) f)
-
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
 sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
@@ -173,15 +156,6 @@ mutual
         f Δ x (inl y) = inl (reify y)
         f Δ x (inr y) = inr (reify y)
  reify {⊥} M = paste M (λ Δ ())
-
-{-
-paste3 : ∀ {Γ P T} -> Γ ◃ P -> (∀ Δ -> P Δ -> sem Δ T) -> sem Γ T
-paste3 base p = p _ (λ x → x)
-paste3 (step y y' y0) p with reflect y
-... | Q , (q1 , q2) = {!!}
-paste3 (step2 y) p = {!!}
-paste3 (monotone y y') p = {!!}
-paste3 (union y y') p = {!!} -}
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
