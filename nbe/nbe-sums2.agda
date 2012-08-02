@@ -225,4 +225,4 @@ translate (inr M) = inr (translate M)
 translate (case M of N1 - N2) with translate M | translate N1 | translate N2
 ... | m | n1 | n2 = {!!}
 translate (abort M) = abort (translate M)
--- Actually, I should be able to directly implement the analog of "case" directly on the semantic interpretation that will effectively do the same thing...
+-- Actually, it's *definitely* possible to directly implement the analog of "case" directly on the semantic interpretation that will effectively do the same thing... Since the derivation of the derived form works in any BiCCC. Don't bother doing it at syntax, do it at semantics
