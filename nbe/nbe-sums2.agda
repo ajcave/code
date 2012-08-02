@@ -89,6 +89,7 @@ mutual
 
 -- BAD: Currently using Set : Set here...
 -- How to fix this? Impredicative set? Lift this definition to Set₁?
+-- Probably we can give a "code" for it
 
 -- Γ ◃ P means P is a set of contexts, such that no matter which path we take, we must eventually hit one of the Ps
 data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
@@ -127,7 +128,7 @@ appSubst ⊥ σ M = monotone M σ
 
 paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
-paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → {!!} --λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!!} (λ x0 → p (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
+paste2 {T ⇝ S} t p = ?
 paste2 {T × S} t p = (paste2 t (λ x → _*_.fst (p x))) , (paste2 t (λ x → _*_.snd (p x)))
 paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p x) Δ))) , (union t (λ x → _*_.fst (Σ.snd (p x))) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
 paste2 {⊥} t p = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
