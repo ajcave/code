@@ -97,7 +97,7 @@ data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
  step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
  monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
  union : ∀ {P} {Q : ∀ {Δ} -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ {Δ} (x : P Δ) -> Δ ◃ (Q x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q {Δ'} x Δ)))
- extensional : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q
+ extensional : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q -- We don't seem to need the full generality of this.. We only seem to use it to exchange two different representations of the False predicate
 
 sem : (Γ : ctx) -> (T : tp) -> Set
 sem Γ (atom A) = ntm Γ (atom A)
@@ -126,7 +126,7 @@ appSubst ⊥ σ M = monotone M σ
 
 paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> sem Δ T) -> sem Γ T
 paste2 {atom A} t p = paste t p
-paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!monotone + intersection?!} (λ x0 → p (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
+paste2 {T ⇝ S} {Γ} {P} t p = λ Δ x x' → paste2 {P = λ Δ' → P Δ' * vsubst Δ Δ'} {!!} (λ x0 → p (_*_.fst x0) _ (λ x1 → x1) (appSubst T (_*_.snd x0) x'))
 paste2 {T × S} t p = (paste2 t (λ x → _*_.fst (p x))) , (paste2 t (λ x → _*_.snd (p x)))
 paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p x) Δ))) , (union t (λ x → _*_.fst (Σ.snd (p x))) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
 paste2 {⊥} t p with union t p
@@ -202,6 +202,7 @@ eval _ (abort R) | M = paste2 M (λ ())
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) 
 
+{-
 data tm' (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm' Γ T
  _·_ : ∀ {T S} -> tm' Γ (T ⇝ S) -> tm' Γ T -> tm' Γ S
@@ -227,5 +228,5 @@ translate (inl M) = inl (translate M)
 translate (inr M) = inr (translate M)
 translate (case M of N1 - N2) with translate M | translate N1 | translate N2
 ... | m | n1 | n2 = {!produce Γ -> C by case analysis, then apply!}
-translate (abort M) = abort (translate M)
+translate (abort M) = abort (translate M) -}
 -- Actually, it's *definitely* possible to directly implement the analog of "case" directly on the semantic interpretation that will effectively do the same thing... Since the derivation of the derived form works in any BiCCC. Don't bother doing it at syntax, do it at semantics
