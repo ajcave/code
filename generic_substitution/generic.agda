@@ -2,6 +2,7 @@ module generic where
 open import Data.Sum
 open import Data.Product
 open import Function
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 data code : Set₁ where
  Vz : code
@@ -34,8 +35,6 @@ data _[_] (C : code) (ψ : ctx unit) : Set where
  ▹ : (x : var ψ *) -> C [ ψ ]
  sup : (M : (C ⟨ ψ ⟩) (_[_] C)) -> C [ ψ ]
 
-exp : code
-exp = (Vz ⊗ Vz) ⊕ (⇒ Vz)
 
 -- TODO: Ugh do the gsubst generality. Make that a library...
 vsubst : ∀ {A} (ψ φ : ctx A) -> Set
@@ -45,10 +44,10 @@ ext : ∀ {A ψ φ} {T : A} -> vsubst ψ φ -> var φ T -> vsubst (ψ , T) φ
 ext σ x top = x
 ext σ x (pop y) = σ y
 
-subst : ∀ (C : code) (ψ φ : ctx unit) -> Set
-subst C ψ φ = {T : _} → var ψ T → C [ φ ]
+tsubst : ∀ (C : code) (ψ φ : ctx unit) -> Set
+tsubst C ψ φ = {T : _} → var ψ T → C [ φ ]
 
-ext2 : ∀ {C ψ φ} -> subst C ψ φ -> C [ φ ] -> subst C (ψ , *) φ
+ext2 : ∀ {C ψ φ} -> tsubst C ψ φ -> C [ φ ] -> tsubst C (ψ , *) φ
 ext2 σ x top = x
 ext2 σ x (pop y) = σ y
 
@@ -73,11 +72,11 @@ mutual
 -- TODO: Can we the second of these operations to some kind of "map"?
 -- Probably violates the termination checker?
 mutual
- sub : ∀ C {ψ φ} -> subst C ψ φ -> C [ ψ ] -> C [ φ ]
+ sub : ∀ C {ψ φ} -> tsubst C ψ φ -> C [ ψ ] -> C [ φ ]
  sub C σ (▹ x) = σ x
  sub C σ (sup M) = sup (sub2 C C σ M)
 
- sub2 : ∀ C D {ψ φ} -> subst D ψ φ
+ sub2 : ∀ C D {ψ φ} -> tsubst D ψ φ
    -> (C ⟨ ψ ⟩) (_[_] D)  -> (C ⟨ φ ⟩) (_[_] D)
  sub2 Vz D σ M = sub D σ M
  sub2 (C ⊕ D) D' σ (inj₁ x) = inj₁ (sub2 C D' σ x)
@@ -86,3 +85,19 @@ mutual
  sub2 (⇒ C) D σ M = sub2 C D (ext2 (rn D pop ∘ σ) (▹ top)) M
  sub2 (A ⊃ C) D σ M = λ x → sub2 C D σ (M x)
  sub2 ⊤ D σ M = *
+
+mutual
+ lem1 : ∀ C {ψ φ ρ} (σ1 : vsubst φ ρ) (σ2 : vsubst ψ φ) (M : C [ ψ ])
+  -> rn C σ1 (rn C σ2 M) ≡ rn C (σ1 ∘ σ2) M
+ lem1 C σ1 σ2 (▹ x) = refl
+ lem1 C σ1 σ2 (sup M) = {!!}
+
+ lem2 : ∀ C D {ψ φ ρ} (σ1 : vsubst φ ρ) (σ2 : vsubst ψ φ) (M : (C ⟨ ψ ⟩) (_[_] D))
+  -> rn2 C D σ1 (rn2 C D σ2 M) ≡ rn2 C D (σ1 ∘ σ2) M
+ lem2 C D σ1 σ2 M = ?
+
+exp : code
+exp = (Vz ⊗ Vz) ⊕ (⇒ Vz)
+
+exp-subst : ∀ {ψ φ} -> tsubst exp ψ φ -> exp [ ψ ] -> exp [ φ ]
+exp-subst σ M = sub exp σ M
