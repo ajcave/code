@@ -37,6 +37,8 @@ data _[_] (C : code) (ψ : ctx unit) : Set where
 
 
 -- TODO: Ugh do the gsubst generality. Make that a library...
+-- Probably want to use the first order representation so we have less problems reconstructing
+-- And also we can get an eta law for free by computing it to _×_
 vsubst : ∀ {A} (ψ φ : ctx A) -> Set
 vsubst ψ φ = ∀ {T} -> var ψ T -> var φ T
 
@@ -67,7 +69,6 @@ mutual
  rn2 (⇒ C) E σ M = rn2 C E (ext (pop ∘ σ) top) M
 -- rn2 (A ⊃ C) E σ M = λ x → rn2 C E σ (M x)
  rn2 ⊤ E σ M = *
-
 
 -- TODO: Can we the second of these operations to some kind of "map"?
 -- Probably violates the termination checker?
@@ -121,10 +122,12 @@ mutual
  lem2 ⊤ D σ1 σ2 M = refl
 
 exp : code
-exp = (Vz ⊗ Vz) ⊕ (⇒ Vz)
+exp = {- "μ" Vz. -} (Vz ⊗ Vz) ⊕ (⇒ Vz)
 
 exp-vsubst : ∀ {ψ φ} -> vsubst ψ φ -> exp [ ψ ] -> exp [ φ ]
 exp-vsubst σ M = rn exp σ M
 
+-- Goal: Intrinsically typed terms
+-- Goal: Judgements ("dependent types") e.g. Typing? Big step reduction? Small step?
 -- Goal: Try for a nice proof of Church Rosser
 
