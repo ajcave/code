@@ -37,6 +37,7 @@ data _[_] (C : code) (ψ : ctx unit) : Set where
 exp : code
 exp = (Vz ⊗ Vz) ⊕ (⇒ Vz)
 
+-- TODO: Ugh do the gsubst generality. Make that a library...
 vsubst : ∀ {A} (ψ φ : ctx A) -> Set
 vsubst ψ φ = ∀ {T} -> var ψ T -> var φ T
 
@@ -44,19 +45,44 @@ ext : ∀ {A ψ φ} {T : A} -> vsubst ψ φ -> var φ T -> vsubst (ψ , T) φ
 ext σ x top = x
 ext σ x (pop y) = σ y
 
---map : ∀ C {X Y} (f : ∀ {ψ} -> X ψ -> Y ψ) φ -> (C ⟨ φ ⟩) X -> (C ⟨ ψ ⟩) Y
+subst : ∀ (C : code) (ψ φ : ctx unit) -> Set
+subst C ψ φ = {T : _} → var ψ T → C [ φ ]
 
+ext2 : ∀ {C ψ φ} -> subst C ψ φ -> C [ φ ] -> subst C (ψ , *) φ
+ext2 σ x top = x
+ext2 σ x (pop y) = σ y
+
+-- TODO: I thought with care it was possible to make it so the C's don't have to be passed
+-- around explicitly... Some paper of McBride demonstrates this...
 mutual
- rn : ∀ {C ψ φ} -> vsubst ψ φ -> C [ ψ ] -> C [ φ ]
- rn σ (▹ x) = ▹ (σ x)
- rn {C} σ (sup M) = sup (rn2 C C σ M)
+ rn : ∀ C {ψ φ} -> vsubst ψ φ -> C [ ψ ] -> C [ φ ]
+ rn C σ (▹ x) = ▹ (σ x)
+ rn C σ (sup M) = sup (rn2 C C σ M)
 
  rn2 : ∀ C D {ψ φ} -> vsubst ψ φ
    -> (C ⟨ ψ ⟩) (_[_] D)  -> (C ⟨ φ ⟩) (_[_] D)
- rn2 Vz E σ M = rn σ M
+ rn2 Vz E σ M = rn E σ M
  rn2 (C ⊕ D) E σ (inj₁ x) = inj₁ (rn2 C E σ x)
  rn2 (C ⊕ D) E σ (inj₂ y) = inj₂ (rn2 D E σ y)
  rn2 (C ⊗ D) E σ (proj₁ , proj₂) = (rn2 C E σ proj₁) , rn2 D E σ proj₂
  rn2 (⇒ C) E σ M = rn2 C E (ext (pop ∘ σ) top) M
  rn2 (A ⊃ C) E σ M = λ x → rn2 C E σ (M x)
  rn2 ⊤ E σ M = *
+
+
+-- TODO: Can we the second of these operations to some kind of "map"?
+-- Probably violates the termination checker?
+mutual
+ sub : ∀ C {ψ φ} -> subst C ψ φ -> C [ ψ ] -> C [ φ ]
+ sub C σ (▹ x) = σ x
+ sub C σ (sup M) = sup (sub2 C C σ M)
+
+ sub2 : ∀ C D {ψ φ} -> subst D ψ φ
+   -> (C ⟨ ψ ⟩) (_[_] D)  -> (C ⟨ φ ⟩) (_[_] D)
+ sub2 Vz D σ M = sub D σ M
+ sub2 (C ⊕ D) D' σ (inj₁ x) = inj₁ (sub2 C D' σ x)
+ sub2 (C ⊕ D) D' σ (inj₂ y) = inj₂ (sub2 D D' σ y)
+ sub2 (C ⊗ D) D' σ (proj₁ , proj₂) = (sub2 C D' σ proj₁) , sub2 D D' σ proj₂
+ sub2 (⇒ C) D σ M = sub2 C D (ext2 (rn D pop ∘ σ) (▹ top)) M
+ sub2 (A ⊃ C) D σ M = λ x → sub2 C D σ (M x)
+ sub2 ⊤ D σ M = *
