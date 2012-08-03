@@ -122,11 +122,15 @@ mutual
 -- lem2 (A ⊃ C) D σ1 σ2 M = {!!}
  lem2 ⊤ D σ1 σ2 M = refl
 
+-- TODO: Try simulating and using label types?
 exp : code
 exp = {- "μ" Vz. -} (Vz ⊗ Vz) ⊕ (⇒ Vz)
 
 exp-vsubst : ∀ {ψ φ} -> vsubst ψ φ -> exp [ ψ ] -> exp [ φ ]
 exp-vsubst σ M = rn exp σ M
+
+exp-subst : ∀ {ψ φ} -> tsubst exp ψ φ -> exp [ ψ ] -> exp [ φ ]
+exp-subst σ M = sub exp σ M
 
 -- Goal: Intrinsically typed terms
 -- Goal: Judgements ("dependent types") e.g. Typing? Big step reduction? Small step?
