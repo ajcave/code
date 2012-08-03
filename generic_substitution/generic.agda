@@ -9,7 +9,7 @@ data code : Set₁ where
  _⊕_ : (C D : code) -> code 
  _⊗_ : (C D : code) -> code
  ⇒ : (C : code) -> code
- _⊃_ : (A : Set) -> (C : code) -> code
+-- _⊃_ : (A : Set) -> (C : code) -> code
  ⊤ : code
 
 record unit : Set where
@@ -28,7 +28,7 @@ _⟨_⟩ Vz ψ X = X ψ
 _⟨_⟩ (C ⊕ D) ψ X = (C ⟨ ψ ⟩) X ⊎ (D ⟨ ψ ⟩) X
 _⟨_⟩ (C ⊗ D) ψ X = ((C ⟨ ψ ⟩) X) × ((D ⟨ ψ ⟩) X)
 _⟨_⟩ (⇒ C) ψ X = (C ⟨ (ψ , *) ⟩) X
-_⟨_⟩ (A ⊃ C) ψ X = A → (C ⟨ ψ ⟩) X
+--_⟨_⟩ (A ⊃ C) ψ X = A → (C ⟨ ψ ⟩) X
 _⟨_⟩ ⊤ ψ X = unit
 
 data _[_] (C : code) (ψ : ctx unit) : Set where
@@ -65,7 +65,7 @@ mutual
  rn2 (C ⊕ D) E σ (inj₂ y) = inj₂ (rn2 D E σ y)
  rn2 (C ⊗ D) E σ (proj₁ , proj₂) = (rn2 C E σ proj₁) , rn2 D E σ proj₂
  rn2 (⇒ C) E σ M = rn2 C E (ext (pop ∘ σ) top) M
- rn2 (A ⊃ C) E σ M = λ x → rn2 C E σ (M x)
+-- rn2 (A ⊃ C) E σ M = λ x → rn2 C E σ (M x)
  rn2 ⊤ E σ M = *
 
 
@@ -83,7 +83,7 @@ mutual
  sub2 (C ⊕ D) D' σ (inj₂ y) = inj₂ (sub2 D D' σ y)
  sub2 (C ⊗ D) D' σ (proj₁ , proj₂) = (sub2 C D' σ proj₁) , sub2 D D' σ proj₂
  sub2 (⇒ C) D σ M = sub2 C D (ext2 (rn D pop ∘ σ) (▹ top)) M
- sub2 (A ⊃ C) D σ M = λ x → sub2 C D σ (M x)
+-- sub2 (A ⊃ C) D σ M = λ x → sub2 C D σ (M x)
  sub2 ⊤ D σ M = *
 
 mutual
@@ -100,7 +100,7 @@ mutual
  rn2-cong (C ⊕ D) D' σ1 σ2 σ1≡σ2 (inj₂ y) = cong inj₂ (rn2-cong D D' σ1 σ2 σ1≡σ2 y)
  rn2-cong (C ⊗ D) D' σ1 σ2 σ1≡σ2 (proj₁ , proj₂) = cong₂ _,_ (rn2-cong C D' σ1 σ2 σ1≡σ2 proj₁) (rn2-cong D D' σ1 σ2 σ1≡σ2 proj₂)
  rn2-cong (⇒ C) D σ1 σ2 σ1≡σ2 M = rn2-cong C D (ext (pop ∘ σ1) top) (ext (pop ∘ σ2) top) {!!} M
- rn2-cong (A ⊃ C) D σ1 σ2 σ1≡σ2 M = {!!}
+-- rn2-cong (A ⊃ C) D σ1 σ2 σ1≡σ2 M = {!!}
  rn2-cong ⊤ D σ1 σ2 σ1≡σ2 M = refl
 
 mutual
@@ -117,7 +117,7 @@ mutual
  lem2 (C ⊗ D) D' σ1 σ2 M = cong₂ _,_ (lem2 C D' σ1 σ2 (proj₁ M)) (lem2 D D' σ1 σ2 (proj₂ M))
  lem2 (⇒ C) D σ1 σ2 M = trans (lem2 C D (ext (pop ∘ σ1) top) (ext (pop ∘ σ2) top) M)
                               (rn2-cong C D (ext (pop ∘ σ1) top ∘ ext (pop ∘ σ2) top) (ext (pop ∘ σ1 ∘ σ2) top) {!!} M)
- lem2 (A ⊃ C) D σ1 σ2 M = {!!}
+-- lem2 (A ⊃ C) D σ1 σ2 M = {!!}
  lem2 ⊤ D σ1 σ2 M = refl
 
 exp : code
