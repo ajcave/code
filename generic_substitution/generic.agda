@@ -123,6 +123,8 @@ mutual
 exp : code
 exp = (Vz ⊗ Vz) ⊕ (⇒ Vz)
 
-exp-subst : ∀ {ψ φ} -> tsubst exp ψ φ -> exp [ ψ ] -> exp [ φ ]
-exp-subst σ M = sub exp σ M
+exp-vsubst : ∀ {ψ φ} -> vsubst ψ φ -> exp [ ψ ] -> exp [ φ ]
+exp-vsubst σ M = rn exp σ M
+
+-- Goal: Try for a nice proof of Church Rosser
 
