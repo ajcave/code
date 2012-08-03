@@ -131,4 +131,4 @@ exp-vsubst σ M = rn exp σ M
 -- Goal: Intrinsically typed terms
 -- Goal: Judgements ("dependent types") e.g. Typing? Big step reduction? Small step?
 -- Goal: Try for a nice proof of Church Rosser
-
+-- Goal: Intrinsically typed system F? How about representing LF?
