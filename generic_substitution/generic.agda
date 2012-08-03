@@ -10,6 +10,7 @@ data code : Set₁ where
  _⊗_ : (C D : code) -> code
  ⇒ : (C : code) -> code
 -- _⊃_ : (A : Set) -> (C : code) -> code
+         -- requries funext or sophisticated equivalence relations later
  ⊤ : code
 
 record unit : Set where
