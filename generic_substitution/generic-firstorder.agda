@@ -97,6 +97,7 @@ mutual
  lem1 C σ1 σ2 (▹ x) = cong ▹ (sym (lookup-gmap (lookup σ1) σ2 x))
  lem1 C σ1 σ2 (sup M) = cong sup (lem2 C C σ1 σ2 M)
 
+-- TODO: Write the embedding from function to first order, and use that?
  lem2 : ∀ C D {ψ φ ρ} (σ1 : vsubst φ ρ) (σ2 : vsubst ψ φ) (M : (C ⟨ ψ ⟩) (_[_] D))
   -> rn2 C D σ1 (rn2 C D σ2 M) ≡ rn2 C D (gmap (lookup σ1) σ2) M
  lem2 Vz D σ1 σ2 M = lem1 D σ1 σ2 M
