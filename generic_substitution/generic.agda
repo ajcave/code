@@ -101,7 +101,7 @@ mutual
                               (rn2-cong C D (extend' (λ x →
         (extend (pop ∘ σ1) top ∘ extend (pop ∘ σ2) top) x ≡ extend (pop ∘ σ1 ∘ σ2) top x)
         (λ x → refl) refl) M)
--- lem2 (A ⊃ C) D σ1 σ2 M = {!!}
+-- lem2 (A ⊃ C) D σ1 σ2 M = {!!} 
  lem2 ⊤ D σ1 σ2 M = refl
 
 -- TODO: Try simulating and using label types?
