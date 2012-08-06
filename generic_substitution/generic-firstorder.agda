@@ -94,7 +94,7 @@ mutual
 mutual
  lem1 : ∀ C {ψ φ ρ} (σ1 : vsubst φ ρ) (σ2 : vsubst ψ φ) (M : C [ ψ ])
   -> rn C σ1 (rn C σ2 M) ≡ rn C (gmap (lookup σ1) σ2) M
- lem1 C σ1 σ2 (▹ x) = {!!}
+ lem1 C σ1 σ2 (▹ x) = cong ▹ (sym (lookup-gmap (lookup σ1) σ2 x))
  lem1 C σ1 σ2 (sup M) = cong sup (lem2 C C σ1 σ2 M)
 
  lem2 : ∀ C D {ψ φ ρ} (σ1 : vsubst φ ρ) (σ2 : vsubst ψ φ) (M : (C ⟨ ψ ⟩) (_[_] D))
