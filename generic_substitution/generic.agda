@@ -67,21 +67,23 @@ mutual
  sub2 ⊤ D σ M = *
 
 mutual
- rn-cong : ∀ C {ψ φ} (σ1 σ2 : vsubst ψ φ) (σ1≡σ2 : ∀ {T} (x : var ψ T) -> σ1 x ≡ σ2 x) (M : C [ ψ ])
+ rn-cong : ∀ C {ψ φ} {σ1 σ2 : vsubst ψ φ} (σ1≡σ2 : gsubst' ψ (λ x -> σ1 x ≡ σ2 x)) (M : C [ ψ ])
   -> rn C σ1 M ≡ rn C σ2 M
- rn-cong C σ1 σ2 σ1≡σ2 (▹ x) = cong ▹ (σ1≡σ2 x)
- rn-cong C σ1 σ2 σ1≡σ2 (sup M) = cong sup (rn2-cong C C σ1 σ2 σ1≡σ2 M)
+ rn-cong C σ1≡σ2 (▹ x) = cong ▹ (σ1≡σ2 x)
+ rn-cong C σ1≡σ2 (sup M) = cong sup (rn2-cong C C σ1≡σ2 M)
 
- rn2-cong : ∀ C D {ψ φ} (σ1 σ2 : vsubst ψ φ) (σ1≡σ2 : ∀ {T} (x : var ψ T) -> σ1 x ≡ σ2 x)
+ rn2-cong : ∀ C D {ψ φ} {σ1 σ2 : vsubst ψ φ} (σ1≡σ2 : ∀ {T} (x : var ψ T) -> σ1 x ≡ σ2 x)
    (M : (C ⟨ ψ ⟩) (_[_] D))
   -> rn2 C D σ1 M ≡ rn2 C D σ2 M
- rn2-cong Vz D σ1 σ2 σ1≡σ2 M = rn-cong D σ1 σ2 σ1≡σ2 M
- rn2-cong (C ⊕ D) D' σ1 σ2 σ1≡σ2 (inj₁ x) = cong inj₁ (rn2-cong C D' σ1 σ2 σ1≡σ2 x)
- rn2-cong (C ⊕ D) D' σ1 σ2 σ1≡σ2 (inj₂ y) = cong inj₂ (rn2-cong D D' σ1 σ2 σ1≡σ2 y)
- rn2-cong (C ⊗ D) D' σ1 σ2 σ1≡σ2 (proj₁ , proj₂) = cong₂ _,_ (rn2-cong C D' σ1 σ2 σ1≡σ2 proj₁) (rn2-cong D D' σ1 σ2 σ1≡σ2 proj₂)
- rn2-cong (⇒ C) D σ1 σ2 σ1≡σ2 M = rn2-cong C D (extend (pop ∘ σ1) top) (extend (pop ∘ σ2) top) {!!} M
+ rn2-cong Vz D σ1≡σ2 M = rn-cong D σ1≡σ2 M
+ rn2-cong (C ⊕ D) D' σ1≡σ2 (inj₁ x) = cong inj₁ (rn2-cong C D' σ1≡σ2 x)
+ rn2-cong (C ⊕ D) D' σ1≡σ2 (inj₂ y) = cong inj₂ (rn2-cong D D' σ1≡σ2 y)
+ rn2-cong (C ⊗ D) D' σ1≡σ2 (proj₁ , proj₂) = cong₂ _,_ (rn2-cong C D'  σ1≡σ2 proj₁) (rn2-cong D D' σ1≡σ2 proj₂)
+ rn2-cong (⇒ C) D {σ1 = σ1} {σ2 = σ2} σ1≡σ2 M = rn2-cong C D (extend' (λ x ->
+     extend (pop ∘ σ1) top x ≡ extend (pop ∘ σ2) top x)
+     (cong pop ∘ σ1≡σ2) refl) M
 -- rn2-cong (A ⊃ C) D σ1 σ2 σ1≡σ2 M = {!!}
- rn2-cong ⊤ D σ1 σ2 σ1≡σ2 M = refl
+ rn2-cong ⊤ D σ1≡σ2 M = refl
 
 mutual
  lem1 : ∀ C {ψ φ ρ} (σ1 : vsubst φ ρ) (σ2 : vsubst ψ φ) (M : C [ ψ ])
@@ -96,7 +98,9 @@ mutual
  lem2 (C ⊕ D) D' σ1 σ2 (inj₂ y) = cong inj₂ (lem2 D D' σ1 σ2 y)
  lem2 (C ⊗ D) D' σ1 σ2 M = cong₂ _,_ (lem2 C D' σ1 σ2 (proj₁ M)) (lem2 D D' σ1 σ2 (proj₂ M))
  lem2 (⇒ C) D σ1 σ2 M = trans (lem2 C D (extend (pop ∘ σ1) top) (extend (pop ∘ σ2) top) M)
-                              (rn2-cong C D (extend (pop ∘ σ1) top ∘ extend (pop ∘ σ2) top) (extend (pop ∘ σ1 ∘ σ2) top) {!!} M)
+                              (rn2-cong C D (extend' (λ x →
+        (extend (pop ∘ σ1) top ∘ extend (pop ∘ σ2) top) x ≡ extend (pop ∘ σ1 ∘ σ2) top x)
+        (λ x → refl) refl) M)
 -- lem2 (A ⊃ C) D σ1 σ2 M = {!!}
  lem2 ⊤ D σ1 σ2 M = refl
 
