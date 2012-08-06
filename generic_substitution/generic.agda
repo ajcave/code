@@ -1,6 +1,7 @@
 module generic where
 open import Data.Sum
-open import Data.Product
+open import Product
+open import Data.Unit hiding (⊤)
 open import FinMapF
 open import Function
 open import Relation.Binary.PropositionalEquality hiding ([_])
@@ -14,22 +15,22 @@ data code : Set₁ where
          -- requries funext or sophisticated equivalence relations later
  ⊤ : code
 
-record unit : Set where
- constructor *
+* : Unit
+* = unit
 
-_⟨_⟩ : code -> ctx unit -> (ctx unit -> Set) -> Set
+_⟨_⟩ : code -> ctx Unit -> (ctx Unit -> Set) -> Set
 _⟨_⟩ Vz ψ X = X ψ
 _⟨_⟩ (C ⊕ D) ψ X = (C ⟨ ψ ⟩) X ⊎ (D ⟨ ψ ⟩) X
 _⟨_⟩ (C ⊗ D) ψ X = ((C ⟨ ψ ⟩) X) × ((D ⟨ ψ ⟩) X)
 _⟨_⟩ (⇒ C) ψ X = (C ⟨ (ψ , *) ⟩) X
 --_⟨_⟩ (A ⊃ C) ψ X = A → (C ⟨ ψ ⟩) X
-_⟨_⟩ ⊤ ψ X = unit
+_⟨_⟩ ⊤ ψ X = Unit
 
-data _[_] (C : code) (ψ : ctx unit) : Set where
+data _[_] (C : code) (ψ : ctx Unit) : Set where
  ▹ : (x : var ψ *) -> C [ ψ ]
  sup : (M : (C ⟨ ψ ⟩) (_[_] C)) -> C [ ψ ]
 
-tsubst : ∀ (C : code) (ψ φ : ctx unit) -> Set
+tsubst : ∀ (C : code) (ψ φ : ctx Unit) -> Set
 tsubst C ψ φ = gsubst ψ (λ _ -> C [ φ ])
 
 -- TODO: I thought with care it was possible to make it so the C's don't have to be passed
@@ -101,7 +102,7 @@ mutual
                               (rn2-cong C D (extend' (λ x →
         (extend (pop ∘ σ1) top ∘ extend (pop ∘ σ2) top) x ≡ extend (pop ∘ σ1 ∘ σ2) top x)
         (λ x → refl) refl) M)
--- lem2 (A ⊃ C) D σ1 σ2 M = {!!} 
+-- lem2 (A ⊃ C) D σ1 σ2 M = {!!}
  lem2 ⊤ D σ1 σ2 M = refl
 
 -- TODO: Try simulating and using label types?

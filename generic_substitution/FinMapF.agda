@@ -12,11 +12,11 @@ data var {A : Set} : (Γ : ctx A) -> A -> Set where
 gsubst' : ∀ {A} (ψ : ctx A) (F : ∀ {T} -> var ψ T -> Set) -> Set
 gsubst' ψ F = ∀ {T} (x : var ψ T) -> F x
 
-extend' : ∀ {A} {U} {ψ : ctx A} (F : ∀ {T} -> var (ψ , U) T -> Set)  -> gsubst' ψ (F ∘ pop) -> F top -> gsubst' (ψ , U) F
+extend' : ∀ {A} {U} {ψ : ctx A} (F : ∀ {T} -> var (ψ , U) T -> Set) -> gsubst' ψ (F ∘ pop) -> F top -> gsubst' (ψ , U) F
 extend' F σ M top = M
 extend' F σ M (pop y) = σ y
 
--- Specialize to non-dependent to get better reconstruction behaviour
+-- Specialized to non-dependent to get better reconstruction behaviour
 gsubst : ∀ {A} (ψ : ctx A) (F : A -> Set) -> Set
 gsubst ψ F = gsubst' ψ (λ {T} x -> F T)
 
