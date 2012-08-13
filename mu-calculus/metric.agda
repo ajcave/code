@@ -50,7 +50,7 @@ agree (▹ X) f zero F t u q = true
 agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
 agree (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (μ⁺ F f)) n (extend'
    (λ x → (m : _) → m <′ n → extend f (μ⁺ F f) x → extend f (μ⁺ F f) x → bool⁺)
-    F' (λ m x x' x0 → agree (μ F) f m (λ x1 m' x2 → F' x1 m' {!!}) x' x0 (rs m x))) t u (acc rs)
+    F' (λ m x x' x0 → agree (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) t u (acc rs)
 agree (T ⇒ S) f n F t u q = sup (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
 agree (T ∧ S) f n F t u q = and (agree T f n F (proj₁ t) (proj₁ u) q) (agree S f n F (proj₂ t) (proj₂ u) q)
 agree (T ∨ S) f n F (inj₁ x) (inj₁ x') q = agree T f n F x x' q
