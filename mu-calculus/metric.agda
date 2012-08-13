@@ -36,9 +36,9 @@ data bool⁺ : Set₁ where
 
 and : bool⁺ -> bool⁺ -> bool⁺
 and true b = b
-and false m = false
-and (sup A f) true = sup A f
-and (sup A f) false = false
+and b true = b
+and false _ = false
+and _ false = false
 and (sup A f) (sup A' f') = sup (A ⊎ A') (λ { (inj₁ x) → f x; (inj₂ y) → f' y})
 
 agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> bool⁺)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> bool⁺
