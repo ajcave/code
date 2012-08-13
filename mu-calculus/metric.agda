@@ -41,6 +41,10 @@ and false _ = false
 and _ false = false
 and (sup A f) (sup A' f') = sup (A ⊎ A') (λ { (inj₁ x) → f x; (inj₂ y) → f' y})
 
+≤′-trans : ∀ {n m p} -> n ≤′ m -> m ≤′ p -> n ≤′ p
+≤′-trans r ≤′-refl = r
+≤′-trans r (≤′-step m≤′n) = ≤′-step (≤′-trans r m≤′n)
+
 agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> bool⁺)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> bool⁺
 agree (▹ X) f zero F t u q = true
 agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
@@ -49,7 +53,10 @@ agree (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (μ⁺ F f)
     F' (λ m x x' x0 → agree (μ F) f m (λ x1 m' x2 → F' x1 m' {!!}) x' x0 (rs m x))) t u (acc rs)
 agree (T ⇒ S) f n F t u q = sup (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
 agree (T ∧ S) f n F t u q = and (agree T f n F (proj₁ t) (proj₁ u) q) (agree S f n F (proj₂ t) (proj₂ u) q)
-agree (T ∨ S) f n F t u q = {!!}
-agree ⊤ f n F t u rs = {!!}
+agree (T ∨ S) f n F (inj₁ x) (inj₁ x') q = agree T f n F x x' q
+agree (T ∨ S) f n F (inj₁ x) (inj₂ y) q = false
+agree (T ∨ S) f n F (inj₂ y) (inj₁ x) q = false
+agree (T ∨ S) f n F (inj₂ y) (inj₂ y') q = agree S f n F y y' q
+agree ⊤ f n F t u rs = true
 agree (○ T) f zero F t u q = true
 agree (○ T) f (suc n) F t u (acc rs) = agree T f n (λ x m x' → F x m (≤′-step x')) t u (rs n ≤′-refl)
