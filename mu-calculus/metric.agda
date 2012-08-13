@@ -46,7 +46,7 @@ and (sup A f) (sup A' f') = sup (A ⊎ A') (λ { (inj₁ x) → f x; (inj₂ y) 
 ≤′-trans r (≤′-step m≤′n) = ≤′-step (≤′-trans r m≤′n)
 
 agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> bool⁺)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> bool⁺
-agree (▹ X) f zero F t u q = true
+agree (▹ X) f zero F t u q = true -- variables are implicitly circled
 agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
 agree (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (μ⁺ F f)) n (extend'
    (λ x → (m : _) → m <′ n → extend f (μ⁺ F f) x → extend f (μ⁺ F f) x → bool⁺)
