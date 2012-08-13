@@ -126,13 +126,14 @@ appSubst (T + S) σ M = (Σ.fst M) , (monotone (_*_.fst (Σ.snd M)) σ , (_*_.sn
 appSubst ⊥ σ M = monotone M σ
 
 
-paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> sem Δ T) -> sem Γ T
-paste2 {atom A} t p = paste t p
-paste2 {T ⇝ S} t p = {!!}
-paste2 {T × S} t p = (paste2 t (λ x → _*_.fst (p x))) , (paste2 t (λ x → _*_.snd (p x)))
-paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p x) Δ))) , (union t (λ x → _*_.fst (Σ.snd (p x))) , λ Δ x → _*_.snd (Σ.snd (p (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
-paste2 {⊥} t p = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
-paste2 {unit} t p = tt
+mutual
+ paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> sem Δ T) -> sem Γ T
+ paste2 {atom A} t p = paste t p
+ paste2 {T ⇝ S} t p = λ Δ x x' → {!!}
+ paste2 {T × S} t p = (paste2 t (λ x → _*_.fst (p x))) , (paste2 t (λ x → _*_.snd (p x)))
+ paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p x) Δ))) , (union t (λ x → _*_.fst (Σ.snd (p x))) , λ Δ x →  _*_.snd (Σ.snd (p (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
+ paste2 {⊥} t p = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
+ paste2 {unit} t p = tt
 
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x

@@ -13,8 +13,8 @@ data var {p} {A : Set p} : (Γ : ctx A) -> A -> Set p where
 gsubst' : ∀ {a b} {A : Set a} (ψ : ctx A) (F : ∀ {T} -> var ψ T -> Set b) -> Set (a ⊔ b)
 gsubst' ψ F = ∀ {T} (x : var ψ T) -> F x
 
-init : ∀ {a b} {A : Set a} {U} (F : ∀ {T} -> var ⊡ T -> Set b) -> gsubst' ⊡ F
-init F x = ?
+init : ∀ {a b} {A : Set a} {F : ∀ {T : A} -> var ⊡ T -> Set b} -> gsubst' ⊡ F
+init ()
 
 extend' : ∀ {a b} {A : Set a} {U} {ψ : ctx A} (F : ∀ {T} -> var (ψ , U) T -> Set b) -> gsubst' ψ (F ∘ pop) -> F top -> gsubst' (ψ , U) F
 extend' F σ M top = M
@@ -36,7 +36,5 @@ gksubst ψ F = gsubst ψ (λ _ -> F)
 
 kextend : ∀ {a b} {A : Set a} {F : Set b} {U} {ψ : ctx A} -> gksubst ψ F -> F -> gksubst (ψ , U) F
 kextend {a} {b} {A} {F} σ M = extend' (λ _ -> F) σ M
-
-
 
 
