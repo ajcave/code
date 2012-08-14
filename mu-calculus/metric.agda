@@ -342,7 +342,7 @@ agree2-restrict2 (T ∨ S) f n k q F Fr t u p1 p2 x = {!!}
 agree2-restrict2 ⊤ f n k q F Fr t u p1 p2 x = unit
 agree2-restrict2 (○ T) f zero k q F Fr t u p1 p2 x = {!!}
 agree2-restrict2 (○ T) f (suc n) zero q F Fr t u (acc rs) (acc rs') x = unit
-agree2-restrict2 (○ T) f (suc n) (suc n') q F Fr t u (acc rs) (acc rs') x with agree2-restrict T f 
+agree2-restrict2 (○ T) f (suc n) (suc n') q F Fr t u (acc rs) (acc rs') x = ? --with agree2-restrict T f 
 
 
 agree2-restrict : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n k : ℕ) (q : k ≤′ n)
