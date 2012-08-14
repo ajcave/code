@@ -8,6 +8,7 @@ open import Induction.WellFounded
 open import Data.Product
 open import Data.Sum
 open import FinMapF
+open import Function
 open import Coinduction
 
 data prop (Δ : ctx Unit) : Set where
@@ -38,15 +39,15 @@ mutual
 -- We could lower this to Set by restricting the A to be in the prop universe
 data bool⁺ : Set₁ where
  true false : bool⁺
- sup : ∀ (A : Set) (f : A -> bool⁺) -> bool⁺
--- TODO: Probably we don't need arbitrary nesting, just need one sup at the topmost level
+ inf : ∀ (A : Set) (f : A -> bool⁺) -> bool⁺
+-- TODO: Probably we don't need arbitrary nesting, just need one sup at the topmost level (like below)
 
 and : bool⁺ -> bool⁺ -> bool⁺
-and true b = b
+and true c = c
+and false c = false
 and b true = b
-and false _ = false
-and _ false = false
-and (sup A f) (sup A' f') = sup (A ⊎ A') (λ { (inj₁ x) → f x; (inj₂ y) → f' y})
+and b false = false
+and (inf A f) (inf A' f') = inf (A ⊎ A') λ {(inj₁ x) → f x; (inj₂ x) → f' x}
 
 ≤′-trans : ∀ {n m p} -> n ≤′ m -> m ≤′ p -> n ≤′ p
 ≤′-trans r ≤′-refl = r
@@ -56,12 +57,12 @@ agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (�
 agree (▹ X) f zero F t u q = true -- variables are implicitly circled
 agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
 agree (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (μ⁺ F f)) n (extend'
-   (λ x → (m : _) → m <′ n → extend f (μ⁺ F f) x → extend f (μ⁺ F f) x → bool⁺)
+   (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → bool⁺)
     F' (λ m x x' x0 → agree (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) t u (acc rs)
 agree (ν F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (ν⁺ F f)) n (extend'
-   (λ x → (m : _) → m <′ n → extend f (ν⁺ F f) x → extend f (ν⁺ F f) x → bool⁺)
+   (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → bool⁺)
     F' (λ m x x' x0 → agree (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) (♭ t) (♭ u) (acc rs)
-agree (T ⇒ S) f n F t u q = sup (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
+agree (T ⇒ S) f n F t u q = inf (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
 agree (T ∧ S) f n F t u q = and (agree T f n F (proj₁ t) (proj₁ u) q) (agree S f n F (proj₂ t) (proj₂ u) q)
 agree (T ∨ S) f n F (inj₁ x) (inj₁ x') q = agree T f n F x x' q
 agree (T ∨ S) f n F (inj₁ x) (inj₂ y) q = false
@@ -71,38 +72,54 @@ agree ⊤ f n F t u rs = true
 agree (○ T) f zero F t u q = true
 agree (○ T) f (suc n) F t u (acc rs) = agree T f n (λ x m x' → F x m (≤′-step x')) t u (rs n ≤′-refl)
 
-data CoNat : Set where
+agree'' : (T : prop ⊡) (t u : ⟦ T ⟧ init) (n : ℕ) -> bool⁺
+agree'' T t u n = agree T init n (init {F = (λ x -> ∀ m -> m <′ n -> init x -> init x -> bool⁺)}) t u (<-well-founded n)
+
+data CoNat : Set₁ where
  zero : CoNat
  suc : ∞ CoNat -> CoNat
--- inf : ∀ (A : Set) (f : A -> ∞ CoNat) -> CoNat
+ inf : ∀ (A : Set) (f : A -> CoNat) -> CoNat
 
 ω : CoNat
 ω = suc (♯ ω)
 
-data CoNat⁺ : Set₁ where
- inf : ∀ (A : Set) (f : A -> CoNat) -> CoNat⁺ 
+-- Huh this seems like some kind of monad?
+record _⁺ (F : Set) : Set₁ where
+ constructor inf
+ field
+  idx : Set
+  f : (idx -> F)
 
-inj : CoNat -> CoNat⁺
-inj n = inf Unit (λ unit -> n)
+inf⁺ : ∀ {F : Set} (A : Set) -> (f : A -> F ⁺) -> F ⁺
+inf⁺ {F} A f = inf (Σ A (λ x → _⁺.idx (f x))) (λ x → _⁺.f (f (proj₁ x)) (proj₂ x))
 
-suc⁺ : CoNat⁺ -> CoNat⁺
-suc⁺ (inf A f) = inf A (λ x → suc (♯ f x))
+collapse : bool⁺ -> Bool ⁺
+collapse true = inf Unit (λ x → true)
+collapse false = inf Unit (λ x → false)
+collapse (inf A f) = inf⁺ A (λ x → collapse (f x))
 
-zero⁺ : CoNat⁺
-zero⁺ = inf Unit (λ unit -> zero)
+{-
+cmin : CoNat -> CoNat -> CoNat
+cmin m n = {!!}
+-}
 
-cmin : CoNat⁺ -> CoNat⁺ -> CoNat⁺
-cmin (inf A f) (inf A' f') = inf (A ⊎ A') λ {(inj₁ x) → f x; (inj₂ x) → f' x}
+agrees-to : (f : ℕ -> Bool ⁺) -> CoNat
+agrees-to f with f zero
+... | (inf idx f') = inf idx (λ x → foo (f' x))
+ where foo : Bool -> CoNat
+       foo true = suc (♯ agrees-to (f ∘ suc))
+       foo false = zero
 
-agree' : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (F : gsubst' Δ (λ x -> f x -> f x -> CoNat)) (t u : ⟦ T ⟧ f) → CoNat⁺
-agree' (▹ X) f F t u = {!!}
-agree' (μ F) f F' t u = {!!}
-agree' (ν F) f F' t u = {!!}
-agree' (T ⇒ S) f F t u = {!!}
+-- I think this abides by some kind of "lexicographic" termination/productivity condition?
+{-agree' : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (F : gsubst' Δ (λ x -> ∀ (t u : f x) -> CoNat)) (t u : ⟦ T ⟧ f) → CoNat
+agree' (▹ X) f F t u = suc (♯ F X t u)
+agree' (μ F) f F' ⟨ t ⟩ ⟨ u ⟩ = agree' F (extend f (μ⁺ F f)) (extend' (λ x → (t' u' : extend f (μ⁺ F f) x) → CoNat) F' (λ t' u' → suc (♯ agree' (μ F) f F' u' t'))) t u
+agree' (ν F) f F' ⟨ t ⟩ ⟨ u ⟩ = {!!}
+agree' (T ⇒ S) f F t u = inf (⟦ T ⟧ init) (λ x → ♯ agree' S f F (t x) (u x))
 agree' (T ∧ S) f F t u = cmin (agree' T f F (proj₁ t) (proj₁ u)) (agree' S f F (proj₂ t) (proj₂ u))
 agree' (T ∨ S) f F (inj₁ x) (inj₁ x') = agree' T f F x x'
-agree' (T ∨ S) f F (inj₁ x) (inj₂ y) = zero⁺
-agree' (T ∨ S) f F (inj₂ y) (inj₁ x) = zero⁺
+agree' (T ∨ S) f F (inj₁ x) (inj₂ y) = zero
+agree' (T ∨ S) f F (inj₂ y) (inj₁ x) = zero
 agree' (T ∨ S) f F (inj₂ y) (inj₂ y') = agree' S f F y y'
-agree' ⊤ f F t u = inj ω
-agree' (○ T) f F t u = suc⁺ (agree' T f F t u)
+agree' ⊤ f F t u = ω
+agree' (○ T) f F t u = suc (♯ agree' T f F t u) -}
