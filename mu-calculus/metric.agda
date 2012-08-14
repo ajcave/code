@@ -313,3 +313,11 @@ agree2-trans (T ∨ S) f n F Ft (inj₂ y) (inj₂ y') (inj₂ y0) p r1 r2 = agr
 agree2-trans ⊤ f n F Ft t u v p r1 r2 = unit
 agree2-trans (○ T) f zero F Ft t u v p r1 r2 = unit
 agree2-trans (○ T) f (suc n) F Ft t u v (acc rs) r1 r2 = agree2-trans T f n (λ x m x' x0 x1 → F x m (≤′-step x') x0 x1) (λ x m p t' u' v' x' x0 → Ft x m (≤′-step p) t' u' v' x' x0) t u v (rs n ≤′-refl) r1 r2
+
+≈-trans : ∀ {T : prop ⊡} {n : ℕ} {t u v} -> agree2' T t u n -> agree2' T u v n -> agree2' T t v n
+≈-trans {T} {n} {t} {u} {v} x1 x2 = agree2-trans T init n (init {F = λ x → (m : _) → m <′ n → init x → init x → Set})
+  (init {F = λ x' → (m : ℕ) (p : suc m ≤′ n) (t' u' v' : init x') →
+        init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p t' u'
+      → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p u' v'
+      → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p t' v'})
+  t u v (<-well-founded n) x1 x2
