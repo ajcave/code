@@ -208,10 +208,27 @@ agree2-refl (T ∨ S) f n F Fr (inj₁ x) p = agree2-refl T f n F Fr x p
 agree2-refl (T ∨ S) f n F Fr (inj₂ y) p = agree2-refl S f n F Fr y p
 agree2-refl ⊤ f n F Fr t p = unit
 agree2-refl (○ T) f zero F Fr t p = unit
-agree2-refl (○ T) f (suc n) F Fr t (acc rs) = agree2-refl T f n (λ x m x' → F x m (≤′-step x')) (λ x m p t' → Fr _ _ _ _) t (rs n ≤′-refl)
+agree2-refl (○ T) f (suc n) F Fr t (acc rs) = agree2-refl T f n (λ x m x' → F x m (≤′-step x')) (λ x m p → Fr _ _ _) t (rs n ≤′-refl)
 
 syntax agree2 T t u n = t ≈[ T , n ] u
 
 ≈-refl : ∀ {T : prop ⊡} {n : ℕ} {t} -> agree2' T t t n
 ≈-refl {T} {n} {t} = agree2-refl T init n (init {F = λ x → (m : _) → m <′ n → init x → init x → Set}) (init {F = λ x → ∀ m (p : m <′ n) (t' : init x) → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x m p t' t'}) t (<-well-founded n)
 
+agree2-sym : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ)
+ (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set))
+ (F-sym : gsubst' Δ (λ x -> ∀ m (p : m <′ n) (t u : f x) -> F x m p t u -> F x m p u t))
+ (t u : ⟦ T ⟧ f) → (p : Acc _<′_ n) -> agree2 T f n F t u p -> agree2 T f n F u t p
+agree2-sym (▹○ X) f zero F Fs t u p x = unit
+agree2-sym (▹○ X) f (suc n) F Fs t u p x = Fs X n ≤′-refl t u x
+agree2-sym (μ F) f n F' Fs t u p x = {!!}
+agree2-sym (ν F) f n F' Fs t u p x = {!!}
+agree2-sym (T ⇒ S) f n F Fs t u p x = λ x' → agree2-sym S f n F Fs (t x') (u x') p (x x')
+agree2-sym (T ∧ S) f n F Fs (t₁ , t₂) (u₁ , u₂) p (x₁ , x₂) = agree2-sym T f n F Fs t₁ u₁ p x₁ , agree2-sym S f n F Fs t₂ u₂ p x₂
+agree2-sym (T ∨ S) f n F Fs (inj₁ x) (inj₁ x') p x0 = agree2-sym T f n F Fs x x' p x0
+agree2-sym (T ∨ S) f n F Fs (inj₁ x) (inj₂ y) p ()
+agree2-sym (T ∨ S) f n F Fs (inj₂ y) (inj₁ x) p ()
+agree2-sym (T ∨ S) f n F Fs (inj₂ y) (inj₂ y') p x = agree2-sym S f n F Fs y y' p x
+agree2-sym ⊤ f n F Fs t u p x = unit
+agree2-sym (○ T) f zero F Fs t u p x = unit
+agree2-sym (○ T) f (suc n) F Fs t u (acc rs) x = agree2-sym T f n (λ x' m x0 → F x' m (≤′-step x0)) (λ x' m p → Fs x' m (≤′-step p)) t u (rs n ≤′-refl) x 
