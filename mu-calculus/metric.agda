@@ -156,6 +156,7 @@ agree' ⊤ f F t u = ω
 agree' (○ T) f F t u = suc (♯ agree' T f F t u) -}
 
 
+-- We're actually defining the equivalence relation ≈ⁿ here!
 agree2 : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Set
 agree2 (▹○ X) f zero F t u q = Unit -- Variables are implicitly circled
 agree2 (▹○ X) f (suc n) F t u q = F X n ≤′-refl t u
@@ -174,3 +175,8 @@ agree2 (T ∨ S) f n F (inj₂ y) (inj₂ y') q = agree2 S f n F y y' q
 agree2 ⊤ f n F t u q = Unit
 agree2 (○ T) f zero F t u q = Unit
 agree2 (○ T) f (suc n) F t u (acc rs) = agree2 T f n (λ x m x' → F x m (≤′-step x')) t u (rs n ≤′-refl)
+
+agree2' : ∀ (T : prop ⊡) (t u : ⟦ T ⟧ init) -> ℕ -> Set
+agree2' T t u n = agree2 T init n (init {F = λ x → (m : _) → m <′ n → init x → init x → Set}) t u (<-well-founded n)
+
+syntax agree2 T t u n = t ≈[ T , n ] u
