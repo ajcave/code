@@ -14,7 +14,7 @@ open import Coinduction
 open import Relation.Binary.PropositionalEquality
 
 data prop (Δ : ctx Unit) : Set where
- ▹ : (X : var Δ unit) -> prop Δ
+ ▹○ : (X : var Δ unit) -> prop Δ
  μ ν : (F : prop (Δ , unit)) -> prop Δ
  _⇒_ : (T : prop ⊡) (S : prop Δ) -> prop Δ
  _∧_ _∨_ : (T S : prop Δ) -> prop Δ
@@ -29,7 +29,7 @@ mutual
   ⟨_⟩ : ⟦ F ⟧ (kextend f (μ⁺ F f)) -> μ⁺ F f
 
  ⟦_⟧ : ∀ {Δ} -> prop Δ -> (f : gksubst Δ Set) -> Set
- ⟦_⟧ (▹ X) f = f X
+ ⟦_⟧ (▹○ X) f = f X
  ⟦_⟧ (μ F) f = μ⁺ F f
  ⟦_⟧ (ν F) f = ν⁺ F f
  ⟦_⟧ (T ⇒ S) f = ⟦ T ⟧ init → ⟦ S ⟧ f -- Almost passes positivity check, except for this
@@ -73,8 +73,8 @@ and (inf A f) (inf A' f') = inf (A ⊎ A') λ {(inj₁ x) → f x; (inj₂ x) �
 
 -- Ah, we could just as well be defining a Prop stating that they agree up to n, i.e. that they are equal in ≈ⁿ
 agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Complete Bool)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Complete Bool
-agree (▹ X) f zero F t u q = emb true -- variables are implicitly circled
-agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
+agree (▹○ X) f zero F t u q = emb true -- variables are implicitly circled
+agree (▹○ X) f (suc n) F t u q = F X n ≤′-refl t u
 agree (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (μ⁺ F f)) n (extend'
    (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → Complete Bool)
     F' (λ m x x' x0 → agree (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) t u (acc rs)
@@ -95,14 +95,14 @@ agree'' : (T : prop ⊡) (t u : ⟦ T ⟧ init) (n : ℕ) -> Complete Bool
 agree'' T t u n = agree T init n (init {F = (λ x -> ∀ m -> m <′ n -> init x -> init x -> Complete Bool)}) t u (<-well-founded n)
 
 test1 : emb true ≡
-  (agree'' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
+  (agree'' (μ ((⊤ ∨ ⊤) ∨ (▹○ top)))
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₁ unit)) ⟩) ⟩) ⟩)
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
-  (suc (suc (suc zero))))
+  (suc zero))
 test1 = refl
 
 test2 : emb false ≡
-  (agree'' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
+  (agree'' (μ ((⊤ ∨ ⊤) ∨ (▹○ top)))
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₁ unit)) ⟩) ⟩) ⟩)
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
   (suc (suc (suc (suc zero)))))
@@ -133,7 +133,7 @@ cast (suc y) = suc (cast (♭ y))
 cast (inf A f) = {!!}
 
 test3 : ℕ
-test3 =  cast (agrees-to' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
+test3 =  cast (agrees-to' (μ ((⊤ ∨ ⊤) ∨ (▹○ top)))
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₁ unit)) ⟩) ⟩) ⟩)
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
   )
@@ -157,8 +157,8 @@ agree' (○ T) f F t u = suc (♯ agree' T f F t u) -}
 
 
 agree2 : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Set
-agree2 (▹ X) f zero F t u q = Unit
-agree2 (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
+agree2 (▹○ X) f zero F t u q = Unit -- Variables are implicitly circled
+agree2 (▹○ X) f (suc n) F t u q = F X n ≤′-refl t u
 agree2 (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree2 F (extend f (μ⁺ F f)) n (extend'
    (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → Set)
     F' (λ m x x' x0 → agree2 (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) t u (acc rs)
