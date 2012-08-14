@@ -79,7 +79,7 @@ agree (ν F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (ν⁺ F f)
    (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → Foo Bool)
     F' (λ m x x' x0 → agree (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) (♭ t) (♭ u) (acc rs)
 agree (T ⇒ S) f n F t u q = inf' (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
-agree (T ∧ S) f n F t u q = and (agree T f n F (proj₁ t) (proj₁ u) q) (agree S f n F (proj₂ t) (proj₂ u) q)
+agree (T ∧ S) f n F (t1 , t2) (u1 , u2) q = and (agree T f n F t1 u1 q) (agree S f n F t2 u2 q)
 agree (T ∨ S) f n F (inj₁ x) (inj₁ x') q = agree T f n F x x' q
 agree (T ∨ S) f n F (inj₁ x) (inj₂ y) q = emb false
 agree (T ∨ S) f n F (inj₂ y) (inj₁ x) q = emb false
