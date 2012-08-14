@@ -323,3 +323,39 @@ agree2-trans (○ T) f (suc n) F Ft t u v (acc rs) r1 r2 = agree2-trans T f n (�
       → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p u' v'
       → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p t' v'})
   t u v (<-well-founded n) x1 x2
+
+
+≤′-suc : ∀ {n m} -> n ≤′ m -> suc n ≤′ suc m
+≤′-suc ≤′-refl = ≤′-refl
+≤′-suc (≤′-step m≤′n) = ≤′-step (≤′-suc m≤′n)
+
+agree2-restrict2 : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n k : ℕ) (q : k <′ n)
+ (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set))
+ (F-restrict : gsubst' Δ (λ x -> ∀ m (p : m <′ n) mk (q : mk ≤′ m) (t u : f x) -> F x m p t u -> F x mk (≤′-trans (≤′-suc q) p) t u))
+ (t u : ⟦ T ⟧ f) → (p : Acc _<′_ n) (p2 : Acc _<′_ k) -> agree2 T f n F t u p -> agree2 T f k (λ x m x' x0 x1 → F x m (≤′-trans (≤′-step x') q) x1 x1) t u p2
+agree2-restrict2 (▹○ X) f n k q F Fr t u p1 p2 x = {!!}
+agree2-restrict2 (μ F) f n k q F' Fr t u p1 p2 x = {!!}
+agree2-restrict2 (ν F) f n k q F' Fr t u p1 p2 x = {!!}
+agree2-restrict2 (T ⇒ S) f n k q F Fr t u p1 p2 x = {!!}
+agree2-restrict2 (T ∧ S) f n k q F Fr t u p1 p2 x = {!!}
+agree2-restrict2 (T ∨ S) f n k q F Fr t u p1 p2 x = {!!}
+agree2-restrict2 ⊤ f n k q F Fr t u p1 p2 x = unit
+agree2-restrict2 (○ T) f zero k q F Fr t u p1 p2 x = {!!}
+agree2-restrict2 (○ T) f (suc n) zero q F Fr t u (acc rs) (acc rs') x = unit
+agree2-restrict2 (○ T) f (suc n) (suc n') q F Fr t u (acc rs) (acc rs') x with agree2-restrict T f 
+
+
+agree2-restrict : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n k : ℕ) (q : k ≤′ n)
+ (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set))
+ (F-restrict : gsubst' Δ (λ x -> ∀ m (p : m <′ n) mk (q : mk ≤′ m) (t u : f x) -> F x m p t u -> F x mk (≤′-trans (≤′-suc q) p) t u))
+ (t u : ⟦ T ⟧ f) → (p : Acc _<′_ n) -> agree2 T f n F t u p -> agree2 T f k (λ x m x' x0 x1 → F x m (≤′-trans x' q) x1 x1) t u (<-well-founded k)
+agree2-restrict (▹○ X) f zero zero q F Fr t u p x = unit
+agree2-restrict (▹○ X) f zero (suc n) q F Fr t u p x = {!!}
+agree2-restrict (▹○ X) f (suc n) k q F Fr t u p x = {!!}
+agree2-restrict (μ F) f n k q F' Fr t u p x = {!!}
+agree2-restrict (ν F) f n k q F' Fr t u p x = {!!}
+agree2-restrict (T ⇒ S) f n k q F Fr t u p x = {!!}
+agree2-restrict (T ∧ S) f n k q F Fr t u p x = {!!}
+agree2-restrict (T ∨ S) f n k q F Fr t u p x = {!!}
+agree2-restrict ⊤ f n k q F Fr t u p x = {!!}
+agree2-restrict (○ T) f n k q F Fr t u p x = {!!}
