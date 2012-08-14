@@ -43,22 +43,22 @@ data bool⁺ : Set₁ where
  inf : ∀ (A : Set) (f : A -> bool⁺) -> bool⁺
 -- TODO: Probably we don't need arbitrary nesting, just need one sup at the topmost level (like below)
 
-data Foo (C : Set) : Set₁ where
- emb : C -> Foo C
- inf : ∀ (A : Set) (f : A -> C) -> Foo C
+data Complete (C : Set) : Set₁ where
+ emb : C -> Complete C
+ inf : ∀ (A : Set) (f : A -> C) -> Complete C
 
-Foo-idx : ∀ {C : Set} -> Foo C -> Set
-Foo-idx (emb y) = Unit
-Foo-idx (inf A f) = A
+Complete-idx : ∀ {C : Set} -> Complete C -> Set
+Complete-idx (emb y) = Unit
+Complete-idx (inf A f) = A
 
-blah : ∀ {C : Set} (x : Foo C) -> Foo-idx x -> C
-blah (emb y) t = y
-blah (inf A f) t = f t
+extract : ∀ {C : Set} (x : Complete C) -> Complete-idx x -> C
+extract (emb y) t = y
+extract (inf A f) t = f t
 
-inf' : ∀ {C : Set} (A : Set) (f : A -> Foo C) -> Foo C
-inf' A f = inf (Σ A (λ x → Foo-idx (f x))) (λ x → blah (f (proj₁ x)) (proj₂ x))
+inf' : ∀ {C : Set} (A : Set) (f : A -> Complete C) -> Complete C
+inf' A f = inf (Σ A (λ x → Complete-idx (f x))) (λ x → extract (f (proj₁ x)) (proj₂ x))
 
-and : Foo Bool -> Foo Bool -> Foo Bool
+and : Complete Bool -> Complete Bool -> Complete Bool
 and (emb true) b = b
 and (emb false) _ = emb false
 and b (emb true) = b
@@ -69,14 +69,14 @@ and (inf A f) (inf A' f') = inf (A ⊎ A') λ {(inj₁ x) → f x; (inj₂ x) �
 ≤′-trans r ≤′-refl = r
 ≤′-trans r (≤′-step m≤′n) = ≤′-step (≤′-trans r m≤′n)
 
-agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Foo Bool)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Foo Bool
+agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Complete Bool)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Complete Bool
 agree (▹ X) f zero F t u q = emb true -- variables are implicitly circled
 agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
 agree (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (μ⁺ F f)) n (extend'
-   (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → Foo Bool)
+   (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → Complete Bool)
     F' (λ m x x' x0 → agree (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) t u (acc rs)
 agree (ν F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (ν⁺ F f)) n (extend'
-   (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → Foo Bool)
+   (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → Complete Bool)
     F' (λ m x x' x0 → agree (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) (♭ t) (♭ u) (acc rs)
 agree (T ⇒ S) f n F t u q = inf' (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
 agree (T ∧ S) f n F (t1 , t2) (u1 , u2) q = and (agree T f n F t1 u1 q) (agree S f n F t2 u2 q)
@@ -88,8 +88,8 @@ agree ⊤ f n F t u rs = emb true
 agree (○ T) f zero F t u q = emb true
 agree (○ T) f (suc n) F t u (acc rs) = agree T f n (λ x m x' → F x m (≤′-step x')) t u (rs n ≤′-refl)
 
-agree'' : (T : prop ⊡) (t u : ⟦ T ⟧ init) (n : ℕ) -> Foo Bool
-agree'' T t u n = agree T init n (init {F = (λ x -> ∀ m -> m <′ n -> init x -> init x -> Foo Bool)}) t u (<-well-founded n)
+agree'' : (T : prop ⊡) (t u : ⟦ T ⟧ init) (n : ℕ) -> Complete Bool
+agree'' T t u n = agree T init n (init {F = (λ x -> ∀ m -> m <′ n -> init x -> init x -> Complete Bool)}) t u (<-well-founded n)
 
 test1 : emb true ≡
   (agree'' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
