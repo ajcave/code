@@ -179,4 +179,34 @@ agree2 (○ T) f (suc n) F t u (acc rs) = agree2 T f n (λ x m x' → F x m (≤
 agree2' : ∀ (T : prop ⊡) (t u : ⟦ T ⟧ init) -> ℕ -> Set
 agree2' T t u n = agree2 T init n (init {F = λ x → (m : _) → m <′ n → init x → init x → Set}) t u (<-well-founded n)
 
+agree2-refl : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set)) (F-refl : gsubst' Δ (λ x -> ∀ m (p : m <′ n) (t : f x) -> F x m p t t)) (t : ⟦ T ⟧ f) → (p : Acc _<′_ n) -> agree2 T f n F t t p
+agree2-refl (▹○ X) f zero F Fr t p = unit
+agree2-refl (▹○ X) f (suc n) F Fr t p = Fr X n ≤′-refl t
+agree2-refl (μ F) f n F' Fr ⟨ t ⟩ (acc rs) = agree2-refl F _ n (extend'
+   (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → Set)
+    F' (λ m x x' x0 → agree2 (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x)))
+   (extend'
+      (λ x → (m : _) (p : m <′ n) (t' : extend f (μ⁺ F f) x) →
+        extend' (λ x' → (m' : _) → m' <′ n → (t0 u : extend f (μ⁺ F f) x') → Set)
+                F'
+                 (λ m' x' x0 x1 → agree2 (μ F) f m' (λ x2 m0 x3 → F' x2 m0 (≤′-trans (≤′-step x3) x')) x0 x1 (rs m' x'))
+         x m p t' t')
+   Fr (λ m p t' → agree2-refl (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) p)) (λ x m' p' t0 → Fr _ _ _ _) t' (rs m p))) t (acc rs)
+agree2-refl (ν F) f n F' Fr ⟨ t ⟩ (acc rs) = agree2-refl F _ n (extend'
+   (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → Set)
+    F' (λ m x x' x0 → agree2 (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x)))
+   (extend'
+      (λ x → (m : _) (p : m <′ n) (t' : extend f (ν⁺ F f) x) →
+        extend' (λ x' → (m' : _) → m' <′ n → (t0 u : extend f (ν⁺ F f) x') → Set)
+                F'
+                 (λ m' x' x0 x1 → agree2 (ν F) f m' (λ x2 m0 x3 → F' x2 m0 (≤′-trans (≤′-step x3) x')) x0 x1 (rs m' x'))
+         x m p t' t')
+   Fr (λ m p t' → agree2-refl (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) p)) (λ x m' p' t0 → Fr _ _ _ _) t' (rs m p))) (♭ t) (acc rs)
+agree2-refl (T ⇒ S) f n F Fr t p = {!!}
+agree2-refl (T ∧ S) f n F Fr t p = {!!}
+agree2-refl (T ∨ S) f n F Fr t p = {!!}
+agree2-refl ⊤ f n F Fr t p = {!!}
+agree2-refl (○ T) f n F Fr t p = {!!}
+
 syntax agree2 T t u n = t ≈[ T , n ] u
+
