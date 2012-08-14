@@ -212,3 +212,6 @@ agree2-refl (○ T) f (suc n) F Fr t (acc rs) = agree2-refl T f n (λ x m x' →
 
 syntax agree2 T t u n = t ≈[ T , n ] u
 
+≈-refl : ∀ {T : prop ⊡} {n : ℕ} {t} -> agree2' T t t n
+≈-refl {T} {n} {t} = agree2-refl T init n (init {F = λ x → (m : _) → m <′ n → init x → init x → Set}) (init {F = λ x → ∀ m (p : m <′ n) (t' : init x) → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x m p t' t'}) t (<-well-founded n)
+
