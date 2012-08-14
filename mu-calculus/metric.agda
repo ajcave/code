@@ -359,3 +359,6 @@ agree2-restrict (T ∧ S) f n k q F Fr t u p x = {!!}
 agree2-restrict (T ∨ S) f n k q F Fr t u p x = {!!}
 agree2-restrict ⊤ f n k q F Fr t u p x = {!!}
 agree2-restrict (○ T) f n k q F Fr t u p x = {!!}
+
+-- TODO: Crap, isn't it easier to just define the restriction for semantic terms, and then take
+-- the equivalence relation to be equality on the restricted terms?
