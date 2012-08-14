@@ -110,6 +110,9 @@ agrees-to f with f zero
        foo true = suc (♯ agrees-to (f ∘ suc))
        foo false = zero
 
+agrees-to' : ∀ (T : prop ⊡) (t u : ⟦ T ⟧ init) -> CoNat
+agrees-to' T t u = agrees-to (λ x → collapse (agree'' T t u x))
+
 -- I think this abides by some kind of "lexicographic" termination/productivity condition?
 {-agree' : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (F : gsubst' Δ (λ x -> ∀ (t u : f x) -> CoNat)) (t u : ⟦ T ⟧ f) → CoNat
 agree' (▹ X) f F t u = suc (♯ F X t u)
