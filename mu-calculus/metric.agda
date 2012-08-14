@@ -272,8 +272,22 @@ agree2-trans : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ)
  (t u v : ⟦ T ⟧ f) → (p : Acc _<′_ n) -> agree2 T f n F t u p -> agree2 T f n F u v p -> agree2 T f n F t v p
 agree2-trans (▹○ X) f zero F Ft t u v p r1 r2 = unit
 agree2-trans (▹○ X) f (suc n) F Ft t u v p r1 r2 = Ft X n ≤′-refl t u v r1 r2
-agree2-trans (μ F) f n F' Ft t u v p r1 r2 = {!!}
-agree2-trans (ν F) f n F' Ft t u v p r1 r2 = {!!}
+agree2-trans (μ F) f n F' Ft ⟨ t ⟩ ⟨ u ⟩ ⟨ v ⟩ (acc rs) r1 r2 = agree2-trans F (extend f (μ⁺ F f)) n
+  (extend' (λ x → (m : ℕ) → m <′ n → extend f (μ⁺ F f) x → extend f (μ⁺ F f) x → Set)
+     F' (λ m x x' x0 → agree2 (μ F) f m (λ x1 m' z → F' x1 m' (≤′-trans (≤′-step z) x)) x' x0 (rs m x)))
+  (extend' (λ x → (m : ℕ) (p : suc m ≤′ n) (t' u' v' : extend f (μ⁺ F f) x) →
+        extend' (λ x' → (m' : ℕ) → suc m' ≤′ n → extend f (μ⁺ F f) x' → extend f (μ⁺ F f) x' → Set)
+        F' (λ m' x' x0 x1 → agree2 (μ F) f m' (λ x2 m0 z → F' x2 m0 (≤′-trans (≤′-step z) x')) x0 x1 (rs m' x'))
+        x m p t' u' →
+        extend' (λ x' → (m' : ℕ) → suc m' ≤′ n → extend f (μ⁺ F f) x' → extend f (μ⁺ F f) x' → Set)
+        F' (λ m' x' x0 x1 → agree2 (μ F) f m' (λ x2 m0 z → F' x2 m0 (≤′-trans (≤′-step z) x')) x0 x1 (rs m' x'))
+        x m p u' v' →
+        extend' (λ x' → (m' : ℕ) → suc m' ≤′ n → extend f (μ⁺ F f) x' → extend f (μ⁺ F f) x' → Set)
+        F' (λ m' x' x0 x1 → agree2 (μ F) f m' (λ x2 m0 z → F' x2 m0 (≤′-trans (≤′-step z) x')) x0 x1 (rs m' x'))
+        x m p t' v')
+     Ft (λ m p t' u' v' x x' → {!agree2-trans!}))
+  t u v (acc rs) r1 r2
+agree2-trans (ν F) f n F' Ft ⟨ t ⟩ ⟨ u ⟩ ⟨ v ⟩ (acc rs) r1 r2 = {!!}
 agree2-trans (T ⇒ S) f n F Ft t u v p r1 r2 = λ x → agree2-trans S f n F Ft (t x) (u x) (v x) p (r1 x) (r2 x)
 agree2-trans (T ∧ S) f n F Ft (t₁ , t₂) (u₁ , u₂) (v₁ , v₂) p (r1₁ , r1₂) (r2₁ , r2₂) = (agree2-trans T f n F Ft t₁ u₁ v₁ p r1₁ r2₁) , (agree2-trans S f n F Ft t₂ u₂ v₂ p r1₂ r2₂)
 agree2-trans (T ∨ S) f n F Ft (inj₁ x) (inj₁ x') (inj₁ x0) p r1 r2 = agree2-trans T f n F Ft x x' x0 p r1 r2
