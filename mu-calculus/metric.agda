@@ -113,14 +113,6 @@ data CoNat : Set₁ where
  suc : ∞ CoNat -> CoNat
  inf : ∀ (A : Set) (f : A -> CoNat) -> CoNat
 
-ω : CoNat
-ω = suc (♯ ω)
-
-{-
-cmin : CoNat -> CoNat -> CoNat
-cmin m n = {!!}
--}
-
 agrees-to : (f : ℕ -> Complete Bool) -> CoNat
 agrees-to f with f zero
 agrees-to f | emb true = suc (♯ agrees-to (f ∘ suc))
