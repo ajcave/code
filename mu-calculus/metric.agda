@@ -265,3 +265,23 @@ agree2-sym (○ T) f (suc n) F Fs t u (acc rs) x = agree2-sym T f n (λ x' m x0 
         init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p t' u'
       → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p u' t'})
   t u (<-well-founded n) x
+
+agree2-trans : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ)
+ (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set))
+ (F-trans : gsubst' Δ (λ x -> ∀ m (p : m <′ n) (t u v : f x) -> F x m p t u -> F x m p u v -> F x m p t v))
+ (t u v : ⟦ T ⟧ f) → (p : Acc _<′_ n) -> agree2 T f n F t u p -> agree2 T f n F u v p -> agree2 T f n F t v p
+agree2-trans (▹○ X) f zero F Ft t u v p r1 r2 = unit
+agree2-trans (▹○ X) f (suc n) F Ft t u v p r1 r2 = Ft X n ≤′-refl t u v r1 r2
+agree2-trans (μ F) f n F' Ft t u v p r1 r2 = {!!}
+agree2-trans (ν F) f n F' Ft t u v p r1 r2 = {!!}
+agree2-trans (T ⇒ S) f n F Ft t u v p r1 r2 = λ x → agree2-trans S f n F Ft (t x) (u x) (v x) p (r1 x) (r2 x)
+agree2-trans (T ∧ S) f n F Ft (t₁ , t₂) (u₁ , u₂) (v₁ , v₂) p (r1₁ , r1₂) (r2₁ , r2₂) = (agree2-trans T f n F Ft t₁ u₁ v₁ p r1₁ r2₁) , (agree2-trans S f n F Ft t₂ u₂ v₂ p r1₂ r2₂)
+agree2-trans (T ∨ S) f n F Ft (inj₁ x) (inj₁ x') (inj₁ x0) p r1 r2 = agree2-trans T f n F Ft x x' x0 p r1 r2
+agree2-trans (T ∨ S) f n F Ft (inj₁ x) (inj₁ x') (inj₂ y) p r1 ()
+agree2-trans (T ∨ S) f n F Ft (inj₁ x) (inj₂ y) v p () r2
+agree2-trans (T ∨ S) f n F Ft (inj₂ y) (inj₁ x) v p () r2
+agree2-trans (T ∨ S) f n F Ft (inj₂ y) (inj₂ y') (inj₁ x) p r1 ()
+agree2-trans (T ∨ S) f n F Ft (inj₂ y) (inj₂ y') (inj₂ y0) p r1 r2 = agree2-trans S f n F Ft y y' y0 p r1 r2
+agree2-trans ⊤ f n F Ft t u v p r1 r2 = unit
+agree2-trans (○ T) f zero F Ft t u v p r1 r2 = unit
+agree2-trans (○ T) f (suc n) F Ft t u v (acc rs) r1 r2 = agree2-trans T f n (λ x m x' x0 x1 → F x m (≤′-step x') x0 x1) (λ x m p t' u' v' x' x0 → Ft x m (≤′-step p) t' u' v' x' x0) t u v (rs n ≤′-refl) r1 r2
