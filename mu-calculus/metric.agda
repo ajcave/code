@@ -266,6 +266,8 @@ agree2-sym (○ T) f (suc n) F Fs t u (acc rs) x = agree2-sym T f n (λ x' m x0 
       → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p u' t'})
   t u (<-well-founded n) x
 
+-- Okay this is a little out of control. We should be able to simplify this with some
+-- nice definitions...
 agree2-trans : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ)
  (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set))
  (F-trans : gsubst' Δ (λ x -> ∀ m (p : m <′ n) (t u v : f x) -> F x m p t u -> F x m p u v -> F x m p t v))
