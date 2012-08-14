@@ -39,7 +39,7 @@ mutual
  ⟦_⟧ (○ T) f = ⟦ T ⟧ f
 
 -- We could lower this to Set by restricting the A to be in the prop universe
-data bool⁺ : Set₁ where
+{-data bool⁺ : Set₁ where
  true false : bool⁺
  inf : ∀ (A : Set) (f : A -> bool⁺) -> bool⁺
 -- TODO: Probably we don't need arbitrary nesting, just need one sup at the topmost level (like below)
@@ -66,11 +66,12 @@ and (emb false) _ = emb false
 and b (emb true) = b
 and _ (emb false) = emb false
 and (inf A f) (inf A' f') = inf (A ⊎ A') λ {(inj₁ x) → f x; (inj₂ x) → f' x}
-
+-}
 ≤′-trans : ∀ {n m p} -> n ≤′ m -> m ≤′ p -> n ≤′ p
 ≤′-trans r ≤′-refl = r
 ≤′-trans r (≤′-step m≤′n) = ≤′-step (≤′-trans r m≤′n)
 
+{-
 -- Ah, we could just as well be defining a Prop stating that they agree up to n, i.e. that they are equal in ≈ⁿ
 agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Complete Bool)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Complete Bool
 agree (▹○ X) f zero F t u q = emb true -- variables are implicitly circled
@@ -137,7 +138,7 @@ test3 =  cast (agrees-to' (μ ((⊤ ∨ ⊤) ∨ (▹○ top)))
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₁ unit)) ⟩) ⟩) ⟩)
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
   )
-
+-}
 -- TODO: Now, can we show that this is in fact an ultrametric, and that each type satisfies its universal property
 -- (for contraction mappings)? (Especially the fixed points)
 
@@ -342,7 +343,7 @@ agree2-restrict2 (T ∨ S) f n k q F Fr t u p1 p2 x = {!!}
 agree2-restrict2 ⊤ f n k q F Fr t u p1 p2 x = unit
 agree2-restrict2 (○ T) f zero k q F Fr t u p1 p2 x = {!!}
 agree2-restrict2 (○ T) f (suc n) zero q F Fr t u (acc rs) (acc rs') x = unit
-agree2-restrict2 (○ T) f (suc n) (suc n') q F Fr t u (acc rs) (acc rs') x = ? --with agree2-restrict T f 
+agree2-restrict2 (○ T) f (suc n) (suc n') q F Fr t u (acc rs) (acc rs') x = {!!} --with agree2-restrict T f 
 
 
 agree2-restrict : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n k : ℕ) (q : k ≤′ n)
