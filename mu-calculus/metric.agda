@@ -221,8 +221,34 @@ agree2-sym : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ)
  (t u : ⟦ T ⟧ f) → (p : Acc _<′_ n) -> agree2 T f n F t u p -> agree2 T f n F u t p
 agree2-sym (▹○ X) f zero F Fs t u p x = unit
 agree2-sym (▹○ X) f (suc n) F Fs t u p x = Fs X n ≤′-refl t u x
-agree2-sym (μ F) f n F' Fs t u p x = {!!}
-agree2-sym (ν F) f n F' Fs t u p x = {!!}
+agree2-sym (μ F) f n F' Fs ⟨ t ⟩ ⟨ u ⟩ (acc rs) x = agree2-sym F (extend f (μ⁺ F f)) n (extend'
+   (λ x' → (m : _) → m <′ n → (t' u' : extend f (μ⁺ F f) x') → Set) F'
+    (λ m x' t' u' → agree2 (μ F) f m (λ x0 m' z → F' x0 m' (≤′-trans (≤′-step z) x')) t' u' (rs m x')))
+   (extend' (λ x' → (m : ℕ) (p : suc m ≤′ n) (t' u' : extend f (μ⁺ F f) x') →
+         extend' (λ x0 → (m' : ℕ) → suc m' ≤′ n → extend f (μ⁺ F f) x0 → extend f (μ⁺ F f) x0 → Set)
+         F'
+         (λ m' x0 t0 u0 → agree2 (μ F) f m' (λ x1 m0 z → F' x1 m0 (≤′-trans (≤′-step z) x0)) t0 u0 (rs m' x0))
+         x' m p t' u' →
+         extend' (λ x0 → (m' : ℕ) → suc m' ≤′ n → extend f (μ⁺ F f) x0 → extend f (μ⁺ F f) x0 → Set)
+         F'
+         (λ m' x0 t0 u0 → agree2 (μ F) f m' (λ x1 m0 z → F' x1 m0 (≤′-trans (≤′-step z) x0)) t0 u0 (rs m' x0))
+         x' m p u' t')
+      Fs (λ m p t' u' x' → agree2-sym (μ F) f m (λ x0 m' x1 → F' x0 m' (≤′-trans (≤′-step x1) p)) (λ x0 m' p' t0 u0 x1 → Fs x0 m' (≤′-trans (≤′-step p') p) t0 u0 x1) t' u' (rs m p) x'))
+   t u (acc rs) x
+agree2-sym (ν F) f n F' Fs ⟨ t ⟩ ⟨ u ⟩ (acc rs) x = agree2-sym F (extend f (ν⁺ F f)) n (extend'
+   (λ x' → (m : _) → m <′ n → (t' u' : extend f (ν⁺ F f) x') → Set) F'
+    (λ m x' t' u' → agree2 (ν F) f m (λ x0 m' z → F' x0 m' (≤′-trans (≤′-step z) x')) t' u' (rs m x')))
+   (extend' (λ x' → (m : ℕ) (p : suc m ≤′ n) (t' u' : extend f (ν⁺ F f) x') →
+         extend' (λ x0 → (m' : ℕ) → suc m' ≤′ n → extend f (ν⁺ F f) x0 → extend f (ν⁺ F f) x0 → Set)
+         F'
+         (λ m' x0 t0 u0 → agree2 (ν F) f m' (λ x1 m0 z → F' x1 m0 (≤′-trans (≤′-step z) x0)) t0 u0 (rs m' x0))
+         x' m p t' u' →
+         extend' (λ x0 → (m' : ℕ) → suc m' ≤′ n → extend f (ν⁺ F f) x0 → extend f (ν⁺ F f) x0 → Set)
+         F'
+         (λ m' x0 t0 u0 → agree2 (ν F) f m' (λ x1 m0 z → F' x1 m0 (≤′-trans (≤′-step z) x0)) t0 u0 (rs m' x0))
+         x' m p u' t')
+      Fs (λ m p t' u' x' → agree2-sym (ν F) f m (λ x0 m' x1 → F' x0 m' (≤′-trans (≤′-step x1) p)) (λ x0 m' p' t0 u0 x1 → Fs x0 m' (≤′-trans (≤′-step p') p) t0 u0 x1) t' u' (rs m p) x'))
+   (♭ t) (♭ u) (acc rs) x
 agree2-sym (T ⇒ S) f n F Fs t u p x = λ x' → agree2-sym S f n F Fs (t x') (u x') p (x x')
 agree2-sym (T ∧ S) f n F Fs (t₁ , t₂) (u₁ , u₂) p (x₁ , x₂) = agree2-sym T f n F Fs t₁ u₁ p x₁ , agree2-sym S f n F Fs t₂ u₂ p x₂
 agree2-sym (T ∨ S) f n F Fs (inj₁ x) (inj₁ x') p x0 = agree2-sym T f n F Fs x x' p x0
