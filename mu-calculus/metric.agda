@@ -2,6 +2,7 @@
 module metric where
 open import Data.Unit hiding (⊤ ; _≤_)
 open import Data.Nat
+open import Data.Empty
 open import Data.Bool hiding (_∧_ ; _∨_)
 open import Induction.Nat
 open import Induction.WellFounded
@@ -70,6 +71,7 @@ and (inf A f) (inf A' f') = inf (A ⊎ A') λ {(inj₁ x) → f x; (inj₂ x) �
 ≤′-trans r ≤′-refl = r
 ≤′-trans r (≤′-step m≤′n) = ≤′-step (≤′-trans r m≤′n)
 
+-- Ah, we could just as well be defining a Prop stating that they agree up to n, i.e. that they are equal in ≈ⁿ
 agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Complete Bool)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Complete Bool
 agree (▹ X) f zero F t u q = emb true -- variables are implicitly circled
 agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
@@ -136,6 +138,9 @@ test3 =  cast (agrees-to' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
   (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
   )
 
+-- TODO: Now, can we show that this is in fact an ultrametric, and that each type satisfies its universal property
+-- (for contraction mappings)? (Especially the fixed points)
+
 -- I think this abides by some kind of "lexicographic" termination/productivity condition?
 {-agree' : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (F : gsubst' Δ (λ x -> ∀ (t u : f x) -> CoNat)) (t u : ⟦ T ⟧ f) → CoNat
 agree' (▹ X) f F t u = suc (♯ F X t u)
@@ -149,3 +154,23 @@ agree' (T ∨ S) f F (inj₂ y) (inj₁ x) = zero
 agree' (T ∨ S) f F (inj₂ y) (inj₂ y') = agree' S f F y y'
 agree' ⊤ f F t u = ω
 agree' (○ T) f F t u = suc (♯ agree' T f F t u) -}
+
+
+agree2 : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Set
+agree2 (▹ X) f zero F t u q = Unit
+agree2 (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
+agree2 (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree2 F (extend f (μ⁺ F f)) n (extend'
+   (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → Set)
+    F' (λ m x x' x0 → agree2 (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) t u (acc rs)
+agree2 (ν F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree2 F (extend f (ν⁺ F f)) n (extend'
+   (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → Set)
+    F' (λ m x x' x0 → agree2 (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) (♭ t) (♭ u) (acc rs)
+agree2 (T ⇒ S) f n F t u q = (x : ⟦ T ⟧ init) → agree2 S f n F (t x) (u x) q
+agree2 (T ∧ S) f n F (t₁ , t₂) (u₁ , u₂) q = (agree2 T f n F t₁ u₁ q) × (agree2 S f n F t₂ u₂ q)
+agree2 (T ∨ S) f n F (inj₁ x) (inj₁ x') q = agree2 T f n F x x' q
+agree2 (T ∨ S) f n F (inj₁ x) (inj₂ y) q = ⊥
+agree2 (T ∨ S) f n F (inj₂ y) (inj₁ x) q = ⊥
+agree2 (T ∨ S) f n F (inj₂ y) (inj₂ y') q = agree2 S f n F y y' q
+agree2 ⊤ f n F t u q = Unit
+agree2 (○ T) f zero F t u q = Unit
+agree2 (○ T) f (suc n) F t u (acc rs) = agree2 T f n (λ x m x' → F x m (≤′-step x')) t u (rs n ≤′-refl)
