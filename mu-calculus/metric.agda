@@ -258,3 +258,10 @@ agree2-sym (T ∨ S) f n F Fs (inj₂ y) (inj₂ y') p x = agree2-sym S f n F Fs
 agree2-sym ⊤ f n F Fs t u p x = unit
 agree2-sym (○ T) f zero F Fs t u p x = unit
 agree2-sym (○ T) f (suc n) F Fs t u (acc rs) x = agree2-sym T f n (λ x' m x0 → F x' m (≤′-step x0)) (λ x' m p → Fs x' m (≤′-step p)) t u (rs n ≤′-refl) x 
+
+≈-sym : ∀ {T : prop ⊡} {n : ℕ} {t u} -> agree2' T t u n -> agree2' T u t n
+≈-sym {T} {n} {t} {u} x = agree2-sym T init n (init {F = λ x → (m : _) → m <′ n → init x → init x → Set})
+  (init {F = λ x' → (m : ℕ) (p : suc m ≤′ n) (t' u' : init x') →
+        init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p t' u'
+      → init {F = λ x → (m : _) → m <′ n → init x → init x → Set} x' m p u' t'})
+  t u (<-well-founded n) x
