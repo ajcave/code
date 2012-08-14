@@ -202,11 +202,13 @@ agree2-refl (ν F) f n F' Fr ⟨ t ⟩ (acc rs) = agree2-refl F _ n (extend'
                  (λ m' x' x0 x1 → agree2 (ν F) f m' (λ x2 m0 x3 → F' x2 m0 (≤′-trans (≤′-step x3) x')) x0 x1 (rs m' x'))
          x m p t' t')
    Fr (λ m p t' → agree2-refl (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) p)) (λ x m' p' t0 → Fr _ _ _ _) t' (rs m p))) (♭ t) (acc rs)
-agree2-refl (T ⇒ S) f n F Fr t p = {!!}
-agree2-refl (T ∧ S) f n F Fr t p = {!!}
-agree2-refl (T ∨ S) f n F Fr t p = {!!}
-agree2-refl ⊤ f n F Fr t p = {!!}
-agree2-refl (○ T) f n F Fr t p = {!!}
+agree2-refl (T ⇒ S) f n F Fr t p = λ x → agree2-refl S f n F Fr (t x) p
+agree2-refl (T ∧ S) f n F Fr (t₁ , t₂) p = (agree2-refl T f n F Fr t₁ p) , (agree2-refl S f n F Fr t₂ p)
+agree2-refl (T ∨ S) f n F Fr (inj₁ x) p = agree2-refl T f n F Fr x p
+agree2-refl (T ∨ S) f n F Fr (inj₂ y) p = agree2-refl S f n F Fr y p
+agree2-refl ⊤ f n F Fr t p = unit
+agree2-refl (○ T) f zero F Fr t p = unit
+agree2-refl (○ T) f (suc n) F Fr t (acc rs) = agree2-refl T f n (λ x m x' → F x m (≤′-step x')) (λ x m p t' → Fr _ _ _ _) t (rs n ≤′-refl)
 
 syntax agree2 T t u n = t ≈[ T , n ] u
 
