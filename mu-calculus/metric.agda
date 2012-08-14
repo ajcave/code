@@ -106,6 +106,8 @@ test2 : emb false ≡
   (suc (suc (suc (suc zero)))))
 test2 = refl
 
+-- Hmm I wonder if we can make it so we only need one inf?
+-- i.e. switch to regular CoNat after inf
 data CoNat : Set₁ where
  zero : CoNat
  suc : ∞ CoNat -> CoNat
