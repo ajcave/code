@@ -10,6 +10,7 @@ open import Data.Sum
 open import FinMapF
 open import Function
 open import Coinduction
+open import Relation.Binary.PropositionalEquality
 
 data prop (Δ : ctx Unit) : Set where
  ▹ : (X : var Δ unit) -> prop Δ
@@ -42,38 +43,67 @@ data bool⁺ : Set₁ where
  inf : ∀ (A : Set) (f : A -> bool⁺) -> bool⁺
 -- TODO: Probably we don't need arbitrary nesting, just need one sup at the topmost level (like below)
 
-and : bool⁺ -> bool⁺ -> bool⁺
-and true c = c
-and false c = false
-and b true = b
-and b false = false
+data Foo (C : Set) : Set₁ where
+ emb : C -> Foo C
+ inf : ∀ (A : Set) (f : A -> C) -> Foo C
+
+Foo-idx : ∀ {C : Set} -> Foo C -> Set
+Foo-idx (emb y) = Unit
+Foo-idx (inf A f) = A
+
+blah : ∀ {C : Set} (x : Foo C) -> Foo-idx x -> C
+blah (emb y) t = y
+blah (inf A f) t = f t
+
+inf' : ∀ {C : Set} (A : Set) (f : A -> Foo C) -> Foo C
+inf' A f = inf (Σ A (λ x → Foo-idx (f x))) (λ x → blah (f (proj₁ x)) (proj₂ x))
+
+and : Foo Bool -> Foo Bool -> Foo Bool
+and (emb true) b = b
+and (emb false) _ = emb false
+and b (emb true) = b
+and _ (emb false) = emb false
 and (inf A f) (inf A' f') = inf (A ⊎ A') λ {(inj₁ x) → f x; (inj₂ x) → f' x}
 
 ≤′-trans : ∀ {n m p} -> n ≤′ m -> m ≤′ p -> n ≤′ p
 ≤′-trans r ≤′-refl = r
 ≤′-trans r (≤′-step m≤′n) = ≤′-step (≤′-trans r m≤′n)
 
-agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> bool⁺)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> bool⁺
-agree (▹ X) f zero F t u q = true -- variables are implicitly circled
+agree : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n : ℕ) (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Foo Bool)) (t u : ⟦ T ⟧ f) → Acc _<′_ n -> Foo Bool
+agree (▹ X) f zero F t u q = emb true -- variables are implicitly circled
 agree (▹ X) f (suc n) F t u q = F X n ≤′-refl t u
 agree (μ F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (μ⁺ F f)) n (extend'
-   (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → bool⁺)
+   (λ x → (m : _) → m <′ n → (t u : extend f (μ⁺ F f) x) → Foo Bool)
     F' (λ m x x' x0 → agree (μ F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) t u (acc rs)
 agree (ν F) f n F' ⟨ t ⟩ ⟨ u ⟩ (acc rs) = agree F (extend f (ν⁺ F f)) n (extend'
-   (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → bool⁺)
+   (λ x → (m : _) → m <′ n → (t u : extend f (ν⁺ F f) x) → Foo Bool)
     F' (λ m x x' x0 → agree (ν F) f m (λ x1 m' x2 → F' x1 m' (≤′-trans (≤′-step x2) x)) x' x0 (rs m x))) (♭ t) (♭ u) (acc rs)
-agree (T ⇒ S) f n F t u q = inf (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
+agree (T ⇒ S) f n F t u q = inf' (⟦ T ⟧ init) (λ x → agree S f n F (t x) (u x) q)
 agree (T ∧ S) f n F t u q = and (agree T f n F (proj₁ t) (proj₁ u) q) (agree S f n F (proj₂ t) (proj₂ u) q)
 agree (T ∨ S) f n F (inj₁ x) (inj₁ x') q = agree T f n F x x' q
-agree (T ∨ S) f n F (inj₁ x) (inj₂ y) q = false
-agree (T ∨ S) f n F (inj₂ y) (inj₁ x) q = false
+agree (T ∨ S) f n F (inj₁ x) (inj₂ y) q = emb false
+agree (T ∨ S) f n F (inj₂ y) (inj₁ x) q = emb false
 agree (T ∨ S) f n F (inj₂ y) (inj₂ y') q = agree S f n F y y' q
-agree ⊤ f n F t u rs = true
-agree (○ T) f zero F t u q = true
+agree ⊤ f n F t u rs = emb true
+agree (○ T) f zero F t u q = emb true
 agree (○ T) f (suc n) F t u (acc rs) = agree T f n (λ x m x' → F x m (≤′-step x')) t u (rs n ≤′-refl)
 
-agree'' : (T : prop ⊡) (t u : ⟦ T ⟧ init) (n : ℕ) -> bool⁺
-agree'' T t u n = agree T init n (init {F = (λ x -> ∀ m -> m <′ n -> init x -> init x -> bool⁺)}) t u (<-well-founded n)
+agree'' : (T : prop ⊡) (t u : ⟦ T ⟧ init) (n : ℕ) -> Foo Bool
+agree'' T t u n = agree T init n (init {F = (λ x -> ∀ m -> m <′ n -> init x -> init x -> Foo Bool)}) t u (<-well-founded n)
+
+test1 : emb true ≡
+  (agree'' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
+  (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₁ unit)) ⟩) ⟩) ⟩)
+  (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
+  (suc (suc (suc zero))))
+test1 = refl
+
+test2 : emb false ≡
+  (agree'' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
+  (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₁ unit)) ⟩) ⟩) ⟩)
+  (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
+  (suc (suc (suc (suc zero)))))
+test2 = refl
 
 data CoNat : Set₁ where
  zero : CoNat
@@ -110,8 +140,9 @@ agrees-to f with f zero
        foo true = suc (♯ agrees-to (f ∘ suc))
        foo false = zero
 
-agrees-to' : ∀ (T : prop ⊡) (t u : ⟦ T ⟧ init) -> CoNat
-agrees-to' T t u = agrees-to (λ x → collapse (agree'' T t u x))
+--agrees-to' : ∀ (T : prop ⊡) (t u : ⟦ T ⟧ init) -> CoNat
+--agrees-to' T t u = agrees-to (λ x → collapse (agree'' T t u x))
+
 
 -- I think this abides by some kind of "lexicographic" termination/productivity condition?
 {-agree' : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (F : gsubst' Δ (λ x -> ∀ (t u : f x) -> CoNat)) (t u : ⟦ T ⟧ f) → CoNat
