@@ -43,6 +43,7 @@ data bool⁺ : Set₁ where
  inf : ∀ (A : Set) (f : A -> bool⁺) -> bool⁺
 -- TODO: Probably we don't need arbitrary nesting, just need one sup at the topmost level (like below)
 
+-- TODO: This seems like a monad or a functor or something of some kind...
 data Complete (C : Set) : Set₁ where
  emb : C -> Complete C
  inf : ∀ (A : Set) (f : A -> C) -> Complete C
@@ -113,36 +114,33 @@ data CoNat : Set₁ where
 ω : CoNat
 ω = suc (♯ ω)
 
--- Huh this seems like some kind of monad?
-record _⁺ (F : Set) : Set₁ where
- constructor inf
- field
-  idx : Set
-  f : (idx -> F)
-
-inf⁺ : ∀ {F : Set} (A : Set) -> (f : A -> F ⁺) -> F ⁺
-inf⁺ {F} A f = inf (Σ A (λ x → _⁺.idx (f x))) (λ x → _⁺.f (f (proj₁ x)) (proj₂ x))
-
-collapse : bool⁺ -> Bool ⁺
-collapse true = inf Unit (λ x → true)
-collapse false = inf Unit (λ x → false)
-collapse (inf A f) = inf⁺ A (λ x → collapse (f x))
-
 {-
 cmin : CoNat -> CoNat -> CoNat
 cmin m n = {!!}
 -}
 
-agrees-to : (f : ℕ -> Bool ⁺) -> CoNat
+agrees-to : (f : ℕ -> Complete Bool) -> CoNat
 agrees-to f with f zero
+agrees-to f | emb true = suc (♯ agrees-to (f ∘ suc))
+agrees-to f | emb false = zero
 ... | (inf idx f') = inf idx (λ x → foo (f' x))
  where foo : Bool -> CoNat
        foo true = suc (♯ agrees-to (f ∘ suc))
        foo false = zero
 
---agrees-to' : ∀ (T : prop ⊡) (t u : ⟦ T ⟧ init) -> CoNat
---agrees-to' T t u = agrees-to (λ x → collapse (agree'' T t u x))
+agrees-to' : ∀ (T : prop ⊡) (t u : ⟦ T ⟧ init) -> CoNat
+agrees-to' T t u = agrees-to (λ x → agree'' T t u x)
 
+cast : CoNat -> ℕ
+cast zero = zero
+cast (suc y) = suc (cast (♭ y))
+cast (inf A f) = {!!}
+
+test3 : ℕ
+test3 =  cast (agrees-to' (μ ((⊤ ∨ ⊤) ∨ ○ (▹ top)))
+  (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₁ unit)) ⟩) ⟩) ⟩)
+  (⟨ (inj₂ ⟨ (inj₂ ⟨ (inj₁ (inj₂ unit)) ⟩) ⟩) ⟩)
+  )
 
 -- I think this abides by some kind of "lexicographic" termination/productivity condition?
 {-agree' : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (F : gsubst' Δ (λ x -> ∀ (t u : f x) -> CoNat)) (t u : ⟦ T ⟧ f) → CoNat
