@@ -343,10 +343,10 @@ map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub
   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
   true (map F (θ , ▹ top))))
-map (ν F) {σ1} {σ2} θ = {!!} {-rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡)
-  (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
-  (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
-  true (map F (θ , ▹ top)))) -}
+map (ν F) {σ1} {σ2} θ = unfold ([ psub-ext σ2 ]p F) (out (▹ top)) (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡)
+   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
+   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
+   true (map F (θ , out (▹ top))))
 map (○ A) θ = let-◦ (▹ top) (◦ (map A θ))
 map (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map B θ))
 map (A ∧ B) θ = < [ ⊡ , (fst (▹ top)) ]t (map A θ) , [ ⊡ , (snd (▹ top)) ]t (map B θ) >
@@ -369,6 +369,8 @@ data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set w
                 -> step (let-◦ (◦ M) N) ([ validsub-id , M ]va N)
  rec-red : ∀ {F C} (M : θ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
                 -> step (rec F (inj M) N) ([ ⊡ , (map3 F (rec F (▹ top) N) M) ]t ([ ⊡ ]va N))
+ out-red : ∀ {F C} (M : θ , Γ ⊢ C - true) (N : ⊡ , ⊡ , C ⊢ [ C /x]p F - true)
+                -> step (out (unfold F M N)) (map3 F (unfold F (▹ top) N) ([ ⊡ , M ]t ([ ⊡ ]va N)))
  app-red : ∀ {A B} (M : θ , (Γ , A) ⊢ B - true) (N : θ , Γ ⊢ A - true)
                 -> step ((ƛ M) · N) ([ truesub-id , N ]t M)
  fst-red : ∀ {A B} (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
