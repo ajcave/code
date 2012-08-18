@@ -338,7 +338,6 @@ agree2-trans (○ T) f (suc n) F Ft t u v (acc rs) r1 r2 = agree2-trans T f n (�
 ≤′-suc2 ≤′-refl = ≤′-refl
 ≤′-suc2 (≤′-step m≤′n) = ≤′-suc3 m≤′n
 
-
 agree2-restrict2 : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n k : ℕ) (q : k <′ n)
  (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set))
  (F-restrict : gsubst' Δ (λ x -> ∀ m (p : m <′ n) mk (q : mk ≤′ m) (t u : f x) -> F x m p t u -> F x mk (≤′-trans (≤′-suc q) p) t u))
