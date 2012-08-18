@@ -330,20 +330,36 @@ agree2-trans (○ T) f (suc n) F Ft t u v (acc rs) r1 r2 = agree2-trans T f n (�
 ≤′-suc ≤′-refl = ≤′-refl
 ≤′-suc (≤′-step m≤′n) = ≤′-step (≤′-suc m≤′n)
 
+≤′-suc3 : ∀ {n m} -> suc n ≤′ m -> n ≤′ m
+≤′-suc3 ≤′-refl = ≤′-step ≤′-refl
+≤′-suc3 (≤′-step m≤′n) = ≤′-step (≤′-suc3 m≤′n)
+
+≤′-suc2 : ∀ {n m} -> suc n ≤′ suc m -> n ≤′ m
+≤′-suc2 ≤′-refl = ≤′-refl
+≤′-suc2 (≤′-step m≤′n) = ≤′-suc3 m≤′n
+
+
 agree2-restrict2 : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n k : ℕ) (q : k <′ n)
  (F : gsubst' Δ (λ x -> ∀ m -> m <′ n -> f x -> f x -> Set))
  (F-restrict : gsubst' Δ (λ x -> ∀ m (p : m <′ n) mk (q : mk ≤′ m) (t u : f x) -> F x m p t u -> F x mk (≤′-trans (≤′-suc q) p) t u))
- (t u : ⟦ T ⟧ f) → (p : Acc _<′_ n) (p2 : Acc _<′_ k) -> agree2 T f n F t u p -> agree2 T f k (λ x m x' x0 x1 → F x m (≤′-trans (≤′-step x') q) x1 x1) t u p2
-agree2-restrict2 (▹○ X) f n k q F Fr t u p1 p2 x = {!!}
+ (t u : ⟦ T ⟧ f) → (p : Acc _<′_ n) (p2 : Acc _<′_ k) -> agree2 T f n F t u p -> agree2 T f k (λ x m x' x0 x1 → F x m (≤′-trans x' (≤′-suc3 q)) x1 x1) t u p2
+agree2-restrict2 (▹○ X) f zero k () F Fr t u p1 p2 x
+agree2-restrict2 (▹○ X) f (suc n) zero q F Fr t u p1 p2 x = unit
+agree2-restrict2 (▹○ X) f (suc n) (suc n') q F Fr t u p1 p2 x with Fr X n ≤′-refl n' (≤′-suc3 (≤′-suc2 q)) t u x
+... | w1 = {!!}
 agree2-restrict2 (μ F) f n k q F' Fr t u p1 p2 x = {!!}
 agree2-restrict2 (ν F) f n k q F' Fr t u p1 p2 x = {!!}
-agree2-restrict2 (T ⇒ S) f n k q F Fr t u p1 p2 x = {!!}
-agree2-restrict2 (T ∧ S) f n k q F Fr t u p1 p2 x = {!!}
-agree2-restrict2 (T ∨ S) f n k q F Fr t u p1 p2 x = {!!}
+agree2-restrict2 (T ⇒ S) f n k q F Fr t u p1 p2 x = λ x' → agree2-restrict2 S f n k q F Fr (t x') (u x') p1 p2 (x x')
+agree2-restrict2 (T ∧ S) f n k q F Fr (t₁ , t₂) (u₁ , u₂) p1 p2 (x₁ , x₂) = agree2-restrict2 T f n k q F Fr t₁ u₁ p1 p2 x₁ , agree2-restrict2 S f n k q F Fr t₂ u₂ p1 p2 x₂
+agree2-restrict2 (T ∨ S) f n k q F Fr (inj₁ x) (inj₁ x') p1 p2 x0 = agree2-restrict2 T f n k q F Fr x x' p1 p2 x0
+agree2-restrict2 (T ∨ S) f n k q F Fr (inj₁ x) (inj₂ y) p1 p2 ()
+agree2-restrict2 (T ∨ S) f n k q F Fr (inj₂ y) (inj₁ x) p1 p2 ()
+agree2-restrict2 (T ∨ S) f n k q F Fr (inj₂ y) (inj₂ y') p1 p2 x = agree2-restrict2 S f n k q F Fr y y' p1 p2 x
 agree2-restrict2 ⊤ f n k q F Fr t u p1 p2 x = unit
-agree2-restrict2 (○ T) f zero k q F Fr t u p1 p2 x = {!!}
+agree2-restrict2 (○ T) f zero k () F Fr t u p1 p2 x
 agree2-restrict2 (○ T) f (suc n) zero q F Fr t u (acc rs) (acc rs') x = unit
-agree2-restrict2 (○ T) f (suc n) (suc n') q F Fr t u (acc rs) (acc rs') x = {!!} --with agree2-restrict T f 
+agree2-restrict2 (○ T) f (suc n) (suc n') q F Fr t u (acc rs) (acc rs') x with agree2-restrict2 T f n n' (≤′-suc2 q) (λ x' m x0 x1 x2 → F x' m (≤′-step x0) x1 x2) (λ x' m p mk q' t' u' x0 → Fr x' m (≤′-step p) mk q' t' u' x0) t u (rs n ≤′-refl) (rs' n' ≤′-refl) x
+... | safafasf = {!want to use uniqueness of ≤′ proofs...!}
 
 
 agree2-restrict : ∀ {Δ} (T : prop Δ) (f : gksubst Δ Set) (n k : ℕ) (q : k ≤′ n)
