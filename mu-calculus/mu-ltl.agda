@@ -528,7 +528,12 @@ nat : ∀ {ζ} -> functor ζ
 nat = μ (⊤ ∨ ▹ top)
  
 plus : ∀ {θ Γ} -> θ , Γ ⊢ (nat ⊃ (nat ⊃ nat)) - true
-plus = {!!}
+plus = ƛ (rec _ (▹ top) (case (▹ top) (ƛ (▹ top)) (ƛ (inj (inr ((▹ (pop top)) · (▹ top)))))))
+
+two : ∀ {θ Γ} -> θ , Γ ⊢ nat - true
+two = inj (inr (inj (inr (inj (inl unit)))))
+
+
 
 □ : (∀ {ζ} -> functor ζ) -> prop
 □ A = ν (A ∧ {!!})
