@@ -1,4 +1,6 @@
 module mu-ltl where
+open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality.TrustMe
 
 const1 : ∀ {A : Set} {B : Set₁} -> B -> A -> B
 const1 b _ = b
@@ -9,15 +11,15 @@ _∘_ : ∀ {A B C : Set} (g : B -> C) (f : A -> B) -> A -> C
 swap : ∀ {A B C : Set} (f : A -> B -> C) -> B -> A -> C
 swap f b a = f a b 
 
-data _≡_ {A : Set} (x : A) : A -> Set where
+{-data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
-
+-}
 subst2/3 : ∀ {A B C : Set} (P : A → B -> C → Set)
          {x₁ x₂ y₁ y₂} → x₁ ≡ x₂ → y₁ ≡ y₂ → (z : C) -> P x₂ y₂ z → P x₁ y₁ z
 subst2/3 P refl refl z p = p
 
-cong : ∀ {A B : Set} (f : A -> B) {x y} -> x ≡ y -> f x ≡ f y
-cong f refl = refl
+--cong : ∀ {A B : Set} (f : A -> B) {x y} -> x ≡ y -> f x ≡ f y
+--cong f refl = refl
 
 cong1st : ∀ {A B C : Set} (f : A -> B -> C) {a1 a2} -> a1 ≡ a2 -> (b : B) -> f a1 b ≡ f a2 b 
 cong1st f refl b = refl
@@ -25,11 +27,11 @@ cong1st f refl b = refl
 cong2 : ∀ {A B C : Set} (f : A -> B -> C) {a1 a2} -> a1 ≡ a2 -> {b1 b2 : B} -> b1 ≡ b2 -> f a1 b1 ≡ f a2 b2
 cong2 f refl refl = refl 
 
-trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+{-trans : ∀ {A : Set} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
 trans refl refl = refl
 
 sym : ∀ {A : Set} {x y : A} -> x ≡ y -> y ≡ x
-sym refl = refl
+sym refl = refl -}
 
 _≈_ : ∀ {A B : Set} (f g : A -> B) -> Set
 f ≈ g = ∀ x -> f x ≡ g x 
@@ -373,13 +375,13 @@ arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
 map : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
 map (▸ P) θ = ▹ top
 map (▹ A) θ = arrow-lookup θ A
-map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡)
-  (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
-  (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
+map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡)
+  (cong (_,_ ⊡) (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
+                (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
   true (map F (θ , ▹ top))))
-map (ν F) {σ1} {σ2} θ = unfold ([ psub-ext σ2 ]p F) (out (▹ top)) (subst2/3 (_,_⊢_-_ ⊡) (cong (_,_ ⊡)
-   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
-   (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
+map (ν F) {σ1} {σ2} θ = unfold ([ psub-ext σ2 ]p F) (out (▹ top)) (subst2/3 (_,_⊢_-_ ⊡)
+   (cong (_,_ ⊡) (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))
+                 (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ2) (sub-map-id σ2)) _) F))
    true (map F (θ , out (▹ top))))
 map (○ A) θ = let-◦ (▹ top) (◦ (map A θ))
 map (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map B θ))
