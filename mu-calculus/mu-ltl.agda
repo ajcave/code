@@ -84,7 +84,8 @@ mutual
   μ ν : (F : functor (ζ , #prop)) -> functor ζ
   ○ : (A : functor ζ) -> functor ζ
   _⊃_ : (A : prop) (B : functor ζ) -> functor ζ
-  _∧_ : (A B : functor ζ) -> functor ζ
+  _∧_ _∨_ : (A B : functor ζ) -> functor ζ
+  ⊤ : functor ζ
 
  prop : Set
  prop = functor ⊡
@@ -100,6 +101,8 @@ psub ζ1 ζ2 = sub (const1 (functor ζ1)) ζ2
 [ σ ]pv (○ A) = ○ ([ σ ]pv A)
 [ σ ]pv (A ⊃ B) = A ⊃ ([ σ ]pv B)
 [ σ ]pv (A ∧ B) = ([ σ ]pv A) ∧ ([ σ ]pv B)
+[ σ ]pv (A ∨ B) = ([ σ ]pv A) ∨ ([ σ ]pv B)
+[ σ ]pv ⊤ = ⊤
 
 id-psub : ∀ {ζ} -> psub ζ ζ
 id-psub {⊡} = ⊡
@@ -119,6 +122,8 @@ psub-ext σ = (psub-wkn σ) , ▹ top
 [ σ ]p (○ A) = ○ ([ σ ]p A)
 [ σ ]p (A ⊃ B) = A ⊃ ([ σ ]p B)
 [ σ ]p (A ∧ B) = ([ σ ]p A) ∧ ([ σ ]p B)
+[ σ ]p (A ∨ B) = ([ σ ]p A) ∨ ([ σ ]p B)
+[ σ ]p ⊤ = ⊤
 
 _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
 σ1 • σ2 = sub-map [ σ1 ]p σ2
@@ -179,6 +184,8 @@ sub-funct σ1 σ2 (ν F) = cong ν (trans (sub-funct (psub-ext σ1) (psub-ext σ
 sub-funct σ1 σ2 (○ A) = cong ○ (sub-funct σ1 σ2 A)
 sub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-funct σ1 σ2 B)
 sub-funct σ1 σ2 (A ∧ B) = cong2 _∧_ (sub-funct σ1 σ2 A) (sub-funct σ1 σ2 B)
+sub-funct σ1 σ2 (A ∨ B) = cong2 _∨_ (sub-funct σ1 σ2 A) (sub-funct σ1 σ2 B)
+sub-funct σ1 σ2 ⊤ = refl
 
 
 vsub-v-id : ∀ {ζ} (A : var ζ #prop) -> [ id-vsub ]v A ≡ A
@@ -197,6 +204,8 @@ sub-id (ν F) = cong ν (sub-id F)
 sub-id (○ A) = cong ○ (sub-id A)
 sub-id (A ⊃ B) = cong (_⊃_ A) (sub-id B)
 sub-id (A ∧ B) = cong2 _∧_ (sub-id A) (sub-id B)
+sub-id (A ∨ B) = cong2 _∨_ (sub-id A) (sub-id B)
+sub-id ⊤ = refl
 
 sub-map-id : ∀ {ζ1 ζ2} (σ : psub ζ1 ζ2) -> (id-psub • σ) ≡ σ
 sub-map-id ⊡ = refl
@@ -250,6 +259,15 @@ mutual
   snd : ∀ {A B} -> (M : θ , Γ ⊢ (A ∧ B) - true)
                 -> -----------------------------
                        θ , Γ ⊢ B - true
+  inl : ∀ {A B} -> (M : θ , Γ ⊢ A - true)
+                -> ------------------------
+                      θ , Γ ⊢ (A ∨ B) - true
+  inr : ∀ {A B} -> (M : θ , Γ ⊢ B - true)
+                -> ------------------------
+                      θ , Γ ⊢ (A ∨ B) - true
+  case : ∀ {A B C} -> (M : θ , Γ ⊢ (A ∨ B) - true) -> (N1 : θ , Γ , A ⊢ C - true) (N2 : θ , Γ , B ⊢ C - true)
+                   -> θ , Γ ⊢ C - true
+  unit : θ , Γ ⊢ ⊤ - true
 
 [_]tv : ∀ {θ Γ1 Γ2 A J} -> vsub Γ2 Γ1 -> θ , Γ1 ⊢ A - J -> θ , Γ2 ⊢ A - J
 [_]tv σ (▹ x) = ▹ ([ σ ]v x)
@@ -264,6 +282,10 @@ mutual
 [_]tv σ < M , N > = < [ σ ]tv M , [ σ ]tv N >
 [_]tv σ (fst M) = fst ([ σ ]tv M)
 [_]tv σ (snd M) = snd ([ σ ]tv M)
+[_]tv σ (inl M) = inl ([ σ ]tv M)
+[_]tv σ (inr M) = inr ([ σ ]tv M)
+[_]tv σ (case M N1 N2) = case ([ σ ]tv M) ([ vsub-ext σ ]tv N1) ([ vsub-ext σ ]tv N2)
+[_]tv σ unit = unit
 
 [_]vav : ∀ {θ1 θ2 Γ A J} -> vsub θ2 θ1 -> θ1 , Γ ⊢ A - J -> θ2 , Γ ⊢ A - J
 [_]vav σ (▹ x) = ▹ x
@@ -278,6 +300,10 @@ mutual
 [_]vav σ < M , N > = < [ σ ]vav M , [ σ ]vav N >
 [_]vav σ (fst M) = fst ([ σ ]vav M)
 [_]vav σ (snd M) = snd ([ σ ]vav M)
+[_]vav σ (inl M) = inl ([ σ ]vav M)
+[_]vav σ (inr M) = inr ([ σ ]vav M)
+[_]vav σ (case M N1 N2) = case ([ σ ]vav M) ([ σ ]vav N1) ([ σ ]vav N2)
+[_]vav σ unit = unit
 
 truesub : ∀ θ (Γ1 Γ2 : ctx (prop)) -> Set
 truesub θ Γ1 Γ2 = sub (λ A -> θ , Γ1 ⊢ A - true) Γ2
@@ -302,6 +328,10 @@ truesub-ext σ = (sub-map [ wkn-vsub ]tv σ) , (▹ top)
 [_]t σ < M , N > = < [ σ ]t M , [ σ ]t N >
 [_]t σ (fst M) = fst ([ σ ]t M)
 [_]t σ (snd M) = snd ([ σ ]t M)
+[_]t σ (inl M) = inl ([ σ ]t M)
+[_]t σ (inr M) = inr ([ σ ]t M)
+[_]t σ (case M N1 N2) = case ([ σ ]t M) ([ truesub-ext σ ]t N1) ([ truesub-ext σ ]t N2)
+[_]t σ unit = unit
 
 validsub : ∀ (θ1 θ2 : ctx prop) -> Set
 validsub θ1 θ2 = truesub ⊡ θ1 θ2
@@ -325,6 +355,10 @@ validsub-id = truesub-id
 [ σ ]va < M , N > = < [ σ ]va M , [ σ ]va N >
 [ σ ]va (fst M) = fst ([ σ ]va M)
 [ σ ]va (snd M) = snd ([ σ ]va M)
+[ σ ]va (inl M) = inl ([ σ ]va M)
+[ σ ]va (inr M) = inr ([ σ ]va M)
+[ σ ]va (case M N1 N2) = case ([ σ ]va M) ([ σ ]va N1) ([ σ ]va N2)
+[ σ ]va unit = unit
 
 -- generalize?
 data arrow : ∀ {ζ} -> psub ⊡ ζ -> psub ⊡ ζ -> Set where
@@ -350,6 +384,8 @@ map (ν F) {σ1} {σ2} θ = unfold ([ psub-ext σ2 ]p F) (out (▹ top)) (subst2
 map (○ A) θ = let-◦ (▹ top) (◦ (map A θ))
 map (A ⊃ B) θ = ƛ ([ ⊡ , (▹ (pop top) · ▹ top) ]t (map B θ))
 map (A ∧ B) θ = < [ ⊡ , (fst (▹ top)) ]t (map A θ) , [ ⊡ , (snd (▹ top)) ]t (map B θ) >
+map (A ∨ B) θ = case (▹ top) (inl ([ ⊡ , (▹ top) ]t (map A θ))) (inr ([ ⊡ , (▹ top) ]t (map B θ)))
+map ⊤ θ = ▹ top
 
 map1 : ∀ F {A B} -> ⊡ , ⊡ , A ⊢ B - true -> ⊡ , (⊡ , [ A /x]p F) ⊢ [ B /x]p F - true
 map1 F H = map F (⊡ , H)
@@ -376,4 +412,133 @@ data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set w
  fst-red : ∀ {A B} (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
                 -> step (fst < M , N >) M
  snd-red : ∀ {A B} (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
-                -> step (snd < M , N >) N 
+                -> step (snd < M , N >) N
+
+
+mutual
+ data _,_⊢_⇓ (θ : ctx prop) (Γ : ctx prop) : prop -> Set where
+  ▹ : ∀ {A} -> (x : var Γ A)
+            -> -------------------
+                θ , Γ ⊢ A ⇓
+  _·_ : ∀ {A B} -> (M : θ , Γ ⊢ (A ⊃ B) ⇓) (N : θ , Γ ⊢ A ↑)
+                -> -----------------------------------------------------------
+                                θ , Γ ⊢ B ⇓
+
+  rec : ∀ F {C} -> (M : θ , Γ ⊢ μ F ⇓) -> (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C ↑)
+                -> -------------------------------------------------------------------
+                                θ , Γ ⊢ C ⇓
+  out : ∀ {F} -> (M : θ , Γ ⊢ ν F ⇓)
+              -> -----------------------------------
+                 θ , Γ ⊢ ([ ν F /x]p F) ⇓
+
+  fst : ∀ {A B} -> (M : θ , Γ ⊢ (A ∧ B) ⇓)
+                -> -----------------------------
+                       θ , Γ ⊢ A ⇓
+  snd : ∀ {A B} -> (M : θ , Γ ⊢ (A ∧ B) ⇓)
+                -> -----------------------------
+                       θ , Γ ⊢ B ⇓
+  let-◦ : ∀ {A C} (M : θ , Γ ⊢ (○ A) ⇓) (N : (θ , A) , Γ ⊢ C ↑)
+                   -> ---------------------------------------------------------------
+                                          θ , Γ ⊢ C ⇓
+
+  case : ∀ {A B C} -> (M : θ , Γ ⊢ (A ∨ B) ⇓) -> (N1 : θ , (Γ , A) ⊢ C ↑) (N2 : θ , (Γ , B) ⊢ C ↑)
+                   -> θ , Γ ⊢ C ⇓
+ data _,_⊢_↑ (θ : ctx prop) (Γ : ctx prop) : prop -> Set where
+  ▸ : ∀ {A} -> (M : θ , Γ ⊢ A ⇓)
+            -> -----------------
+                 θ , Γ ⊢ A ↑
+  ƛ : ∀ {A B} -> (M : θ , (Γ , A) ⊢ B ↑)
+              -> ----------------------------------
+                      θ , Γ ⊢ (A ⊃ B) ↑
+  ◦ : ∀ {A} -> (M : ⊡ , θ ⊢ A ↑)
+              -> --------------------------
+                   θ , Γ ⊢ (○ A) ↑
+  inj : ∀ {F} -> (M : θ , Γ ⊢ ([ μ F /x]p F) ↑)
+              -> -----------------------------------------------------
+                              θ , Γ ⊢ μ F ↑
+  unfold : ∀ F {C} -> (M : θ , Γ ⊢ C ↑) -> (N : ⊡ , (⊡ , C) ⊢ ([ C /x]p F) ↑)
+                   -> -------------------------------------------------------------
+                       θ , Γ ⊢ ν F ↑
+  <_,_> : ∀ {A B} -> (M : θ , Γ ⊢ A ↑) (N : θ , Γ ⊢ B ↑)
+                  -> ---------------------------------------------
+                                θ , Γ ⊢ (A ∧ B) ↑
+  inl : ∀ {A B} -> (M : θ , Γ ⊢ A ↑)
+                -> ------------------------
+                      θ , Γ ⊢ (A ∨ B) ↑
+  inr : ∀ {A B} -> (M : θ , Γ ⊢ B ↑)
+                -> ------------------------
+                      θ , Γ ⊢ (A ∨ B) ↑
+  unit : θ , Γ ⊢ ⊤ ↑
+
+mutual
+ rinj : ∀ {θ Γ A} -> θ , Γ ⊢ A ⇓ -> θ , Γ ⊢ A - true
+ rinj (▹ x) = ▹ x
+ rinj (M · N) = rinj M · ninj N
+ rinj (rec F M N) = rec F (rinj M) (ninj N)
+ rinj (out M) = out (rinj M)
+ rinj (fst M) = fst (rinj M)
+ rinj (snd M) = snd (rinj M)
+ rinj (let-◦ M N) = let-◦ (rinj M) (ninj N)
+ rinj (case M N1 N2) = case (rinj M) (ninj N1) (ninj N2)
+ ninj : ∀ {θ Γ A} -> θ , Γ ⊢ A ↑ -> θ , Γ ⊢ A - true
+ ninj (▸ M) = rinj M
+ ninj (ƛ M) = ƛ (ninj M)
+ ninj (◦ M) = ◦ (ninj M)
+ ninj (inj M) = inj (ninj M)
+ ninj (unfold F M N) = unfold F (ninj M) (ninj N)
+ ninj < M , N > = < (ninj M) , (ninj N) >
+ ninj (inl M) = inl (ninj M)
+ ninj (inr M) = inr (ninj M)
+ ninj unit = unit
+
+eval : ∀ {θ Γ A} -> θ , Γ ⊢ A - true -> θ , Γ ⊢ A ↑
+eval (▹ x) = ▸ (▹ x)
+eval (ƛ M) = ƛ (eval M)
+eval (M · N) with eval M
+eval (M · N) | ▸ M' = ▸ (M' · (eval N))
+eval (M · N) | ƛ M' = eval ([ truesub-id , ninj (eval N) ]t (ninj M'))
+eval (let-◦ M N) with eval M
+eval (let-◦ M N) | ▸ M' = ▸ (let-◦ M' (eval N))
+eval (let-◦ M N) | ◦ M' = eval ([ validsub-id , ninj M' ]va ninj (eval N))
+eval (◦ M) = ◦ (eval M)
+eval (inj M) = inj (eval M)
+eval (rec F M N) with eval M
+eval (rec F M N) | ▸ M' = ▸ (rec F M' (eval N))
+eval (rec F M N) | inj M' = eval ([ ⊡ , (map3 F (rec F (▹ top) N) (ninj M')) ]t ([ ⊡ ]va N))
+eval (out M) with eval M
+eval (out M) | ▸ M' = ▸ (out M')
+eval (out M) | unfold F M' N = eval (map3 F (unfold F (▹ top) (ninj N)) ([ ⊡ , (ninj M') ]t ([ ⊡ ]va ninj N)))
+eval (unfold F M N) = unfold F (eval M) (eval N)
+eval < M , N > = < (eval M) , (eval N) >
+eval (fst M) with eval M
+eval (fst M) | ▸ M' = ▸ (fst M')
+eval (fst M) | < M' , N > = M'
+eval (snd M) with eval M
+eval (snd M) | ▸ M' = ▸ (snd M')
+eval (snd M) | < M' , N > = N
+eval (inl M) = inl (eval M)
+eval (inr M) = inr (eval M)
+eval (case M N1 N2) with eval M
+eval (case M N1 N2) | ▸ M' = ▸ (case M' (eval N1) (eval N2))
+eval (case M N1 N2) | inl M' = eval ([ truesub-id , (ninj M') ]t N1)
+eval (case M N1 N2) | inr M' = eval ([ truesub-id , ninj M' ]t N2)
+eval unit = unit
+
+nat : ∀ {ζ} -> functor ζ
+nat = μ (⊤ ∨ ▹ top)
+ 
+plus : ∀ {θ Γ} -> θ , Γ ⊢ (nat ⊃ (nat ⊃ nat)) - true
+plus = {!!}
+
+□ : (∀ {ζ} -> functor ζ) -> prop
+□ A = ν (A ∧ {!!})
+
+psum : ∀ {θ Γ} -> θ , Γ ⊢ (nat ⊃ (□ nat ⊃ □ nat)) - true
+psum = {!!}
+
+
+{-data _⇓_ {θ Γ} : ∀ {A} -> θ , Γ ⊢ A - true -> θ , Γ ⊢ A - true -> Set where
+ box-red : ∀ {A C} {M : θ , Γ ⊢ ○ A - true} {V} {N : (θ , A) , Γ ⊢ C - true} {V'} ->
+             M ⇓ (◦ V) -> [ validsub-id , V ]va N ⇓ V'
+          -> -----------------------------------------
+             (let-◦ M N) ⇓ V' -}
