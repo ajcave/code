@@ -533,13 +533,30 @@ plus = ƛ (rec _ (▹ top) (case (▹ top) (ƛ (▹ top)) (ƛ (inj (inr ((▹ (p
 two : ∀ {θ Γ} -> θ , Γ ⊢ nat - true
 two = inj (inr (inj (inr (inj (inl unit)))))
 
+infixl 9 _·_
 
+test : ∀ {θ Γ} -> θ , Γ ⊢ nat - true
+test = plus · two · two
 
 □ : (∀ {ζ} -> functor ζ) -> prop
-□ A = ν (A ∧ {!!})
+□ A = ν (A ∧ ○ (▹ top))
+
+imp : ∀ {θ Γ} -> θ , Γ ⊢ (nat ⊃ ○ nat) - true
+imp = ƛ (rec _ (▹ top) (case (▹ top) (◦ (inj (inl unit))) (let-◦ (▹ top) (◦ (inj (inr (▹ top)))))))
 
 psum : ∀ {θ Γ} -> θ , Γ ⊢ (nat ⊃ (□ nat ⊃ □ nat)) - true
-psum = {!!}
+psum = ƛ (ƛ (unfold _ < ▹ top , ▹ (pop top) > < (plus · snd (▹ top) · fst (out (fst (▹ top)))) ,
+  let-◦ (imp · (plus · snd (▹ top) · fst (out (fst (▹ top)))))
+  (let-◦ (snd (out (fst (▹ top)))) (◦ < (▹ top) , (▹ (pop top)) >)) >))
+
+take3 : ∀ {θ Γ} -> θ , Γ ⊢ (□ nat) ⊃ (nat ∧ (○ (nat ∧ (○ nat)))) - true
+take3  = ƛ < (fst (out (▹ top))) , let-◦ (snd (out (▹ top))) (◦ < fst (out (▹ top)) , let-◦ (snd (out (▹ top))) (◦ (fst (out (▹ top)))) >) >
+
+count : ∀ {θ Γ} -> θ , Γ ⊢ □ nat - true
+count = unfold _ {nat} (inj (inl unit)) < (▹ top) , (let-◦ (imp · ▹ top) (◦ (inj (inr (▹ top))))) >
+
+test2 : ∀ {θ Γ} -> θ , Γ ⊢ (nat ∧ (○ (nat ∧ (○ nat)))) - true
+test2 = take3 · (psum · inj (inl unit) · count)
 
 
 {-data _⇓_ {θ Γ} : ∀ {A} -> θ , Γ ⊢ A - true -> θ , Γ ⊢ A - true -> Set where
