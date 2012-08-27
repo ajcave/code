@@ -51,7 +51,7 @@ World w := b1 | b2 | ... | bn
 pr x x :- var x
 wf x :- var x
 
-Comparisong of church rosser with Agda
+Comparison of church rosser with Agda
 
 \section{Strengthening}
 We would like to consider {\tt wf} in only
@@ -125,7 +125,8 @@ Explain separate typing context for worlds.
 Describe eq\_ctx proof that went away.
 
 Notion of computation: { (G, of x T, wf x) :> wf\_ctx |- ...} reduces
-to { G :> wf\_ctx, wf x |- ...}.
+to { G :> wf\_ctx, wf x |- ...}. Also works for ``pr'', ``cd,
+notlam''. We can compute one from the other.
 
 Point out that Agda NbE proof preserves types for no extra effort
 
