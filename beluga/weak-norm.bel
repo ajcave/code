@@ -19,22 +19,6 @@ stepapp : mstep M M' -> mstep N N' -> mstep (app M N) (app M' N').
 refl : mstep M M.
 trans : mstep M M' -> mstep M' M'' -> mstep M M''.
 
-%{neut : {A:tp} tm A -> type.
-norm : {A:tp} tm A -> type.
-rapp : neut (arr A B) R -> norm A N -> neut B (app R N).
-embed : neut i R -> norm i R.
-nlam : ({x:tm A} neut A x -> norm B (M x)) -> norm (arr A B) (lam M).
-
-schema rctx = some [t:tp] block x:tm t, u:neut t x;
-}%
-
-%{
-datatype Extends : {g:ctx} {h:ctx} ctype =
-| EZero : Extends [g] [g]
-| ESucc : {h:ctx} Extends [g] [h] -> Extends [g] [h,x:tm A]
-;
-}%
-
 datatype IsWeakeningOf : {g:ctx} [g. tm A] -> {h:ctx} [h. tm A] -> ctype =
 | Zero : IsWeakeningOf [g] [g. M ..] [g] [g. M ..]
 | Succ : {h:ctx} {M:[g.tm B]} IsWeakeningOf [g] [g. M ..] [h] [h. N ..] -> IsWeakeningOf [g] [g. M ..] [h,x:tm A] [h,x:tm A. N ..]
@@ -49,13 +33,10 @@ and IsNeutral : {g:ctx} {A:[.tp]} {M:[g.tm A]} ctype =
 | App : IsNeutral [g] [.arr A B] [g. M ..] -> IsNormal [g] [.A] [g. N ..] -> IsNeutral [g] [.B] [g. app (M ..) (N ..)]
 ;
 
-
 datatype Halts : {g:ctx} {A:[.tp]} {M:[g.tm A]} ctype =
 | Halts : [g. mstep (M ..) (V ..)] -> IsNormal [g] [.A] [g. V ..] ->
           Halts [g] [.A] [g. M ..]
 ;
-
-datatype Unit : ctype = | Unit : Unit;
 
 datatype Reduce : {g:ctx} {A:[.tp]} {M:[g.tm A]} ctype =
 | Base : Halts [g] [.i] [g. M ..] -> Reduce [g] [. i] [g. M ..]
@@ -72,11 +53,6 @@ datatype IsVar : {g:ctx}{M:[g.tm A]} ctype =
 | IsVar : {#p:[g.tm A]} IsVar [g] [g. #p ..]
 ;
 
-%{datatype IsLam : {g:ctx}{M:[g,x:tm A. tm B]}{h:ctx}{R:[h. tm (arr A B)]} ctype =
-| IsLam : {M':[h,x:tm A. tm B]} IsWeakeningOf [g,x:tm A] [g,x:tm A. M .. x] [h,x:tm A] [h,x:tm A. M' .. x] -> IsLam [g] [g,x:tm A. M .. x] [h] [h. lam (\x. M' .. x)]
-;
-}%
-
 rec weakenInvApp : IsWeakeningOf [g] [g. app (M ..) (N ..)] [h] [h. R ..] -> IsApp [g] [g. M ..] [g. N ..] [h] [h. R ..] =
 fn w => let (w : IsWeakeningOf [g] [g. app (M ..) (N ..)] [h] [h. R ..]) = w in case w of
 | Zero => IsApp [h. _] Zero Zero
@@ -88,13 +64,6 @@ fn w => let (w : IsWeakeningOf [g] [g. #p ..] [h] [h. R ..]) = w in case w of
 | Zero => IsVar [g. #p ..]
 | Succ [h] [h. Q ..] w' => let IsVar [h. #q ..] = weakenInvVar w' in IsVar [h,x:tm _. #q ..]
 ;
-
-%{rec weakenInvLam : IsWeakeningOf [g] [g. lam (\x. M .. x)] [h] [h. R ..] -> IsLam [g] [g,x:tm A. M .. x] [h] [h. R ..] =
-fn w => let (w : IsWeakeningOf [g] [g. lam (\x. M .. x)] [h] [h. R ..]) = w in case w of
-| Zero => IsLam [h,x:tm _. _] Zero
-| Succ [h'] [h'. Q ..] w' => let IsLam [h',x:tm _. Q1 .. x] w1 = weakenInvLam w' in IsLam [h',x:tm _,y:tm _. Q1 .. y] (Succ [h',x:tm _] [h',x:tm _. Q1 .. x] w1)
-;
-}%
 
 rec wkn : IsNeutral [g] [.A] [g. R ..] -> IsWeakeningOf [g] [g. R ..] [h] [h. R' ..] -> IsNeutral [h] [.A] [h. R' ..] =
 fn r => fn e => let (e : IsWeakeningOf [g] [g. R ..] [h] [h. R' ..]) = e in case r of
@@ -180,7 +149,7 @@ mlam M => reify (eval [. M] [.] Nil)
 
 
 %{ An attempt without substitution vars, which fails:
-Note that the following won't work for representing instantiations, since we need U to be in h, not closed.
+This won't work for representing instantiations, since we need U to be in h, not closed.
 I don't see how we can build up simultaneous substitutions inductively out of single substitutions...
 datatype IsInstantiation : {g:ctx}{M:[g.tm A]}{N:[.tm A]} ctype =
 | Nil : IsInstantiation [] [. M] [. M]
