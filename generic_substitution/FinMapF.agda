@@ -14,7 +14,7 @@ gsubst' : ∀ {a b} {A : Set a} (ψ : ctx A) (F : ∀ {T} -> var ψ T -> Set b) 
 gsubst' ψ F = ∀ {T} (x : var ψ T) -> F x
 
 init : ∀ {a b} {A : Set a} {U} (F : ∀ {T} -> var ⊡ T -> Set b) -> gsubst' ⊡ F
-init F x = ?
+init F x = {!!}
 
 extend' : ∀ {a b} {A : Set a} {U} {ψ : ctx A} (F : ∀ {T} -> var (ψ , U) T -> Set b) -> gsubst' ψ (F ∘ pop) -> F top -> gsubst' (ψ , U) F
 extend' F σ M top = M

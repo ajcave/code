@@ -73,6 +73,7 @@ mutual
 mutual
  data μ⁺ {ζ} (F : functor (ζ , *)) (σ : gksubst ζ (ctx tp -> Set)) (Γ : ctx tp) : Set where
   ⟨_⟩ : ⟦ F ⟧ (σ , μ⁺ F σ) Γ -> μ⁺ F σ Γ
+--  ▸ : rtm Γ (μ F) -> μ⁺ F σ Γ
 
  ⟦_⟧ : ∀ {ζ} -> (F : functor ζ) (σ : gksubst ζ (ctx tp -> Set)) -> (Γ : ctx tp) -> Set
  ⟦_⟧ (▹ A) σ Γ = lookup σ A Γ
@@ -108,16 +109,26 @@ functorial₀ F = ∀ {Γ Δ} -> (σ : vsubst Γ Δ) -> (x : F Γ) -> F Δ
 ⟦⟧-functorial₀ (A ∧ B) θ θf σ t = (⟦⟧-functorial₀ A θ θf σ (proj₁ t)) , (⟦⟧-functorial₀ B θ θf σ (proj₂ t))
 ⟦⟧-functorial₀ ⊤ θ θf σ t = unit
 
-{-
+
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
-appSubst (atom A) σ M = rappSubst σ M
-appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
-appSubst (T × S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
-appSubst unit σ tt = tt
+appSubst T σ M = ⟦⟧-functorial₀ T unit unit σ M
 
-wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn x = s x
+mutual
+ reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
+ reflect {▹ ()} R
+ reflect {μ F} R = {!!}
+ reflect {A ⇝ B} R = λ Δ σ x → reflect ((rappSubst σ R) · reify x)
+ reflect {A ∧ B} R = reflect (π₁ R) , reflect (π₂ R)
+ reflect {⊤} R = unit
 
+ reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
+ reify {▹ ()} t
+ reify {μ F} t = {!!}
+ reify {A ⇝ B} t = ƛ (reify (t _ wkn-vsub (reflect {A} (v top))))
+ reify {A ∧ B} t = < reify (proj₁ t) , reify (proj₂ t) >
+ reify {⊤} t = tt
+
+{-
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
  reflect {atom A} N = N
