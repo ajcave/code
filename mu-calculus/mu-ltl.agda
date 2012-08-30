@@ -622,7 +622,10 @@ take3 : ∀ {θ Γ} -> θ , Γ ⊢ (□ nat) ⊃ (nat ∧ (○ (nat ∧ (○ nat
 take3  = ƛ < (fst (out (▹ top))) , let-◦ (snd (out (▹ top))) (◦ < fst (out (▹ top)) , let-◦ (snd (out (▹ top))) (◦ (fst (out (▹ top)))) >) >
 
 count : ∀ {θ Γ} -> θ , Γ ⊢ □ nat - true
-count = unfold _ {nat} (inj (inl unit)) < (▹ top) , (let-◦ (imp · ▹ top) (◦ (inj (inr (▹ top))))) >
+count = unfold _ {nat} (inj (inr (inj (inl unit)))) < (▹ top) , (let-◦ (imp · ▹ top) (◦ (inj (inr (▹ top))))) >
+
+test1 : ∀ {θ Γ} -> θ , Γ ⊢ (nat ∧ (○ (nat ∧ (○ nat)))) - true
+test1 = take3 · count
 
 test2 : ∀ {θ Γ} -> θ , Γ ⊢ (nat ∧ (○ (nat ∧ (○ nat)))) - true
 test2 = take3 · (psum · inj (inl unit) · count)
