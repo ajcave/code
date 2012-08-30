@@ -133,7 +133,7 @@ _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 
 _◦_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> psub ζ1 ζ3
 σ1 ◦ σ2 = sub-map [ σ1 ]v σ2
 
-_⁌_ : ∀ {A} {ζ1 ζ2 ζ3} (σ1 : vsub {A} ζ1 ζ2) (σ2 : vsub {A} ζ2 ζ3) -> vsub {A} ζ1 ζ3
+_⁌_ : ∀ {A} {ζ2 ζ3} {exp : A -> Set} (σ1 : sub exp ζ2) (σ2 : vsub {A} ζ2 ζ3) -> sub exp ζ3
 σ1 ⁌ σ2 = sub-map [ σ1 ]v σ2
 
 _◆_ :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
@@ -188,7 +188,7 @@ vsub-v-id (pop y) = trans (map-lookup pop id-vsub y) (cong pop (vsub-v-id y))
 ext-wkn2 : ∀ {A} {ζ1 ζ2} (σ1 : vsub {A} ζ1 ζ2) {T} -> ((vsub-ext {A} {T} σ1) ⁌ wkn-vsub) ≡ (wkn-vsub ⁌ σ1)
 ext-wkn2 σ1 = trans (sub-map-funct _ _ _) (trans (id-v-right2 (sub-map pop σ1)) (sub-map-resp-≈ (λ x → trans (cong pop (sym (vsub-v-id x))) (sym (map-lookup pop id-vsub x))) σ1))
 
-vsub-vsub-funct :  ∀ {A} {ζ1 ζ2 ζ3} (σ1 : vsub {A} ζ1 ζ2) (σ2 : vsub ζ2 ζ3) {T} (x : var ζ3 T) -> ([ σ1 ]v ∘ [ σ2 ]v) x ≡ [ σ1 ⁌ σ2 ]v x
+vsub-vsub-funct :  ∀ {A} {ζ2 ζ3} {exp : A -> Set} (σ1 : sub exp ζ2) (σ2 : vsub {A} ζ2 ζ3) {T} (x : var ζ3 T) -> ([ σ1 ]v ∘ [ σ2 ]v) x ≡ [ σ1 ⁌ σ2 ]v x
 vsub-vsub-funct σ1 ⊡ ()
 vsub-vsub-funct σ1 (σ , M) top = refl
 vsub-vsub-funct σ1 (σ , M) (pop y) = vsub-vsub-funct σ1 σ y
@@ -210,12 +210,11 @@ pvsub-pvsub-funct σ1 σ2 (A ∧ B) = cong2 _∧_ (pvsub-pvsub-funct σ1 σ2 A) 
 pvsub-pvsub-funct σ1 σ2 (A ∨ B) = cong2 _∨_ (pvsub-pvsub-funct σ1 σ2 A) (pvsub-pvsub-funct σ1 σ2 B)
 pvsub-pvsub-funct σ1 σ2 ⊤ = refl
 
-
 sub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]pv) ≈ [ σ1 ◦ σ2 ]p
 sub-pvsub-funct σ1 σ2 (▸ P) = refl
-sub-pvsub-funct σ1 σ2 (▹ A) = {!!}
-sub-pvsub-funct σ1 σ2 (μ F) = {!!}
-sub-pvsub-funct σ1 σ2 (ν F) = {!!}
+sub-pvsub-funct σ1 σ2 (▹ A) = vsub-vsub-funct σ1 σ2 A
+sub-pvsub-funct σ1 σ2 (μ F) = cong μ (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p {!!} F))
+sub-pvsub-funct σ1 σ2 (ν F) = cong ν (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p {!!} F))
 sub-pvsub-funct σ1 σ2 (○ A) = cong ○ (sub-pvsub-funct σ1 σ2 A)
 sub-pvsub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-pvsub-funct σ1 σ2 B)
 sub-pvsub-funct σ1 σ2 (A ∧ B) = cong2 _∧_ (sub-pvsub-funct σ1 σ2 A) (sub-pvsub-funct σ1 σ2 B)
