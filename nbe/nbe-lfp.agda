@@ -25,18 +25,6 @@ mutual
  tp : Set
  tp = functor ⊡
 
-mutual 
- data rtm (Γ : ctx tp) : (T : tp) -> Set where
-  v : ∀ {T} -> var Γ T -> rtm Γ T
-  _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
-  π₁ : ∀ {T S} -> rtm Γ (T ∧ S) -> rtm Γ T
-  π₂ : ∀ {T S} -> rtm Γ (T ∧ S) -> rtm Γ S
- data ntm (Γ : ctx tp) : (T : tp) -> Set where
-  ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
-  neut : ∀ {A} -> rtm Γ A -> ntm Γ A -- don't worry about eta longness for now
-  <_,_> : ∀ {T S} -> (M : ntm Γ T) -> (N : ntm Γ S) -> ntm Γ (T ∧ S)
-  tt : ntm Γ ⊤
-
 psub : ∀ (ζ1 ζ2 : ctx Kind) -> Set
 psub ζ1 ζ2 = gsubst ζ2 (λ _ -> functor ζ1)
 
@@ -64,6 +52,24 @@ psub-ext σ = (psub-wkn σ) , ▹ top
 [ σ ]p (A ∧ B) = ([ σ ]p A) ∧ ([ σ ]p B)
 [ σ ]p ⊤ = ⊤
 
+[_/x]p : ∀ {ζ} -> functor ζ -> functor (ζ , *) -> functor ζ
+[ M /x]p A = [ id-psub , M ]p A
+
+mutual 
+ data rtm (Γ : ctx tp) : (T : tp) -> Set where
+  v : ∀ {T} -> var Γ T -> rtm Γ T
+  _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
+  π₁ : ∀ {T S} -> rtm Γ (T ∧ S) -> rtm Γ T
+  π₂ : ∀ {T S} -> rtm Γ (T ∧ S) -> rtm Γ S
+  -- TODO: Try other forms for this rule..
+  fold : ∀ F {C} -> rtm Γ (μ F) -> ntm (⊡ , [ C /x]p F) C -> rtm Γ C
+ data ntm (Γ : ctx tp) : (T : tp) -> Set where
+  ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
+  neut : ∀ {A} -> rtm Γ A -> ntm Γ A -- don't worry about eta longness for now
+  <_,_> : ∀ {T S} -> (M : ntm Γ T) -> (N : ntm Γ S) -> ntm Γ (T ∧ S)
+  tt : ntm Γ ⊤
+  inj : ∀ F -> ntm Γ ([ μ F /x]p F) -> ntm Γ (μ F)
+
 mutual
  data μ⁺ {ζ} (F : functor (ζ , *)) (σ : gksubst ζ (ctx tp -> Set)) (Γ : ctx tp) : Set where
   ⟨_⟩ : ⟦ F ⟧ (σ , (λ Γ' -> (μ⁺ F σ Γ'))) Γ -> μ⁺ F σ Γ
@@ -75,36 +81,34 @@ mutual
  ⟦_⟧ (A ∧ B) σ Γ = ⟦ A ⟧ σ Γ × ⟦ B ⟧ σ Γ
  ⟦_⟧ ⊤ σ Γ = Unit
 
-{-
- sem Γ (▹ ())
- sem Γ (μ F) = {!!}
- sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
- sem Γ (T ∧ S) = sem Γ T × sem Γ S
- sem Γ ⊤ = Unit
--}
-{-
-_∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
-(σ1 ∘ σ2) x = σ1 (σ2 x)
-
-ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
-ext σ z = z
-ext σ (s y) = s (σ y)
+ sem : (Γ : ctx tp) -> tp -> Set
+ sem Γ T = ⟦ T ⟧ unit Γ
 
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
- rappSubst σ (v y) = v (σ y)
+ rappSubst σ (v y) = v ([ σ ]v y)
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
  rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
+ rappSubst σ (fold F R N) = fold F (rappSubst σ R) N
  nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
- nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
+ nappSubst σ (ƛ M) = ƛ (nappSubst (vsub-ext σ) M)
  nappSubst σ (neut R) = neut (rappSubst σ R)
  nappSubst σ < M , N > = < nappSubst σ M , nappSubst σ N >
  nappSubst σ tt = tt
+ nappSubst σ (inj F N) = inj F (nappSubst σ N)
 
-id : ∀ {Γ} -> vsubst Γ Γ
-id x = x
+functorial₀ : (F : ctx tp -> Set) -> Set
+functorial₀ F = ∀ {Γ Δ} -> (σ : vsubst Γ Δ) -> (x : F Γ) -> F Δ
 
+⟦⟧-functorial₀ : ∀ {ζ} F -> (θ : gksubst ζ (ctx tp -> Set)) (θf : gsubst-pred functorial₀ θ) -> functorial₀ (⟦ F ⟧ θ)
+⟦⟧-functorial₀ (▹ A) θ θf σ t = lookup-pred θf A σ t
+⟦⟧-functorial₀ (μ F) θ θf σ t = {!!}
+⟦⟧-functorial₀ (A ⇝ B) θ θf σ t = λ Δ σ' x → t _ (σ' ∘v σ) x
+⟦⟧-functorial₀ (A ∧ B) θ θf σ t = (⟦⟧-functorial₀ A θ θf σ (proj₁ t)) , (⟦⟧-functorial₀ B θ θf σ (proj₂ t))
+⟦⟧-functorial₀ ⊤ θ θf σ t = unit
+
+{-
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
 appSubst (atom A) σ M = rappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
