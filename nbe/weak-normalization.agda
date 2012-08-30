@@ -300,3 +300,6 @@ mutual
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
+
+done' : ∀ {T} (t : tm ⊡ T) -> halts t
+done' t = reify _ (eq-ind (reduce _ _) []-id (thm v (λ ()) t))

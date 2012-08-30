@@ -133,6 +133,9 @@ _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 
 _◦_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> psub ζ1 ζ3
 σ1 ◦ σ2 = sub-map [ σ1 ]v σ2
 
+_⁌_ : ∀ {A} {ζ1 ζ2 ζ3} (σ1 : vsub {A} ζ1 ζ2) (σ2 : vsub {A} ζ2 ζ3) -> vsub {A} ζ1 ζ3
+σ1 ⁌ σ2 = sub-map [ σ1 ]v σ2
+
 _◆_ :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
 σ1 ◆ σ2 = sub-map [ σ1 ]pv σ2
 
@@ -142,8 +145,6 @@ sub-vsub-funct σ1 ⊡ ()
 sub-vsub-funct σ1 (σ , M) top = refl
 sub-vsub-funct σ1 (σ , M) (pop y) = sub-vsub-funct σ1 σ y
 
-sub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]pv) ≈ [ σ1 ◦ σ2 ]p
-sub-pvsub-funct σ1 σ2 P = {!!}
 
 
 pvsub-vsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]v) ≈ [ σ1 ◆ σ2 ]v
@@ -151,8 +152,7 @@ pvsub-vsub-funct σ1 ⊡ ()
 pvsub-vsub-funct σ1 (σ , M) top = refl
 pvsub-vsub-funct σ1 (σ , M) (pop y) = pvsub-vsub-funct σ1 σ y
 
-pvsub-sub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]p) ≈ [ σ1 ◆ σ2 ]p
-pvsub-sub-funct σ1 σ2 P = {!!}
+
 
 sub-map-funct : ∀ {A : Set} {exp1 exp2 exp3 : A -> Set} (g : ∀ {T} -> exp2 T -> exp3 T) (f : ∀ {T} -> exp1 T -> exp2 T)
  -> ∀ {Δ} (σ : sub exp1 Δ) -> (((sub-map g) ∘ (sub-map f)) σ) ≡ (sub-map (g ∘ f) σ)
@@ -168,11 +168,63 @@ id-v-right : ∀ {ζ2 ζ1} (σ : psub ζ1 ζ2) -> (σ ◦ id-vsub) ≡ σ
 id-v-right ⊡ = refl
 id-v-right (σ , M) = cong1st _,_ (trans (sub-map-funct _ _ _) (id-v-right σ)) M
 
-assocv : ∀ {ζ1 ζ2 ζ3 ζ4} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) (σ3 : psub ζ3 ζ4) -> (σ1 • (σ2 ◆ σ3)) ≡ ((σ1 ◦ σ2) • σ3)
-assocv σ1 σ2 σ3 = trans (sub-map-funct _ _ _) (sub-map-resp-≈ (sub-pvsub-funct σ1 σ2) σ3) 
-
 ext-wkn : ∀ {ζ1 ζ2} (σ1 : psub ζ1 ζ2) -> ((psub-ext σ1) ◦ wkn-vsub) ≡ (wkn-vsub ◆ σ1)
 ext-wkn σ1 = trans (sub-map-funct _ _ _) (id-v-right _)
+
+id-v-right2 : ∀ {A} {ζ2 ζ1} (σ : vsub {A} ζ1 ζ2) -> (σ ⁌ id-vsub) ≡ σ
+id-v-right2 ⊡ = refl
+id-v-right2 (σ , M) = cong1st _,_ (trans (sub-map-funct _ _ _) (id-v-right2 σ)) M
+
+ext-wkn2 : ∀ {A} {ζ1 ζ2} (σ1 : vsub {A} ζ1 ζ2) {T} -> ((vsub-ext {A} {T} σ1) ⁌ wkn-vsub) ≡ (wkn-vsub ⁌ σ1)
+ext-wkn2 σ1 = trans (sub-map-funct _ _ _) (trans (id-v-right2 (sub-map pop σ1)) {!!}) --trans (sub-map-funct _ _ _) (id-v-right _)
+
+vsub-vsub-funct :  ∀ {A} {ζ1 ζ2 ζ3} (σ1 : vsub {A} ζ1 ζ2) (σ2 : vsub ζ2 ζ3) {T} (x : var ζ3 T) -> ([ σ1 ]v ∘ [ σ2 ]v) x ≡ [ σ1 ⁌ σ2 ]v x
+vsub-vsub-funct σ1 ⊡ ()
+vsub-vsub-funct σ1 (σ , M) top = refl
+vsub-vsub-funct σ1 (σ , M) (pop y) = vsub-vsub-funct σ1 σ y
+
+pvsub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]pv) ≈ [ σ1 ⁌ σ2 ]pv
+pvsub-pvsub-funct σ1 σ2 (▸ P) = refl
+pvsub-pvsub-funct σ1 σ2 (▹ A) = cong ▹ (vsub-vsub-funct σ1 σ2 A)
+pvsub-pvsub-funct σ1 σ2 (μ F) = cong μ (trans (pvsub-pvsub-funct (vsub-ext σ1) (vsub-ext σ2) F) (cong1st [_]pv {!!} F))
+pvsub-pvsub-funct σ1 σ2 (ν F) = cong ν (trans (pvsub-pvsub-funct (vsub-ext σ1) (vsub-ext σ2) F) (cong1st [_]pv {!!} F))
+pvsub-pvsub-funct σ1 σ2 (○ A) = cong ○ (pvsub-pvsub-funct σ1 σ2 A)
+pvsub-pvsub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (pvsub-pvsub-funct σ1 σ2 B)
+pvsub-pvsub-funct σ1 σ2 (A ∧ B) = cong2 _∧_ (pvsub-pvsub-funct σ1 σ2 A) (pvsub-pvsub-funct σ1 σ2 B)
+pvsub-pvsub-funct σ1 σ2 (A ∨ B) = cong2 _∨_ (pvsub-pvsub-funct σ1 σ2 A) (pvsub-pvsub-funct σ1 σ2 B)
+pvsub-pvsub-funct σ1 σ2 ⊤ = refl
+
+
+sub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]pv) ≈ [ σ1 ◦ σ2 ]p
+sub-pvsub-funct σ1 σ2 (▸ P) = refl
+sub-pvsub-funct σ1 σ2 (▹ A) = {!!}
+sub-pvsub-funct σ1 σ2 (μ F) = {!!}
+sub-pvsub-funct σ1 σ2 (ν F) = {!!}
+sub-pvsub-funct σ1 σ2 (○ A) = cong ○ (sub-pvsub-funct σ1 σ2 A)
+sub-pvsub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) {!!}
+sub-pvsub-funct σ1 σ2 (A ∧ B) = {!!}
+sub-pvsub-funct σ1 σ2 (A ∨ B) = {!!}
+sub-pvsub-funct σ1 σ2 ⊤ = {!!}
+
+assocvv : ∀ {ζ1 ζ2 ζ3 ζ4} (σ1 : vsub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) (σ3 : psub ζ3 ζ4) -> (σ1 ◆ (σ2 ◆ σ3)) ≡ ((σ1 ⁌ σ2) ◆ σ3)
+assocvv σ1 σ2 σ3 = trans (sub-map-funct _ _ _) (sub-map-resp-≈ (pvsub-pvsub-funct σ1 σ2) σ3)
+
+ext-funct-vp : ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((vsub-ext σ1) ◆ (psub-ext σ2)) ≡ psub-ext (σ1 ◆ σ2)
+ext-funct-vp σ1 σ2 = cong1st _,_ (trans (assocvv _ _ _) (trans (sub-map-resp-≈ (λ x → trans (cong1st [_]pv (ext-wkn2 σ1) x) (sym (pvsub-pvsub-funct _ _ x))) σ2) (sym (sub-map-funct _ _ σ2)))) (▹ top)
+
+pvsub-sub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]p) ≈ [ σ1 ◆ σ2 ]p
+pvsub-sub-funct σ1 σ2 (▸ P) = refl
+pvsub-sub-funct σ1 σ2 (▹ A) = pvsub-vsub-funct σ1 σ2 A
+pvsub-sub-funct σ1 σ2 (μ F) = cong μ (trans (pvsub-sub-funct (vsub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct-vp σ1 σ2) F))
+pvsub-sub-funct σ1 σ2 (ν F) = cong ν (trans (pvsub-sub-funct (vsub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct-vp σ1 σ2) F))
+pvsub-sub-funct σ1 σ2 (○ A) = cong ○ (pvsub-sub-funct σ1 σ2 A)
+pvsub-sub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (pvsub-sub-funct σ1 σ2 B)
+pvsub-sub-funct σ1 σ2 (A ∧ B) = cong2 _∧_ (pvsub-sub-funct σ1 σ2 A) (pvsub-sub-funct σ1 σ2 B)
+pvsub-sub-funct σ1 σ2 (A ∨ B) = cong2 _∨_ (pvsub-sub-funct σ1 σ2 A) (pvsub-sub-funct σ1 σ2 B)
+pvsub-sub-funct σ1 σ2 ⊤ = refl
+
+assocv : ∀ {ζ1 ζ2 ζ3 ζ4} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) (σ3 : psub ζ3 ζ4) -> (σ1 • (σ2 ◆ σ3)) ≡ ((σ1 ◦ σ2) • σ3)
+assocv σ1 σ2 σ3 = trans (sub-map-funct _ _ _) (sub-map-resp-≈ (sub-pvsub-funct σ1 σ2) σ3) 
 
 ext-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((psub-ext σ1) • (psub-ext σ2)) ≡ psub-ext (σ1 • σ2)
 ext-funct σ1 σ2 = cong1st _,_ (trans (assocv _ _ _) (trans (sub-map-resp-≈ (λ x → trans (cong1st [_]p (ext-wkn σ1) x) (sym (pvsub-sub-funct _ _ x))) σ2) (sym (sub-map-funct _ _ σ2)))) (▹ top)
@@ -190,13 +242,18 @@ sub-funct σ1 σ2 (A ∨ B) = cong2 _∨_ (sub-funct σ1 σ2 A) (sub-funct σ1 �
 sub-funct σ1 σ2 ⊤ = refl
 
 
+map-lookup : ∀ {A} {ζ1 ζ2 ζ3} (f : ∀ {U : A} -> var ζ2 U -> var ζ3 U) (σ : vsub {A} ζ2 ζ1) {T} (y : var ζ1 T) -> [ sub-map f σ ]v y ≡ f ([ σ ]v y)
+map-lookup f ⊡ ()
+map-lookup f (σ , M) top = refl
+map-lookup f (σ , M) (pop y) = map-lookup f σ y
+
 vsub-v-id : ∀ {ζ} (A : var ζ #prop) -> [ id-vsub ]v A ≡ A
 vsub-v-id top = refl
-vsub-v-id (pop y) = {!!}
+vsub-v-id (pop y) = trans (map-lookup pop id-vsub y) (cong pop (vsub-v-id y))
 
 sub-v-id : ∀ {ζ1} (A : var ζ1 #prop) -> [ id-psub ]v A ≡ ▹ A
 sub-v-id top = refl
-sub-v-id (pop y) = trans (sym (pvsub-vsub-funct wkn-vsub id-psub y)) (trans (cong [ wkn-vsub ]pv (sub-v-id y)) (cong ▹ {!!}))
+sub-v-id (pop y) = trans (sym (pvsub-vsub-funct wkn-vsub id-psub y)) (trans (cong [ wkn-vsub ]pv (sub-v-id y)) (cong ▹ (trans (map-lookup pop id-vsub y) (cong pop (vsub-v-id y)))))
 
 sub-id : ∀ {ζ1} (M : functor ζ1) -> [ id-psub ]p M ≡ M
 sub-id (▸ P) = refl

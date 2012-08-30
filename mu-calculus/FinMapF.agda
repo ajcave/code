@@ -27,8 +27,14 @@ gsubst ψ F = gsubst' ψ (λ {T} x -> F T)
 extend : ∀ {a b} {A : Set a} {F : A -> Set b} {U} {ψ : ctx A} -> gsubst ψ F -> F U -> gsubst (ψ , U) F
 extend {a} {b} {A} {F} σ M = extend' (λ {T} x -> F T) σ M
 
+init0 : ∀ {a b} {A : Set a} {F : A -> Set b} -> gsubst ⊡ F
+init0 {F = F} = init {F = λ {U} x -> F U}
+
 vsubst : ∀ {a} {A : Set a} (ψ φ : ctx A) -> Set a
 vsubst ψ φ = gsubst ψ (λ T -> var φ T)
+
+id-vsubst : ∀ {a} {A : Set a} {ψ : ctx A} -> vsubst ψ ψ
+id-vsubst x = x
 
 -- Specialize to a constant family
 gksubst : ∀ {a b} {A : Set a} (ψ : ctx A) (F : Set b) -> Set (a ⊔ b)
