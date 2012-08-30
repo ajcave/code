@@ -72,7 +72,7 @@ mutual
 
 mutual
  data μ⁺ {ζ} (F : functor (ζ , *)) (σ : gksubst ζ (ctx tp -> Set)) (Γ : ctx tp) : Set where
-  ⟨_⟩ : ⟦ F ⟧ (σ , (λ Γ' -> (μ⁺ F σ Γ'))) Γ -> μ⁺ F σ Γ
+  ⟨_⟩ : ⟦ F ⟧ (σ , μ⁺ F σ) Γ -> μ⁺ F σ Γ
 
  ⟦_⟧ : ∀ {ζ} -> (F : functor ζ) (σ : gksubst ζ (ctx tp -> Set)) -> (Γ : ctx tp) -> Set
  ⟦_⟧ (▹ A) σ Γ = lookup σ A Γ
@@ -103,7 +103,7 @@ functorial₀ F = ∀ {Γ Δ} -> (σ : vsubst Γ Δ) -> (x : F Γ) -> F Δ
 
 ⟦⟧-functorial₀ : ∀ {ζ} F -> (θ : gksubst ζ (ctx tp -> Set)) (θf : gsubst-pred functorial₀ θ) -> functorial₀ (⟦ F ⟧ θ)
 ⟦⟧-functorial₀ (▹ A) θ θf σ t = lookup-pred θf A σ t
-⟦⟧-functorial₀ (μ F) θ θf σ t = {!!}
+⟦⟧-functorial₀ (μ F) θ θf σ ⟨ y ⟩ = ⟨ (⟦⟧-functorial₀ F (θ , (μ⁺ F θ)) (θf , ⟦⟧-functorial₀ (μ F) θ θf) σ y) ⟩
 ⟦⟧-functorial₀ (A ⇝ B) θ θf σ t = λ Δ σ' x → t _ (σ' ∘v σ) x
 ⟦⟧-functorial₀ (A ∧ B) θ θf σ t = (⟦⟧-functorial₀ A θ θf σ (proj₁ t)) , (⟦⟧-functorial₀ B θ θf σ (proj₂ t))
 ⟦⟧-functorial₀ ⊤ θ θf σ t = unit
