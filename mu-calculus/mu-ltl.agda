@@ -210,11 +210,14 @@ pvsub-pvsub-funct σ1 σ2 (A ∧ B) = cong2 _∧_ (pvsub-pvsub-funct σ1 σ2 A) 
 pvsub-pvsub-funct σ1 σ2 (A ∨ B) = cong2 _∨_ (pvsub-pvsub-funct σ1 σ2 A) (pvsub-pvsub-funct σ1 σ2 B)
 pvsub-pvsub-funct σ1 σ2 ⊤ = refl
 
+ext-funct-pv : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ((psub-ext σ1) ◦ (vsub-ext σ2)) ≡ psub-ext (σ1 ◦ σ2)
+ext-funct-pv σ1 σ2 = cong1st _,_ (trans (trans (sub-map-funct _ pop σ2) (sub-map-resp-≈ (λ x → sym (pvsub-vsub-funct _ σ1 x)) σ2)) (sym (sub-map-funct _ _ σ2))) (▹ top)
+
 sub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]pv) ≈ [ σ1 ◦ σ2 ]p
 sub-pvsub-funct σ1 σ2 (▸ P) = refl
 sub-pvsub-funct σ1 σ2 (▹ A) = vsub-vsub-funct σ1 σ2 A
-sub-pvsub-funct σ1 σ2 (μ F) = cong μ (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p {!!} F))
-sub-pvsub-funct σ1 σ2 (ν F) = cong ν (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p {!!} F))
+sub-pvsub-funct σ1 σ2 (μ F) = cong μ (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p (ext-funct-pv _ _) F))
+sub-pvsub-funct σ1 σ2 (ν F) = cong ν (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p (ext-funct-pv _ _) F))
 sub-pvsub-funct σ1 σ2 (○ A) = cong ○ (sub-pvsub-funct σ1 σ2 A)
 sub-pvsub-funct σ1 σ2 (A ⊃ B) = cong (_⊃_ A) (sub-pvsub-funct σ1 σ2 B)
 sub-pvsub-funct σ1 σ2 (A ∧ B) = cong2 _∧_ (sub-pvsub-funct σ1 σ2 A) (sub-pvsub-funct σ1 σ2 B)
