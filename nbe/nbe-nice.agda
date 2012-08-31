@@ -91,6 +91,8 @@ wkn x = s x
 
 mutual
  -- Has the pattern of η-expansion
+ -- These are structurally recursive on the type, which
+ -- is an implicit argument.
  reflect : ∀ {T Γ} -> rtm Γ T -> sem T Γ
  reflect {i} N = neut N
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
