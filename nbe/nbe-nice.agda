@@ -59,15 +59,19 @@ mutual
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
  rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
+
  nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
  nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
  nappSubst σ (neut R) = neut (rappSubst σ R)
  nappSubst σ < M , N > = < nappSubst σ M , nappSubst σ N >
  nappSubst σ tt = tt
 
--- Types are interpreted as functors from ctx to Set
+-- Types are semantically interpreted as functors from ctx to Set
+-- i.e. Types are interpreted as objects of the category of presheaves
+-- eval (below) interprets terms as arrows in the category of presheaves
 sem : (T : tp) -> (ctx -> Set)
 sem i Γ = ntm Γ i
+                -- This is the exponential in the category of presheaves
 sem (T ⇝ S) Γ = ∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
 sem (T × S) Γ = sem T Γ * sem S Γ
 sem unit Γ = Unit
@@ -110,7 +114,7 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  <_,_> : ∀ {T S} -> tm Γ T -> tm Γ S -> tm Γ (T × S)
  tt : tm Γ unit
 
--- Generalize semantic interpretation of types to substitutions
+-- Generalize semantic interpretation of types to contexts
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem T Δ
 
@@ -119,6 +123,7 @@ extend θ M z = M
 extend θ M (s y) = θ y
 
 -- Interpret a term Γ ⊢ T as a natural transformation (subst Γ) ⇒ (sem T)
+-- i.e. as an arrow in the category of presheaves
 -- aka "evaluate in an environment"
 eval : ∀ {Γ T} -> tm Γ T -> (∀ {Δ} -> subst Γ Δ -> sem T Δ)
 eval (v y) θ = θ y
