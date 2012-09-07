@@ -62,19 +62,6 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
 vsubst : ctx -> ctx -> Set 
 vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
 
-mutual 
- data rtm (Γ : ctx) : (T : tp) -> Set where
-  v : ∀ {T} -> var Γ T -> rtm Γ T
-  _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
- data ntm (Γ : ctx) : (T : tp) -> Set where
-  ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
-  neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
-
-
-{-sem : (Γ : ctx) -> (T : tp) -> Set
-sem Γ (atom A) = ntm Γ (atom A)
-sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S -}
-
 _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘ σ2) x = σ1 (σ2 x)
 
@@ -84,15 +71,6 @@ _∘₁_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
-
-mutual
- rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
- rappSubst σ (v y) = v (σ y)
- rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
- nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
- nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
- nappSubst σ (neut R) = neut (rappSubst σ R)
-
 
 var-dom-eq' : ∀ {A : tp -> Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A U) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
 var-dom-eq' f g p q z = q
@@ -105,30 +83,12 @@ ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) 
 ext-funct σ1 σ2 z = refl
 ext-funct σ1 σ2 (s y) = refl
 
-mutual
- rappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : rtm Γ1 S)
-  -> rappSubst σ1 (rappSubst σ2 R) ≡ rappSubst (σ1 ∘ σ2) R
- rappSubst-funct σ1 σ2 (v y) = refl
- rappSubst-funct σ1 σ2 (R · N) = cong2 _·_ (rappSubst-funct σ1 σ2 R) (nappSubst-funct σ1 σ2 N)
- nappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (N : ntm Γ1 S)
-  -> nappSubst σ1 (nappSubst σ2 N) ≡ nappSubst (σ1 ∘ σ2) N
- nappSubst-funct σ1 σ2 (ƛ N) = cong ƛ (trans (nappSubst-funct (ext σ1) (ext σ2) N) (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x' → ext-funct σ1 σ2 x')))))
- nappSubst-funct σ1 σ2 (neut R) = cong neut (rappSubst-funct σ1 σ2 R)
-
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
 ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> ext id x ≡ x
 ext-id z = refl
 ext-id (s y) = refl
-
-mutual
- rappSubst-id : ∀ {Γ S} (R : rtm Γ S) -> rappSubst id R ≡ R
- rappSubst-id (v y) = refl
- rappSubst-id (R · N) = cong2 _·_ (rappSubst-id R) (nappSubst-id N)
- nappSubst-id : ∀ {Γ S} (N : ntm Γ S) -> nappSubst id N ≡ N
- nappSubst-id (ƛ N) = cong ƛ (trans (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x → ext-id x)))) (nappSubst-id N))
- nappSubst-id (neut R) = cong neut (rappSubst-id R)
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn = s
@@ -206,14 +166,6 @@ sub-ext-id (s y) = refl
 []v-eq-[] σ (y · y') = cong2 _·_ ([]v-eq-[] σ y) ([]v-eq-[] σ y')
 []v-eq-[] σ (ƛ y) = cong ƛ (trans ([]v-eq-[] (ext σ) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl))) 
 
-
-data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
- _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →₁ M2 -> N1 →₁ N2 -> (M1 · N1) →₁ (M2 · N2)
- ƛ : ∀ {T S} {M1 M2 : tm (Γ , T) S} -> M1 →₁ M2 -> (ƛ M1) →₁ (ƛ M2)
- β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →₁ [ v ,, N ] M
- η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →₁ (ƛ ([ s ]v M · (v z)))
-
--- Why not just use an explicit substitution calculus?
 data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  v : ∀ {T} (x : var Γ T) -> (v x) →* (v x)
  _·_ : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> M1 →* M2 -> N1 →* N2 -> (M1 · N1) →* (M2 · N2)
@@ -226,37 +178,6 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 →*-refl {M = v y} = v y
 →*-refl {M = M · N} = →*-refl · →*-refl
 →*-refl {M = ƛ M} = ƛ →*-refl
-
-→*-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 →* M2
-→*-refl' refl = →*-refl
-
-vsimp : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : tm Γ T) {U} (x : var (Γ , T) U) -> ((v ,, [ σ ]v N) ∘₁ (ext σ)) x ≡ ([ σ ]v ∘₁ (v ,, N)) x
-vsimp σ N z = refl
-vsimp σ N (s y) = refl
-
-→*-subst : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) {M1 M2 : tm Γ1 T} -> M1 →* M2 -> [ σ ]v M1 →* [ σ ]v M2
-→*-subst σ (v x) = →*-refl
-→*-subst σ (y · y') = (→*-subst σ y) · (→*-subst σ y')
-→*-subst σ (ƛ y) = ƛ (→*-subst (ext σ) y)
-→*-subst σ (β M N) = →*-trans (β _ _) (→*-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
-→*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
-→*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y')
-
-mutual
- ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
- ninj (ƛ M) = ƛ (ninj M)
- ninj (neut R) = rinj R
- rinj : ∀ {Γ T} -> rtm Γ T -> tm Γ T
- rinj (v x) = v x
- rinj (R · N) = (rinj R) · (ninj N)
-
-mutual
- []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
- []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
- []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
- []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
- []v-comm-rinj σ (v y) = refl
- []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
 
 data isNormal {Γ} : ∀ {T} (t : tm Γ T) -> Set where
  ƛ : ∀ {T S} (t : tm (Γ , T) S) -> isNormal (ƛ t)
