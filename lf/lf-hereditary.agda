@@ -36,12 +36,7 @@ data vsubst : ∀ (Γ : ctx) (Δ : ctx) -> Set where
  ⊡ : ∀ {Δ} -> vsubst ⊡ Δ
  _,_ : ∀ {Γ Δ U} -> (σ : vsubst Γ Δ) -> (x : var Δ U) -> vsubst (Γ , U) Δ
 
-mutual 
- {-data rtm (Γ : ctx) : (T : tp) -> Set where
-  v : ∀ {T} -> var Γ T -> rtm Γ T
-  _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
-  π₁ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ T
-  π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S -}
+mutual
  data spine (Γ : ctx) : (T S : tp) -> Set where
   ε : ∀ {ρ} -> spine Γ ρ ρ
   _,_ : ∀ {τ σ ρ} -> (S : spine Γ σ ρ) -> (N : ntm Γ τ)  -> spine Γ (τ ⇝ σ) ρ
@@ -95,67 +90,7 @@ mutual
  nappSubst σ nil = nil
  nappSubst σ (cons N L) = cons (nappSubst σ N) (nappSubst σ L)
 
-_-_ : ∀ {τ} -> (Γ : ctx) -> var Γ τ -> ctx
-⊡ - ()
-(Γ , τ) - z = Γ
-(Γ , τ) - (s x) = (Γ - x) , τ
-
-wkv : ∀ {Γ σ τ} (x : var Γ σ) -> var (Γ - x) τ -> var Γ τ
-wkv z y = s y
-wkv (s y) z = z
-wkv (s y) (s y') = s (wkv y y')
-
-data eqV {Γ} : ∀ {τ σ} -> var Γ τ -> var Γ σ -> Set where
- same : ∀ {τ} {x : var Γ τ} -> eqV x x
- diff : ∀ {τ σ} (x : var Γ τ) (y : var (Γ - x) σ) -> eqV x (wkv x y)
-
-eq : ∀ {Γ τ σ} -> (x : var Γ τ) -> (y : var Γ σ) -> eqV x y
-eq z z = same
-eq z (s y) = diff z y
-eq (s y) z = diff (s y) z
-eq (s y) (s y') with eq y y'
-eq (s .y) (s .y) | same {τ} {y} = same
-eq (s y) (s .(wkv y y')) | diff .y y' = diff (s y) (wkv z y')
-
-mutual
- _[[_:=_]] : ∀ {Γ τ σ} -> ntm Γ τ -> (x : var Γ σ) -> ntm (Γ - x) σ -> ntm (Γ - x) τ
- ƛ N [[ x := M ]] = ƛ (N [[ s x := nappSubst wkn M ]])
- ▹ x S [[ x' := M ]] with eq x' x
- ▹ .x S [[ .x := N' ]] | same {τ} {x} = N' ◇ (S << x := N' >>)
- ▹ .(wkv x y) S [[ .x := N' ]] | diff x y = ▹ y (S << x := N' >>)
- < M , N > [[ x := M' ]] = < M [[ x := M' ]] , N [[ x := M' ]] >
- tt [[ x := M ]] = tt
- z [[ x := M ]] = z
- s N [[ x := M ]] = s (N [[ x := M ]])
- nil [[ x := M ]] = nil
- cons N L [[ x := M ]] = cons (N [[ x := M ]]) (L [[ x := M ]])
-
- _<<_:=_>> : ∀ {Γ τ σ ρ} -> spine Γ τ ρ -> (x : var Γ σ) -> ntm (Γ - x) σ -> spine (Γ - x) τ ρ
- ε << x := M >> = ε
- (S , N) << x := M >> = (S << x := M >>) , (N [[ x := M ]])
- π₁ S << x := M >> = π₁ (S << x := M >>)
- π₂ S << x := M >> = π₂ (S << x := M >>)
-
- _◇_ : ∀ {Γ τ σ} -> ntm Γ σ -> spine Γ σ τ -> ntm Γ τ
- N ◇ ε = N
- ƛ N ◇ (S , N') = (N [[ z := N' ]]) ◇ S
- < M , N > ◇ π₁ S = M ◇ S
- < M , N > ◇ π₂ S = N ◇ S
-
-data nSubst : ∀ (Γ : ctx) (Δ : ctx) -> Set where 
- ⊡ : ∀ {Δ} -> nSubst ⊡ Δ
- _,_ : ∀ {Γ Δ U} -> (σ : nSubst Γ Δ) -> (N : ntm Δ U) -> nSubst (Γ , U) Δ
-
-
-nSubst-app : ∀ {Γ Δ U} -> nSubst Γ Δ -> var Γ U -> ntm Δ U
-nSubst-app ⊡ ()
-nSubst-app (σ , N) z = N
-nSubst-app (σ , N) (s y) = nSubst-app σ y
-
-nSubst-map : ∀ {Δ Γ ψ} -> (∀ {U} -> ntm Δ U -> ntm Γ U) -> nSubst ψ Δ -> nSubst ψ Γ
-nSubst-map σ1 ⊡ = ⊡
-nSubst-map σ1 (σ , x) = (nSubst-map σ1 σ) , (σ1 x)
-
+{-
 concatSp : ∀ {ρ Γ τ σ} -> spine Γ ρ σ -> spine Γ σ τ -> spine Γ ρ τ
 concatSp ε S2 = S2
 concatSp (S , N) S2 = concatSp S S2 , N
@@ -179,9 +114,7 @@ appSp S N = concatSp S (ε , N)
 
 nv : ∀ {Γ T} -> var Γ T -> ntm Γ T
 nv x = η-expand x ε
-
-n-ext : ∀ {Γ Δ T} -> nSubst Γ Δ -> nSubst (Γ , T) (Δ , T)
-n-ext θ = (nSubst-map (nappSubst wkn) θ) , nv z
+-}
 
 lcons : tp -> ctx -> ctx
 lcons T ⊡ = ⊡ , T
@@ -191,21 +124,14 @@ _++_ : ctx -> ctx -> ctx
 Γ1 ++ ⊡ = Γ1
 Γ1 ++ (Γ2 , T) = (Γ1 ++ Γ2) , T
 
-{-bar2 : ∀ Γ Δ U -> var (Δ ++ lcons U Γ) U
-bar2 ⊡ Δ U = z
-bar2 (Γ , T) Δ U = s (bar2 Γ Δ U)
-
-foo2 : ∀ Γ Δ U -> (Δ ++ Γ) ≡ ((Δ ++ lcons U Γ) - bar2 Γ Δ U)
-foo2 ⊡ Δ U = refl
-foo2 (Γ , T) Δ U rewrite foo2 Γ Δ U = refl -}
-
+{-
 baz : ∀ Γ Δ U -> ((Δ , U) ++ Γ) ≡ (Δ ++ lcons U Γ)
 baz ⊡ Δ U = refl
 baz (Γ , T) Δ U rewrite baz Γ Δ U = refl
 
 quux : ∀ Γ -> (⊡ ++ Γ) ≡ Γ
 quux ⊡ = refl
-quux (Γ , T) rewrite quux Γ = refl
+quux (Γ , T) rewrite quux Γ = refl -}
 
 wkn* : ∀ Δ Γ -> vsubst Δ (Δ ++ Γ)
 wkn* Δ ⊡ = id
@@ -214,63 +140,6 @@ wkn* Δ (Γ , T) = vsubst-map s (wkn* Δ Γ)
 wkn*l : ∀ Δ Γ -> vsubst Γ (Δ ++ Γ)
 wkn*l Δ ⊡ = ⊡
 wkn*l Δ (Γ , T) = (vsubst-map s (wkn*l Δ Γ)) , z
-{-
--- It might be feasible to define hereditary substitution in this form directly?
-cut' : ∀ {Γ1 Γ2 Δ T} -> nSubst Γ1 Δ -> ntm (Γ1 ++ Γ2) T -> ntm (Δ ++ Γ2) T
-cut' {⊡} {Γ2} {Δ} ⊡ N rewrite quux Γ2 = nappSubst (wkn*l Δ Γ2) N
-cut' {Γ1 , U} {Γ2} {Δ} (σ , N) N' rewrite baz Γ2 Γ1 U with cut' {Γ1} {lcons U Γ2} {Δ} σ N' | nappSubst (wkn* Δ Γ2) N
-... | w1 | w rewrite foo2 Γ2 Δ U = w1 [[ (bar2 Γ2 Δ U) := w ]]
-
-cut : ∀ {Γ Δ T} -> nSubst Γ Δ -> ntm Γ T -> ntm Δ T
-cut {Γ} σ t = cut' {Γ} {⊡} σ t -}
-
--- Simultaneous, more directly.
-mutual
- [_] : ∀ {Γ1 Γ2 τ} -> nSubst Γ1 Γ2 -> ntm Γ1 τ -> ntm Γ2 τ
- [ σ ] (ƛ N) = ƛ ([ n-ext σ ] N)
- [ σ ] (▹ x S) = nSubst-app σ x ◆ << σ >> S
- [ σ ] < M , N > = < [ σ ] M , [ σ ] N >
- [ σ ] tt = tt
- [ σ ] z = z
- [ σ ] (s N) = s ([ σ ] N)
- [ σ ] nil = nil
- [ σ ] (cons N L) = cons ([ σ ] N) ([ σ ] L)
-
- <<_>> : ∀ {Γ1 Γ2 τ σ} -> nSubst Γ1 Γ2 -> spine Γ1 τ σ -> spine Γ2 τ σ
- << σ >> ε = ε
- << σ >> (S , N) = << σ >> S , [ σ ] N
- << σ >> (π₁ y) = π₁ (<< σ >> y)
- << σ >> (π₂ y) = π₂ (<< σ >> y)
-
- _◆_ : ∀ {Γ σ τ} -> ntm Γ σ -> spine Γ σ τ -> ntm Γ τ
- N ◆ ε = N
- ƛ N ◆ (S , N') = (N [[ z := N' ]]) ◆ S
- < M , N > ◆ π₁ N' = M ◆ N'
- < M , N > ◆ π₂ N' = N ◆ N'
-
-
-_∘₂_ : ∀ {Γ Δ ψ} -> nSubst Γ Δ -> nSubst ψ Γ -> nSubst ψ Δ
-θ1 ∘₂ ⊡ = ⊡
-θ1 ∘₂ (σ , N) = (θ1 ∘₂ σ) , [ θ1 ] N
-
-nId : ∀ {Γ} -> nSubst Γ Γ
-nId {⊡} = ⊡
-nId {Γ , T} = n-ext nId
-
-n-single : ∀ {Γ T} -> ntm Γ T -> nSubst (Γ , T) Γ
-n-single N = nId , N
-
-n-single-subst : ∀ {Γ T S} -> ntm (Γ , S) T -> ntm Γ S -> ntm Γ T
-n-single-subst M N = M [[ z := N ]]
-
-napp : ∀ {Γ T S} -> ntm Γ (T ⇝ S) -> ntm Γ T -> ntm Γ S
-napp (ƛ M) N = n-single-subst M N
-
-nfst : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ T
-nfst < M , N > = M
-
-nsnd : ∀ {Γ T S} -> ntm Γ (T × S) -> ntm Γ S
-nsnd < M , N > = N
 
 data lf-atomic-tp (Γ : ctx) : atomic_tp -> Set where
  lf-nat' : lf-atomic-tp Γ nat
@@ -297,25 +166,8 @@ lf-tp-vsubst σ (S ⇝ T) = (lf-tp-vsubst σ S) ⇝ (lf-tp-vsubst (ext σ) T)
 lf-tp-vsubst σ (S × T) = (lf-tp-vsubst σ S) × (lf-tp-vsubst σ T)
 lf-tp-vsubst σ unit = unit
 
-lf-tp-subst-atomic : ∀ {γ δ : ctx} (θ : nSubst γ δ) {a} (A : lf-atomic-tp γ a) -> lf-atomic-tp δ a
-lf-tp-subst-atomic θ lf-nat' = lf-nat'
-lf-tp-subst-atomic θ (lf-vec' N) = lf-vec' ([ θ ] N)
-
-lf-tp-subst : ∀ {γ δ : ctx} (θ : nSubst γ δ) {s} (S : lf-tp γ s) -> lf-tp δ s
-lf-tp-subst θ (atom A) = atom (lf-tp-subst-atomic θ A)
-lf-tp-subst θ (S ⇝ T) = (lf-tp-subst θ S) ⇝ (lf-tp-subst (n-ext θ) T)
-lf-tp-subst θ (S × T) = (lf-tp-subst θ S) × (lf-tp-subst θ T)
-lf-tp-subst θ unit = unit
-
 lf-tp-wkn : ∀ {Γ : ctx} (t : tp) {s} (S : lf-tp Γ s) -> lf-tp (Γ , t) s
 lf-tp-wkn t S = lf-tp-vsubst wkn S
-
-{- Compare this style with not indexing by everything. Involves induction-recursion everywhere?
-   I suspect there may be more preservation lemmas? -}
-data lf-ctx : ctx -> Set where
- ⊡ : lf-ctx ⊡
- _,_ : ∀ {γ} (Γ : lf-ctx γ) -> {t : tp} -> (T : lf-tp γ t) -> lf-ctx (γ , t)
-
 
 
 {-lf-vsubst : ∀ {γ δ} (Γ : lf-ctx γ) (σ : vsubst γ δ) (Δ : lf-ctx δ) -> Set
@@ -479,9 +331,18 @@ mutual
  dia < M , N > (π₁ y) = dia M y
  dia < M , N > (π₂ y) = dia N y
 
+data lf-ctx : ctx -> Set where
+ ⊡ : lf-ctx ⊡
+ _,_ : ∀ {γ} (Γ : lf-ctx γ) -> {t : tp} -> (T : lf-tp γ t) -> lf-ctx (γ , t)
+
+
 data ctx-suffix (γ : ctx) : ctx -> Set where
  ⊡ : ctx-suffix γ ⊡
  _,_ : ∀ {δ} (Γ : ctx-suffix γ δ) -> {t : tp} -> (T : lf-tp (γ ++ δ) t) -> ctx-suffix γ (δ , t)
+
+{-lf-ctx : ctx -> Set
+lf-ctx γ = ctx-suffix ⊡ γ
+-}
 
 lf-tp-wkn2 : ∀ δ {γ} t {s} (S : lf-tp (γ ++ δ) s) -> lf-tp ((γ , t) ++ δ) s
 lf-tp-wkn2 δ t (atom A) = {!!}
@@ -494,7 +355,6 @@ data lf-var : ∀ {γ} (Γ : lf-ctx γ) {t} (T : lf-tp γ t) (x : var γ t) -> S
  s : ∀ {γ Γ t T u U x} -> lf-var {γ} Γ {t} T x -> lf-var (Γ , U) (lf-tp-wkn2 ⊡ u T) (s x)
 
 
--- It's more uniform if we append ctx-suffixes directly (category). Then should ntms be in a pair of contexts? Weird..
 _+++_ : ∀ {γ δ} (Γ : lf-ctx γ) -> (Δ : ctx-suffix γ δ) -> lf-ctx (γ ++ δ)
 Γ +++ ⊡ = Γ
 Γ +++ (Γ' , T) = (Γ +++ Γ') , T
@@ -580,8 +440,8 @@ mutual
  nsublem2 {δ = δ} Δ {n = ▹ .(wkv2 δ x) r} (▹ X R) M | diff2 x = ▹ {!!} {!!}
  nsublem2 Δ < M , N > M' = < nsublem2 Δ M M' , nsublem2 Δ N M' >
  nsublem2 Δ tt M = tt
- nsublem2 Δ z M = z
- nsublem2 Δ (s N) M = s (nsublem2 Δ N M)
+ nsublem2 Δ z M = z 
+nsublem2 Δ (s N) M = s (nsublem2 Δ N M)
  nsublem2 Δ nil M = nil
  nsublem2 Δ (cons N L) M = cons (nsublem2 Δ N M) (nsublem2 Δ L M)
 
