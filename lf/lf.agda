@@ -93,7 +93,7 @@ vsubst-ok-, θ y (pop y') (pop y0) = {!!}
 
 vsubst-ok-ext : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋} -> vsubst-ok Γ Δ σ
   -> vsubst-ok (Γ , T) (Δ , ([ σ ]tv T)) (vsub-ext σ)
-vsubst-ok-ext θ y = {!!}
+vsubst-ok-ext θ y = ? --vsubst-ok-, {!!} {!!} top
 
 mutual
  tv-ok : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
