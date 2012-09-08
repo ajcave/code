@@ -5,6 +5,14 @@ open import Data.Product
 open import Function
 open import FinMap
 
+mutual
+ data rtm (Γ : ctx Unit) :  Set where
+  ▹ : ∀ (x : var Γ unit) -> rtm Γ
+  _·_ : ∀ (R : rtm Γ) (N : ntm Γ) -> rtm Γ
+ data ntm (Γ : ctx Unit) : Set where
+  ▸ : ∀ (R : rtm Γ) -> ntm Γ
+  ƛ : ∀ (N : ntm (Γ , unit)) -> ntm Γ
+
 {-mutual
  data ctx : Set where
   ⊡ : ctx
