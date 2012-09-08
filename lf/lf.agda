@@ -82,4 +82,4 @@ mutual
   _·_ : ∀ {T S R N} -> (r : Γ ⊢ R ⇒ (Π T S)) -> (n : Γ ⊢ N ⇐ T) -> Γ ⊢ (R · N) ⇒ [ id-n , N ]t S
  data _⊢_⇐_ (Γ : dctx) : ntm ⌊ Γ ⌋ -> tp ⌊ Γ ⌋ -> Set where
   ▸ : ∀ {T R} -> (r : Γ ⊢ R ⇒ T) -> Γ ⊢ (▸ R) ⇐ T
-  ƛ : ∀ {T S N} -> (n : (Γ , T) ⊢ N ⇐ S) -> Γ ⊢ (ƛ N) ⇐ (Π T S)
+  ƛ : ∀ {T S N} -> (t : Γ ⊢ T type) -> (n : (Γ , T) ⊢ N ⇐ S) -> Γ ⊢ (ƛ N) ⇐ (Π T S)
