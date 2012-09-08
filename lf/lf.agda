@@ -27,7 +27,7 @@ mutual
  [_]nv σ (ƛ N) = ƛ ([ vsub-ext σ ]nv N)
 
 id-n : ∀ {Γ} -> gksubst Γ (ntm Γ)
-id-n = build-gksubst (▸ ∘ ▹)
+id-n = interp (▸ ∘ ▹)
 
 mutual
  [_]r : ∀ {Γ Δ} -> gksubst Γ (ntm Δ) -> rtm Γ -> ntm Δ
@@ -73,7 +73,6 @@ mutual
   vec : ∀ {n : ntm ⌊ Γ ⌋} -> Γ ⊢ n ⇐ nat -> Γ ⊢ (vec n) type
   Π : ∀ {T S} -> (T-type : Γ ⊢ T type) -> (S-type : (Γ , T) ⊢ S type) -> Γ ⊢ (Π T S) type 
 
- -- TODO: This is going to need some "type" judgements inserted... I think just in ƛ
  data _∋_∶_ : (Γ : dctx) -> (x : var ⌊ Γ ⌋ *) -> (T : tp ⌊ Γ ⌋) -> Set where
   top : ∀ {Γ T} -> (Γ , T) ∋ top ∶ [ wkn-vsub ]tv T
   pop : ∀ {Γ T S x} -> Γ ∋ x ∶ T -> (Γ , S) ∋ (pop x) ∶ [ wkn-vsub ]tv T
@@ -83,6 +82,13 @@ mutual
  data _⊢_⇐_ (Γ : dctx) : ntm ⌊ Γ ⌋ -> tp ⌊ Γ ⌋ -> Set where
   ▸ : ∀ {T R} -> (r : Γ ⊢ R ⇒ T) -> Γ ⊢ (▸ R) ⇐ T
   ƛ : ∀ {T S N} -> (t : Γ ⊢ T type) -> (n : (Γ , T) ⊢ N ⇐ S) -> Γ ⊢ (ƛ N) ⇐ (Π T S)
+
+mutual
+ rv-ok : ∀ {Γ Δ R T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
+    -> (∀ x U -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U))
+   -- -> gsubst-pred (λ x -> ∀ U -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U)) σ
+   -> Γ ⊢ R ⇒ T -> Δ ⊢ ([ σ ]rv R) ⇒ ([ σ ]tv T)
+ rv-ok f r = ?
 
 mutual
  var-wf : ∀ {Γ x T} -> Γ ok -> Γ ∋ x ∶ T -> Γ ⊢ T type
