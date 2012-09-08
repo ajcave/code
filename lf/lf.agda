@@ -71,7 +71,7 @@ mutual
  data _⊢_type (Γ : dctx) : tp ⌊ Γ ⌋ -> Set where
   nat : Γ ⊢ nat type
   vec : ∀ {n : ntm ⌊ Γ ⌋} -> Γ ⊢ n ⇐ nat -> Γ ⊢ (vec n) type
-  Π : ∀ {T S} -> Γ ⊢ T type -> (Γ , T) ⊢ S type -> Γ ⊢ (Π T S) type 
+  Π : ∀ {T S} -> (T-type : Γ ⊢ T type) -> (S-type : (Γ , T) ⊢ S type) -> Γ ⊢ (Π T S) type 
 
  -- TODO: This is going to need some "type" judgements inserted... I think just in ƛ
  data _∋_∶_ : (Γ : dctx) -> (x : var ⌊ Γ ⌋ *) -> (T : tp ⌊ Γ ⌋) -> Set where
@@ -89,3 +89,12 @@ mutual
  var-wf {⊡} γ ()
  var-wf (Γok , T-type) top = {!!}
  var-wf (Γok , T-type) (pop y) = {!!}
+
+ neut-wf : ∀ {Γ R T} -> Γ ok -> Γ ⊢ R ⇒ T -> Γ ⊢ T type
+ neut-wf Γok (▹ y) = var-wf Γok y
+ neut-wf Γok (r · n) with neut-wf Γok r
+ neut-wf Γok (r · n) | Π T-type S-type = {!!}
+
+ norm-wf : ∀ {Γ N T} -> Γ ok -> Γ ⊢ N ⇐ T -> Γ ⊢ T type
+ norm-wf Γok (▸ r) = neut-wf Γok r
+ norm-wf Γok (ƛ t n) = Π t (norm-wf (Γok , t) n)
