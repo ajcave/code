@@ -84,17 +84,32 @@ mutual
   ƛ : ∀ {T S N} -> (t : Γ ⊢ T type) -> (n : (Γ , T) ⊢ N ⇐ S) -> Γ ⊢ (ƛ N) ⇐ (Π T S)
 
 mutual
+ tv-ok : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
+    -> (∀ x {U} -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U))
+   -> Γ ⊢ T type -> Δ ⊢ ([ σ ]tv T) type
+ tv-ok f nat = nat
+ tv-ok f (vec y) = vec (nv-ok f y)
+ tv-ok f (Π T-type S-type) = Π (tv-ok f T-type) (tv-ok {!!} S-type)
+ 
  rv-ok : ∀ {Γ Δ R T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
-    -> (∀ x U -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U))
-   -- -> gsubst-pred (λ x -> ∀ U -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U)) σ
+    -> (∀ x {U} -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U))
    -> Γ ⊢ R ⇒ T -> Δ ⊢ ([ σ ]rv R) ⇒ ([ σ ]tv T)
- rv-ok f r = ?
+ rv-ok f (▹ y) = ▹ (f _ y)
+ rv-ok f (r · n) with rv-ok f r
+ ... | q = {!!}
+
+ nv-ok : ∀ {Γ Δ N T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
+   -> (∀ x {U} -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U))
+   -> Γ ⊢ N ⇐ T -> Δ ⊢ ([ σ ]nv N) ⇐ ([ σ ]tv T)
+ nv-ok f (▸ r) = ▸ (rv-ok f r)
+ nv-ok f (ƛ t n) with nv-ok {!!} n
+ ... | q = ƛ (tv-ok f t) {!!}
 
 mutual
  var-wf : ∀ {Γ x T} -> Γ ok -> Γ ∋ x ∶ T -> Γ ⊢ T type
  var-wf {⊡} γ ()
- var-wf (Γok , T-type) top = {!!}
- var-wf (Γok , T-type) (pop y) = {!!}
+ var-wf (Γok , T-type) top = tv-ok {!!} T-type
+ var-wf (Γok , T-type) (pop y) = tv-ok {!!} (var-wf Γok y)
 
  neut-wf : ∀ {Γ R T} -> Γ ok -> Γ ⊢ R ⇒ T -> Γ ⊢ T type
  neut-wf Γok (▹ y) = var-wf Γok y
