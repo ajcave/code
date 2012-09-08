@@ -95,8 +95,8 @@ mutual
     -> (∀ x {U} -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U))
    -> Γ ⊢ R ⇒ T -> Δ ⊢ ([ σ ]rv R) ⇒ ([ σ ]tv T)
  rv-ok f (▹ y) = ▹ (f _ y)
- rv-ok f (r · n) with rv-ok f r
- ... | q = {!!}
+ rv-ok f (r · n) with (rv-ok f r) | (nv-ok f n)
+ ... | q1 | q2 = {!!} · q2
 
  nv-ok : ∀ {Γ Δ N T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
    -> (∀ x {U} -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U))
