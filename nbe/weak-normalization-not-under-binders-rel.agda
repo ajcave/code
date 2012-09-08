@@ -220,7 +220,7 @@ data IsLam {Γ A B} : tm (Γ , A) B -> tm ⊡ (A ⇝ B) -> Set where
  yep : ∀ {M M'} -> (∀ U -> reduce ⊡ _ U -> IsInstantiation M ([ init ,, U ] M')) -> IsLam M (ƛ M')
 
 invLam : ∀ {Γ A B} {M : tm (Γ , A) B} {R} -> IsInstantiation (ƛ M) R -> IsLam M R
-invLam {M = M} ⊡ = yep (λ U x → eq-ind (λ α → IsInstantiation α ([ init ,, U ] M)) (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ ()) (trans (sym []-id) (cong (λ (α : sub _ _) → [ α ] U) (funext-imp (λ x' → funext (λ ()))))))) ⊡ , x)
+invLam {M = M} ⊡ = yep (λ U x → (eq-ind (λ α → IsInstantiation α ([ init ,, U ] M)) (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ ()) (trans (sym []-id) (cong (λ (α : sub _ _) → [ α ] U) (funext-imp (λ x' → funext (λ ()))))))) ⊡) , x)
 invLam {Γ , A'} {A} {B} {M} (_,_ {U = V} i r) with invLam i
 ... | yep {._} {M'} f = yep g
       where g : ∀ (U : tm ⊡ A) (redU : reduce ⊡ A U) -> _
