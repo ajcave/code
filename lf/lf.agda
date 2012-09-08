@@ -66,7 +66,7 @@ mutual
 mutual
  data _ok : (Γ : dctx) -> Set where
   ⊡ : ⊡ ok
-  _,_ : ∀ {Γ T} -> Γ ok -> Γ ⊢ T type -> (Γ , T) ok
+  _,_ : ∀ {Γ T} -> (Γok : Γ ok) -> (T-type : Γ ⊢ T type) -> (Γ , T) ok
 
  data _⊢_type (Γ : dctx) : tp ⌊ Γ ⌋ -> Set where
   nat : Γ ⊢ nat type
@@ -83,3 +83,9 @@ mutual
  data _⊢_⇐_ (Γ : dctx) : ntm ⌊ Γ ⌋ -> tp ⌊ Γ ⌋ -> Set where
   ▸ : ∀ {T R} -> (r : Γ ⊢ R ⇒ T) -> Γ ⊢ (▸ R) ⇐ T
   ƛ : ∀ {T S N} -> (t : Γ ⊢ T type) -> (n : (Γ , T) ⊢ N ⇐ S) -> Γ ⊢ (ƛ N) ⇐ (Π T S)
+
+mutual
+ var-wf : ∀ {Γ x T} -> Γ ok -> Γ ∋ x ∶ T -> Γ ⊢ T type
+ var-wf {⊡} γ ()
+ var-wf (Γok , T-type) top = {!!}
+ var-wf (Γok , T-type) (pop y) = {!!}
