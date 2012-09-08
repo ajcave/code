@@ -86,13 +86,22 @@ mutual
 vsubst-ok : ∀ Γ Δ (σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋) -> Set
 vsubst-ok Γ Δ σ = ∀ x {U} -> Γ ∋ x ∶ U -> Δ ∋ (lookup σ x) ∶ ([ σ ]tv U)
 
+vsubst-ok-, : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋} -> vsubst-ok Γ Δ σ -> ∀ {x} (y : Δ ∋ x ∶ ([ σ ]tv T))
+  -> vsubst-ok (Γ , T) Δ (σ , x)
+vsubst-ok-, θ y top top = {!!}
+vsubst-ok-, θ y (pop y') (pop y0) = {!!}
+
+vsubst-ok-ext : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋} -> vsubst-ok Γ Δ σ
+  -> vsubst-ok (Γ , T) (Δ , ([ σ ]tv T)) (vsub-ext σ)
+vsubst-ok-ext θ y = {!!}
+
 mutual
  tv-ok : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
     -> vsubst-ok Γ Δ σ
    -> Γ ⊢ T type -> Δ ⊢ ([ σ ]tv T) type
  tv-ok f nat = nat
  tv-ok f (vec y) = vec (nv-ok f y)
- tv-ok f (Π T-type S-type) = Π (tv-ok f T-type) (tv-ok {!!} S-type)
+ tv-ok f (Π T-type S-type) = Π (tv-ok f T-type) (tv-ok (vsubst-ok-ext f) S-type)
  
  rv-ok : ∀ {Γ Δ R T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
     -> vsubst-ok Γ Δ σ
@@ -105,8 +114,7 @@ mutual
    -> vsubst-ok Γ Δ σ
    -> Γ ⊢ N ⇐ T -> Δ ⊢ ([ σ ]nv N) ⇐ ([ σ ]tv T)
  nv-ok f (▸ r) = ▸ (rv-ok f r)
- nv-ok f (ƛ t n) with nv-ok {!!} n
- ... | q = ƛ (tv-ok f t) {!!}
+ nv-ok f (ƛ t n) = ƛ (tv-ok f t) (nv-ok (vsubst-ok-ext f) n)
 
 mutual
  var-wf : ∀ {Γ x T} -> Γ ok -> Γ ∋ x ∶ T -> Γ ⊢ T type
