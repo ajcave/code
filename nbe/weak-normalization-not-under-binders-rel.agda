@@ -241,7 +241,7 @@ thm (v y) i = thm-v y i
 thm (M · N) i with invApp i
 ... | yep i1 i2 = _*_.snd (thm M i1) _ (thm N i2)
 thm (ƛ M) i with invLam i
-thm (ƛ M) i | yep {.M} {M'} y = (ƛ M' , (→*-refl , (ƛ M'))) , (λ N redN → {!!})
+thm (ƛ {T} {S} M) i | yep {.M} {M'} y = (ƛ M' , (→*-refl , (ƛ M'))) , (λ N redN → reduce-closed (β _ _) (eq-ind (reduce ⊡ S) (cong (λ (α : sub _ _) → [ α ] M') (var-dom-eq (λ ()) refl)) (thm M (y N redN))))
 
 {-reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
 reify {atom A} t p = p
