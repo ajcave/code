@@ -227,8 +227,12 @@ invLam {Γ , A'} {A} {B} {M} (_,_ {U = V} i r) with invLam i
             g U x with f U x
             g U x | (_,_ {U = V2} i' r') = (eq-ind (λ α → IsInstantiation α ([ init ,, U ] M')) (trans (sym (lemma _ _ M)) (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x' → refl) (trans (cong (λ (α : sub _ _) → [ α ] V2) (funext-imp (λ x' → funext (λ ())))) (sym ([]-funct _ _ V2))))) (sym ([]-funct _ _ M)))) i' , r) , r'
 
+instEmpty : ∀ {Γ T} {M : tm ⊡ T} {N} -> IsInstantiation ([ init {Γ} ] M) N -> M ≡ N
+instEmpty {M = M} ⊡ = trans (sym []-id) (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ ()))))
+instEmpty {M = M} {N} (i , r) = instEmpty {M = M} (eq-ind (λ α -> IsInstantiation α N) (trans ([]-funct _ _ M) (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ ()))))) i)
+
 thm-v : ∀ {Γ T} (y : var Γ T) {n} -> IsInstantiation (v y) n -> reduce ⊡ T n
-thm-v z (i , r) = {!r!}
+thm-v z (i , r) = {!!}
 thm-v (s y) (i , r) = thm-v y i
 
 thm : ∀ {Γ T} (t : tm Γ T) {n} -> IsInstantiation t n -> reduce ⊡ T n
