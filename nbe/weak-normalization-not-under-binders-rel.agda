@@ -232,14 +232,16 @@ instEmpty {M = M} ⊡ = trans (sym []-id) (cong (λ (α : sub _ _) → [ α ] M)
 instEmpty {M = M} {N} (i , r) = instEmpty {M = M} (eq-ind (λ α -> IsInstantiation α N) (trans ([]-funct _ _ M) (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ ()))))) i)
 
 thm-v : ∀ {Γ T} (y : var Γ T) {n} -> IsInstantiation (v y) n -> reduce ⊡ T n
-thm-v z (i , r) = {!!}
+thm-v z (_,_ {U = U} i r) with instEmpty {M = U} i
+thm-v z (i , r) | refl = r
 thm-v (s y) (i , r) = thm-v y i
 
 thm : ∀ {Γ T} (t : tm Γ T) {n} -> IsInstantiation t n -> reduce ⊡ T n
 thm (v y) i = thm-v y i
 thm (M · N) i with invApp i
 ... | yep i1 i2 = _*_.snd (thm M i1) _ (thm N i2)
-thm (ƛ M) i = {!!}
+thm (ƛ M) i with invLam i
+thm (ƛ M) i | yep {.M} {M'} y = (ƛ M' , (→*-refl , (ƛ M'))) , (λ N redN → {!!})
 
 {-reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
 reify {atom A} t p = p
