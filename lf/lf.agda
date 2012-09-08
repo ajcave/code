@@ -1,19 +1,21 @@
 -- By Induction-induction-recursion
 module lf where
-open import Data.Unit
-open import Data.Product
+open import Level
+open import Unit
+open import Product
 open import Function
 open import FinMap
 
-* = unit
+* : ∀ {a} -> Unit {a}
+* = tt
 
 mutual
- data rtm (Γ : ctx Unit) :  Set where
-  ▹ : ∀ (x : var Γ unit) -> rtm Γ
+ data rtm (Γ : ctx (Unit {zero})) :  Set where
+  ▹ : ∀ (x : var Γ *) -> rtm Γ
   _·_ : ∀ (R : rtm Γ) (N : ntm Γ) -> rtm Γ
  data ntm (Γ : ctx Unit) : Set where
   ▸ : ∀ (R : rtm Γ) -> ntm Γ
-  ƛ : ∀ (N : ntm (Γ , unit)) -> ntm Γ
+  ƛ : ∀ (N : ntm (Γ , *)) -> ntm Γ
 
 mutual
  [_]rv : ∀ {Γ Δ} -> vsubst Γ Δ -> rtm Γ -> rtm Δ
@@ -24,6 +26,19 @@ mutual
  [_]nv σ (▸ R) = ▸ ([ σ ]rv R)
  [_]nv σ (ƛ N) = ƛ ([ vsub-ext σ ]nv N)
 
+id-n : ∀ {Γ} -> gksubst Γ (ntm Γ)
+id-n = build-gksubst (▸ ∘ ▹)
+
+mutual
+ [_]r : ∀ {Γ Δ} -> gksubst Γ (ntm Δ) -> rtm Γ -> ntm Δ
+ [_]r σ (▹ x) = lookup σ x
+ [_]r σ (R · N) with [ σ ]r R | [ σ ]n N
+ [_]r σ (R · N) | ▸ R' | N2 = ▸ (R' · N2)
+ [_]r σ (R · N) | ƛ N' | N2 = [ id-n , N2 ]n N'
+ [_]n : ∀ {Γ Δ} -> gksubst Γ (ntm Δ) -> ntm Γ -> ntm Δ
+ [_]n σ (▸ R) = [ σ ]r R
+ [_]n σ (ƛ N) = ƛ ([ (gmap [ wkn-vsub ]nv σ) , (▸ (▹ top)) ]n N)
+
 data tp (Γ : ctx Unit) : Set where
  Π : (T : tp Γ) (S : tp (Γ , *)) -> tp Γ
  nat : tp Γ
@@ -33,6 +48,11 @@ data tp (Γ : ctx Unit) : Set where
 [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsub-ext σ ]tv S)
 [_]tv σ nat = nat
 [_]tv σ (vec n) = vec ([ σ ]nv n)
+
+[_]t : ∀ {Γ Δ} -> gksubst Γ (ntm Δ) -> tp Γ -> tp Δ
+[_]t σ (Π T S) = Π ([ σ ]t T) ([ (gmap [ wkn-vsub ]nv σ) , (▸ (▹ top)) ]t S)
+[_]t σ nat = nat
+[_]t σ (vec n) = vec ([ σ ]n n)
 
 mutual
  data dctx : Set where
@@ -57,7 +77,8 @@ mutual
   top : ∀ {Γ T} -> (Γ , T) ∋ top ∶ [ wkn-vsub ]tv T
   pop : ∀ {Γ T S x} -> Γ ∋ x ∶ T -> (Γ , S) ∋ (pop x) ∶ [ wkn-vsub ]tv T
  data _⊢_⇒_ (Γ : dctx) : rtm ⌊ Γ ⌋ -> tp ⌊ Γ ⌋ -> Set where
-  ▹ : ∀ {T x} -> Γ ∋ x ∶ T -> Γ ⊢ (▹ x) ⇒ T 
+  ▹ : ∀ {T x} -> (y : Γ ∋ x ∶ T) -> Γ ⊢ (▹ x) ⇒ T
+  _·_ : ∀ {T S R N} -> (r : Γ ⊢ R ⇒ (Π T S)) -> (n : Γ ⊢ N ⇐ T) -> Γ ⊢ (R · N) ⇒ [ id-n , N ]t S
  data _⊢_⇐_ (Γ : dctx) : ntm ⌊ Γ ⌋ -> tp ⌊ Γ ⌋ -> Set where
 
 {-mutual

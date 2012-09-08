@@ -17,8 +17,15 @@ gsubst : ∀ {a b} {A : Set a} -> ctx A -> (F : A -> Set b) -> Set b
 gsubst ⊡ F = Unit
 gsubst (ψ , T) F = (gsubst ψ F) × (F T)
 
+build-gsubst : ∀ {a b} {A : Set a} {Γ : ctx A} (F : A -> Set b) -> (∀ {T} -> var Γ T -> F T) -> gsubst Γ F
+build-gsubst {a} {b} {A} {⊡} F f = tt
+build-gsubst {a} {b} {A} {ψ , T} F f = (build-gsubst F (f ∘ pop)) , (f top)
+
 gksubst : ∀ {a b} {A : Set a} -> ctx A -> (F : Set b) -> Set b
 gksubst ψ F = gsubst ψ (λ _ -> F)
+
+build-gksubst : ∀ {a b} {A : Set a} {Γ : ctx A} {F : Set b} -> (∀ {T} -> var Γ T -> F) -> gksubst Γ F
+build-gksubst f = build-gsubst _ f
 
 gsubst' : ∀ {a b} {A : Set a} (ψ : ctx A) (F : gksubst ψ (Set b)) -> Set b
 gsubst' ⊡ F = Unit
