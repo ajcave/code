@@ -56,9 +56,9 @@ mutual
   _,_ : ∀ {Ψ Φ A} (σ : sub Δ Ψ Φ) (N : ntm Δ Ψ A) -> sub Δ Ψ (Φ , A)
 -- POPL'08: Pretty sure this should allow weakening, s :: (Φ₁ << Φ₁')[Φ₂]
 -- produces sub Δ Ψ Φ₁
--- POPL'08: Also problem: These need to be normal in that if the range is Ψ , x : A, it needs to be split as a _,_. Maybe this solves the above issue? I guess the analogue is that when we *use* a substitution variable it has to be at "atomic" type? Also we need to identity ⊡ and substitution variables with range ⊡
+-- POPL'08: Also problem: These need to be normal in that if the range is Ψ , x : A, it needs to be split as a _,_. Maybe this solves the above issue? I think we need to split substitutions into normal and neutral. Also we need to identity ⊡ and substitution variables with range ⊡
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (ρ : sub Δ Ψ Φ₂) -> sub Δ Ψ Φ₁
-  id : ∀ {Ψ φ} -> sub Δ ((▹ φ) << Ψ) (▹ φ)
+  id : ∀ {φ} Ψ -> sub Δ ((▹ φ) << Ψ) (▹ φ)
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
@@ -82,13 +82,41 @@ mutual
 ⟦_⟧tv Ψs top = top
 ⟦_⟧tv Ψs (pop x) = pop (⟦ Ψs ⟧tv x)
 
+data vtsubst {Ω} : tctx Ω -> tctx Ω -> Set where
+ ⊡ : ∀ {Ψ₂} -> vtsubst ⊡ Ψ₂
+ _,_ : ∀ {Ψ₁ Ψ₂ A} (σ : vtsubst Ψ₁ Ψ₂) -> (x : tvar Ψ₂ A) -> vtsubst (Ψ₁ , A) Ψ₂
+ id : ∀ {Ψ φ} -> vtsubst (▹ φ) ((▹ φ) << Ψ)
+
+vt-lookup : ∀ {Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> vtsubst Ψ₁ Ψ₂ -> tvar Ψ₁ A -> tvar Ψ₂ A
+vt-lookup ⊡ ()
+vt-lookup (σ , x) top = x
+vt-lookup (σ , x) (pop x') = vt-lookup σ x'
+vt-lookup id x = {!!}
+
+mutual
+ [_]vr : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {A} -> rtm Δ Ψ₁ A -> rtm Δ Ψ₂ A
+ [_]vr σ (▹ x) = ▹ (vt-lookup σ x)
+ [_]vr σ (u [ ρ ]) = u [ [ σ ]vs ρ ]
+ [_]vr σ (p ♯[ ρ ]) = p ♯[ [ σ ]vs ρ ]
+ [_]vr σ (R · N) = [ σ ]vr R · [ σ ]vn N
+
+ [_]vn : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {A} -> ntm Δ Ψ₁ A -> ntm Δ Ψ₂ A
+ [_]vn σ (ƛ N) = ƛ ([ {!!} , top ]vn N)
+ [_]vn σ (▸ R) = ▸ ([ σ ]vr R)
+
+ [_]vs : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {Φ} -> sub Δ Ψ₁ Φ -> sub Δ Ψ₂ Φ
+ [_]vs σ ⊡ = ⊡
+ [_]vs σ (ρ , N) = ([ σ ]vs ρ) , ([ σ ]vn N)
+ [_]vs σ (s [ ρ ]) = s [ [ σ ]vs ρ ]
+ [_]vs σ (id Ψ) = {!!}
+
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
 η-expand {i} R = ▸ R
 η-expand {A ⇒ B} R = ƛ (η-expand ({!!} · η-expand (▹ top)))
 
 id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> sub Δ Ψ Ψ
 id-subst Δ ⊡ = ⊡
-id-subst Δ (▹ φ) = id {Ψ = ⊡}
+id-subst Δ (▹ φ) = id ⊡
 id-subst Δ (Ψ , A) = {!!} , η-expand (▹ top)
 
 mutual
@@ -109,5 +137,5 @@ mutual
  ⟦_⟧cs Ψs ⊡ = ⊡
  ⟦_⟧cs Ψs (σ , N) = (⟦ Ψs ⟧cs σ) , (⟦ Ψs ⟧cn N)
  ⟦_⟧cs Ψs (s [ ρ ]) = cmap-var ⟦ Ψs ⟧mt s [ ⟦ Ψs ⟧cs ρ ]
- ⟦_⟧cs Ψs (id {φ = φ}) with id-subst {!!} (lookup Ψs φ)
+ ⟦_⟧cs Ψs (id {φ = φ} Ψ) with id-subst {!!} (lookup Ψs φ)
  ... | q = {!!}
