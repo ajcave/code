@@ -166,3 +166,35 @@ mutual
  ⟦_⟧cs Ψs (σ , N) = (⟦ Ψs ⟧cs σ) , (⟦ Ψs ⟧cn N)
  ⟦_⟧cs Ψs (s [ ρ ]) = cmap-var ⟦ Ψs ⟧mt s [ ⟦ Ψs ⟧cs ρ ]
  ⟦_⟧cs Ψs {Δ} (id {φ = φ} Ψ) = subst (λ α → sub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (▹ φ) Ψ)) (<<sub (id-subst _ (lookup Ψs φ)) Ψ)
+
+slookup : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> sub Δ Ψ₁ Ψ₂ -> tvar Ψ₂ A -> ntm Δ Ψ₁ A
+slookup ⊡ ()
+slookup (σ , N) top = N
+slookup (σ , N) (pop x) = slookup σ x
+slookup (s [ ρ ]) x = {!!}
+slookup (id Ψ) ()
+
+sub-inv-φ : ∀ {Ω} {Δ} {Ψ₁ : tctx Ω} Ψ₂ {φ} -> sub Δ Ψ₁ (▹ φ << Ψ₂) -> ∃ (λ Ψ₁' -> Ψ₁ ≡ ▹ φ << Ψ₁')
+sub-inv-φ ⊡ (s [ ρ ]) = {!!}
+sub-inv-φ ⊡ (id Ψ) = Ψ , refl
+sub-inv-φ (ψ , T) (σ , N) with sub-inv-φ ψ σ
+sub-inv-φ (ψ , T) (σ , N) | Φ , refl = Φ , refl
+sub-inv-φ (ψ , T) (s [ ρ ]) = {!!}
+
+mutual
+ [_]r :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : sub Δ Ψ₂ Ψ₁) {A} -> rtm Δ Ψ₁ A -> ntm Δ Ψ₂ A
+ [_]r σ (▹ x) = slookup σ x
+ [_]r σ (u [ σ' ]) = η-expand (u [ [ σ ]s σ' ])
+ [_]r σ (p ♯[ σ' ]) = η-expand (p ♯[ [ σ ]s σ' ])
+ [_]r σ (R · N) with [ σ ]r R
+ [_]r σ (R · N) | ƛ M = [ (id-subst _ _) , [ σ ]n N ]n M
+
+ [_]n :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : sub Δ Ψ₂ Ψ₁) {A} -> ntm Δ Ψ₁ A -> ntm Δ Ψ₂ A
+ [_]n σ (ƛ N) = ƛ ([ [ wkn-vts ]vs σ , (η-expand (▹ top)) ]n N)
+ [_]n σ (▸ R) = [ σ ]r R
+
+ [_]s :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : sub Δ Ψ₂ Ψ₁) {Φ} -> sub Δ Ψ₁ Φ -> sub Δ Ψ₂ Φ
+ [_]s σ ⊡ = ⊡
+ [_]s σ (σ' , N) = ([ σ ]s σ') , ([ σ ]n N)
+ [_]s σ (s [ ρ ]) = s [ [ σ ]s ρ ]
+ [_]s σ (id Ψ) = {!!}
