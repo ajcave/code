@@ -85,13 +85,30 @@ mutual
 data vtsubst {Ω} : tctx Ω -> tctx Ω -> Set where
  ⊡ : ∀ {Ψ₂} -> vtsubst ⊡ Ψ₂
  _,_ : ∀ {Ψ₁ Ψ₂ A} (σ : vtsubst Ψ₁ Ψ₂) -> (x : tvar Ψ₂ A) -> vtsubst (Ψ₁ , A) Ψ₂
- id : ∀ {Ψ φ} -> vtsubst (▹ φ) ((▹ φ) << Ψ)
+ id : ∀ {φ} Ψ -> vtsubst (▹ φ) ((▹ φ) << Ψ)
+
+<<tv : ∀ {Ω} {Ψ₁ : tctx Ω} {A} -> tvar Ψ₁ A -> ∀ Ψ₂ -> tvar (Ψ₁ << Ψ₂) A
+<<tv x ⊡ = x
+<<tv x (ψ , T) = pop (<<tv x ψ) 
 
 vt-lookup : ∀ {Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> vtsubst Ψ₁ Ψ₂ -> tvar Ψ₁ A -> tvar Ψ₂ A
 vt-lookup ⊡ ()
 vt-lookup (σ , x) top = x
 vt-lookup (σ , x) (pop x') = vt-lookup σ x'
-vt-lookup id x = {!!}
+vt-lookup (id Ψ) x = <<tv x Ψ
+
+↑vts : ∀ {Ω} {Ψ₁ Ψ₂ : tctx Ω} -> vtsubst Ψ₁ Ψ₂ -> ∀ A -> vtsubst Ψ₁ (Ψ₂ , A)
+↑vts ⊡ A = ⊡
+↑vts (σ , x) A' = (↑vts σ A') , pop x
+↑vts (id Ψ) A = id (Ψ , A)
+
+id-vts : ∀ {Ω} {Ψ : tctx Ω} -> vtsubst Ψ Ψ
+id-vts {Ω} {⊡} = ⊡
+id-vts {Ω} {▹ φ} = id ⊡
+id-vts {Ω} {Ψ , A} = (↑vts id-vts A) , top
+
+wkn-vts : ∀ {Ω} {Ψ : tctx Ω} {A} -> vtsubst Ψ (Ψ , A)
+wkn-vts = ↑vts id-vts _
 
 mutual
  [_]vr : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {A} -> rtm Δ Ψ₁ A -> rtm Δ Ψ₂ A
@@ -101,7 +118,7 @@ mutual
  [_]vr σ (R · N) = [ σ ]vr R · [ σ ]vn N
 
  [_]vn : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {A} -> ntm Δ Ψ₁ A -> ntm Δ Ψ₂ A
- [_]vn σ (ƛ N) = ƛ ([ {!!} , top ]vn N)
+ [_]vn σ (ƛ N) = ƛ ([ ↑vts σ _ , top ]vn N)
  [_]vn σ (▸ R) = ▸ ([ σ ]vr R)
 
  [_]vs : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {Φ} -> sub Δ Ψ₁ Φ -> sub Δ Ψ₂ Φ
@@ -112,12 +129,12 @@ mutual
 
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
 η-expand {i} R = ▸ R
-η-expand {A ⇒ B} R = ƛ (η-expand ({!!} · η-expand (▹ top)))
+η-expand {A ⇒ B} R = ƛ (η-expand ([ wkn-vts ]vr R · η-expand (▹ top)))
 
 id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> sub Δ Ψ Ψ
 id-subst Δ ⊡ = ⊡
 id-subst Δ (▹ φ) = id ⊡
-id-subst Δ (Ψ , A) = {!!} , η-expand (▹ top)
+id-subst Δ (Ψ , A) = [ wkn-vts ]vs (id-subst Δ Ψ) , η-expand (▹ top)
 
 mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
