@@ -44,7 +44,7 @@ mutual
  data rtm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
   ▹ : ∀ {A} (x : tvar Ψ A) -> rtm Δ Ψ A
   _[_] : ∀ {A Φ} (u : var Δ (% A [ Φ ])) (σ : sub Δ Ψ Φ) -> rtm Δ Ψ A
-  ♯_[_] : ∀ {A Φ} (p : var Δ (♯ A [ Φ ])) (σ : sub Δ Ψ Φ) -> rtm Δ Ψ A
+  _♯[_] : ∀ {A Φ} (p : var Δ (♯ A [ Φ ])) (σ : sub Δ Ψ Φ) -> rtm Δ Ψ A
   _·_ : ∀ {A B} (R : rtm Δ Ψ (A ⇒ B)) (N : ntm Δ Ψ A) -> rtm Δ Ψ B
  data ntm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
   ƛ : ∀ {A B} (N : ntm Δ (Ψ , A) B) -> ntm Δ Ψ (A ⇒ B)
@@ -75,8 +75,8 @@ mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
    -> (R : rtm Δ Ψ A) -> rtm (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
  ⟦_⟧cr Ψs (▹ x) = ▹ {!!}
- ⟦_⟧cr Ψs (u [ σ ]) = {!!} [ {!!} ]
- ⟦_⟧cr Ψs ♯ p [ σ ] = {!!}
+ ⟦_⟧cr Ψs (u [ σ ]) = {!!} [ ⟦ Ψs ⟧cs σ ]
+ ⟦_⟧cr Ψs (p ♯[ σ ]) = {!!} ♯[ ⟦ Ψs ⟧cs σ ]
  ⟦_⟧cr Ψs (R · N) = (⟦ Ψs ⟧cr R) · ⟦ Ψs ⟧cn N
 
  ⟦_⟧cn : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
