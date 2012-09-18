@@ -93,3 +93,11 @@ vsub-ext σ = (gmap pop σ) , top
 
 _∘v_ : ∀ {A} {Δ Γ ψ : ctx A} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘v σ2) = gmap [ σ1 ]v σ2
+
+cmap : ∀ {a b} {A : Set a} {B : Set b} (f : A -> B) (Ψ : ctx A) -> ctx B
+cmap f ⊡ = ⊡
+cmap f (ψ , T) = (cmap f ψ) , (f T)
+
+cmap-var : ∀ {a b} {A : Set a} {B : Set b} (f : A -> B) {Ψ : ctx A} {T} (x : var Ψ T) -> var (cmap f Ψ) (f T)
+cmap-var f top = top
+cmap-var f (pop y) = pop (cmap-var f y)

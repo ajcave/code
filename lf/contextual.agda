@@ -51,11 +51,13 @@ mutual
   ▸ : (R : rtm Δ Ψ i) -> ntm Δ Ψ i 
  data sub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   ⊡ : ∀ {Ψ} -> sub Δ Ψ ⊡
+  -- POPL'08: Also we do η-expansions instead of allow both N and R
   _,_ : ∀ {Ψ Φ A} (σ : sub Δ Ψ Φ) (N : ntm Δ Ψ A) -> sub Δ Ψ (Φ , A)
 -- POPL'08: Pretty sure this should allow weakening, s :: (Φ₁ << Φ₁')[Φ₂]
 -- produces sub Δ Ψ Φ₁
+-- POPL'08: Also problem: These need to be normal in that if the range is Ψ , x : A, it needs to be split as a _,_. Maybe this solves the above issue? I guess the analogue is that when we *use* a substitution variable it has to be at "atomic" type? Also we need to identity ⊡ and substitution variables with range ⊡
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (ρ : sub Δ Ψ Φ₂) -> sub Δ Ψ Φ₁
-  id : ∀ {φ Ψ} -> sub Δ ((▹ φ) << Ψ) (▹ φ)
+  id : ∀ {Ψ φ} -> sub Δ ((▹ φ) << Ψ) (▹ φ)
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
@@ -68,15 +70,27 @@ mutual
 ⟦_⟧mt Ψs (% A [ Φ ]) = % A [ ⟦ Ψs ⟧tc Φ ]
 
 ⟦_⟧mc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Δ : mctx Ω₁) -> mctx Ω₂
-⟦_⟧mc Ψs ⊡ = ⊡
-⟦_⟧mc Ψs (Δ , U) = (⟦ Ψs ⟧mc Δ) , ⟦ Ψs ⟧mt U 
+⟦_⟧mc Ψs Δ = cmap ⟦ Ψs ⟧mt Δ
+
+⟦_⟧tv : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Φ : tctx Ω₁} {A} -> tvar Φ A -> tvar (⟦ Ψs ⟧tc Φ) A
+⟦_⟧tv Ψs top = top
+⟦_⟧tv Ψs (pop x) = pop (⟦ Ψs ⟧tv x)
+
+η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
+η-expand {i} R = ▸ R
+η-expand {A ⇒ B} R = ƛ (η-expand ({!!} · η-expand (▹ top)))
+
+id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> sub Δ Ψ Ψ
+id-subst Δ ⊡ = ⊡
+id-subst Δ (▹ φ) = id {Ψ = ⊡}
+id-subst Δ (Ψ , A) = {!!} , η-expand (▹ top)
 
 mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
    -> (R : rtm Δ Ψ A) -> rtm (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
- ⟦_⟧cr Ψs (▹ x) = ▹ {!!}
- ⟦_⟧cr Ψs (u [ σ ]) = {!!} [ ⟦ Ψs ⟧cs σ ]
- ⟦_⟧cr Ψs (p ♯[ σ ]) = {!!} ♯[ ⟦ Ψs ⟧cs σ ]
+ ⟦_⟧cr Ψs (▹ x) = ▹ (⟦ Ψs ⟧tv x)
+ ⟦_⟧cr Ψs (u [ σ ]) = cmap-var ⟦ Ψs ⟧mt u [ ⟦ Ψs ⟧cs σ ]
+ ⟦_⟧cr Ψs (p ♯[ σ ]) = cmap-var ⟦ Ψs ⟧mt p ♯[ ⟦ Ψs ⟧cs σ ]
  ⟦_⟧cr Ψs (R · N) = (⟦ Ψs ⟧cr R) · ⟦ Ψs ⟧cn N
 
  ⟦_⟧cn : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
@@ -88,5 +102,6 @@ mutual
    -> (σ : sub Δ Ψ Φ) -> sub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
  ⟦_⟧cs Ψs ⊡ = ⊡
  ⟦_⟧cs Ψs (σ , N) = (⟦ Ψs ⟧cs σ) , (⟦ Ψs ⟧cn N)
- ⟦_⟧cs Ψs (s [ ρ ]) = {!!} [ ⟦ Ψs ⟧cs ρ ]
- ⟦_⟧cs Ψs id = {!!}
+ ⟦_⟧cs Ψs (s [ ρ ]) = cmap-var ⟦ Ψs ⟧mt s [ ⟦ Ψs ⟧cs ρ ]
+ ⟦_⟧cs Ψs (id {φ = φ}) with id-subst {!!} (lookup Ψs φ)
+ ... | q = {!!}
