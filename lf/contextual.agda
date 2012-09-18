@@ -136,6 +136,10 @@ id-subst Δ ⊡ = ⊡
 id-subst Δ (▹ φ) = id ⊡
 id-subst Δ (Ψ , A) = [ wkn-vts ]vs (id-subst Δ Ψ) , η-expand (▹ top)
 
+<<sub : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> sub Δ Ψ Φ -> ∀ Ψ' -> sub Δ (Ψ << Ψ') Φ
+<<sub σ ⊡ = σ
+<<sub σ (ψ , T) = [ wkn-vts ]vs (<<sub σ ψ)
+
 mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
    -> (R : rtm Δ Ψ A) -> rtm (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
@@ -154,5 +158,4 @@ mutual
  ⟦_⟧cs Ψs ⊡ = ⊡
  ⟦_⟧cs Ψs (σ , N) = (⟦ Ψs ⟧cs σ) , (⟦ Ψs ⟧cn N)
  ⟦_⟧cs Ψs (s [ ρ ]) = cmap-var ⟦ Ψs ⟧mt s [ ⟦ Ψs ⟧cs ρ ]
- ⟦_⟧cs Ψs (id {φ = φ} Ψ) with id-subst {!!} (lookup Ψs φ)
- ... | q = {!!}
+ ⟦_⟧cs Ψs {Δ} (id {φ = φ} Ψ) = subst (λ α → sub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (▹ φ) Ψ)) (<<sub (id-subst _ (lookup Ψs φ)) Ψ)
