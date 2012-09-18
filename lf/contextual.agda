@@ -2,6 +2,7 @@ module contextual where
 open import Level
 open import Unit
 open import FinMap
+open import Data.Product
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
 schema-ctx = ctx Unitz
@@ -110,6 +111,11 @@ id-vts {Ω} {Ψ , A} = (↑vts id-vts A) , top
 wkn-vts : ∀ {Ω} {Ψ : tctx Ω} {A} -> vtsubst Ψ (Ψ , A)
 wkn-vts = ↑vts id-vts _
 
+vtsubst-inv-φ : ∀ {Ω} {Ψ₁ : tctx Ω} Ψ₂ {φ} -> vtsubst (▹ φ << Ψ₂) Ψ₁ -> ∃ (λ Ψ₁' -> Ψ₁ ≡ ▹ φ << Ψ₁')
+vtsubst-inv-φ ⊡ (id Ψ) = Ψ , refl
+vtsubst-inv-φ (ψ , T) (σ , x) with vtsubst-inv-φ ψ σ
+vtsubst-inv-φ (ψ , T) (σ , x) | Ψ' , refl = Ψ' , refl
+
 mutual
  [_]vr : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {A} -> rtm Δ Ψ₁ A -> rtm Δ Ψ₂ A
  [_]vr σ (▹ x) = ▹ (vt-lookup σ x)
@@ -125,7 +131,8 @@ mutual
  [_]vs σ ⊡ = ⊡
  [_]vs σ (ρ , N) = ([ σ ]vs ρ) , ([ σ ]vn N)
  [_]vs σ (s [ ρ ]) = s [ [ σ ]vs ρ ]
- [_]vs σ (id Ψ) = {!!}
+ [_]vs σ (id Ψ) with vtsubst-inv-φ Ψ σ
+ [_]vs σ (id Ψ) | Ψ' , refl = id Ψ'
 
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
 η-expand {i} R = ▸ R
