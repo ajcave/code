@@ -2,6 +2,7 @@ module contextual where
 open import Level
 open import Unit
 open import FinMap
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 schema-ctx = ctx Unitz
 
@@ -63,6 +64,11 @@ mutual
 ⟦_⟧tc Ψs ⊡ = ⊡
 ⟦_⟧tc Ψs (▹ φ) = lookup Ψs φ
 ⟦_⟧tc Ψs (Φ , A) = ⟦ Ψs ⟧tc Φ , A
+
+⟦⟧tc-<< : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) Φ₁ Φ₂
+ -> ⟦ Ψs ⟧tc (Φ₁ << Φ₂) ≡ ((⟦ Ψs ⟧tc Φ₁) << Φ₂)
+⟦⟧tc-<< Ψs Φ₁ ⊡ = refl
+⟦⟧tc-<< Ψs Φ₁ (ψ , T) = cong (λ α → α , T) (⟦⟧tc-<< Ψs Φ₁ ψ)
 
 ⟦_⟧mt : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (U : mtp Ω₁) -> mtp Ω₂
 ⟦_⟧mt Ψs ($ Ψ [ Φ ]) = $ (⟦ Ψs ⟧tc Ψ) [ ⟦ Ψs ⟧tc Φ ]
