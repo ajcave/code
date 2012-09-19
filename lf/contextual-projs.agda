@@ -152,9 +152,11 @@ id-subst Δ ⊡ = ⊡
 id-subst Δ (▹ φ) = ▸ id 
 id-subst Δ (Ψ , A) = [ wkn-vts ]vns (id-subst Δ Ψ) , η-expand (▹ top)
 
+{-
 <<sub : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> nsub Δ Ψ Φ -> ∀ Ψ' -> nsub Δ (Ψ << Ψ') Φ
 <<sub σ ⊡ = σ
 <<sub σ (ψ , T) = [ wkn-vts ]vns (<<sub σ ψ)
+-}
 
 mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
