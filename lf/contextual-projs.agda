@@ -1,4 +1,4 @@
-module contextual where
+module contextual-projs where
 open import Level
 open import Unit
 open import FinMap
@@ -45,21 +45,21 @@ _<<_ : ∀ {Ω} -> tctx Ω -> ctx tp -> tctx Ω
 mutual
  data rtm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
   ▹ : ∀ {A} (x : tvar Ψ A) -> rtm Δ Ψ A
-  _[_] : ∀ {A Φ} (u : var Δ (% A [ Φ ])) (σ : sub Δ Ψ Φ) -> rtm Δ Ψ A
-  _♯[_] : ∀ {A Φ} (p : var Δ (♯ A [ Φ ])) (σ : sub Δ Ψ Φ) -> rtm Δ Ψ A
+  _[_] : ∀ {A Φ} (u : var Δ (% A [ Φ ])) (σ : nsub Δ Ψ Φ) -> rtm Δ Ψ A
+  _♯[_] : ∀ {A Φ} (p : var Δ (♯ A [ Φ ])) (σ : nsub Δ Ψ Φ) -> rtm Δ Ψ A
   _·_ : ∀ {A B} (R : rtm Δ Ψ (A ⇒ B)) (N : ntm Δ Ψ A) -> rtm Δ Ψ B
+  top : ∀ {Φ A} (ρ : rsub Δ Ψ (Φ , A)) -> rtm Δ Ψ A
  data ntm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
   ƛ : ∀ {A B} (N : ntm Δ (Ψ , A) B) -> ntm Δ Ψ (A ⇒ B)
   ▸ : (R : rtm Δ Ψ i) -> ntm Δ Ψ i 
- data sub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
-  ⊡ : ∀ {Ψ} -> sub Δ Ψ ⊡
-  -- POPL'08: Also we do η-expansions instead of allow both N and R
-  _,_ : ∀ {Ψ Φ A} (σ : sub Δ Ψ Φ) (N : ntm Δ Ψ A) -> sub Δ Ψ (Φ , A)
--- POPL'08: Pretty sure this should allow weakening, s :: (Φ₁ << Φ₁')[Φ₂]
--- produces sub Δ Ψ Φ₁
--- POPL'08: Also problem: These need to be normal in that if the range is Ψ , x : A, it needs to be split as a _,_. Maybe this solves the above issue? I think we need to split substitutions into normal and neutral. Also we need to identity ⊡ and substitution variables with range ⊡. i.e. η for substitutions
-  _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (ρ : sub Δ Ψ Φ₂) -> sub Δ Ψ Φ₁
-  id : ∀ {φ} Ψ -> sub Δ ((▹ φ) << Ψ) (▹ φ)
+ data nsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
+  ⊡ : ∀ {Ψ} -> nsub Δ Ψ ⊡
+  _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , A)
+  ▸ : ∀ {Ψ φ} (ρ : rsub Δ Ψ (▹ φ)) -> nsub Δ Ψ (▹ φ)
+ data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
+  _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (ρ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
+  id : ∀ {Ψ} -> rsub Δ Ψ Ψ
+  π₁ : ∀ {Ψ Φ A} (ρ : rsub Δ Ψ (Φ , A)) -> rsub Δ Ψ Φ
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
@@ -119,60 +119,74 @@ vtsubst-inv-φ (ψ , T) (σ , x) | Ψ' , refl = Ψ' , refl
 mutual
  [_]vr : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {A} -> rtm Δ Ψ₁ A -> rtm Δ Ψ₂ A
  [_]vr σ (▹ x) = ▹ (vt-lookup σ x)
- [_]vr σ (u [ ρ ]) = u [ [ σ ]vs ρ ]
- [_]vr σ (p ♯[ ρ ]) = p ♯[ [ σ ]vs ρ ]
+ [_]vr σ (u [ ρ ]) = u [ [ σ ]vns ρ ]
+ [_]vr σ (p ♯[ ρ ]) = p ♯[ [ σ ]vns ρ ]
  [_]vr σ (R · N) = [ σ ]vr R · [ σ ]vn N
+ [_]vr σ (top ρ) = top ([ σ ]vrs ρ)
 
  [_]vn : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {A} -> ntm Δ Ψ₁ A -> ntm Δ Ψ₂ A
  [_]vn σ (ƛ N) = ƛ ([ ↑vts σ _ , top ]vn N)
  [_]vn σ (▸ R) = ▸ ([ σ ]vr R)
 
- [_]vs : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {Φ} -> sub Δ Ψ₁ Φ -> sub Δ Ψ₂ Φ
- [_]vs σ ⊡ = ⊡
- [_]vs σ (ρ , N) = ([ σ ]vs ρ) , ([ σ ]vn N)
- [_]vs σ (s [ ρ ]) = s [ [ σ ]vs ρ ]
- [_]vs σ (id Ψ) with vtsubst-inv-φ Ψ σ
- [_]vs σ (id Ψ) | Ψ' , refl = id Ψ'
+ [_]vns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {Φ} -> nsub Δ Ψ₁ Φ -> nsub Δ Ψ₂ Φ
+ [_]vns σ ⊡ = ⊡
+ [_]vns σ (σ' , N) = ([ σ ]vns σ') , ([ σ ]vn N)
+ [_]vns σ (▸ ρ) = ▸ ([ σ ]vrs ρ)
+
+ [_]vrs : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {Φ} -> rsub Δ Ψ₁ Φ -> rsub Δ Ψ₂ Φ
+ [_]vrs σ (s [ ρ ]) = s [ [ σ ]vns ρ ]
+ [_]vrs σ id = {!!}
+ [_]vrs σ (π₁ ρ) = π₁ ([ σ ]vrs ρ)
 
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
 η-expand {i} R = ▸ R
 η-expand {A ⇒ B} R = ƛ (η-expand ([ wkn-vts ]vr R · η-expand (▹ top)))
 
-id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> sub Δ Ψ Ψ
-id-subst Δ ⊡ = ⊡
-id-subst Δ (▹ φ) = id ⊡
-id-subst Δ (Ψ , A) = [ wkn-vts ]vs (id-subst Δ Ψ) , η-expand (▹ top)
+η-expand-s : ∀ {Ω} {Φ} {Δ : mctx Ω} {Ψ} -> rsub Δ Ψ Φ -> nsub Δ Ψ Φ
+η-expand-s {Ω} {⊡} ρ = ⊡
+η-expand-s {Ω} {▹ φ} ρ = ▸ ρ
+η-expand-s {Ω} {Ψ , A} ρ = η-expand-s (π₁ ρ) , η-expand (top ρ)
 
-<<sub : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> sub Δ Ψ Φ -> ∀ Ψ' -> sub Δ (Ψ << Ψ') Φ
+id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> nsub Δ Ψ Ψ
+id-subst Δ ⊡ = ⊡
+id-subst Δ (▹ φ) = ▸ id 
+id-subst Δ (Ψ , A) = [ wkn-vts ]vns (id-subst Δ Ψ) , η-expand (▹ top)
+
+<<sub : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> nsub Δ Ψ Φ -> ∀ Ψ' -> nsub Δ (Ψ << Ψ') Φ
 <<sub σ ⊡ = σ
-<<sub σ (ψ , T) = [ wkn-vts ]vs (<<sub σ ψ)
+<<sub σ (ψ , T) = [ wkn-vts ]vns (<<sub σ ψ)
 
 mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
    -> (R : rtm Δ Ψ A) -> rtm (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
  ⟦_⟧cr Ψs (▹ x) = ▹ (⟦ Ψs ⟧tv x)
- ⟦_⟧cr Ψs (u [ σ ]) = cmap-var ⟦ Ψs ⟧mt u [ ⟦ Ψs ⟧cs σ ]
- ⟦_⟧cr Ψs (p ♯[ σ ]) = cmap-var ⟦ Ψs ⟧mt p ♯[ ⟦ Ψs ⟧cs σ ]
+ ⟦_⟧cr Ψs (u [ σ ]) = cmap-var ⟦ Ψs ⟧mt u [ ⟦ Ψs ⟧cns σ ]
+ ⟦_⟧cr Ψs (p ♯[ σ ]) = cmap-var ⟦ Ψs ⟧mt p ♯[ ⟦ Ψs ⟧cns σ ]
  ⟦_⟧cr Ψs (R · N) = (⟦ Ψs ⟧cr R) · ⟦ Ψs ⟧cn N
+ ⟦_⟧cr Ψs (top ρ) = top (⟦ Ψs ⟧crs ρ)
 
  ⟦_⟧cn : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
    -> (N : ntm Δ Ψ A) -> ntm (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
  ⟦_⟧cn Ψs (ƛ N) = ƛ (⟦ Ψs ⟧cn N)
  ⟦_⟧cn Ψs (▸ R) = ▸ (⟦ Ψs ⟧cr R)
 
- ⟦_⟧cs : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {Φ}
-   -> (σ : sub Δ Ψ Φ) -> sub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
- ⟦_⟧cs Ψs ⊡ = ⊡
- ⟦_⟧cs Ψs (σ , N) = (⟦ Ψs ⟧cs σ) , (⟦ Ψs ⟧cn N)
- ⟦_⟧cs Ψs (s [ ρ ]) = cmap-var ⟦ Ψs ⟧mt s [ ⟦ Ψs ⟧cs ρ ]
- ⟦_⟧cs Ψs {Δ} (id {φ = φ} Ψ) = subst (λ α → sub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (▹ φ) Ψ)) (<<sub (id-subst _ (lookup Ψs φ)) Ψ)
+ ⟦_⟧cns : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {Φ}
+   -> (σ : nsub Δ Ψ Φ) -> nsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
+ ⟦_⟧cns Ψs ⊡ = ⊡
+ ⟦_⟧cns Ψs (σ , N) = (⟦ Ψs ⟧cns σ) , (⟦ Ψs ⟧cn N)
+ ⟦_⟧cns Ψs (▸ ρ) = η-expand-s (⟦ Ψs ⟧crs ρ)
 
-slookup : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> sub Δ Ψ₁ Ψ₂ -> tvar Ψ₂ A -> ntm Δ Ψ₁ A
+ ⟦_⟧crs : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {Φ}
+   -> (σ : rsub Δ Ψ Φ) -> rsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
+ ⟦_⟧crs Ψs (s [ ρ ]) = (cmap-var ⟦ Ψs ⟧mt s) [ ⟦ Ψs ⟧cns ρ ]
+ ⟦_⟧crs Ψs id = id
+ ⟦_⟧crs Ψs (π₁ ρ) = π₁ (⟦ Ψs ⟧crs ρ)
+
+slookup : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> nsub Δ Ψ₁ Ψ₂ -> tvar Ψ₂ A -> ntm Δ Ψ₁ A
 slookup ⊡ ()
 slookup (σ , N) top = N
 slookup (σ , N) (pop x) = slookup σ x
-slookup (s [ ρ ]) x = {!!}
-slookup (id Ψ) ()
+slookup (▸ ρ) ()
 
 {-sub-inv-φ : ∀ {Ω} {Δ} {Ψ₁ : tctx Ω} Ψ₂ {φ} -> sub Δ Ψ₁ (▹ φ << Ψ₂) -> ∃ (λ Ψ₁' -> Ψ₁ ≡ ▹ φ << Ψ₁')
 sub-inv-φ ⊡ (s [ ρ ]) = {!!}
@@ -182,19 +196,26 @@ sub-inv-φ (ψ , T) (σ , N) | Φ , refl = Φ , refl
 sub-inv-φ (ψ , T) (s [ ρ ]) = {!!} -}
 
 mutual
- [_]r :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : sub Δ Ψ₂ Ψ₁) {A} -> rtm Δ Ψ₁ A -> ntm Δ Ψ₂ A
+ [_]r :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : nsub Δ Ψ₂ Ψ₁) {A} -> rtm Δ Ψ₁ A -> ntm Δ Ψ₂ A
  [_]r σ (▹ x) = slookup σ x
- [_]r σ (u [ σ' ]) = η-expand (u [ [ σ ]s σ' ])
- [_]r σ (p ♯[ σ' ]) = η-expand (p ♯[ [ σ ]s σ' ])
+ [_]r σ (u [ σ' ]) = η-expand (u [ [ σ ]ns σ' ])
+ [_]r σ (p ♯[ σ' ]) = η-expand (p ♯[ [ σ ]ns σ' ])
  [_]r σ (R · N) with [ σ ]r R
  [_]r σ (R · N) | ƛ M = [ (id-subst _ _) , [ σ ]n N ]n M
+ [_]r σ (top ρ) with [ σ ]rs ρ
+ [_]r σ (top ρ) | σ' , N = N
 
- [_]n :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : sub Δ Ψ₂ Ψ₁) {A} -> ntm Δ Ψ₁ A -> ntm Δ Ψ₂ A
- [_]n σ (ƛ N) = ƛ ([ [ wkn-vts ]vs σ , (η-expand (▹ top)) ]n N)
+ [_]n :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : nsub Δ Ψ₂ Ψ₁) {A} -> ntm Δ Ψ₁ A -> ntm Δ Ψ₂ A
+ [_]n σ (ƛ N) = ƛ ([ [ wkn-vts ]vns σ , (η-expand (▹ top)) ]n N)
  [_]n σ (▸ R) = [ σ ]r R
 
- [_]s :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : sub Δ Ψ₂ Ψ₁) {Φ} -> sub Δ Ψ₁ Φ -> sub Δ Ψ₂ Φ
- [_]s σ ⊡ = ⊡
- [_]s σ (σ' , N) = ([ σ ]s σ') , ([ σ ]n N)
- [_]s σ (s [ ρ ]) = s [ [ σ ]s ρ ]
- [_]s σ (id Ψ) = {!need to project out things!}
+ [_]ns :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : nsub Δ Ψ₂ Ψ₁) {Φ} -> nsub Δ Ψ₁ Φ -> nsub Δ Ψ₂ Φ
+ [_]ns σ ⊡ = ⊡
+ [_]ns σ (σ' , N) = ([ σ ]ns σ') , ([ σ ]n N)
+ [_]ns σ (▸ ρ) = [ σ ]rs ρ
+
+ [_]rs :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : nsub Δ Ψ₂ Ψ₁) {Φ} -> rsub Δ Ψ₁ Φ -> nsub Δ Ψ₂ Φ
+ [_]rs σ (s [ ρ ]) = η-expand-s (s [ [ σ ]ns ρ ])
+ [_]rs σ id = σ
+ [_]rs σ (π₁ ρ) with [ σ ]rs ρ
+ [_]rs σ (π₁ ρ) | σ' , N = σ'
