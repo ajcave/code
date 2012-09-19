@@ -93,7 +93,7 @@ vsubst-ok-, θ y (pop y') (pop y0) = {!!}
 
 vsubst-ok-ext : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋} -> vsubst-ok Γ Δ σ
   -> vsubst-ok (Γ , T) (Δ , ([ σ ]tv T)) (vsub-ext σ)
-vsubst-ok-ext θ y = ? --vsubst-ok-, {!!} {!!} top
+vsubst-ok-ext θ y = {!!} --vsubst-ok-, {!!} {!!} top
 
 mutual
  tv-ok : ∀ {Γ Δ T} {σ : vsubst ⌊ Γ ⌋ ⌊ Δ ⌋}
@@ -125,7 +125,7 @@ mutual
  neut-wf : ∀ {Γ R T} -> Γ ok -> Γ ⊢ R ⇒ T -> Γ ⊢ T type
  neut-wf Γok (▹ y) = var-wf Γok y
  neut-wf Γok (r · n) with neut-wf Γok r
- neut-wf Γok (r · n) | Π T-type S-type = {!!}
+ neut-wf Γok (r · n) | Π T-type S-type = {! !}
 
  norm-wf : ∀ {Γ N T} -> Γ ok -> Γ ⊢ N ⇐ T -> Γ ⊢ T type
  norm-wf Γok (▸ r) = neut-wf Γok r
