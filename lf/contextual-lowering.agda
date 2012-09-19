@@ -1,4 +1,4 @@
-module contextual where
+module contextual-lowering where
 open import Level
 open import Unit
 open import FinMap
@@ -201,3 +201,4 @@ mutual
 
 -- So maybe solution is assume everything is lowered.
 -- Does that screw with operational semantics if we substitute for g?
+-- It seems like lowering for functions would cause problems with polymorphism?
