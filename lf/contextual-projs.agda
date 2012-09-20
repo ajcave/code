@@ -159,11 +159,11 @@ id-subst Δ (Ψ , A) = [ wkn-vts ]vns (id-subst Δ Ψ) , η-expand (▹ top)
 <<sub σ ⊡ = σ
 <<sub σ (ψ , T) = [ wkn-vts ]vns (<<sub σ ψ)
 
-<<subr : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> rsub Δ Ψ Φ -> ∀ Ψ' -> rsub Δ (Ψ << Ψ') Φ
+{-<<subr : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> rsub Δ Ψ Φ -> ∀ Ψ' -> rsub Δ (Ψ << Ψ') Φ
 <<subr (s [ ρ ]) Ψ' = s [ <<sub ρ Ψ' ]
 <<subr (id Ψ) Ψ' = {!!}
 <<subr (π₁ ρ) Ψ' = π₁ (<<subr ρ Ψ')
-
+-}
 
 mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
@@ -172,7 +172,8 @@ mutual
  ⟦_⟧cr Ψs (u [ σ ]) = cmap-var ⟦ Ψs ⟧mt u [ ⟦ Ψs ⟧cns σ ]
  ⟦_⟧cr Ψs (p ♯[ σ ]) = cmap-var ⟦ Ψs ⟧mt p ♯[ ⟦ Ψs ⟧cns σ ]
  ⟦_⟧cr Ψs (R · N) = (⟦ Ψs ⟧cr R) · ⟦ Ψs ⟧cn N
- ⟦_⟧cr Ψs (top ρ) = top (⟦ Ψs ⟧crs ρ)
+ ⟦_⟧cr Ψs (top ρ) with ⟦ Ψs ⟧crs ρ
+ ⟦_⟧cr Ψs (top ρ) | σ , N = {!!}
 
  ⟦_⟧cn : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
    -> (N : ntm Δ Ψ A) -> ntm (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
@@ -183,13 +184,14 @@ mutual
    -> (σ : nsub Δ Ψ Φ) -> nsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
  ⟦_⟧cns Ψs ⊡ = ⊡
  ⟦_⟧cns Ψs (σ , N) = (⟦ Ψs ⟧cns σ) , (⟦ Ψs ⟧cn N)
- ⟦_⟧cns Ψs (▸ ρ) = η-expand-s (⟦ Ψs ⟧crs ρ)
+ ⟦_⟧cns Ψs (▸ ρ) = ⟦ Ψs ⟧crs ρ
 
  ⟦_⟧crs : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {Φ}
-   -> (σ : rsub Δ Ψ Φ) -> rsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
- ⟦_⟧crs Ψs (s [ ρ ]) = (cmap-var ⟦ Ψs ⟧mt s) [ ⟦ Ψs ⟧cns ρ ]
- ⟦_⟧crs Ψs (id {φ} Ψ) = subst (λ α → rsub _ α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (▹ φ) Ψ)) (<<subr {!!} Ψ)
- ⟦_⟧crs Ψs (π₁ ρ) = π₁ (⟦ Ψs ⟧crs ρ)
+   -> (σ : rsub Δ Ψ Φ) -> nsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
+ ⟦_⟧crs Ψs (s [ ρ ]) = η-expand-s ((cmap-var ⟦ Ψs ⟧mt s) [ ⟦ Ψs ⟧cns ρ ])
+ ⟦_⟧crs Ψs {Δ} (id {φ} Ψ) = subst (λ α → nsub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (▹ φ) Ψ)) (<<sub (id-subst (⟦ Ψs ⟧mc Δ) (lookup Ψs φ)) Ψ)
+ ⟦_⟧crs Ψs (π₁ ρ) with ⟦ Ψs ⟧crs ρ
+ ⟦_⟧crs Ψs (π₁ ρ) | σ , N = σ
 
 slookup : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> nsub Δ Ψ₁ Ψ₂ -> tvar Ψ₂ A -> ntm Δ Ψ₁ A
 slookup ⊡ ()
