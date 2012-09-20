@@ -58,7 +58,7 @@ mutual
   ▸ : ∀ {Ψ φ} (ρ : rsub Δ Ψ (▹ φ)) -> nsub Δ Ψ (▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (ρ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
-  id : ∀ {Ψ} -> rsub Δ Ψ Ψ
+  id : ∀ {φ} Ψ -> rsub Δ (▹ φ << Ψ) (▹ φ)
   π₁ : ∀ {Ψ Φ A} (ρ : rsub Δ Ψ (Φ , A)) -> rsub Δ Ψ Φ
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
@@ -135,7 +135,8 @@ mutual
 
  [_]vrs : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : vtsubst Ψ₁ Ψ₂) {Φ} -> rsub Δ Ψ₁ Φ -> rsub Δ Ψ₂ Φ
  [_]vrs σ (s [ ρ ]) = s [ [ σ ]vns ρ ]
- [_]vrs σ id = {!!}
+ [_]vrs σ (id Ψ) with vtsubst-inv-φ Ψ σ
+ [_]vrs σ (id Ψ) | Φ , refl = id Φ
  [_]vrs σ (π₁ ρ) = π₁ ([ σ ]vrs ρ)
 
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
@@ -149,14 +150,20 @@ mutual
 
 id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> nsub Δ Ψ Ψ
 id-subst Δ ⊡ = ⊡
-id-subst Δ (▹ φ) = ▸ id 
+id-subst Δ (▹ φ) = ▸ (id ⊡)
 id-subst Δ (Ψ , A) = [ wkn-vts ]vns (id-subst Δ Ψ) , η-expand (▹ top)
 
-{-
+
+
 <<sub : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> nsub Δ Ψ Φ -> ∀ Ψ' -> nsub Δ (Ψ << Ψ') Φ
 <<sub σ ⊡ = σ
 <<sub σ (ψ , T) = [ wkn-vts ]vns (<<sub σ ψ)
--}
+
+<<subr : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> rsub Δ Ψ Φ -> ∀ Ψ' -> rsub Δ (Ψ << Ψ') Φ
+<<subr (s [ ρ ]) Ψ' = s [ <<sub ρ Ψ' ]
+<<subr (id Ψ) Ψ' = {!!}
+<<subr (π₁ ρ) Ψ' = π₁ (<<subr ρ Ψ')
+
 
 mutual
  ⟦_⟧cr : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {A}
@@ -181,7 +188,7 @@ mutual
  ⟦_⟧crs : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Δ : mctx Ω₁} {Ψ} {Φ}
    -> (σ : rsub Δ Ψ Φ) -> rsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
  ⟦_⟧crs Ψs (s [ ρ ]) = (cmap-var ⟦ Ψs ⟧mt s) [ ⟦ Ψs ⟧cns ρ ]
- ⟦_⟧crs Ψs id = id
+ ⟦_⟧crs Ψs (id {φ} Ψ) = subst (λ α → rsub _ α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (▹ φ) Ψ)) (<<subr {!!} Ψ)
  ⟦_⟧crs Ψs (π₁ ρ) = π₁ (⟦ Ψs ⟧crs ρ)
 
 slookup : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> nsub Δ Ψ₁ Ψ₂ -> tvar Ψ₂ A -> ntm Δ Ψ₁ A
@@ -218,6 +225,6 @@ mutual
 
  [_]rs :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : nsub Δ Ψ₂ Ψ₁) {Φ} -> rsub Δ Ψ₁ Φ -> nsub Δ Ψ₂ Φ
  [_]rs σ (s [ ρ ]) = η-expand-s (s [ [ σ ]ns ρ ])
- [_]rs σ id = σ
+ [_]rs σ (id Ψ) = {!!}
  [_]rs σ (π₁ ρ) with [ σ ]rs ρ
  [_]rs σ (π₁ ρ) | σ' , N = σ'
