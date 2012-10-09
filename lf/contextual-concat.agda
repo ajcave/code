@@ -1,4 +1,4 @@
-module contextual-projs where
+module contextual-concat where
 open import Level
 open import Unit
 open import FinMap
@@ -14,14 +14,21 @@ data tp : Set where
  i : tp
  _⇒_ : (A B : tp) -> tp
 
+data tctx-elt (Ω : schema-ctx) : Set where
+ ▹ : (φ : var Ω *) -> tctx-elt Ω
+ ▸ : (A : tp) -> tctx-elt Ω
+
 data tctx (Ω : schema-ctx) : Set where
  ⊡ : tctx Ω
- ▹ : (φ : var Ω *) -> tctx Ω
- _,_ : (Ψ : tctx Ω) -> (A : tp) -> tctx Ω
+ _,_ : (Ψ : tctx Ω) -> (A : tctx-elt Ω) -> tctx Ω
 
 data tvar {Ω : schema-ctx} : ∀ (Γ : tctx Ω) (T : tp) -> Set where
- top : ∀ {Γ T} -> tvar (Γ , T) T
+ top : ∀ {Γ T} -> tvar (Γ , (▸ T)) T
  pop : ∀ {Γ T S} -> (x : tvar Γ T) -> tvar (Γ , S) T
+
+data cvar {Ω : schema-ctx} : ∀ (Γ : tctx Ω) (φ : var Ω *) -> Set where
+ top : ∀ {Γ φ} -> cvar (Γ , (▹ φ)) φ
+ pop : ∀ {Γ φ S} -> (xs : cvar Γ φ) -> cvar (Γ , S) φ
 
 data ctp (Ω : schema-ctx) : Set where
  $ : (Ψ : tctx Ω) -> ctp Ω
@@ -37,10 +44,13 @@ record mtp (Ω : schema-ctx) : Set where
 mctx : schema-ctx -> Set
 mctx Ω = ctx (mtp Ω)
 
--- POPL'08: Concatenating φ , Ψ is wrong because Ψ can't start with a variable
-_<<_ : ∀ {Ω} -> tctx Ω -> ctx tp -> tctx Ω
+_<<_ : ∀ {Ω} -> tctx Ω -> tctx Ω -> tctx Ω
 Ψ₁ << ⊡ = Ψ₁
-Ψ₁ << (Ψ₂ , T) = (Ψ₁ << Ψ₂) , T
+Ψ₁ << (Ψ , A) = (Ψ₁ << Ψ) , A
+
+<<-assoc : ∀ {Ω} (Ψ₁ Ψ₂ Ψ₃ : tctx Ω) -> (Ψ₁ << Ψ₂) << Ψ₃ ≡ Ψ₁ << (Ψ₂ << Ψ₃)
+<<-assoc {Ω} Ψ₁ Ψ₂ ⊡ = refl
+<<-assoc {Ω} Ψ₁ Ψ₂ (Ψ , A) = cong (λ α → α , A) (<<-assoc Ψ₁ Ψ₂ Ψ)
 
 -- TODO: Give also a non-normal calculus, which is convenient
 mutual
@@ -49,49 +59,54 @@ mutual
   _[_] : ∀ {A Φ} (u : var Δ (% A [ Φ ])) (σ : nsub Δ Ψ Φ) -> rtm Δ Ψ A
   _♯[_] : ∀ {A Φ} (p : var Δ (♯ A [ Φ ])) (σ : nsub Δ Ψ Φ) -> rtm Δ Ψ A
   _·_ : ∀ {A B} (R : rtm Δ Ψ (A ⇒ B)) (N : ntm Δ Ψ A) -> rtm Δ Ψ B
-  top : ∀ {Φ A} (ρ : rsub Δ Ψ (Φ , A)) -> rtm Δ Ψ A
+  π : ∀ {Φ A} (x : tvar Φ A) (ρ : rsub Δ Ψ Φ) -> rtm Δ Ψ A
  data ntm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
-  ƛ : ∀ {A B} (N : ntm Δ (Ψ , A) B) -> ntm Δ Ψ (A ⇒ B)
+  ƛ : ∀ {A B} (N : ntm Δ (Ψ , (▸ A)) B) -> ntm Δ Ψ (A ⇒ B)
   ▸ : (R : rtm Δ Ψ i) -> ntm Δ Ψ i 
  data nsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   ⊡ : ∀ {Ψ} -> nsub Δ Ψ ⊡
-  _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , A)
-  ▸ : ∀ {Ψ φ} (ρ : rsub Δ Ψ (▹ φ)) -> nsub Δ Ψ (▹ φ)
+  _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
+  _,[_]_ : ∀ {Ψ Φ₁ Φ₂ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (ρ : rsub Δ Ψ Φ₂) -> nsub Δ Ψ (Φ₁ , ▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (ρ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
-  id : ∀ {φ} Ψ -> rsub Δ (▹ φ << Ψ) (▹ φ)
-  π₁ : ∀ {Ψ Φ A} (ρ : rsub Δ Ψ (Φ , A)) -> rsub Δ Ψ Φ
+  id : ∀ {Ψ} -> rsub Δ Ψ Ψ
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
-⟦_⟧tc Ψs (▹ φ) = lookup Ψs φ
-⟦_⟧tc Ψs (Φ , A) = ⟦ Ψs ⟧tc Φ , A
+⟦_⟧tc Ψs (Φ , (▹ φ)) = ⟦ Ψs ⟧tc Φ << (lookup Ψs φ)
+⟦_⟧tc Ψs (Φ , (▸ A)) = ⟦ Ψs ⟧tc Φ , (▸ A)
 
 ⟦⟧tc-<< : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) Φ₁ Φ₂
- -> ⟦ Ψs ⟧tc (Φ₁ << Φ₂) ≡ ((⟦ Ψs ⟧tc Φ₁) << Φ₂)
+ -> ⟦ Ψs ⟧tc (Φ₁ << Φ₂) ≡ ((⟦ Ψs ⟧tc Φ₁) << (⟦ Ψs ⟧tc Φ₂))
 ⟦⟧tc-<< Ψs Φ₁ ⊡ = refl
-⟦⟧tc-<< Ψs Φ₁ (ψ , T) = cong (λ α → α , T) (⟦⟧tc-<< Ψs Φ₁ ψ)
+⟦⟧tc-<< Ψs Φ₁ (ψ , ▹ φ) = trans (cong (λ α → α << lookup Ψs φ) (⟦⟧tc-<< Ψs Φ₁ ψ)) (<<-assoc (⟦ Ψs ⟧tc Φ₁) (⟦ Ψs ⟧tc ψ) (lookup Ψs φ))
+⟦⟧tc-<< Ψs Φ₁ (ψ , ▸ A) = cong (λ α → α , ▸ A) (⟦⟧tc-<< Ψs Φ₁ ψ)
+
 
 ⟦_⟧mt : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (U : mtp Ω₁) -> mtp Ω₂
 ⟦_⟧mt Ψs ($ Ψ [ Φ ]) = $ (⟦ Ψs ⟧tc Ψ) [ ⟦ Ψs ⟧tc Φ ]
 ⟦_⟧mt Ψs ((♯ A) [ Φ ]) = (♯ A) [ ⟦ Ψs ⟧tc Φ ]
 ⟦_⟧mt Ψs (% A [ Φ ]) = % A [ ⟦ Ψs ⟧tc Φ ]
 
+
 ⟦_⟧mc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Δ : mctx Ω₁) -> mctx Ω₂
 ⟦_⟧mc Ψs Δ = cmap ⟦ Ψs ⟧mt Δ
 
+<<tv : ∀ {Ω} {Ψ₁ : tctx Ω} {A} -> tvar Ψ₁ A -> ∀ Ψ₂ -> tvar (Ψ₁ << Ψ₂) A
+<<tv x ⊡ = x
+<<tv x (ψ , T) = pop (<<tv x ψ) 
+
 ⟦_⟧tv : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Φ : tctx Ω₁} {A} -> tvar Φ A -> tvar (⟦ Ψs ⟧tc Φ) A
 ⟦_⟧tv Ψs top = top
-⟦_⟧tv Ψs (pop x) = pop (⟦ Ψs ⟧tv x)
+⟦_⟧tv Ψs (pop {Γ} {T} {▹ φ} x) = <<tv (⟦ Ψs ⟧tv x) (lookup Ψs φ)
+⟦_⟧tv Ψs (pop {Γ} {T} {▸ A} x) = pop (⟦ Ψs ⟧tv x) --pop (⟦ Ψs ⟧tv x)
 
+{-
 data vtsubst {Ω} : tctx Ω -> tctx Ω -> Set where
  ⊡ : ∀ {Ψ₂} -> vtsubst ⊡ Ψ₂
  _,_ : ∀ {Ψ₁ Ψ₂ A} (σ : vtsubst Ψ₁ Ψ₂) -> (x : tvar Ψ₂ A) -> vtsubst (Ψ₁ , A) Ψ₂
  id : ∀ {φ} Ψ -> vtsubst (▹ φ) ((▹ φ) << Ψ)
 
-<<tv : ∀ {Ω} {Ψ₁ : tctx Ω} {A} -> tvar Ψ₁ A -> ∀ Ψ₂ -> tvar (Ψ₁ << Ψ₂) A
-<<tv x ⊡ = x
-<<tv x (ψ , T) = pop (<<tv x ψ) 
 
 vt-lookup : ∀ {Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> vtsubst Ψ₁ Ψ₂ -> tvar Ψ₁ A -> tvar Ψ₂ A
 vt-lookup ⊡ ()
@@ -138,7 +153,7 @@ mutual
  [_]vrs σ (s [ ρ ]) = s [ [ σ ]vns ρ ]
  [_]vrs σ (id Ψ) with vtsubst-inv-φ Ψ σ
  [_]vrs σ (id Ψ) | Φ , refl = id Φ
- [_]vrs σ (π₁ ρ) = π₁ ([ σ ]vrs ρ)
+-- [_]vrs σ (π₁ ρ) = π₁ ([ σ ]vrs ρ)
 
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
 η-expand {i} R = ▸ R
@@ -147,7 +162,7 @@ mutual
 η-expand-s : ∀ {Ω} {Φ} {Δ : mctx Ω} {Ψ} -> rsub Δ Ψ Φ -> nsub Δ Ψ Φ
 η-expand-s {Ω} {⊡} ρ = ⊡
 η-expand-s {Ω} {▹ φ} ρ = ▸ ρ
-η-expand-s {Ω} {Ψ , A} ρ = η-expand-s (π₁ ρ) , η-expand (top ρ)
+η-expand-s {Ω} {Ψ , A} ρ = ? --η-expand-s (π₁ ρ) , η-expand (top ρ)
 
 id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> nsub Δ Ψ Ψ
 id-subst Δ ⊡ = ⊡
@@ -191,8 +206,8 @@ mutual
    -> (σ : rsub Δ Ψ Φ) -> nsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc Φ)
  ⟦_⟧crs Ψs (s [ ρ ]) = η-expand-s ((cmap-var ⟦ Ψs ⟧mt s) [ ⟦ Ψs ⟧cns ρ ])
  ⟦_⟧crs Ψs {Δ} (id {φ} Ψ) = subst (λ α → nsub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (▹ φ) Ψ)) (<<sub (id-subst (⟦ Ψs ⟧mc Δ) (lookup Ψs φ)) Ψ)
- ⟦_⟧crs Ψs (π₁ ρ) with ⟦ Ψs ⟧crs ρ
- ⟦_⟧crs Ψs (π₁ ρ) | σ , N = σ
+-- ⟦_⟧crs Ψs (π₁ ρ) with ⟦ Ψs ⟧crs ρ
+-- ⟦_⟧crs Ψs (π₁ ρ) | σ , N = σ
 
 slookup : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂ : tctx Ω} {A} -> nsub Δ Ψ₁ Ψ₂ -> tvar Ψ₂ A -> ntm Δ Ψ₁ A
 slookup ⊡ ()
@@ -229,5 +244,6 @@ mutual
  [_]rs :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Ψ₂} (σ : nsub Δ Ψ₂ Ψ₁) {Φ} -> rsub Δ Ψ₁ Φ -> nsub Δ Ψ₂ Φ
  [_]rs σ (s [ ρ ]) = η-expand-s (s [ [ σ ]ns ρ ])
  [_]rs σ (id Ψ) = {!!}
- [_]rs σ (π₁ ρ) with [ σ ]rs ρ
- [_]rs σ (π₁ ρ) | σ' , N = σ'
+ --[_]rs σ (π₁ ρ) with [ σ ]rs ρ
+ --[_]rs σ (π₁ ρ) | σ' , N = σ'
+-}
