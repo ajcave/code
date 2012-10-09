@@ -48,6 +48,8 @@ _<<_ : ∀ {Ω} -> tctx Ω -> tctx Ω -> tctx Ω
 Ψ₁ << ⊡ = Ψ₁
 Ψ₁ << (Ψ , A) = (Ψ₁ << Ψ) , A
 
+infixr 10 _<<_
+
 <<-assoc : ∀ {Ω} (Ψ₁ Ψ₂ Ψ₃ : tctx Ω) -> (Ψ₁ << Ψ₂) << Ψ₃ ≡ Ψ₁ << (Ψ₂ << Ψ₃)
 <<-assoc {Ω} Ψ₁ Ψ₂ ⊡ = refl
 <<-assoc {Ω} Ψ₁ Ψ₂ (Ψ , A) = cong (λ α → α , A) (<<-assoc Ψ₁ Ψ₂ Ψ)
@@ -68,8 +70,8 @@ mutual
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
   _,[_]_ : ∀ {Ψ Φ₁ Φ₂ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (ρ : rsub Δ Ψ Φ₂) -> nsub Δ Ψ (Φ₁ , ▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
-  _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (ρ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
-  id : ∀ {Ψ} -> rsub Δ Ψ Ψ
+  _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
+  id : ∀ {Ψ φ} (xs : cvar Ψ φ) -> rsub Δ Ψ (⊡ , ▹ φ)
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
@@ -94,12 +96,48 @@ mutual
 
 <<tv : ∀ {Ω} {Ψ₁ : tctx Ω} {A} -> tvar Ψ₁ A -> ∀ Ψ₂ -> tvar (Ψ₁ << Ψ₂) A
 <<tv x ⊡ = x
-<<tv x (ψ , T) = pop (<<tv x ψ) 
+<<tv x (ψ , T) = pop (<<tv x ψ)
+
+<<cv : ∀ {Ω} {Ψ₁ : tctx Ω} {φ} -> cvar Ψ₁ φ -> ∀ Ψ₂ -> cvar (Ψ₁ << Ψ₂) φ
+<<cv xs ⊡ = xs
+<<cv xs (Ψ , A) = pop (<<cv xs Ψ)
 
 ⟦_⟧tv : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Φ : tctx Ω₁} {A} -> tvar Φ A -> tvar (⟦ Ψs ⟧tc Φ) A
 ⟦_⟧tv Ψs top = top
 ⟦_⟧tv Ψs (pop {Γ} {T} {▹ φ} x) = <<tv (⟦ Ψs ⟧tv x) (lookup Ψs φ)
-⟦_⟧tv Ψs (pop {Γ} {T} {▸ A} x) = pop (⟦ Ψs ⟧tv x) --pop (⟦ Ψs ⟧tv x)
+⟦_⟧tv Ψs (pop {Γ} {T} {▸ A} x) = pop (⟦ Ψs ⟧tv x)
+
+tvar-wkn : ∀ {Ω} (Ψ₁ Ψ₂ Ψ₃ : tctx Ω) {A} -> tvar (Ψ₁ << Ψ₃) A -> tvar (Ψ₁ << Ψ₂ << Ψ₃) A
+tvar-wkn Ψ₁ Ψ₂ ⊡ x = <<tv x Ψ₂
+tvar-wkn Ψ₁ Ψ₂ (Ψ , .(▸ A)) {A} top = top
+tvar-wkn Ψ₁ Ψ₂ (Ψ , A) (pop x) = pop (tvar-wkn Ψ₁ Ψ₂ Ψ x)
+
+cvar-wkn : ∀ {Ω} (Ψ₁ Ψ₂ Ψ₃ : tctx Ω) {φ} -> cvar (Ψ₁ << Ψ₃) φ -> cvar (Ψ₁ << Ψ₂ << Ψ₃) φ
+cvar-wkn Ψ₁ Ψ₂ ⊡ xs = <<cv xs Ψ₂
+cvar-wkn Ψ₁ Ψ₂ (Ψ , .(▹ φ)) {φ} top = top
+cvar-wkn Ψ₁ Ψ₂ (Ψ , A) (pop xs) = pop (cvar-wkn Ψ₁ Ψ₂ Ψ xs)
+
+mutual
+ r-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> rtm Δ (Ψ₁ << Ψ₃) A -> rtm Δ (Ψ₁ << Ψ₂ << Ψ₃) A
+ r-wkn Ψ₁ Ψ₂ Ψ₃ (▹ x) = ▹ (tvar-wkn Ψ₁ Ψ₂ Ψ₃ x)
+ r-wkn Ψ₁ Ψ₂ Ψ₃ (u [ σ ]) = u [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ ]
+ r-wkn Ψ₁ Ψ₂ Ψ₃ (p ♯[ σ ]) = p ♯[ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ ]
+ r-wkn Ψ₁ Ψ₂ Ψ₃ (R · N) = r-wkn Ψ₁ Ψ₂ Ψ₃ R · n-wkn Ψ₁ Ψ₂ Ψ₃ N
+ r-wkn Ψ₁ Ψ₂ Ψ₃ (π x ρ) = π x (rs-wkn Ψ₁ Ψ₂ Ψ₃ ρ)
+
+ n-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> ntm Δ (Ψ₁ << Ψ₃) A -> ntm Δ (Ψ₁ << Ψ₂ << Ψ₃) A
+ n-wkn Ψ₁ Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn Ψ₁ Ψ₂ (Ψ₃ , ▸ A) N)
+ n-wkn Ψ₁ Ψ₂ Ψ₃ (▸ R) = ▸ (r-wkn Ψ₁ Ψ₂ Ψ₃ R)
+
+ ns-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> nsub Δ (Ψ₁ << Ψ₃) Φ -> nsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
+ ns-wkn Ψ₁ Ψ₂ Ψ₃ ⊡ = ⊡
+ ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ , N) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) , (n-wkn Ψ₁ Ψ₂ Ψ₃ N)
+ ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ ,[ xs ] ρ) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) ,[ xs ] (rs-wkn Ψ₁ Ψ₂ Ψ₃ ρ)
+
+ rs-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> rsub Δ (Ψ₁ << Ψ₃) Φ -> rsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
+ rs-wkn Ψ₁ Ψ₂ Ψ₃ (s [ σ ]) = s [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ ]
+ rs-wkn Ψ₁ Ψ₂ Ψ₃ (id xs) = id (cvar-wkn Ψ₁ Ψ₂ Ψ₃ xs)
+ 
 
 {-
 data vtsubst {Ω} : tctx Ω -> tctx Ω -> Set where
