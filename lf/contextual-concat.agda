@@ -70,6 +70,7 @@ mutual
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
   _,[_]_ : ∀ {Ψ Φ₁ Φ₂ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (ρ : rsub Δ Ψ Φ₂) -> nsub Δ Ψ (Φ₁ , ▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
+  -- I guess this doesn't quite look like a spine. Maybe it's better to make a more direct attempt?
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
   id : ∀ {Ψ φ} (xs : cvar Ψ φ) -> rsub Δ Ψ (⊡ , ▹ φ)
 
@@ -193,21 +194,24 @@ mutual
  [_]vrs σ (id Ψ) | Φ , refl = id Φ
 -- [_]vrs σ (π₁ ρ) = π₁ ([ σ ]vrs ρ)
 
+-}
+
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
 η-expand {i} R = ▸ R
-η-expand {A ⇒ B} R = ƛ (η-expand ([ wkn-vts ]vr R · η-expand (▹ top)))
+η-expand {A ⇒ B} R = ƛ (η-expand (r-wkn _ (⊡ , ▸ A) ⊡ R · η-expand (▹ top)))
 
-η-expand-s : ∀ {Ω} {Φ} {Δ : mctx Ω} {Ψ} -> rsub Δ Ψ Φ -> nsub Δ Ψ Φ
-η-expand-s {Ω} {⊡} ρ = ⊡
-η-expand-s {Ω} {▹ φ} ρ = ▸ ρ
-η-expand-s {Ω} {Ψ , A} ρ = ? --η-expand-s (π₁ ρ) , η-expand (top ρ)
+-- Maybe this is more of a "join it with an xs" thing
+η-expand-s : ∀ {Ω} {Φ} Φ' {Δ : mctx Ω} {Ψ} -> rsub Δ Ψ (Φ << Φ') -> nsub Δ Ψ Φ
+η-expand-s {Ω} {⊡} Φ' ρ = ⊡
+η-expand-s {Ω} {Ψ , ▹ φ} Φ' {Δ} {Ψ'} ρ = η-expand-s (⊡ , ▹ φ << Φ') (subst (λ α → rsub Δ Ψ' α) (<<-assoc Ψ (⊡ , ▹ φ) Φ') ρ) ,[ <<cv top Φ' ] ρ
+η-expand-s {Ω} {Ψ , ▸ A} Φ' {Δ} {Ψ'} ρ = η-expand-s (⊡ , ▸ A << Φ') (subst (λ α → rsub Δ Ψ' α) (<<-assoc Ψ (⊡ , ▸ A) Φ') ρ) , η-expand (π (<<tv top Φ') ρ)
 
 id-subst : ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) -> nsub Δ Ψ Ψ
 id-subst Δ ⊡ = ⊡
-id-subst Δ (▹ φ) = ▸ (id ⊡)
-id-subst Δ (Ψ , A) = [ wkn-vts ]vns (id-subst Δ Ψ) , η-expand (▹ top)
+id-subst Δ (Ψ , ▹ φ) = (ns-wkn Ψ (⊡ , ▹ φ) ⊡ (id-subst Δ Ψ)) ,[ top ] (id top)
+id-subst Δ (Ψ , ▸ A) = (ns-wkn Ψ (⊡ , ▸ A) ⊡ (id-subst Δ Ψ)) , η-expand (▹ top)
 
-
+{-
 
 <<sub : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ : tctx Ω} -> nsub Δ Ψ Φ -> ∀ Ψ' -> nsub Δ (Ψ << Ψ') Φ
 <<sub σ ⊡ = σ
