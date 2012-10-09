@@ -200,7 +200,7 @@ mutual
 η-expand {i} R = ▸ R
 η-expand {A ⇒ B} R = ƛ (η-expand (r-wkn _ (⊡ , ▸ A) ⊡ R · η-expand (▹ top)))
 
--- Maybe this is more of a "join it with an xs" thing
+-- Maybe this is more of a "join it with an xs" thing?
 η-expand-s : ∀ {Ω} {Φ} Φ' {Δ : mctx Ω} {Ψ} -> rsub Δ Ψ (Φ << Φ') -> nsub Δ Ψ Φ
 η-expand-s {Ω} {⊡} Φ' ρ = ⊡
 η-expand-s {Ω} {Ψ , ▹ φ} Φ' {Δ} {Ψ'} ρ = η-expand-s (⊡ , ▹ φ << Φ') (subst (λ α → rsub Δ Ψ' α) (<<-assoc Ψ (⊡ , ▹ φ) Φ') ρ) ,[ <<cv top Φ' ] ρ
