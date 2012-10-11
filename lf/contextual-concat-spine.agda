@@ -289,7 +289,7 @@ sub-inv-φ (ψ , T) (s [ ρ ]) = {!!} -}
 
 cvar-str : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₂ {φ} -> cvar (Ψ₁ , ▸ B << Ψ₂) φ -> cvar (Ψ₁ << Ψ₂) φ
 cvar-str ⊡ (pop xs) = xs
-cvar-str (Ψ , ▹ .φ) {φ} top = top
+cvar-str (Ψ , ▹ φ) top = top
 cvar-str (Ψ , ▹ φ) (pop xs) = pop (cvar-str Ψ xs)
 cvar-str (Ψ , ▸ A) (pop xs) = pop (cvar-str Ψ xs)
 
@@ -339,6 +339,12 @@ mutual
 -- Now I need simultaneous! This is the tricky part
 -- Also substitution for context variables
 
+tvar-str : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₂ {φ} -> tvar (Ψ₁ , ▹ B << Ψ₂) φ -> tvar (Ψ₁ << Ψ₂) φ
+tvar-str ⊡ (pop xs) = xs
+tvar-str (Ψ , ▸ A) top = top
+tvar-str (Ψ , ▸ A) (pop xs) = pop (tvar-str Ψ xs)
+tvar-str (Ψ , ▹ φ) (pop xs) = pop (tvar-str Ψ xs)
+
 cthatone : ∀ {Ω} {Ψ : tctx Ω} Φ {A} -> cvar (Ψ , ▹ A << Φ) A
 cthatone ⊡ = top
 cthatone (Φ , A) = pop (cthatone Φ)
@@ -358,10 +364,11 @@ ceq? (Ψ , A) (pop .(cvar-wkn1 Ψ x)) | diff x = diff (pop x)
 mutual
  nc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ} {φ} Ψ₂ {A} -> ntm Δ (Ψ₁ , ▹ φ << Ψ₂) A -> cvar Φ φ -> rsub Δ Ψ₁ Φ -> ntm Δ (Ψ₁ << Ψ₂) A
  nc-sub Ψ (ƛ {A} {B} N) xs ρ = ƛ (nc-sub (Ψ , ▸ A) N xs ρ)
- nc-sub Ψ (▹ x · S) xs ρ = ▹ {!!} · sc-sub Ψ S xs ρ
+ nc-sub Ψ (▹ x · S) xs ρ = ▹ (tvar-str Ψ x) · sc-sub Ψ S xs ρ
  nc-sub Ψ (u [ σ ] · S) xs ρ = (u [ nsc-sub Ψ σ xs ρ ]) · sc-sub Ψ S xs ρ
  nc-sub Ψ (p ♯[ σ ] · S) xs ρ = (p ♯[ nsc-sub Ψ σ xs ρ ]) · sc-sub Ψ S xs ρ
- nc-sub Ψ (π x ρ' · S) xs ρ = π x {!!} · sc-sub Ψ S xs ρ
+ nc-sub Ψ (π x (s [ σ ]) · S) xs ρ = π x (s [ nsc-sub Ψ σ xs ρ ]) · sc-sub Ψ S xs ρ
+ nc-sub Ψ (π (pop ()) (id xs) · S) xs' ρ
 
  sc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ} {φ} Ψ₂ {A B} -> spine Δ (Ψ₁ , ▹ φ << Ψ₂) A B -> cvar Φ φ -> rsub Δ Ψ₁ Φ -> spine Δ (Ψ₁ << Ψ₂) A B
  sc-sub Ψ ε xs ρ = ε
