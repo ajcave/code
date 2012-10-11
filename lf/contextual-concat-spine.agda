@@ -78,6 +78,7 @@ mutual
   _,[_]_ : ∀ {Ψ Φ₁ Φ₂ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (ρ : rsub Δ Ψ Φ₂) -> nsub Δ Ψ (Φ₁ , ▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   -- I guess this is actually the head, and the cvar is the spine?
+  -- TODO: Try directly with a fst and snd approach
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
   id : ∀ {Ψ φ} (xs : cvar Ψ φ) -> rsub Δ Ψ (⊡ , ▹ φ)
 
@@ -172,7 +173,6 @@ id-subst Δ (Ψ , ▹ φ) = (ns-wkn Ψ (⊡ , ▹ φ) ⊡ (id-subst Δ Ψ)) ,[ t
 id-subst Δ (Ψ , ▸ A) = {!!} --(ns-wkn Ψ (⊡ , ▸ A) ⊡ (id-subst Δ Ψ)) , η-expand (▹ top)
 -}
 
-
 cvar-str : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₂ {φ} -> cvar (Ψ₁ , ▸ B << Ψ₂) φ -> cvar (Ψ₁ << Ψ₂) φ
 cvar-str ⊡ (pop xs) = xs
 cvar-str (Ψ , ▹ φ) top = top
@@ -221,9 +221,6 @@ mutual
  _◇_ : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B} -> ntm Δ Ψ A -> spine Δ Ψ A B -> ntm Δ Ψ B
  N ◇ ε = N
  (ƛ N) ◇ (N' , S) = (n-sub ⊡ N N') ◇ S
-
--- Now I need simultaneous! This is the tricky part
--- Also substitution for context variables
 
 tvar-str : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₂ {φ} -> tvar (Ψ₁ , ▹ B << Ψ₂) φ -> tvar (Ψ₁ << Ψ₂) φ
 tvar-str ⊡ (pop xs) = xs
@@ -280,3 +277,5 @@ mutual
 
 n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
 n-sim-sub' N σ = n-sim-sub ⊡ N σ
+
+-- Now I need all 3 kinds of meta-substitution...
