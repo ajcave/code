@@ -311,7 +311,7 @@ mutual
  n-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , ▸ B << Ψ₂) A -> ntm Δ Ψ₁ B -> ntm Δ (Ψ₁ << Ψ₂) A
  n-sub Ψ (ƛ {A} {B} N) M = ƛ (n-sub (Ψ , ▸ A) N M)
  n-sub Ψ (▸ (▹ x · S)) M with eq? Ψ x
- n-sub Ψ (▸ (▹ .(thatone Ψ) · S)) M | same = {!!}
+ n-sub Ψ (▸ (▹ .(thatone Ψ) · S)) M | same = n-wkn _ Ψ ⊡ M ◇ (s-sub Ψ S M)
  n-sub Ψ (▸ (▹ .(tvar-wkn1 Ψ x) · S)) M | diff x = ▸ ((▹ x) · s-sub Ψ S M)
  n-sub Ψ (▸ (u [ σ ] · S)) M = ▸ ((u [ ns-sub Ψ σ M ]) · s-sub Ψ S M)
  n-sub Ψ (▸ (p ♯[ σ ] · S)) M = ▸ ((p ♯[ ns-sub Ψ σ M ]) · s-sub Ψ S M)
