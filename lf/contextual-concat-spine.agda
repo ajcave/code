@@ -77,7 +77,7 @@ mutual
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
   _,[_]_ : ∀ {Ψ Φ₁ Φ₂ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (ρ : rsub Δ Ψ Φ₂) -> nsub Δ Ψ (Φ₁ , ▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
-  -- I guess this is actually the head, and the cvar is the spine?
+  -- I guess this is actually the head, and the cvar is the spine? Why doesn't the code seem to reflect that very well?
   -- TODO: Try directly with a fst and snd approach
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
   id : ∀ {Ψ φ} (xs : cvar Ψ φ) -> rsub Δ Ψ (⊡ , ▹ φ)
