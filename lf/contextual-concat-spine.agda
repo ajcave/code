@@ -333,3 +333,5 @@ mutual
  _◇_ : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B} -> ntm Δ Ψ A -> spine Δ Ψ A B -> ntm Δ Ψ B
  N ◇ ε = N
  (ƛ N) ◇ (N' , S) = (n-sub ⊡ N N') ◇ S
+
+-- Now I need simultaneous! This is the tricky part
