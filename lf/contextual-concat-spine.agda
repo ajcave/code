@@ -54,6 +54,10 @@ infixl 10 _<<_
 <<-assoc {Ω} Ψ₁ Ψ₂ ⊡ = refl
 <<-assoc {Ω} Ψ₁ Ψ₂ (Ψ , A) = cong (λ α → α , A) (<<-assoc Ψ₁ Ψ₂ Ψ)
 
+<<-idl : ∀ {Ω} (Ψ : tctx Ω) -> ⊡ << Ψ ≡ Ψ
+<<-idl ⊡ = refl
+<<-idl (Ψ , A) = cong (λ α → α , A) (<<-idl Ψ)
+
 -- TODO: Give also a non-normal calculus, which is convenient
 mutual
  data head {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
@@ -65,11 +69,9 @@ mutual
  data spine {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> tp -> Set where
   ε : ∀ {C} -> spine Δ Ψ C C
   _,_ : ∀ {A B C} (N : ntm Δ Ψ A) (S : spine Δ Ψ B C) -> spine Δ Ψ (A ⇒ B) C
- data rtm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
-  _·_ : ∀ {A B} (H : head Δ Ψ A) (S : spine Δ Ψ A B) -> rtm Δ Ψ B
  data ntm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
   ƛ : ∀ {A B} (N : ntm Δ (Ψ , (▸ A)) B) -> ntm Δ Ψ (A ⇒ B)
-  ▸ : (R : rtm Δ Ψ i) -> ntm Δ Ψ i 
+  _·_ : ∀ {A} (H : head Δ Ψ A) (S : spine Δ Ψ A i) -> ntm Δ Ψ i
  data nsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   ⊡ : ∀ {Ψ} -> nsub Δ Ψ ⊡
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
@@ -137,12 +139,9 @@ mutual
  s-wkn Ψ₁ Ψ₂ Ψ₃ ε = ε
  s-wkn Ψ₁ Ψ₂ Ψ₃ (N , S) = (n-wkn Ψ₁ Ψ₂ Ψ₃ N) , (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
 
- r-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> rtm Δ (Ψ₁ << Ψ₃) A -> rtm Δ (Ψ₁ << Ψ₂ << Ψ₃) A
- r-wkn Ψ₁ Ψ₂ Ψ₃ (H · S) = (h-wkn Ψ₁ Ψ₂ Ψ₃ H) · (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
-
  n-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> ntm Δ (Ψ₁ << Ψ₃) A -> ntm Δ (Ψ₁ << Ψ₂ << Ψ₃) A
  n-wkn Ψ₁ Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn Ψ₁ Ψ₂ (Ψ₃ , ▸ A) N)
- n-wkn Ψ₁ Ψ₂ Ψ₃ (▸ R) = ▸ (r-wkn Ψ₁ Ψ₂ Ψ₃ R)
+ n-wkn Ψ₁ Ψ₂ Ψ₃ (H · S) = (h-wkn Ψ₁ Ψ₂ Ψ₃ H) · (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
 
  ns-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> nsub Δ (Ψ₁ << Ψ₃) Φ -> nsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
  ns-wkn Ψ₁ Ψ₂ Ψ₃ ⊡ = ⊡
@@ -310,12 +309,12 @@ eq? (Ψ , A) (pop .(tvar-wkn1 Ψ x)) | diff x = diff (pop x)
 mutual
  n-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , ▸ B << Ψ₂) A -> ntm Δ Ψ₁ B -> ntm Δ (Ψ₁ << Ψ₂) A
  n-sub Ψ (ƛ {A} {B} N) M = ƛ (n-sub (Ψ , ▸ A) N M)
- n-sub Ψ (▸ (▹ x · S)) M with eq? Ψ x
- n-sub Ψ (▸ (▹ .(thatone Ψ) · S)) M | same = n-wkn _ Ψ ⊡ M ◇ (s-sub Ψ S M)
- n-sub Ψ (▸ (▹ .(tvar-wkn1 Ψ x) · S)) M | diff x = ▸ ((▹ x) · s-sub Ψ S M)
- n-sub Ψ (▸ (u [ σ ] · S)) M = ▸ ((u [ ns-sub Ψ σ M ]) · s-sub Ψ S M)
- n-sub Ψ (▸ (p ♯[ σ ] · S)) M = ▸ ((p ♯[ ns-sub Ψ σ M ]) · s-sub Ψ S M)
- n-sub Ψ (▸ (π x ρ · S)) M = ▸ (π x (rs-sub Ψ ρ M) · s-sub Ψ S M) 
+ n-sub Ψ (▹ x · S) M with eq? Ψ x
+ n-sub Ψ (▹ .(thatone Ψ) · S) M | same = (n-wkn _ Ψ ⊡ M) ◇ (s-sub Ψ S M)
+ n-sub Ψ (▹ .(tvar-wkn1 Ψ x) · S) M | diff x = (▹ x) · s-sub Ψ S M
+ n-sub Ψ (u [ σ ] · S) M = (u [ ns-sub Ψ σ M ]) · s-sub Ψ S M
+ n-sub Ψ (p ♯[ σ ] · S) M = (p ♯[ ns-sub Ψ σ M ]) · s-sub Ψ S M
+ n-sub Ψ (π x ρ · S) M = π x (rs-sub Ψ ρ M) · s-sub Ψ S M
 
  s-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A C} -> spine Δ (Ψ₁ , ▸ B << Ψ₂) A C -> ntm Δ Ψ₁ B -> spine Δ (Ψ₁ << Ψ₂) A C
  s-sub Ψ ε N = ε
@@ -335,3 +334,11 @@ mutual
  (ƛ N) ◇ (N' , S) = (n-sub ⊡ N N') ◇ S
 
 -- Now I need simultaneous! This is the tricky part
+-- Also substitution for context variables
+
+mutual
+ n-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
+ n-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
+ n-sim-sub {Ω} {Δ} Ψ {.Φ'} {A} N (_,_ {Φ'} {Φ} {B} σ N') with n-sim-sub (⊡ , ▸ B << Ψ) (subst (λ α → ntm Δ α A) (<<-assoc Φ (⊡ , ▸ B) Ψ) N) σ
+ ... | q = n-sub Ψ (subst (λ α → ntm Δ α A) (sym (<<-assoc Φ' (⊡ , ▸ B) Ψ)) q) N'
+ n-sim-sub Ψ N (σ ,[ xs ] ρ) = {!!}
