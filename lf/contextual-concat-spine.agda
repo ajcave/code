@@ -391,3 +391,6 @@ mutual
  ... | q = n-sub Ψ q N'
  n-sim-sub {Ω} {Δ} Ψ {.Φ'} {A} N (_,[_]_ {Φ'} {Φ} {Φ''} {φ} σ xs ρ) with subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ' (⊡ , ▹ φ) Ψ)) (n-sim-sub (⊡ , ▹ φ << Ψ) (subst (λ α → ntm Δ α A) (<<-assoc Φ (⊡ , ▹ φ) Ψ) N) σ)
  ... | q = nc-sub Ψ q xs ρ 
+
+n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
+n-sim-sub' N σ = n-sim-sub ⊡ N σ
