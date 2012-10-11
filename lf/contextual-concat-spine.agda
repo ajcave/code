@@ -77,7 +77,7 @@ mutual
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
   _,[_]_ : ∀ {Ψ Φ₁ Φ₂ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (ρ : rsub Δ Ψ Φ₂) -> nsub Δ Ψ (Φ₁ , ▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
-  -- I guess this doesn't quite look like a spine. Maybe it's better to make a more direct attempt?
+  -- I guess this is actually the head, and the cvar is the spine?
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
   id : ∀ {Ψ φ} (xs : cvar Ψ φ) -> rsub Δ Ψ (⊡ , ▹ φ)
 
@@ -127,6 +127,9 @@ cvar-wkn : ∀ {Ω} (Ψ₁ Ψ₂ Ψ₃ : tctx Ω) {φ} -> cvar (Ψ₁ << Ψ₃) 
 cvar-wkn Ψ₁ Ψ₂ ⊡ xs = <<cv xs Ψ₂
 cvar-wkn Ψ₁ Ψ₂ (Ψ , .(▹ φ)) {φ} top = top
 cvar-wkn Ψ₁ Ψ₂ (Ψ , A) (pop xs) = pop (cvar-wkn Ψ₁ Ψ₂ Ψ xs)
+
+cvar-wkn1 : ∀ {Ω} {Ψ₁ B} (Ψ₃ : tctx Ω) {A} -> cvar (Ψ₁ << Ψ₃) A -> cvar (Ψ₁ , ▹ B << Ψ₃) A
+cvar-wkn1 {Ω} {Ψ₁} {B} Ψ₃ x = cvar-wkn Ψ₁ (⊡ , ▹ B) Ψ₃ x
 
 mutual
  h-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> head Δ (Ψ₁ << Ψ₃) A -> head Δ (Ψ₁ << Ψ₂ << Ψ₃) A
@@ -336,10 +339,48 @@ mutual
 -- Now I need simultaneous! This is the tricky part
 -- Also substitution for context variables
 
+cthatone : ∀ {Ω} {Ψ : tctx Ω} Φ {A} -> cvar (Ψ , ▹ A << Φ) A
+cthatone ⊡ = top
+cthatone (Φ , A) = pop (cthatone Φ)
+
+data ceqV {Ω} {Ψ : tctx Ω} : ∀ {A} B Φ -> cvar ((Ψ , ▹ B) << Φ) A -> Set where
+ same : ∀ {A Φ} -> ceqV A Φ (cthatone Φ)
+ diff : ∀ {A B Φ} (x : cvar (Ψ << Φ) A) -> ceqV B Φ (cvar-wkn1 Φ x)
+
+ceq? : ∀ {Ω} {Ψ : tctx Ω} Φ {A B} (x : cvar (Ψ , ▹ A << Φ) B) -> ceqV A Φ x
+ceq? ⊡ top = same
+ceq? ⊡ (pop x) = diff x
+ceq? (Ψ , .(▹ B)) {A} {B} top = diff top
+ceq? (Ψ , A) (pop x) with ceq? Ψ x
+ceq? (Ψ , A) (pop .(cthatone Ψ)) | same = same
+ceq? (Ψ , A) (pop .(cvar-wkn1 Ψ x)) | diff x = diff (pop x)
+
+mutual
+ nc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ} {φ} Ψ₂ {A} -> ntm Δ (Ψ₁ , ▹ φ << Ψ₂) A -> cvar Φ φ -> rsub Δ Ψ₁ Φ -> ntm Δ (Ψ₁ << Ψ₂) A
+ nc-sub Ψ (ƛ {A} {B} N) xs ρ = ƛ (nc-sub (Ψ , ▸ A) N xs ρ)
+ nc-sub Ψ (▹ x · S) xs ρ = ▹ {!!} · sc-sub Ψ S xs ρ
+ nc-sub Ψ (u [ σ ] · S) xs ρ = (u [ nsc-sub Ψ σ xs ρ ]) · sc-sub Ψ S xs ρ
+ nc-sub Ψ (p ♯[ σ ] · S) xs ρ = (p ♯[ nsc-sub Ψ σ xs ρ ]) · sc-sub Ψ S xs ρ
+ nc-sub Ψ (π x ρ' · S) xs ρ = π x {!!} · sc-sub Ψ S xs ρ
+
+ sc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ} {φ} Ψ₂ {A B} -> spine Δ (Ψ₁ , ▹ φ << Ψ₂) A B -> cvar Φ φ -> rsub Δ Ψ₁ Φ -> spine Δ (Ψ₁ << Ψ₂) A B
+ sc-sub Ψ ε xs ρ = ε
+ sc-sub Ψ (N , S) xs ρ = (nc-sub Ψ N xs ρ) , sc-sub Ψ S xs ρ
+
+ nsc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ} {φ} Ψ₂ {χ} -> nsub Δ (Ψ₁ , ▹ φ << Ψ₂) χ -> cvar Φ φ -> rsub Δ Ψ₁ Φ -> nsub Δ (Ψ₁ << Ψ₂) χ
+ nsc-sub Ψ ⊡ xs ρ = ⊡
+ nsc-sub Ψ (σ , N) xs ρ = (nsc-sub Ψ σ xs ρ) , (nc-sub Ψ N xs ρ)
+ nsc-sub Ψ (σ ,[ xs' ] (s [ σ' ])) xs ρ = nsc-sub Ψ σ xs ρ ,[ xs' ] (s [ nsc-sub Ψ σ' xs ρ ])
+ nsc-sub Ψ (σ ,[ top ] (id xs')) xs ρ with ceq? Ψ xs'
+ nsc-sub Ψ (σ ,[ top ] (id .(cthatone Ψ))) xs ρ | same = nsc-sub Ψ σ xs ρ ,[ xs ] (rs-wkn _ Ψ ⊡ ρ)
+ nsc-sub Ψ (σ ,[ top ] (id .(cvar-wkn1 Ψ xs'))) xs ρ | diff xs' = (nsc-sub Ψ σ xs ρ) ,[ top ] (id xs')
+ nsc-sub Ψ (σ ,[ pop () ] id xs') xs ρ
+
+
 mutual
  n-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
  n-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
  n-sim-sub {Ω} {Δ} Ψ {.Φ'} {A} N (_,_ {Φ'} {Φ} {B} σ N') with subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ' (⊡ , ▸ B) Ψ)) (n-sim-sub (⊡ , ▸ B << Ψ) (subst (λ α → ntm Δ α A) (<<-assoc Φ (⊡ , ▸ B) Ψ) N) σ)
  ... | q = n-sub Ψ q N'
  n-sim-sub {Ω} {Δ} Ψ {.Φ'} {A} N (_,[_]_ {Φ'} {Φ} {Φ''} {φ} σ xs ρ) with subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ' (⊡ , ▹ φ) Ψ)) (n-sim-sub (⊡ , ▹ φ << Ψ) (subst (λ α → ntm Δ α A) (<<-assoc Φ (⊡ , ▹ φ) Ψ) N) σ)
- ... | q = {!!} 
+ ... | q = nc-sub Ψ q xs ρ 
