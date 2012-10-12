@@ -77,7 +77,7 @@ mutual
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
   _,_[_[_]] : ∀ {Ψ Φ₁ Φ₂ Φ₃ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (s : var Δ ($ Φ₂ [ Φ₃ ])) (σ : nsub Δ Ψ Φ₃)
               -> nsub Δ Ψ (Φ₁ , ▹ φ)
-  _∶_ : ∀ {Ψ Φ φ} (σ : nsub Δ Ψ Φ) (xs : cvar Φ φ) -> nsub Δ Ψ (Φ , ▹ φ)
+  _∶_ : ∀ {Ψ Φ φ} (σ : nsub Δ Ψ Φ) (xs : cvar Ψ φ) -> nsub Δ Ψ (Φ , ▹ φ)
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
@@ -148,7 +148,7 @@ mutual
  ns-wkn Ψ₁ Ψ₂ Ψ₃ ⊡ = ⊡
  ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ , N) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) , (n-wkn Ψ₁ Ψ₂ Ψ₃ N)
  ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ , xs [ s [ σ' ]]) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) , xs [ s [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ' ]]
- ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ ∶ xs) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) ∶ xs
+ ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ ∶ xs) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) ∶ cvar-wkn Ψ₁ Ψ₂ Ψ₃ xs
 
 {-
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
@@ -207,7 +207,7 @@ mutual
  ns-sub Ψ ⊡ M = ⊡
  ns-sub Ψ (σ , N) M = (ns-sub Ψ σ M) , (n-sub Ψ N M)
  ns-sub Ψ (σ , xs [ s [ σ' ]]) M = ns-sub Ψ σ M , xs [ s [ ns-sub Ψ σ' M ]]
- ns-sub Ψ (σ ∶ xs) M = (ns-sub Ψ σ M) ∶ xs
+ ns-sub Ψ (σ ∶ xs) M = (ns-sub Ψ σ M) ∶ cvar-str Ψ xs
 
  _◇_ : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B} -> ntm Δ Ψ A -> spine Δ Ψ A B -> ntm Δ Ψ B
  N ◇ ε = N
@@ -269,4 +269,20 @@ mutual
 n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
 n-sim-sub' N σ = n-sim-sub ⊡ N σ
 -}
+
+mutual
+ n-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
+ n-sim-sub Ψ N ⊡ = {!!} --subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
+ n-sim-sub Ψ N (σ , M) with helper (⊡ , _) Ψ N σ
+ ... | q = {!!}
+ n-sim-sub Ψ N (σ , xs [ s [ σ' ]]) with helper (⊡ , _) Ψ N σ
+ ... | q = {!!}
+ n-sim-sub Ψ N (σ ∶ xs) with helper (⊡ , _) Ψ N σ
+ ... | q = {!!}
+
+ helper : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂ << Ψ₃) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂ << Ψ₃) A
+ helper {Ω} {Δ} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} N σ = subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ Ψ₂ Ψ₃)) (n-sim-sub (Ψ₂ << Ψ₃) (subst (λ α -> ntm Δ α A) (<<-assoc Ψ₁ Ψ₂ Ψ₃) N) σ)
+
 -- Now I need all 3 kinds of meta-substitution...
+
+
