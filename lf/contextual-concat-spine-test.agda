@@ -209,7 +209,7 @@ mutual
 
  ns-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> nsub Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> nsub Δ (Ψ₁ << Ψ₂) Φ
  ns-sub Ψ ⊡ M = ⊡
- ns-sub Ψ (σ , V) M = {!!}
+ ns-sub Ψ (σ , V) M = (ns-sub Ψ σ M) , (nv-sub Ψ V M)
 
  nv-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> nval Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> nval Δ (Ψ₁ << Ψ₂) Φ
  nv-sub Ψ (▸ N) N' = ▸ (n-sub Ψ N N')
@@ -232,7 +232,7 @@ cthatone (Φ , A) = pop (cthatone Φ)
 
 data ceqV {Ω} {Ψ : tctx Ω} : ∀ {A} B Φ -> cvar ((Ψ , ▹ B) << Φ) A -> Set where
  same : ∀ {A Φ} -> ceqV A Φ (cthatone Φ)
- diff : ∀ {A B Φ} (x : cvar (Ψ << Φ) A) -> ceqV B Φ (cvar-wkn1 Φ x)
+ diff : ∀ {A B Φ} (ys : cvar (Ψ << Φ) A) -> ceqV B Φ (cvar-wkn1 Φ ys)
 
 ceq? : ∀ {Ω} {Ψ : tctx Ω} Φ {A B} (x : cvar (Ψ , ▹ A << Φ) B) -> ceqV A Φ x
 ceq? ⊡ top = same
@@ -263,6 +263,43 @@ ceq? (Ψ , A) (pop .(cvar-wkn1 Ψ x)) | diff x = diff (pop x)
  nsc-sub Ψ (σ ,[ top ] (id .(cvar-wkn1 Ψ xs'))) xs ρ | diff xs' = (nsc-sub Ψ σ xs ρ) ,[ top ] (id xs')
  nsc-sub Ψ (σ ,[ pop () ] id xs') xs ρ -}
 -}
+
+mutual
+ nc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {A} -> ntm Δ (Ψ₁ , ▹ φ << Ψ₂) A -> cvar Ψ₁ φ -> ntm Δ (Ψ₁ << Ψ₂) A
+ nc-sub Ψ (ƛ N) xs = ƛ (nc-sub (Ψ , ▸ _) N xs)
+ nc-sub Ψ (▹ x · S) xs = ▹ (tvar-str Ψ x) · sc-sub Ψ S xs
+ nc-sub Ψ ((u [ σ ]) · S) xs = (u [ nsc-sub Ψ σ xs ]) · sc-sub Ψ S xs
+ nc-sub Ψ ((p ♯[ σ ]) · S) xs = (p ♯[ nsc-sub Ψ σ xs ]) · sc-sub Ψ S xs
+ nc-sub Ψ (π x [ s [ σ ]] · S) xs = π x [ s [ nsc-sub Ψ σ xs ]] · sc-sub Ψ S xs
+
+ sc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {A B} -> spine Δ (Ψ₁ , ▹ φ << Ψ₂) A B -> cvar Ψ₁ φ -> spine Δ (Ψ₁ << Ψ₂) A B
+ sc-sub Ψ ε xs = ε
+ sc-sub Ψ (N , S) xs = (nc-sub Ψ N xs) , (sc-sub Ψ S xs)
+
+ nsc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {χ} -> nsub Δ (Ψ₁ , ▹ φ << Ψ₂) χ -> cvar Ψ₁ φ -> nsub Δ (Ψ₁ << Ψ₂) χ
+ nsc-sub Ψ ⊡ xs = ⊡
+ nsc-sub Ψ (σ , N) xs = (nsc-sub Ψ σ xs) , nvc-sub Ψ N xs
+
+ nvc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {χ} -> nval Δ (Ψ₁ , ▹ φ << Ψ₂) χ -> cvar Ψ₁ φ -> nval Δ (Ψ₁ << Ψ₂) χ
+ nvc-sub Ψ (▸ N) xs = ▸ (nc-sub Ψ N xs)
+ nvc-sub Ψ (xs [ s [ σ ]]) xs' = xs [ s [ nsc-sub Ψ σ xs' ]]
+ nvc-sub Ψ (▹ ys) xs with ceq? Ψ ys
+ nvc-sub Ψ (▹ .(cthatone Ψ)) xs     | same    = nv-wkn _ Ψ ⊡ (▹ xs)
+ nvc-sub Ψ (▹ .(cvar-wkn1 Ψ ys)) xs | diff ys = ▹ ys
+
+mutual
+ {-nc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {A} -> ntm Δ (Ψ₁ , ▹ φ << Ψ₂) A -> cvar Ψ₁ φ -> ntm Δ (Ψ₁ << Ψ₂) A
+
+ sc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {A B} -> spine Δ (Ψ₁ , ▹ φ << Ψ₂) A B -> cvar Ψ₁ φ -> spine Δ (Ψ₁ << Ψ₂) A B
+
+ nsc-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {χ} -> nsub Δ (Ψ₁ , ▹ φ << Ψ₂) χ -> cvar Ψ₁ φ -> nsub Δ (Ψ₁ << Ψ₂) χ -}
+
+ nvc2-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {Φ₂ Φ₃ χ} -> nval Δ (Ψ₁ , ▹ φ << Ψ₂) χ -> (xs : cvar Φ₂ φ) (s : var Δ ($ Φ₂ [ Φ₃ ])) (σ : nsub Δ Ψ₁ Φ₃) -> nval Δ (Ψ₁ << Ψ₂) χ
+ nvc2-sub Ψ (▸ N) xs s σ = ▸ {!!}
+ nvc2-sub Ψ (xs [ s [ σ ]]) xs' s' σ' = xs [ s [ {!!} ]]
+ nvc2-sub Ψ (▹ ys) xs s σ with ceq? Ψ ys
+ nvc2-sub Ψ (▹ .(cthatone Ψ)) xs s σ | same = nv-wkn _ Ψ ⊡ (xs [ s [ σ ]])
+ nvc2-sub Ψ (▹ .(cvar-wkn1 Ψ ys)) xs s σ | diff ys = ▹ ys
 
 {-
 mutual
