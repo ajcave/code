@@ -27,6 +27,7 @@ record tctx-elt (Ω : schema-ctx) : Set where
   which : bool
   val : elt-type which Ω
 
+-- TODO: Give a better notatioin like A ∶ type and φ ∶ cntx
 ▸₂ : ∀ {Ω} (A : tp) -> tctx-elt Ω
 ▸₂ A = type ,, A
 
