@@ -166,6 +166,8 @@ eq? (Ψ , A) (pop x) with eq? Ψ x
 eq? (Ψ , A) (pop .(thatone Ψ)) | same = same
 eq? (Ψ , A) (pop .(gvar-wkn1 Ψ x)) | diff x = diff (pop x)
 
+-- We're making clever use of elt-type here to get termination checking.
+-- Expressing the sum of var Ω * or tp by dependent pair tagging is better for termination
 mutual
  sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , (B ∶ t) << Ψ₂) A -> nval Δ Ψ₁ (B ∶ t) -> ntm Δ (Ψ₁ << Ψ₂) A
  sub-n Ψ (ƛ N) V = ƛ (sub-n (Ψ , _) N V)
