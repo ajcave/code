@@ -27,13 +27,10 @@ record tctx-elt (Ω : schema-ctx) : Set where
   which : bool
   val : elt-type which Ω
 
--- TODO: Give a better notatioin like A ∶ type and φ ∶ cntx
-▸₂ : ∀ {Ω} (A : tp) -> tctx-elt Ω
-▸₂ A = type ,, A
+con : ∀ {Ω} (b : bool) -> elt-type b Ω -> tctx-elt Ω
+con = _,,_
 
-▹₂ : ∀ {Ω} (φ : var Ω *) -> tctx-elt Ω
-▹₂ φ = cntx ,, φ
-
+syntax con t B = B ∶ t
 
 data tctx (Ω : schema-ctx) : Set where
  ⊡ : tctx Ω
@@ -74,35 +71,35 @@ infixl 10 _<<_
 -- TODO: Give also a non-normal calculus, which is convenient
 mutual
  data head {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
-  ▹ : ∀ {A} (x : gvar Ψ (▸₂ A)) -> head Δ Ψ A
+  ▹ : ∀ {A} (x : gvar Ψ (A ∶ type)) -> head Δ Ψ A
   _[_] : ∀ {A Φ} (u : var Δ (% A [ Φ ])) (σ : nsub Δ Ψ Φ) -> head Δ Ψ A
   _♯[_] : ∀ {A Φ} (p : var Δ (♯ A [ Φ ])) (σ : nsub Δ Ψ Φ) -> head Δ Ψ A
   -- This is a little out of place. Would normally be included in the spine...
-  π_[_[_]] : ∀ {Φ₁ Φ₂ A} (x : gvar Φ₁ (▸₂ A)) (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> head Δ Ψ A
+  π_[_[_]] : ∀ {Φ₁ Φ₂ A} (x : gvar Φ₁ (A ∶ type)) (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> head Δ Ψ A
  data spine {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> tp -> Set where
   ε : ∀ {C} -> spine Δ Ψ C C
   _,_ : ∀ {A B C} (N : ntm Δ Ψ A) (S : spine Δ Ψ B C) -> spine Δ Ψ (A ⇒ B) C
  data ntm {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
-  ƛ : ∀ {A B} (N : ntm Δ (Ψ , (▸₂ A)) B) -> ntm Δ Ψ (A ⇒ B)
+  ƛ : ∀ {A B} (N : ntm Δ (Ψ , (A ∶ type)) B) -> ntm Δ Ψ (A ⇒ B)
   _·_ : ∀ {A} (H : head Δ Ψ A) (S : spine Δ Ψ A i) -> ntm Δ Ψ i
  data nsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   ⊡ : ∀ {Ψ} -> nsub Δ Ψ ⊡
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : nval Δ Ψ A) -> nsub Δ Ψ (Φ , A)
  data nval {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tctx-elt Ω -> Set where
-  ▸ : ∀ {A} (N : ntm Δ Ψ A) -> nval Δ Ψ (▸₂ A)
-  _[_[_]] : ∀ {Φ₂ Φ₃ φ} (xs : gvar Φ₂ (▹₂ φ)) (s : var Δ ($ Φ₂ [ Φ₃ ])) (σ : nsub Δ Ψ Φ₃) -> nval Δ Ψ (▹₂ φ)
-  ▹ : ∀ {φ} (xs : gvar Ψ (▹₂ φ)) -> nval Δ Ψ (▹₂ φ)
+  ▸ : ∀ {A} (N : ntm Δ Ψ A) -> nval Δ Ψ (A ∶ type)
+  _[_[_]] : ∀ {Φ₂ Φ₃ φ} (xs : gvar Φ₂ (φ ∶ cntx)) (s : var Δ ($ Φ₂ [ Φ₃ ])) (σ : nsub Δ Ψ Φ₃) -> nval Δ Ψ (φ ∶ cntx)
+  ▹ : ∀ {φ} (xs : gvar Ψ (φ ∶ cntx)) -> nval Δ Ψ (φ ∶ cntx)
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
 ⟦_⟧tc Ψs (Φ , (cntx ,, φ)) = ⟦ Ψs ⟧tc Φ << (lookup Ψs φ)
-⟦_⟧tc Ψs (Φ , (type ,, A)) = ⟦ Ψs ⟧tc Φ , (▸₂ A)
+⟦_⟧tc Ψs (Φ , (type ,, A)) = ⟦ Ψs ⟧tc Φ , (A ∶ type)
 
 ⟦⟧tc-<< : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) Φ₁ Φ₂
  -> ⟦ Ψs ⟧tc (Φ₁ << Φ₂) ≡ ((⟦ Ψs ⟧tc Φ₁) << (⟦ Ψs ⟧tc Φ₂))
 ⟦⟧tc-<< Ψs Φ₁ ⊡ = refl
 ⟦⟧tc-<< Ψs Φ₁ (ψ , (cntx ,, φ)) = trans (cong (λ α → α << lookup Ψs φ) (⟦⟧tc-<< Ψs Φ₁ ψ)) (<<-assoc (⟦ Ψs ⟧tc Φ₁) (⟦ Ψs ⟧tc ψ) (lookup Ψs φ))
-⟦⟧tc-<< Ψs Φ₁ (ψ , (type ,, A)) = cong (λ α → α , ▸₂ A) (⟦⟧tc-<< Ψs Φ₁ ψ)
+⟦⟧tc-<< Ψs Φ₁ (ψ , (type ,, A)) = cong (λ α → α , (A ∶ type)) (⟦⟧tc-<< Ψs Φ₁ ψ)
 
 ⟦_⟧mt : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (U : mtp Ω₁) -> mtp Ω₂
 ⟦_⟧mt Ψs ($ Ψ [ Φ ]) = $ (⟦ Ψs ⟧tc Ψ) [ ⟦ Ψs ⟧tc Φ ]
@@ -116,7 +113,7 @@ mutual
 <<gv x ⊡ = x
 <<gv x (Ψ , A') = pop (<<gv x Ψ)
 
-⟦_⟧tv : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Φ : tctx Ω₁} {A} -> gvar Φ (▸₂ A) -> gvar (⟦ Ψs ⟧tc Φ) (▸₂ A)
+⟦_⟧tv : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Φ : tctx Ω₁} {A} -> gvar Φ (A ∶ type) -> gvar (⟦ Ψs ⟧tc Φ) (A ∶ type)
 ⟦_⟧tv Ψs top = top
 ⟦_⟧tv Ψs {Φ , (cntx ,, φ)} (pop x) = <<gv (⟦ Ψs ⟧tv x) (lookup Ψs φ)
 ⟦_⟧tv Ψs {Φ , (type ,, A)} (pop x) = pop (⟦ Ψs ⟧tv x)
@@ -141,7 +138,7 @@ mutual
  s-wkn Ψ₁ Ψ₂ Ψ₃ (N , S) = (n-wkn Ψ₁ Ψ₂ Ψ₃ N) , (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
 
  n-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> ntm Δ (Ψ₁ << Ψ₃) A -> ntm Δ (Ψ₁ << Ψ₂ << Ψ₃) A
- n-wkn Ψ₁ Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn Ψ₁ Ψ₂ (Ψ₃ , ▸₂ A) N)
+ n-wkn Ψ₁ Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn Ψ₁ Ψ₂ (Ψ₃ , (A ∶ type)) N)
  n-wkn Ψ₁ Ψ₂ Ψ₃ (H · S) = (h-wkn Ψ₁ Ψ₂ Ψ₃ H) · (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
 
  ns-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> nsub Δ (Ψ₁ << Ψ₃) Φ -> nsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
@@ -170,7 +167,7 @@ eq? (Ψ , A) (pop .(thatone Ψ)) | same = same
 eq? (Ψ , A) (pop .(gvar-wkn1 Ψ x)) | diff x = diff (pop x)
 
 mutual
- sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , (t ,, B) << Ψ₂) A -> nval Δ Ψ₁ (t ,, B) -> ntm Δ (Ψ₁ << Ψ₂) A
+ sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , (B ∶ t) << Ψ₂) A -> nval Δ Ψ₁ (B ∶ t) -> ntm Δ (Ψ₁ << Ψ₂) A
  sub-n Ψ (ƛ N) V = ƛ (sub-n (Ψ , _) N V)
  sub-n Ψ (▹ x · S) V with eq? Ψ x
  sub-n Ψ (▹ .(thatone Ψ) · S) (▸ N) | same = n-wkn _ Ψ ⊡ N ◆ sub-s Ψ S (▸ N)
@@ -179,15 +176,15 @@ mutual
  sub-n Ψ ((p ♯[ σ ]) · S) V = (p ♯[ sub-ns Ψ σ V ]) · sub-s Ψ S V
  sub-n Ψ (π x [ s [ σ ]] · S) V = π x [ s [ sub-ns Ψ σ V ]] · sub-s Ψ S V
 
- sub-s : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A C} -> spine Δ (Ψ₁ , (t ,, B) << Ψ₂) A C -> nval Δ Ψ₁ (t ,, B) -> spine Δ (Ψ₁ << Ψ₂) A C
+ sub-s : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A C} -> spine Δ (Ψ₁ , (B ∶ t) << Ψ₂) A C -> nval Δ Ψ₁ (B ∶ t) -> spine Δ (Ψ₁ << Ψ₂) A C
  sub-s Ψ ε V = ε
  sub-s Ψ (N , S) V = (sub-n Ψ N V) , (sub-s Ψ S V)
 
- sub-ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> nsub Δ (Ψ₁ , (t ,, B) << Ψ₂) A -> nval Δ Ψ₁ (t ,, B) -> nsub Δ (Ψ₁ << Ψ₂) A
+ sub-ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> nsub Δ (Ψ₁ , (B ∶ t) << Ψ₂) A -> nval Δ Ψ₁ (B ∶ t) -> nsub Δ (Ψ₁ << Ψ₂) A
  sub-ns Ψ ⊡ V = ⊡
  sub-ns Ψ (σ , N) V = (sub-ns Ψ σ V) , sub-nv Ψ N V
 
- sub-nv : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {χ} -> nval Δ (Ψ₁ , (t ,, B) << Ψ₂) χ -> nval Δ Ψ₁ (t ,, B) -> nval Δ (Ψ₁ << Ψ₂) χ
+ sub-nv : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {χ} -> nval Δ (Ψ₁ , (B ∶ t) << Ψ₂) χ -> nval Δ Ψ₁ (B ∶ t) -> nval Δ (Ψ₁ << Ψ₂) χ
  sub-nv Ψ (▸ N) V = ▸ (sub-n Ψ N V)
  sub-nv Ψ (xs [ s [ σ ]]) V = xs [ s [ sub-ns Ψ σ V ]]
  sub-nv Ψ (▹ xs) V with eq? Ψ xs
