@@ -152,6 +152,7 @@ eq? (Ψ , A) (pop x) with eq? Ψ x
 eq? (Ψ , A) (pop .(thatone Ψ)) | same = same
 eq? (Ψ , A) (pop .(gvar-wkn1 Ψ x)) | diff x = diff (pop x)
 
+-- TODO: SHould be able to make this work by passing a selector, and something which computes down to the required type...
 mutual
  sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , B << Ψ₂) A -> nval Δ Ψ₁ B -> ntm Δ (Ψ₁ << Ψ₂) A
  sub-n Ψ (ƛ N) V = ƛ (sub-n (Ψ , _) N V)
