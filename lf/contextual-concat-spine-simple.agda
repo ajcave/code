@@ -153,6 +153,17 @@ eq? (Ψ , A) (pop .(thatone Ψ)) | same = same
 eq? (Ψ , A) (pop .(gvar-wkn1 Ψ x)) | diff x = diff (pop x)
 
 -- TODO: SHould be able to make this work by passing a selector, and something which computes down to the required type...
+data bool : Set where
+ true false : bool
+
+blar : bool -> schema-ctx -> Set
+blar true Ω = tp
+blar false Ω = var Ω *
+
+grar : {b : bool} -> ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) (B : blar b Ω) -> Set
+grar {true} Δ Ψ B = ntm Δ Ψ B
+grar {false} Δ Ψ B = nval Δ Ψ (▹ B)
+
 mutual
  sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , B << Ψ₂) A -> nval Δ Ψ₁ B -> ntm Δ (Ψ₁ << Ψ₂) A
  sub-n Ψ (ƛ N) V = ƛ (sub-n (Ψ , _) N V)
