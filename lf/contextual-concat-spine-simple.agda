@@ -164,6 +164,9 @@ grar : {b : bool} -> ∀ {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) (B : blar b Ω) -> S
 grar {true} Δ Ψ B = ntm Δ Ψ B
 grar {false} Δ Ψ B = nval Δ Ψ (▹ B)
 
+inj : ∀ {b Ω} -> blar b Ω -> tctx-elt Ω
+inj {b} x = ?
+
 mutual
  sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , B << Ψ₂) A -> nval Δ Ψ₁ B -> ntm Δ (Ψ₁ << Ψ₂) A
  sub-n Ψ (ƛ N) V = ƛ (sub-n (Ψ , _) N V)
@@ -202,5 +205,4 @@ mutual
  n-sim-sub Ψ N (σ , V) = sub-n Ψ (helper (⊡ , _) Ψ N σ) V
 
 -- Now I need all 3 kinds of meta-substitution...
-
 
