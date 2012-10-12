@@ -17,15 +17,15 @@ data tp : Set where
 data bool : Set where
  type cntx : bool
 
-blar : bool -> schema-ctx -> Set
-blar type Ω = tp
-blar cntx Ω = var Ω *
+elt-type : bool -> schema-ctx -> Set
+elt-type type Ω = tp
+elt-type cntx Ω = var Ω *
 
 record tctx-elt (Ω : schema-ctx) : Set where
  constructor _,,_
  field
   which : bool
-  val : blar which Ω
+  val : elt-type which Ω
 
 ▸₂ : ∀ {Ω} (A : tp) -> tctx-elt Ω
 ▸₂ A = type ,, A
@@ -171,7 +171,7 @@ eq? (Ψ , A) (pop .(gvar-wkn1 Ψ x)) | diff x = diff (pop x)
 -- TODO: SHould be able to make this work by passing a selector, and something which computes down to the required type...
 
 mutual
- sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {b} {B : blar b Ω} Ψ₂ {A} -> ntm Δ (Ψ₁ , (b ,, B) << Ψ₂) A -> nval Δ Ψ₁ (b ,, B) -> ntm Δ (Ψ₁ << Ψ₂) A
+ sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , (t ,, B) << Ψ₂) A -> nval Δ Ψ₁ (t ,, B) -> ntm Δ (Ψ₁ << Ψ₂) A
  sub-n Ψ (ƛ N) V = ƛ (sub-n (Ψ , _) N V)
  sub-n Ψ (▹ x · S) V with eq? Ψ x
  sub-n Ψ (▹ .(thatone Ψ) · S) (▸ N) | same = n-wkn _ Ψ ⊡ N ◆ sub-s Ψ S (▸ N)
@@ -180,15 +180,15 @@ mutual
  sub-n Ψ ((p ♯[ σ ]) · S) V = (p ♯[ sub-ns Ψ σ V ]) · sub-s Ψ S V
  sub-n Ψ (π x [ s [ σ ]] · S) V = π x [ s [ sub-ns Ψ σ V ]] · sub-s Ψ S V
 
- sub-s : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {b} {B : blar b Ω} Ψ₂ {A C} -> spine Δ (Ψ₁ , (b ,, B) << Ψ₂) A C -> nval Δ Ψ₁ (b ,, B) -> spine Δ (Ψ₁ << Ψ₂) A C
+ sub-s : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A C} -> spine Δ (Ψ₁ , (t ,, B) << Ψ₂) A C -> nval Δ Ψ₁ (t ,, B) -> spine Δ (Ψ₁ << Ψ₂) A C
  sub-s Ψ ε V = ε
  sub-s Ψ (N , S) V = (sub-n Ψ N V) , (sub-s Ψ S V)
 
- sub-ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {b} {B : blar b Ω} Ψ₂ {A} -> nsub Δ (Ψ₁ , (b ,, B) << Ψ₂) A -> nval Δ Ψ₁ (b ,, B) -> nsub Δ (Ψ₁ << Ψ₂) A
+ sub-ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> nsub Δ (Ψ₁ , (t ,, B) << Ψ₂) A -> nval Δ Ψ₁ (t ,, B) -> nsub Δ (Ψ₁ << Ψ₂) A
  sub-ns Ψ ⊡ V = ⊡
  sub-ns Ψ (σ , N) V = (sub-ns Ψ σ V) , sub-nv Ψ N V
 
- sub-nv : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {b} {B : blar b Ω} Ψ₂ {χ} -> nval Δ (Ψ₁ , (b ,, B) << Ψ₂) χ -> nval Δ Ψ₁ (b ,, B) -> nval Δ (Ψ₁ << Ψ₂) χ
+ sub-nv : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {χ} -> nval Δ (Ψ₁ , (t ,, B) << Ψ₂) χ -> nval Δ Ψ₁ (t ,, B) -> nval Δ (Ψ₁ << Ψ₂) χ
  sub-nv Ψ (▸ N) V = ▸ (sub-n Ψ N V)
  sub-nv Ψ (xs [ s [ σ ]]) V = xs [ s [ sub-ns Ψ σ V ]]
  sub-nv Ψ (▹ xs) V with eq? Ψ xs
