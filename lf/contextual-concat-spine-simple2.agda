@@ -172,10 +172,10 @@ mutual
  sub-n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , (B ∶ t) << Ψ₂) A -> nval Δ Ψ₁ (B ∶ t) -> ntm Δ (Ψ₁ << Ψ₂) A
  sub-n Ψ (ƛ N) V = ƛ (sub-n (Ψ , _) N V)
  sub-n Ψ (▹ x · S) V with eq? Ψ x
- sub-n Ψ (▹ .(thatone Ψ) · S) (▸ N) | same = n-wkn _ Ψ ⊡ N ◆ sub-s Ψ S (▸ N)
+ sub-n Ψ (▹ .(thatone Ψ) · S) (▸ N) | same   = n-wkn _ Ψ ⊡ N ◆ sub-s Ψ S (▸ N)
  sub-n Ψ (▹ .(gvar-wkn1 Ψ x) · S) V | diff x = ▹ x · sub-s Ψ S V
- sub-n Ψ ((u [ σ ]) · S) V = (u [ sub-ns Ψ σ V ]) · sub-s Ψ S V
- sub-n Ψ ((p ♯[ σ ]) · S) V = (p ♯[ sub-ns Ψ σ V ]) · sub-s Ψ S V
+ sub-n Ψ (u [ σ ] · S) V = u [ sub-ns Ψ σ V ] · sub-s Ψ S V
+ sub-n Ψ (p ♯[ σ ] · S) V = p ♯[ sub-ns Ψ σ V ] · sub-s Ψ S V
  sub-n Ψ (π x [ s [ σ ]] · S) V = π x [ s [ sub-ns Ψ σ V ]] · sub-s Ψ S V
 
  sub-s : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {t} {B} Ψ₂ {A C} -> spine Δ (Ψ₁ , (B ∶ t) << Ψ₂) A C -> nval Δ Ψ₁ (B ∶ t) -> spine Δ (Ψ₁ << Ψ₂) A C
@@ -190,7 +190,7 @@ mutual
  sub-nv Ψ (▸ N) V = ▸ (sub-n Ψ N V)
  sub-nv Ψ (xs [ s [ σ ]]) V = xs [ s [ sub-ns Ψ σ V ]]
  sub-nv Ψ (▹ xs) V with eq? Ψ xs
- sub-nv Ψ (▹ .(thatone Ψ)) V | same = nv-wkn _ Ψ ⊡ V
+ sub-nv Ψ (▹ .(thatone Ψ)) V      | same    = nv-wkn _ Ψ ⊡ V
  sub-nv Ψ (▹ .(gvar-wkn1 Ψ xs)) V | diff xs = ▹ xs
 
  _◆_ : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B} -> ntm Δ Ψ A -> spine Δ Ψ A B -> ntm Δ Ψ B
