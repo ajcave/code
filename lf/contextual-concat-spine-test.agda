@@ -74,10 +74,11 @@ mutual
   _·_ : ∀ {A} (H : head Δ Ψ A) (S : spine Δ Ψ A i) -> ntm Δ Ψ i
  data nsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   ⊡ : ∀ {Ψ} -> nsub Δ Ψ ⊡
-  _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
-  _,_[_[_]] : ∀ {Ψ Φ₁ Φ₂ Φ₃ φ} (σ : nsub Δ Ψ Φ₁) (xs : cvar Φ₂ φ) (s : var Δ ($ Φ₂ [ Φ₃ ])) (σ : nsub Δ Ψ Φ₃)
-              -> nsub Δ Ψ (Φ₁ , ▹ φ)
-  _∶_ : ∀ {Ψ Φ φ} (σ : nsub Δ Ψ Φ) (xs : cvar Ψ φ) -> nsub Δ Ψ (Φ , ▹ φ)
+  _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : nval Δ Ψ A) -> nsub Δ Ψ (Φ , A)
+ data nval {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tctx-elt Ω -> Set where
+  ▸ : ∀ {A} (N : ntm Δ Ψ A) -> nval Δ Ψ (▸ A)
+  _[_[_]] : ∀ {Φ₂ Φ₃ φ} (xs : cvar Φ₂ φ) (s : var Δ ($ Φ₂ [ Φ₃ ])) (σ : nsub Δ Ψ Φ₃) -> nval Δ Ψ (▹ φ)
+  ▹ : ∀ {φ} (xs : cvar Ψ φ) -> nval Δ Ψ (▹ φ)
 
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
@@ -146,9 +147,12 @@ mutual
 
  ns-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> nsub Δ (Ψ₁ << Ψ₃) Φ -> nsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
  ns-wkn Ψ₁ Ψ₂ Ψ₃ ⊡ = ⊡
- ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ , N) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) , (n-wkn Ψ₁ Ψ₂ Ψ₃ N)
- ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ , xs [ s [ σ' ]]) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) , xs [ s [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ' ]]
- ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ ∶ xs) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) ∶ cvar-wkn Ψ₁ Ψ₂ Ψ₃ xs
+ ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ , V) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) , (nv-wkn Ψ₁ Ψ₂ Ψ₃ V)
+
+ nv-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> nval Δ (Ψ₁ << Ψ₃) Φ -> nval Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
+ nv-wkn Ψ₁ Ψ₂ Ψ₃ (▸ N) = ▸ (n-wkn Ψ₁ Ψ₂ Ψ₃ N)
+ nv-wkn Ψ₁ Ψ₂ Ψ₃ (xs [ s [ σ ]]) = xs [ s [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ ]]
+ nv-wkn Ψ₁ Ψ₂ Ψ₃ (▹ xs) = ▹ (cvar-wkn Ψ₁ Ψ₂ Ψ₃ xs)
 
 {-
 η-expand : ∀ {A} {Ω} {Δ : mctx Ω} {Ψ} -> rtm Δ Ψ A -> ntm Δ Ψ A
@@ -205,9 +209,12 @@ mutual
 
  ns-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> nsub Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> nsub Δ (Ψ₁ << Ψ₂) Φ
  ns-sub Ψ ⊡ M = ⊡
- ns-sub Ψ (σ , N) M = (ns-sub Ψ σ M) , (n-sub Ψ N M)
- ns-sub Ψ (σ , xs [ s [ σ' ]]) M = ns-sub Ψ σ M , xs [ s [ ns-sub Ψ σ' M ]]
- ns-sub Ψ (σ ∶ xs) M = (ns-sub Ψ σ M) ∶ cvar-str Ψ xs
+ ns-sub Ψ (σ , V) M = {!!}
+
+ nv-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> nval Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> nval Δ (Ψ₁ << Ψ₂) Φ
+ nv-sub Ψ (▸ N) N' = ▸ (n-sub Ψ N N')
+ nv-sub Ψ (xs [ s [ σ ]]) N = xs [ s [ ns-sub Ψ σ N ]]
+ nv-sub Ψ (▹ xs) N = ▹ (cvar-str Ψ xs)
 
  _◇_ : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B} -> ntm Δ Ψ A -> spine Δ Ψ A B -> ntm Δ Ψ B
  N ◇ ε = N
@@ -273,12 +280,7 @@ n-sim-sub' N σ = n-sim-sub ⊡ N σ
 mutual
  n-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
  n-sim-sub Ψ N ⊡ = {!!} --subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
- n-sim-sub Ψ N (σ , M) with helper (⊡ , _) Ψ N σ
- ... | q = {!!}
- n-sim-sub Ψ N (σ , xs [ s [ σ' ]]) with helper (⊡ , _) Ψ N σ
- ... | q = {!!}
- n-sim-sub Ψ N (σ ∶ xs) with helper (⊡ , _) Ψ N σ
- ... | q = {!!}
+ n-sim-sub Ψ N (σ , V) = {!!}
 
  helper : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂ << Ψ₃) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂ << Ψ₃) A
  helper {Ω} {Δ} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} N σ = subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ Ψ₂ Ψ₃)) (n-sim-sub (Ψ₂ << Ψ₃) (subst (λ α -> ntm Δ α A) (<<-assoc Ψ₁ Ψ₂ Ψ₃) N) σ)
