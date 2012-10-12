@@ -182,12 +182,13 @@ mutual
  ƛ N ◆ (N' , S) = sub-n ⊡ N (▸ N') ◆ S 
 
 mutual
+ helper : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂ << Ψ₃) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂ << Ψ₃) A
+ helper {Ω} {Δ} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} N σ = subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ Ψ₂ Ψ₃)) (n-sim-sub (Ψ₂ << Ψ₃) (subst (λ α -> ntm Δ α A) (<<-assoc Ψ₁ Ψ₂ Ψ₃) N) σ)
+
  n-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
  n-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
  n-sim-sub Ψ N (σ , V) = sub-n Ψ (helper (⊡ , _) Ψ N σ) V
 
- helper : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂ << Ψ₃) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂ << Ψ₃) A
- helper {Ω} {Δ} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} N σ = subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ Ψ₂ Ψ₃)) (n-sim-sub (Ψ₂ << Ψ₃) (subst (λ α -> ntm Δ α A) (<<-assoc Ψ₁ Ψ₂ Ψ₃) N) σ)
 
 -- Now I need all 3 kinds of meta-substitution...
 
