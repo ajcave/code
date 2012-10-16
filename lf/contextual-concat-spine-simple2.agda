@@ -74,7 +74,6 @@ mutual
   ▹ : ∀ {A} (x : gvar Ψ (A ∶ type)) -> head Δ Ψ A
   _[_] : ∀ {A Φ} (u : var Δ (% A [ Φ ])) (σ : nsub Δ Ψ Φ) -> head Δ Ψ A
   _♯[_] : ∀ {A Φ} (p : var Δ (♯ A [ Φ ])) (σ : nsub Δ Ψ Φ) -> head Δ Ψ A
-  -- This is a little out of place. Would normally be included in the spine...
   π_[_[_]] : ∀ {Φ₁ Φ₂ A} (x : gvar Φ₁ (A ∶ type)) (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> head Δ Ψ A
  data spine {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> tp -> Set where
   ε : ∀ {C} -> spine Δ Ψ C C
@@ -84,7 +83,7 @@ mutual
   _·_ : ∀ {A} (H : head Δ Ψ A) (S : spine Δ Ψ A i) -> ntm Δ Ψ i
  data nsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   ⊡ : ∀ {Ψ} -> nsub Δ Ψ ⊡
-  _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : nval Δ Ψ A) -> nsub Δ Ψ (Φ , A)
+  _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (K : nval Δ Ψ A) -> nsub Δ Ψ (Φ , A)
  data nval {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tctx-elt Ω -> Set where
   ▸ : ∀ {A} (N : ntm Δ Ψ A) -> nval Δ Ψ (A ∶ type)
   _[_[_]] : ∀ {Φ₂ Φ₃ φ} (xs : gvar Φ₂ (φ ∶ cntx)) (s : var Δ ($ Φ₂ [ Φ₃ ])) (σ : nsub Δ Ψ Φ₃) -> nval Δ Ψ (φ ∶ cntx)
@@ -205,5 +204,6 @@ mutual
  n-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
  n-sim-sub Ψ N (σ , V) = sub-n Ψ (helper (⊡ , _) Ψ N σ) V
 
+-- TODO: Hmm if instead of a mutual definition, we did a tagged-with-n,r,s,ns definition, then we could have one nice notation, and even infer the n,r,s,ns implicitly
 -- Now I need all 3 kinds of meta-substitution...
 
