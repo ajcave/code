@@ -21,7 +21,11 @@ data is-path {Γ : ctx Unitz} : path Γ -> tm Γ -> Set where
 yay : ∀ {Γ} (M : tm Γ) N -> (∀ {P} -> is-path P M -> is-path P N) -> M ≡ N
 yay (▹ x) N f with f (▹ x)
 yay (▹ x) .(▹ x) f | ▹ .x = refl
-yay (ƛ M) N f = {!!}
+yay (ƛ M) N f with f (ƛ ⊡)
+yay (ƛ M) .(ƛ M') f | ƛ {.⊡} {M'} p = cong ƛ (yay M M' g)
+ where g : ∀ {Q} → is-path Q M → is-path Q M'
+       g x with f (ƛ x)
+       g x | ƛ p' = p'
 yay (M · N) N' f with f (m· ⊡)
 yay (M · N) .(M' · N') f | m·_ {.⊡} {M'} {N'} p = cong₂ _·_ (yay M M' g1) (yay N N' g2)
   where g1 : ∀ {Q} -> is-path Q M -> is-path Q M'
