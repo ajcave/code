@@ -46,14 +46,24 @@ data is-path {Γ : dctx} : path ≪ Γ ≫ -> tm ≪ Γ ≫ -> Set where
  m·_ : ∀ {P M N} (p : is-path P M) -> is-path (m· P) (M · N)
  _·n : ∀ {P M N} (p : is-path P N) -> is-path (P ·n) (M · N)
  rdx : ∀ {P F M} (p : is-path {Γ , inj₂ M} ([ wkn-vsub ]pr P) F) -> is-path P (F [ M ])
+ ▸ : ∀ {
  ⊡ : ∀ {M} -> is-path ⊡ M
 
 data reduce {Γ : dctx} : tm ≪ Γ ≫ -> tm ≪ Γ ≫ -> Set where
  ▹ : (x : dvar Γ (inj₁ *)) -> reduce (▹ ≪ x ≫v) (▹ ≪ x ≫v)
- ƛ : ∀ {P} {M} (p : reduce {Γ , inj₁ *} P M) -> reduce (ƛ P) (ƛ M)
- m·_ : ∀ {M M' N N'} (r1 : reduce M M') (r2 : reduce N N') -> reduce (M · N) (M' · N')
- rdx : ∀ {P F M} (p : reduce {Γ , inj₂ M} F ([ wkn-vsub ]r P)) -> reduce (F [ M ]) P
+ ƛ : ∀ {P} {M} (r : reduce {Γ , inj₁ *} P M) -> reduce (ƛ P) (ƛ M)
+ _·_ : ∀ {M M' N N'} (r1 : reduce M M') (r2 : reduce N N') -> reduce (M · N) (M' · N')
+ rdx : ∀ {P F M} (r : reduce {Γ , inj₂ M} F ([ wkn-vsub ]r P)) -> reduce (F [ M ]) P
 
+
+path-preserved : ∀ {Γ : dctx} {M U : tm ≪ Γ ≫} {P} -> reduce M U -> is-path P M -> is-path P U
+path-preserved (▹ x) p = {!!}
+path-preserved (ƛ r) (ƛ p) = ƛ (path-preserved r p)
+path-preserved (ƛ r) ⊡ = ⊡
+path-preserved (r1 · r2) (m· p) = m· path-preserved r1 p
+path-preserved (r1 · r2) (p ·n) = path-preserved r2 p ·n
+path-preserved (r1 · r2) ⊡ = ⊡
+path-preserved (rdx p) p' = {!!}
 
 {-
 yay : ∀ {Γ} (M : tm Γ) N -> (∀ {P} -> is-path P M -> is-path P N) -> M ≡ N
