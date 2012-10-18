@@ -48,6 +48,13 @@ data is-path {Γ : dctx} : path ≪ Γ ≫ -> tm ≪ Γ ≫ -> Set where
  rdx : ∀ {P F M} (p : is-path {Γ , inj₂ M} ([ wkn-vsub ]pr P) F) -> is-path P (F [ M ])
  ⊡ : ∀ {M} -> is-path ⊡ M
 
+data reduce {Γ : dctx} : tm ≪ Γ ≫ -> tm ≪ Γ ≫ -> Set where
+ ▹ : (x : dvar Γ (inj₁ *)) -> reduce (▹ ≪ x ≫v) (▹ ≪ x ≫v)
+ ƛ : ∀ {P} {M} (p : reduce {Γ , inj₁ *} P M) -> reduce (ƛ P) (ƛ M)
+ m·_ : ∀ {M M' N N'} (r1 : reduce M M') (r2 : reduce N N') -> reduce (M · N) (M' · N')
+ rdx : ∀ {P F M} (p : reduce {Γ , inj₂ M} F ([ wkn-vsub ]r P)) -> reduce (F [ M ]) P
+
+
 {-
 yay : ∀ {Γ} (M : tm Γ) N -> (∀ {P} -> is-path P M -> is-path P N) -> M ≡ N
 yay (▹ x) N f with f (▹ x)
