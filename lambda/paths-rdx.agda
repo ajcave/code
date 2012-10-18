@@ -3,7 +3,7 @@ open import FinMap
 open import Unit
 open import lambda-rdx
 open import Data.Sum
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 data path (Γ : ctx Unitz) : Set where
  ▹ : (x : var Γ *) -> path Γ
@@ -11,6 +11,13 @@ data path (Γ : ctx Unitz) : Set where
  m·_ : (P : path Γ) -> path Γ
  _·n : (P : path Γ) -> path Γ
  ⊡ : path Γ
+
+[_]pr : ∀ {Γ Δ} (σ : vsubst Γ Δ) -> (M : path Γ) -> path Δ
+[_]pr σ (▹ x) = ▹ (lookup σ x)
+[_]pr σ (ƛ P) = ƛ ([ vsub-ext σ ]pr P)
+[_]pr σ (m· P) = m· [ σ ]pr P
+[_]pr σ (P ·n) = [ σ ]pr P ·n
+[_]pr σ ⊡ = ⊡
 
 mutual
  data dctx : Set where
@@ -38,7 +45,7 @@ data is-path {Γ : dctx} : path ≪ Γ ≫ -> tm ≪ Γ ≫ -> Set where
  ƛ : ∀ {P} {M} (p : is-path {Γ , inj₁ *} P M) -> is-path (ƛ P) (ƛ M)
  m·_ : ∀ {P M N} (p : is-path P M) -> is-path (m· P) (M · N)
  _·n : ∀ {P M N} (p : is-path P N) -> is-path (P ·n) (M · N)
--- rdx : ∀ 
+ rdx : ∀ {P F M} (p : is-path {Γ , inj₂ M} ([ wkn-vsub ]pr P) F) -> is-path P (F [ M ])
  ⊡ : ∀ {M} -> is-path ⊡ M
 
 {-
