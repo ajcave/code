@@ -1,5 +1,5 @@
 module nbe-correctness where
-
+open import Relation.Binary.PropositionalEquality hiding (subst ; [_] )
 record _*_ (A B : Set) : Set where
  constructor _,_
  field
@@ -12,49 +12,52 @@ record Σ {A : Set} (B : A -> Set) : Set where
   fst : A
   snd : B fst
 
+{-
 data _≡_ {A : Set} (x : A) : A -> Set where
  refl : x ≡ x
 
 {-# BUILTIN EQUALITY _≡_ #-}
-{-# BUILTIN REFL refl #-}
+{-# BUILTIN REFL refl #-} 
+
+-}
 
 postulate
- funext : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
- funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
+ funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
+ funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ {_} { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
 
-cong-app1 : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> f ≡ g -> (x : A) -> f x ≡ g x
+cong-app1 : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> f ≡ g -> (x : A) -> f x ≡ g x
 cong-app1 refl x = refl
 
 cong-app : ∀ {A B : Set} {f g : A -> B} -> f ≡ g -> {x y : A} -> x ≡ y -> f x ≡ g y
 cong-app refl refl = refl 
 
-cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+{-cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 cong f refl = refl
-
+-}
 cong1/2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> (z : B) -> f x z ≡ f y z
 cong1/2 f refl z = refl 
 
 cong2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> f x z ≡ f y w
 cong2 f refl refl = refl
 
-eq-ind : ∀ {A} (P : A -> Set) -> {x y : A} -> x ≡ y -> P x -> P y
+eq-ind : ∀ {A : Set} (P : A -> Set) -> {x y : A} -> x ≡ y -> P x -> P y
 eq-ind P refl t = t 
 
-eq-ind2 : ∀ {A B} (P : A -> B -> Set) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P x z -> P y w
+eq-ind2 : ∀ {A B : Set} (P : A -> B -> Set) -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P x z -> P y w
 eq-ind2 P refl refl t = t
 
-eq-sub1 : ∀ {A C} (P : A -> C) {t} -> {x y : A} -> x ≡ y -> P y ≡ t -> P x ≡ t
+eq-sub1 : ∀ {A C : Set} (P : A -> C) {t} -> {x y : A} -> x ≡ y -> P y ≡ t -> P x ≡ t
 eq-sub1 P refl p = p 
 
-eq-sub2 : ∀ {A B C} (P : A -> B -> C) {t} -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P y w ≡ t -> P x z ≡ t
+eq-sub2 : ∀ {A B C : Set} (P : A -> B -> C) {t} -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P y w ≡ t -> P x z ≡ t
 eq-sub2 P refl refl p = p
 
-trans : ∀ {A} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
+{-trans : ∀ {A} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
 trans refl refl = refl
 
 sym : ∀ {A} {x y : A} -> x ≡ y -> y ≡ x
 sym refl = refl
-
+-}
 record Unit : Set where
  constructor tt
 
@@ -112,7 +115,7 @@ var-dom-eq' : ∀ {A : tp -> Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> 
 var-dom-eq' f g p q z = q
 var-dom-eq' f g p q (s y) = p y
 
-var-dom-eq : ∀ {A : tp -> Set} {Γ T} {f g : ∀ {U} (x : var (Γ , T) U) -> A U} -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> _≡_ { ∀ {U} -> var (Γ , T) U -> A U } f g
+var-dom-eq : ∀ {A : tp -> Set} {Γ T} {f g : ∀ {U} (x : var (Γ , T) U) -> A U} -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> _≡_ {_} { ∀ {U} -> var (Γ , T) U -> A U } f g
 var-dom-eq {f = f} {g = g} p q = funext-imp (λ U -> funext (λ x -> var-dom-eq' f g p q x))
 
 ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (x : var (Γ1 , U) S) -> ((ext σ1) ∘ (ext σ2)) x ≡ ext (σ1 ∘ σ2) x
@@ -291,7 +294,7 @@ blah σ s' σ' z = refl
 blah σ s' σ' (s y) = compv s (extend σ s') (σ' y)
 
 blah' : ∀ {Γ1 Γ2 Γ3 T} (σ : subst Γ2 Γ3) (s : sem Γ3 T) (σ' : sub Γ1 Γ2)
- -> _≡_ {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
+ -> _≡_ {_} {subst (Γ1 , T) Γ3} ((extend σ s) • (sub-ext σ')) (extend (σ • σ') s)
 blah' σ s' σ' = funext-imp (λ U → funext (λ x → blah σ s' σ' x))
 
 -- Oh yay a PER
