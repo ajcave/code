@@ -27,3 +27,15 @@ sem (T ⇝ S) = sem T → sem S
 ⟦_⟧ (▹ x) σ = lookup σ x
 ⟦_⟧ (M · N) σ = ⟦ M ⟧ σ (⟦ N ⟧ σ)
 ⟦_⟧ (ƛ M) σ = λ x → ⟦ M ⟧ (σ , x)
+
+postulate
+ funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
+
+soundness : ∀ {Γ T} -> {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (σ : gsubst Γ sem)  -> ⟦ M1 ⟧ σ ≡ ⟦ M2 ⟧ σ
+soundness (▹ x) σ = refl
+soundness (M · N) σ = cong₂ (λ α β' → α β') (soundness M σ) (soundness N σ)
+soundness (ƛ M) σ = {!funext!}
+soundness (β M N) σ = {!!}
+soundness (η M1) σ = {!!}
+soundness (≈-trans p1 p2) σ = trans (soundness p1 σ) (soundness p2 σ)
+soundness (≈-sym p) σ = sym (soundness p σ)
