@@ -31,11 +31,16 @@ sem (T ⇝ S) = sem T → sem S
 postulate
  funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
 
+comp : ∀ {Γ Δ T} (M : tm Γ T) (σ : tsubst Γ Δ) (ρ : gsubst Δ sem) -> ⟦ [ σ ]t M ⟧ ρ ≡ ⟦ M ⟧ (gmap (λ x → ⟦ x ⟧ ρ) σ)
+comp (▹ x) σ ρ = sym (lookup-gmap (λ x' → ⟦ x' ⟧ ρ) σ x)
+comp (M · N) σ ρ = cong₂ (λ α β' → α β') (comp M σ ρ) (comp N σ ρ)
+comp (ƛ M) σ ρ = {!!}
+
 soundness : ∀ {Γ T} -> {M1 M2 : tm Γ T} -> M1 ≈ M2 -> (σ : gsubst Γ sem)  -> ⟦ M1 ⟧ σ ≡ ⟦ M2 ⟧ σ
 soundness (▹ x) σ = refl
 soundness (M · N) σ = cong₂ (λ α β' → α β') (soundness M σ) (soundness N σ)
 soundness (ƛ M) σ = {!funext!}
-soundness (β M N) σ = {!!}
-soundness (η M1) σ = {!!}
+soundness (β M N) σ = trans {!!} (sym (comp M (id-tsubst , N) σ))
+soundness (η M1) σ = {!+!}
 soundness (≈-trans p1 p2) σ = trans (soundness p1 σ) (soundness p2 σ)
 soundness (≈-sym p) σ = sym (soundness p σ)

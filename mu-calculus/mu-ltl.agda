@@ -465,6 +465,30 @@ map2 F ρ t = [ ⊡ , t ]t ([ ⊡ ]va map F ρ)
 map3 : ∀ {θ Γ A B} F -> (ρ : ⊡ , ⊡ , A ⊢ B - true) -> θ , Γ ⊢ [ A /x]p F - true -> θ , Γ ⊢ [ B /x]p F - true
 map3 F ρ t = map2 F (⊡ , ρ) t
 
+map2' : ∀ {ζ θ Γ} F {σ1 σ2 : psub ⊡ ζ} (ρ : arrow σ1 σ2) -> θ , Γ ⊢ [ σ1 ]p F - true -> θ , Γ ⊢ [ σ2 ]p F - true
+map2' (▸ P) ρ t = {!!}
+map2' (▹ A) ρ t = [ ⊡ , t ]t ([ ⊡ ]va (arrow-lookup ρ A))
+map2' (μ F) {σ1} {σ2} ρ t = rec ([ psub-ext σ1 ]p F) t (inj (subst2/3 (_,_⊢_-_ ⊡)
+  {!!} {!!} 
+  true (map2' F (ρ , {!!}) {!!})) )
+map2' (ν F) ρ t = {!!}
+map2' (○ A) ρ t = {!!}
+map2' (A ⊃ B) ρ t = {!!}
+map2' (A ∧ B) ρ t = < (map2' A ρ (fst t)) , {!!} >
+map2' (A ∨ B) ρ t = {!!}
+map2' ⊤ ρ t = {!!}
+
+map3' : ∀ {θ Γ A B} F -> (ρ : ⊡ , ⊡ , A ⊢ B - true) -> θ , Γ ⊢ [ A /x]p F - true -> θ , Γ ⊢ [ B /x]p F - true
+map3' (▸ P) ρ t = {!!}
+map3' (▹ A') ρ t = {!!}
+map3' (μ F) ρ t = rec ([ (⊡ , [ ⊡ ]pv _) , ▹ top ]p F) t (inj {!!})
+map3' (ν F) ρ t = {!!}
+map3' (○ A') ρ t = {!!}
+map3' (A' ⊃ B') ρ t = {!!}
+map3' (A' ∧ B') ρ t = < (map3' A' ρ (fst t)) , (map3' B' ρ (snd t)) >
+map3' (A' ∨ B') ρ t = {!!}
+map3' ⊤ ρ t = {!!}
+
 -- Other way to write it maybe concludes θ;Γ ⊢ F(A) -> θ;Γ ⊢ F(B) ?
 
 -- Double check that this is the same way Baelde treats fixed points
