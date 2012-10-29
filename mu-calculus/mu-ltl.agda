@@ -497,10 +497,10 @@ map2' (μ F) {σ1} {σ2} ρ t = rec ([ psub-ext σ1 ]p F) t (inj (subst2/3 (_,_�
                 (lem2 F σ2 (μ ([ psub-ext σ2 ]p F))) true
   (map2' F (ρ , ▹ top) (▹ top))) )
 
-map2' (ν F) {σ1} {σ2} ρ t = unfold ([ psub-ext σ2 ]p F) (out t) (subst2/3 (_,_⊢_-_ ⊡)
-   (cong (_,_ ⊡) (lem2 F σ1 (ν ([ psub-ext σ1 ]p F))))
-                 (lem2 F σ2 _) true
-   (map2' F (ρ , out (▹ top)) (▹ top)))
+map2' (ν F) {σ1} {σ2} ρ t = unfold ([ psub-ext σ2 ]p F) t ([ ⊡ , out (▹ top) ]t (subst2/3 (_,_⊢_-_ ⊡)
+  (cong (_,_ ⊡) (lem2 F σ1 (ν ([ psub-ext σ1 ]p F))))
+                (lem2 F σ2 (ν ([ psub-ext σ1 ]p F))) true
+  (map2' F (ρ , ▹ top) (▹ top))))
 map2' (○ A) ρ t = {!!}
 map2' (A ⊃ B) ρ t = {!!}
 map2' (A ∧ B) ρ t = < (map2' A ρ (fst t)) , {!!} >
