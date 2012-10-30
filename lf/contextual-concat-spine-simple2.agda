@@ -246,5 +246,11 @@ mutual
  ⟦_⟧mr θ (N , S) = (⟦ θ ⟧mn N) , (⟦ θ ⟧mr S)
 
  ⟦_⟧mns : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A} -> gsubst Δ1 (foo Δ2) -> nsub Δ1 Ψ A -> nsub Δ2 Ψ A
- ⟦_⟧mns θ σ = {!!}
+ ⟦_⟧mns θ ⊡ = ⊡
+ ⟦_⟧mns θ (σ , K) = (⟦ θ ⟧mns σ) , ⟦ θ ⟧mnv K
+
+ ⟦_⟧mnv : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A} -> gsubst Δ1 (foo Δ2) -> nval Δ1 Ψ A -> nval Δ2 Ψ A
+ ⟦_⟧mnv θ (▸ N) = ▸ (⟦ θ ⟧mn N)
+ ⟦_⟧mnv θ (xs [ s [ σ ]]) = [ [ ⟦ θ ⟧mns σ ]ns (lookup θ s) ]gv xs
+ ⟦_⟧mnv θ (▹ xs) = ▹ xs
 
