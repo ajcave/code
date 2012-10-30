@@ -28,27 +28,16 @@ unify (Arrow s1 s2) (Arrow t1 t2) = do
 unify (Product s1 s2) (Product t1 t2) = do
 	unify s1 t1
 	unify s2 t2
-unify s@(TVar x) t@(TVar y) = do
-	xv <- readSTRef x
-	yv <- readSTRef y
-	case (xv,yv) of
-	  (Nothing,Nothing) -> if x == y then return () else writeSTRef x (Just t)
-	  (Just s',_) -> unify s' t
-	  (_,Just t') -> unify s t' 
 unify s@(TVar x) t = helper t s x
 unify t s@(TVar x) = helper t s x
 unify _ _ = error "Cannot unify"
 
+-- This is buggy (rtest2 diverges) and I'm not sure why. Oh. it relies on the occurs check when we set one variable to point to the other
 helper t s x = do
   xv <- readSTRef x
   case xv of
-    Just s' -> unify s' t
-    Nothing -> case t == s of
-	         True -> return ()
-	         False -> do b <- occurs s t
-                             case b of
-                                True -> error "Can't unify: Fails occurs check"
-                                False -> writeSTRef x (Just t)
+    Just s' -> unify t s'
+    Nothing -> if t == s then return () else writeSTRef x (Just t)
 
 data PType = 
 	  PInt
