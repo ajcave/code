@@ -224,8 +224,8 @@ mutual
 [_]gv (σ , K) (pop x) = [ σ ]gv x
 
 -- TODO: Hmm if instead of a mutual definition, we did a tagged-with-n,r,s,ns definition, then we could have one nice notation, and even infer the n,r,s,ns implicitly
--- Now I need all 3 kinds of meta-substitution...
 
+-- All 3 kinds of meta-substitution
 foo : ∀ {Ω} Δ -> mtp Ω -> Set
 foo Δ ($ Ψ [ Φ ]) = nsub Δ Φ Ψ
 foo Δ (♯ A [ Φ ]) = gvar Φ (A ∶ type)
@@ -254,3 +254,4 @@ mutual
  ⟦_⟧mnv θ (xs [ s [ σ ]]) = [ [ ⟦ θ ⟧mns σ ]ns (lookup θ s) ]gv xs
  ⟦_⟧mnv θ (▹ xs) = ▹ xs
 
+-- Still need context substitution
