@@ -129,7 +129,7 @@ data cexp (Γ : ctx ctp) : ctp -> Set where
  ƛ : ∀ {Tev T S} -> cexp (⊡ , (∧ Tev) , T) S -> cexp Γ (code Tev T S)
  ≪_,_≫ : ∀ {Tev T S} -> cexp Γ (code Tev T S) -> psub Tev Γ -> cexp Γ (T ⇝ S)
  π : ∀ {Tev T} -> var Tev T -> cexp Γ (∧ Tev) -> cexp Γ T
- let* : ∀ {Δ} -> 
+ --let* : ∀ {Δ} -> 
 
 〈_〉 : tp -> ctp
 〈 i 〉 = i
