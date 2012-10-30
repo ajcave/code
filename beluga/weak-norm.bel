@@ -1,4 +1,4 @@
-% Weak normalization for STLC that goes under binders
+% Sketch of weak normalization for STLC that goes under binders
 % Author: Andrew Cave
 
 tp : type.                %name tp T.
@@ -25,6 +25,7 @@ datatype IsWeakeningOf : {g:ctx} [g. tm A] -> {h:ctx} [h. tm A] -> ctype =
 ;
 
 % This could be defined at the LF layer, but then it would require a bigger schema, and I don't want to deal with that
+% TODO: Hmm, couldn't we use a block x:tm A , neut x schema all the way through? lam even adds the assumption that neut x?
 datatype IsNormal : {g:ctx} {A:[.tp]} {M:[g.tm A]} ctype =
 | Neut : IsNeutral [g] [. i] [g. M ..] -> IsNormal [g] [.i] [g. M ..]
 | Lam : IsNormal [g,x:tm A] [.B] [g,x:tm A. M .. x] -> IsNormal [g] [.arr A B] [g. lam (\x. M .. x)]
