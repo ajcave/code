@@ -204,6 +204,47 @@ mutual
  n-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
  n-sim-sub Ψ N (σ , V) = sub-n Ψ (helper (⊡ , _) Ψ N σ) V
 
+[_]n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> nsub Δ Φ Ψ₁ -> ntm Δ Ψ₁ A -> ntm Δ Φ A
+[ σ ]n N = n-sim-sub ⊡ N σ
+
+mutual
+ helper-ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} -> nsub Δ (Ψ₁ << Ψ₂ << Ψ₃) A -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ << Ψ₂ << Ψ₃) A
+ helper-ns {Ω} {Δ} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} N σ = subst (λ α -> nsub Δ α A) (sym (<<-assoc Φ Ψ₂ Ψ₃)) (ns-sim-sub (Ψ₂ << Ψ₃) (subst (λ α -> nsub Δ α A) (<<-assoc Ψ₁ Ψ₂ Ψ₃) N) σ)
+
+ ns-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> nsub Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ << Ψ₂) A
+ ns-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → nsub Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (ns-wkn ⊡ Φ Ψ N)
+ ns-sim-sub Ψ N (σ , V) = sub-ns Ψ (helper-ns (⊡ , _) Ψ N σ) V
+
+[_]ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> nsub Δ Φ Ψ₁ -> nsub Δ Ψ₁ A -> nsub Δ Φ A
+[ σ ]ns N = ns-sim-sub ⊡ N σ
+
+[_]gv : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> nsub Δ Φ Ψ₁ -> gvar Ψ₁ A -> nval Δ Φ A
+[ ⊡ ]gv ()
+[_]gv (σ , K) top = K
+[_]gv (σ , K) (pop x) = [ σ ]gv x
+
 -- TODO: Hmm if instead of a mutual definition, we did a tagged-with-n,r,s,ns definition, then we could have one nice notation, and even infer the n,r,s,ns implicitly
 -- Now I need all 3 kinds of meta-substitution...
+
+foo : ∀ {Ω} Δ -> mtp Ω -> Set
+foo Δ ($ Ψ [ Φ ]) = nsub Δ Φ Ψ
+foo Δ (♯ A [ Φ ]) = gvar Φ (A ∶ type)
+foo Δ (% A [ Φ ]) = ntm Δ Φ A
+
+mutual
+ ⟦_⟧mn : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A} -> gsubst Δ1 (foo Δ2) -> ntm Δ1 Ψ A -> ntm Δ2 Ψ A
+ ⟦_⟧mn θ (ƛ N) = ƛ (⟦ θ ⟧mn N)
+ ⟦_⟧mn θ (▹ x · S) = ▹ x · ⟦ θ ⟧mr S
+ ⟦_⟧mn θ ((u [ σ ]) · S) = ([ ⟦ θ ⟧mns σ ]n (lookup θ u)) ◆ (⟦ θ ⟧mr S)
+ ⟦_⟧mn θ ((p ♯[ σ ]) · S) with [ ⟦ θ ⟧mns σ ]gv (lookup θ p)
+ ⟦_⟧mn θ ((p ♯[ σ ]) · S) | ▸ N = N ◆ (⟦ θ ⟧mr S)
+ ⟦_⟧mn θ (π x [ s [ σ ]] · S) with [ [ ⟦ θ ⟧mns σ ]ns (lookup θ s) ]gv x
+ ⟦_⟧mn θ (π x [ s [ σ ]] · S) | ▸ N = N ◆ ⟦ θ ⟧mr S
+
+ ⟦_⟧mr : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A B} -> gsubst Δ1 (foo Δ2) -> spine Δ1 Ψ A B -> spine Δ2 Ψ A B
+ ⟦_⟧mr θ ε = ε
+ ⟦_⟧mr θ (N , S) = (⟦ θ ⟧mn N) , (⟦ θ ⟧mr S)
+
+ ⟦_⟧mns : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A} -> gsubst Δ1 (foo Δ2) -> nsub Δ1 Ψ A -> nsub Δ2 Ψ A
+ ⟦_⟧mns θ σ = {!!}
 
