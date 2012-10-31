@@ -471,21 +471,16 @@ map3 F ρ t = map2 F (⊡ , ρ) t
 
 lem : ∀ {ζ1 ζ2 ζ3} F (σ1 : psub ζ2 ζ1) (σ2 : psub ζ3 ζ2) A -> ([ σ2 , A ]p ([ psub-ext σ1 ]p F)) ≡ ([ (σ2 • σ1) , A ]p F)
 lem F σ1 σ2 A = begin
-  [ σ2 , A ]p ([ psub-ext σ1 ]p F)
-   ≡⟨ sub-funct (σ2 , A) (psub-ext σ1) F ⟩
-  [ ((σ2 , A) • (wkn-vsub ◆ σ1)) , A ]p F
-   ≡⟨ cong (λ α → [ α , A ]p F) (assocv (σ2 , A) (wkn-vsub) σ1) ⟩
-  [ (((σ2 , A) ⁌ wkn-vsub) • σ1) , A ]p F
-   ≡⟨ cong (λ α → [ α , A ]p F) (sub-map-resp-≈ (λ x → cong (λ α → [ α ]p x) (comma-wkn σ2 A)) σ1) ⟩
+  [ σ2 , A ]p ([ psub-ext σ1 ]p F)             ≡⟨ sub-funct (σ2 , A) (psub-ext σ1) F ⟩
+  [ ((σ2 , A) • (wkn-vsub ◆ σ1)) , A ]p F      ≡⟨ cong (λ α → [ α , A ]p F) (assocv (σ2 , A) (wkn-vsub) σ1) ⟩
+  [ (((σ2 , A) ⁌ wkn-vsub) • σ1) , A ]p F      ≡⟨ cong (λ α → [ α , A ]p F) (sub-map-resp-≈ (λ x → cong (λ α → [ α ]p x) (comma-wkn σ2 A)) σ1) ⟩
   [ (σ2 • σ1) , A ]p F
   ∎
 
 lem2 : ∀ {ζ1} F (σ1 : psub ⊡ ζ1) A -> ([ ⊡ , A ]p ([ psub-ext σ1 ]p F)) ≡ ([ σ1 , A ]p F)
 lem2 F σ1 A = begin
-  [ ⊡ , A ]p ([ psub-ext σ1 ]p F)
-    ≡⟨ lem F σ1 ⊡ A ⟩
-  [ (⊡ • σ1) , A ]p F
-    ≡⟨ cong (λ α → [ α , A ]p F) (sub-map-id σ1) ⟩
+  [ ⊡ , A ]p ([ psub-ext σ1 ]p F)           ≡⟨ lem F σ1 ⊡ A ⟩
+  [ (⊡ • σ1) , A ]p F                       ≡⟨ cong (λ α → [ α , A ]p F) (sub-map-id σ1) ⟩
   [ σ1 , A ]p F
   ∎
 
