@@ -316,9 +316,5 @@ mutual
  ⟦_⟧cnv {Ω₁} {Ω₂} {Δ} {.(Ψ₁ , (cntx ,, φ) << Ψ₂)} {cntx ,, φ} Ψs (▹ xs) | con2 Ψ₁ .φ Ψ₂ = 
   subst (λ α → nsub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (Ψ₁ , (φ ∶ cntx)) Ψ₂))
    (ns-id' (⟦ Ψs ⟧tc Ψ₁) (lookup Ψs φ) (⟦ Ψs ⟧tc Ψ₂))
-    {-subst (λ α → nsub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (Ψ₁ , (φ ∶ cntx)) Ψ₂))
-     (ns-wkn (⟦ Ψs ⟧tc Ψ₁ << lookup Ψs φ) (⟦ Ψs ⟧tc Ψ₂) ⊡
-   (subst (λ α → nsub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (trans (<<-assoc ⊡ (⟦ Ψs ⟧tc Ψ₁) (lookup Ψs φ)) (<<-idl (⟦ Ψs ⟧tc Ψ₁ << lookup Ψs φ))) (ns-wkn ⊡ (⟦ Ψs ⟧tc Ψ₁) (lookup Ψs φ)
-   (subst (λ α → nsub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (<<-idl (lookup Ψs φ))) ns-id)))) -}
 
  
