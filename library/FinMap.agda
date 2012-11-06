@@ -101,3 +101,5 @@ cmap f (ψ , T) = (cmap f ψ) , (f T)
 cmap-var : ∀ {a b} {A : Set a} {B : Set b} (f : A -> B) {Ψ : ctx A} {T} (x : var Ψ T) -> var (cmap f Ψ) (f T)
 cmap-var f top = top
 cmap-var f (pop y) = pop (cmap-var f y)
+
+-- id-v-right
