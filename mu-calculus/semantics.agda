@@ -128,8 +128,8 @@ _·⁺_ : ∀ {Γ B C} -> Γ ⇒ (B ⊃⁺ C) -> Γ ⇒ B -> Γ ⇒ C
 ⟦ out M ⟧e = {!!}
 ⟦ mu-ltl.unfold F M N ⟧e = {!!}
 ⟦ < M , N > ⟧e = {!!}
-⟦ fst M ⟧e = {!!}
-⟦ snd M ⟧e = {!!}
+⟦ fst M ⟧e = π₁⁺ ∘⁺ ⟦ M ⟧e
+⟦ snd M ⟧e = π₂⁺ ∘⁺ ⟦ M ⟧e
 ⟦ inl M ⟧e = {!!}
 ⟦ inr M ⟧e = {!!}
 ⟦ case M N1 N2 ⟧e = {!!}
