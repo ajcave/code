@@ -4,7 +4,7 @@ open import mu-ltl
 open import Data.Sum
 open import Data.Nat
 open import FinMap
-open import Coinduction
+open import Coinduction hiding (unfold)
 open import Product
 open import Unit
 open import Data.Empty
@@ -207,8 +207,8 @@ id⁺ A = (λ α x → x) , (λ β≤ωα x → refl)
 ∧⁺-assoc {A} {B} {C} = ∧⁺-assoc' A B C
 
 
-λ⁺ : ∀ {Γ B C} -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ (B ⊃⁺ C)
-λ⁺ {Γ} {B} {C} (t , nt) = record {
+λ⁺ : ∀ {B Γ C} -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ (B ⊃⁺ C)
+λ⁺ {B} {Γ} {C} (t , nt) = record {
         η = λ α γ -> record {
               f = λ β β≤ωα b → t β ((Γ ₂) β≤ωα γ , b);
               natural = (λ β≤ωα γ≤ωβ x → trans (sym (nt γ≤ωβ (obj.ωmap Γ β≤ωα γ , x))) (cong (t _) (cong₂ _,_ (sym (obj.fcomp Γ β≤ωα γ≤ωβ γ)) refl)))
@@ -228,21 +228,20 @@ _·⁺_ {Γ} (t , mt) (u , mu) = record {
        (sym (_⊃₁_.natural (t α x) ≤ω-refl β≤ωα (u α x)))
   }
 
-
-⟦_⟧e : ∀ {θ Γ T} -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
-⟦ ▹ x ⟧e = {!!}
-⟦ ƛ M ⟧e = λ⁺ (⟦ M ⟧e ∘⁺ ∧⁺-assoc)
-⟦ M · N ⟧e = ⟦ M ⟧e ·⁺ ⟦ N ⟧e
-⟦ let-◦ M N ⟧e = {!!}
-⟦ ◦ M ⟧e = {!!}
-⟦ inj M ⟧e = {!!}
-⟦ rec F M N ⟧e = {!!}
-⟦ out M ⟧e = {!!}
-⟦ mu-ltl.unfold F M N ⟧e = {!!}
-⟦ < M , N > ⟧e = {!!}
-⟦ fst M ⟧e = π₁⁺ ∘⁺ ⟦ M ⟧e
-⟦ snd M ⟧e = π₂⁺ ∘⁺ ⟦ M ⟧e
-⟦ inl M ⟧e = {!!}
-⟦ inr M ⟧e = {!!}
-⟦ case M N1 N2 ⟧e = {!!}
-⟦ unit ⟧e = {!!}
+eval : ∀ θ Γ T -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
+eval θ Γ T (▹ x) = {!!}
+eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M ∘⁺ (∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t))
+eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
+eval θ Γ T (let-◦ M N) = {!!}
+eval θ Γ .(○ A) (◦ {A} M) = {!!}
+eval θ Γ .(μ F) (inj {F} M) = {!!}
+eval θ Γ T (rec F M N) = {!!}
+eval θ Γ .([ tt , ν F ]p F) (out {F} M) = {!!}
+eval θ Γ .(ν F) (unfold F M N) = {!!}
+eval θ Γ .(A ∧ B) (<_,_> {A} {B} M N) = {!!}
+eval θ Γ .T (fst {T} {B} M) = π₁⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (T ∧ B) M
+eval θ Γ .T (snd {B} {T} M) = π₂⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (B ∧ T) M
+eval θ Γ .(A ∨ B) (inl {A} {B} M) = {!!}
+eval θ Γ .(A ∨ B) (inr {A} {B} M) = {!!}
+eval θ Γ T (case M N1 N2) = {!!}
+eval θ Γ .⊤ unit = {!!}
