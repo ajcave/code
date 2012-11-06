@@ -33,7 +33,7 @@ obj₁ : Set₁
 obj₁ = ω+1 -> Set
 
 obj₂ : obj₁ -> Set
-obj₂ A = ∀ {α β} -> α ≤ω β -> A β -> A α
+obj₂ A = ∀ {α β} -> (α≤ωβ : α ≤ω β) -> A β -> A α
 
 record obj : Set₁ where
  field
@@ -66,8 +66,8 @@ A ₂ = obj.ωmap A
 ○⁺ A = record {
         A = ○₁ (A ₁);
         ωmap = ○₂ (A ₂);
-        fcomp = {!!};
-        fid = {!!}
+        fcomp = λ β≤ωγ α≤ωβ x → {!!};
+        fid = λ x → {!!}
        }
 
 
@@ -89,10 +89,15 @@ _∧⁺_ : obj -> obj -> obj
              fid = λ x → cong₂ _,_ (obj.fid A (proj₁ x)) (obj.fid B (proj₂ x))
            }
 
-{-
 _∨⁺_ : obj -> obj -> obj
-(A ∨⁺ B) α = A α ⊎ B α
+(A ∨⁺ B) = record {
+             A = λ α -> (A ₁) α ⊎ (B ₁) α;
+             ωmap = λ α≤ωβ → [ (λ x -> inj₁ ((A ₂) α≤ωβ x)) , (λ x → inj₂ ((B ₂) α≤ωβ x)) ]′;
+             fcomp = λ β≤ωγ α≤ωβ → λ {(inj₁ x) → cong inj₁ (obj.fcomp A β≤ωγ α≤ωβ x); (inj₂ y) → cong inj₂ (obj.fcomp B β≤ωγ α≤ωβ y)};
+             fid = λ { (inj₁ x) → cong inj₁ (obj.fid A x) ; (inj₂ y) -> cong inj₂ (obj.fid B y) }
+           }
 
+{-
 ⊤⁺ : obj
 ⊤⁺ α = Unit
 
