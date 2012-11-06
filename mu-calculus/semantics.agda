@@ -128,13 +128,19 @@ _∨⁺_ : obj -> obj -> obj
        fid = λ x → refl
      }
 
-{-
-mutual
- data ν⁺ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ωnat) : Set where
-  ⟨_⟩ : ∞ (⟦ F ⟧f (ρ , (ν⁺ F ρ)) α) -> ν⁺ F ρ α
 
- data μ⁺ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ωnat) : Set where
-  ⟨_⟩ : ⟦ F ⟧f (ρ , (μ⁺ F ρ)) α -> μ⁺ F ρ α
+mutual
+ data ν₁ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ω+1) : Set where
+  ⟨_⟩ : ∞ ((⟦ F ⟧f (ρ , (ν⁺ F ρ)) ₁) α) -> ν₁ F ρ α
+
+ ν⁺ : ∀ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) -> obj
+ ν⁺ F ρ = {!!}
+
+ data μ₁ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ω+1) : Set where
+  ⟨_⟩ : (⟦ F ⟧f (ρ , (μ⁺ F ρ)) ₁) α -> μ₁ F ρ α
+
+ μ⁺ : ∀ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) -> obj
+ μ⁺ F ρ = {!!}
 
  ⟦_⟧f : ∀ {Δ} -> functor Δ -> (ρ : gksubst Δ obj) -> obj
  ⟦_⟧f (▹ A) ρ = lookup ρ A
@@ -145,6 +151,8 @@ mutual
  ⟦_⟧f (A ∧ B) ρ = ⟦ A ⟧f ρ ∧⁺ ⟦ B ⟧f ρ
  ⟦_⟧f (A ∨ B) ρ = ⟦ A ⟧f ρ ∨⁺ ⟦ B ⟧f ρ
  ⟦_⟧f ⊤ ρ = ⊤⁺
+
+{-
 
 ⟦_⟧t : prop -> obj
 ⟦ A ⟧t = ⟦ A ⟧f tt
