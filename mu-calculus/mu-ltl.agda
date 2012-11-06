@@ -78,12 +78,8 @@ vsub-ext σ = (sub-map pop σ) , top -}
 record type : Set where
  constructor #prop
 
-postulate
- atomic-prop : Set
-
 mutual
  data functor (ζ : ctx type) : Set where
-  ▸ : (P : atomic-prop) -> functor ζ
   ▹ : (A : var ζ #prop) -> functor ζ
   μ ν : (F : functor (ζ , #prop)) -> functor ζ
   ○ : (A : functor ζ) -> functor ζ
@@ -98,7 +94,6 @@ psub : ∀ (ζ1 ζ2 : ctx type) -> Set
 psub ζ1 ζ2 = sub (const1 (functor ζ1)) ζ2
 
 [_]pv : ∀ {ζ1 ζ2} -> vsub ζ2 ζ1 -> functor ζ1 -> functor ζ2
-[ σ ]pv (▸ P) = ▸ P
 [ σ ]pv (▹ A) = ▹ ([ σ ]v A)
 [ σ ]pv (μ F) = μ ([ vsub-ext σ ]pv F)
 [ σ ]pv (ν F) = ν ([ vsub-ext σ ]pv F)
@@ -119,7 +114,6 @@ psub-ext : ∀ {ζ1 ζ2} -> psub ζ1 ζ2 -> psub (ζ1 , #prop) (ζ2 , #prop)
 psub-ext σ = (psub-wkn σ) , ▹ top
 
 [_]p : ∀ {ζ1 ζ2} -> psub ζ2 ζ1 -> functor ζ1 -> functor ζ2
-[ σ ]p (▸ P) = ▸ P
 [ σ ]p (▹ A) = [ σ ]v A
 [ σ ]p (μ F) = μ ([ psub-ext σ ]p F)
 [ σ ]p (ν F) = ν ([ psub-ext σ ]p F)
@@ -199,7 +193,6 @@ ext-funct-vv : ∀ {A} {ζ1 ζ2 ζ3} {T} (σ1 : vsub {A} ζ1 ζ2) (σ2 : vsub ζ
 ext-funct-vv σ1 σ2 = cong1st _,_ (trans (trans (sub-map-funct _ pop σ2) (sub-map-resp-≈ (map-lookup pop σ1) σ2)) (sym (sub-map-funct pop [ σ1 ]v σ2))) top
 
 pvsub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]pv) ≈ [ σ1 ⁌ σ2 ]pv
-pvsub-pvsub-funct σ1 σ2 (▸ P) = refl
 pvsub-pvsub-funct σ1 σ2 (▹ A) = cong ▹ (vsub-vsub-funct σ1 σ2 A)
 pvsub-pvsub-funct σ1 σ2 (μ F) = cong μ (trans (pvsub-pvsub-funct (vsub-ext σ1) (vsub-ext σ2) F) (cong1st [_]pv (ext-funct-vv _ _) F))
 pvsub-pvsub-funct σ1 σ2 (ν F) = cong ν (trans (pvsub-pvsub-funct (vsub-ext σ1) (vsub-ext σ2) F) (cong1st [_]pv (ext-funct-vv _ _) F))
@@ -213,7 +206,6 @@ ext-funct-pv : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ((
 ext-funct-pv σ1 σ2 = cong1st _,_ (trans (trans (sub-map-funct _ pop σ2) (sub-map-resp-≈ (λ x → sym (pvsub-vsub-funct _ σ1 x)) σ2)) (sym (sub-map-funct _ _ σ2))) (▹ top)
 
 sub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]pv) ≈ [ σ1 ◦ σ2 ]p
-sub-pvsub-funct σ1 σ2 (▸ P) = refl
 sub-pvsub-funct σ1 σ2 (▹ A) = vsub-vsub-funct σ1 σ2 A
 sub-pvsub-funct σ1 σ2 (μ F) = cong μ (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p (ext-funct-pv _ _) F))
 sub-pvsub-funct σ1 σ2 (ν F) = cong ν (trans (sub-pvsub-funct (psub-ext σ1) (vsub-ext σ2) F) (cong1st [_]p (ext-funct-pv _ _) F))
@@ -230,7 +222,6 @@ ext-funct-vp : ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ((
 ext-funct-vp σ1 σ2 = cong1st _,_ (trans (assocvv _ _ _) (trans (sub-map-resp-≈ (λ x → trans (cong1st [_]pv (ext-wkn2 σ1) x) (sym (pvsub-pvsub-funct _ _ x))) σ2) (sym (sub-map-funct _ _ σ2)))) (▹ top)
 
 pvsub-sub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]p) ≈ [ σ1 ◆ σ2 ]p
-pvsub-sub-funct σ1 σ2 (▸ P) = refl
 pvsub-sub-funct σ1 σ2 (▹ A) = pvsub-vsub-funct σ1 σ2 A
 pvsub-sub-funct σ1 σ2 (μ F) = cong μ (trans (pvsub-sub-funct (vsub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct-vp σ1 σ2) F))
 pvsub-sub-funct σ1 σ2 (ν F) = cong ν (trans (pvsub-sub-funct (vsub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct-vp σ1 σ2) F))
@@ -248,7 +239,6 @@ ext-funct σ1 σ2 = cong1st _,_ (trans (assocv _ _ _) (trans (sub-map-resp-≈ (
 
 -- TODO: Take advantage of generic traversal to get functorality
 sub-funct : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> ([ σ1 ]p ∘ [ σ2 ]p) ≈ [ σ1 • σ2 ]p
-sub-funct σ1 σ2 (▸ P) = refl
 sub-funct σ1 σ2 (▹ A) = sub-vsub-funct σ1 σ2 A
 sub-funct σ1 σ2 (μ F) = cong μ (trans (sub-funct (psub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct σ1 σ2) F))
 sub-funct σ1 σ2 (ν F) = cong ν (trans (sub-funct (psub-ext σ1) (psub-ext σ2) F) (cong1st [_]p (ext-funct σ1 σ2) F))
@@ -265,7 +255,6 @@ sub-v-id top = refl
 sub-v-id (pop y) = trans (sym (pvsub-vsub-funct wkn-vsub id-psub y)) (trans (cong [ wkn-vsub ]pv (sub-v-id y)) (cong ▹ (trans (map-lookup pop id-vsub y) (cong pop (vsub-v-id y)))))
 
 sub-id : ∀ {ζ1} (M : functor ζ1) -> [ id-psub ]p M ≡ M
-sub-id (▸ P) = refl
 sub-id (▹ A) = sub-v-id A
 sub-id (μ F) = cong μ (sub-id F)
 sub-id (ν F) = cong ν (sub-id F)
@@ -439,7 +428,6 @@ arrow-lookup (θ , N) top = N
 arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
 
 map : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
-map (▸ P) θ = ▹ top
 map (▹ A) θ = arrow-lookup θ A
 map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡)
   (cong (_,_ ⊡) (trans (sub-funct _ _ F) (cong1st [_]p (cong1st _,_ (trans (assocv _ _ σ1) (sub-map-id σ1)) _) F)))

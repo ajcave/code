@@ -1,5 +1,8 @@
 module interpreter where
 open import mu-ltl
+open import FinMap
+open import Product
+open import Unit
 
 mutual
  data _,_⊢_⇓ (θ : ctx prop) (Γ : ctx prop) : prop -> Set where
@@ -90,10 +93,10 @@ eval (◦ M) = ◦ (eval M)
 eval (inj M) = inj (eval M)
 eval (rec F M N) with eval M
 eval (rec F M N) | ▸ M' = ▸ (rec F M' (eval N))
-eval (rec F M N) | inj M' = eval ([ ⊡ , (map3 F (rec F (▹ top) N) (ninj M')) ]t ([ ⊡ ]va N))
+eval (rec F M N) | inj M' = eval ([ tt , (map3 F (rec F (▹ top) N) (ninj M')) ]t ([ tt ]va N))
 eval (out M) with eval M
 eval (out M) | ▸ M' = ▸ (out M')
-eval (out M) | unfold F M' N = eval (map3 F (unfold F (▹ top) (ninj N)) ([ ⊡ , (ninj M') ]t ([ ⊡ ]va ninj N)))
+eval (out M) | unfold F M' N = eval (map3 F (unfold F (▹ top) (ninj N)) ([ tt , (ninj M') ]t ([ tt ]va ninj N)))
 eval (unfold F M N) = unfold F (eval M) (eval N)
 eval < M , N > = < (eval M) , (eval N) >
 eval (fst M) with eval M
