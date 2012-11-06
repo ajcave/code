@@ -134,13 +134,18 @@ mutual
   ⟨_⟩ : ∞ ((⟦ F ⟧f (ρ , (ν⁺ F ρ)) ₁) α) -> ν₁ F ρ α
 
  ν⁺ : ∀ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) -> obj
- ν⁺ F ρ = {!!}
+ ν⁺ F ρ = record { A = ν₁ F ρ; ωmap = νωmap; fcomp = {!!}; fid = {!!} }
+  where νωmap : {β α : ω+1} → β ≤ω α → ν₁ F ρ α → ν₁ F ρ β
+        νωmap β≤ωα ⟨ y ⟩ = ⟨ (♯ (⟦ F ⟧f (ρ , ν⁺ F ρ) ₂) β≤ωα (♭ y)) ⟩
 
  data μ₁ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ω+1) : Set where
   ⟨_⟩ : (⟦ F ⟧f (ρ , (μ⁺ F ρ)) ₁) α -> μ₁ F ρ α
 
+
  μ⁺ : ∀ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) -> obj
- μ⁺ F ρ = {!!}
+ μ⁺ F ρ = record { A = μ₁ F ρ; ωmap = μωmap; fcomp = {!!}; fid = {!!} }
+  where μωmap : {β α : ω+1} → β ≤ω α → μ₁ F ρ α → μ₁ F ρ β
+        μωmap β≤ωα ⟨ y ⟩ = ⟨ ((⟦ F ⟧f (ρ , (μ⁺ F ρ))) ₂) β≤ωα y ⟩
 
  ⟦_⟧f : ∀ {Δ} -> functor Δ -> (ρ : gksubst Δ obj) -> obj
  ⟦_⟧f (▹ A) ρ = lookup ρ A
