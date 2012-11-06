@@ -29,11 +29,22 @@ _∘ω_ : ∀ {α β γ} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β) -> 
 inj₁ n≤m ∘ω inj₁ n≤m' = inj₁ (begin _ ≤⟨ n≤m' ⟩ _ ≤⟨ n≤m ⟩ (_ ∎))
 inj₂ ∘ω _ = inj₂
 
+≤-unique : ∀ {n m} (p1 p2 : n ≤ m) -> p1 ≡ p2
+≤-unique z≤n z≤n = refl
+≤-unique (s≤s m≤n) (s≤s m≤n') = cong s≤s (≤-unique m≤n m≤n')
+
+≤ω-unique : ∀ {α β} (p1 p2 : α ≤ω β) -> p1 ≡ p2
+≤ω-unique (inj₁ n≤m) (inj₁ n≤m') = cong inj₁ (≤-unique n≤m n≤m')
+≤ω-unique inj₂ inj₂ = refl
+
+∘ω-assoc : ∀ {α β γ ε} {γ≤ωε : γ ≤ω ε} {β≤ωγ : β ≤ω γ} {α≤ωβ : α ≤ω β} -> ((γ≤ωε ∘ω β≤ωγ) ∘ω α≤ωβ) ≡ (γ≤ωε ∘ω (β≤ωγ ∘ω α≤ωβ))
+∘ω-assoc = ≤ω-unique _ _
+
 obj₁ : Set₁
 obj₁ = ω+1 -> Set
 
 obj₂ : obj₁ -> Set
-obj₂ A = ∀ {α β} -> (α≤ωβ : α ≤ω β) -> A β -> A α
+obj₂ A = ∀ {β α} -> (β≤ωα : β ≤ω α) -> A α -> A β
 
 record obj : Set₁ where
  field
@@ -70,14 +81,26 @@ A ₂ = obj.ωmap A
         fid = λ x → {!!}
        }
 
+record _⊃₁_ (A B : obj) (α : ω+1) : Set where
+ constructor _,_
+ field
+  f : ∀ β → (β≤ωα : β ≤ω α) → (A ₁) β → (B ₁) β
+  .natural : ∀ {β γ} (β≤ωα : β ≤ω α) (γ≤ωβ : γ ≤ω β) -> ∀ x -> (B ₂) γ≤ωβ (f β β≤ωα x) ≡ f γ (β≤ωα ∘ω γ≤ωβ) ((A ₂) γ≤ωβ x)
+
+⊃₁≡ : ∀ {A B : obj} {α : ω+1} {P Q : (A ⊃₁ B) α} ->  _⊃₁_.f P ≡ _⊃₁_.f Q -> P ≡ Q
+⊃₁≡ {A} {B} {α} {.f' , natural} {f' , natural'} refl = refl
 
 _⊃⁺_ : obj -> obj -> obj
 (A ⊃⁺ B) = record {
             -- TODO: Crap, this needs a naturality condition
-            A = λ α -> ∀ β → β ≤ω α → (A ₁) β → (B ₁) β;
-            ωmap = λ α≤ωβ F β' β'≤ωα x → F β' (α≤ωβ ∘ω β'≤ωα) x;
-            fcomp = λ β≤ωγ α≤ωβ x → {!!};
-            fid = λ x → {!!}
+            A = A ⊃₁ B;
+            ωmap = λ β≤ωα F → record {
+                               f = λ γ γ≤ωβ x → _⊃₁_.f F γ (β≤ωα ∘ω γ≤ωβ) x;
+                               natural = λ β≤ωα' γ≤ωβ x → trans (_⊃₁_.natural F (β≤ωα ∘ω β≤ωα') γ≤ωβ x)
+                                                                (cong (λ ρ → _⊃₁_.f F _ ρ (obj.ωmap A γ≤ωβ x)) ∘ω-assoc) 
+                              };
+            fcomp = λ β≤ωγ α≤ωβ x → ⊃₁≡ {!!};
+            fid = λ x → ⊃₁≡ {!!}
            }
 
 
@@ -97,10 +120,15 @@ _∨⁺_ : obj -> obj -> obj
              fid = λ { (inj₁ x) → cong inj₁ (obj.fid A x) ; (inj₂ y) -> cong inj₂ (obj.fid B y) }
            }
 
-{-
 ⊤⁺ : obj
-⊤⁺ α = Unit
+⊤⁺ = record {
+       A = λ x → Unit;
+       ωmap = λ α≤ωβ x → tt;
+       fcomp = λ β≤ωγ α≤ωβ x → refl;
+       fid = λ x → refl
+     }
 
+{-
 mutual
  data ν⁺ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ωnat) : Set where
   ⟨_⟩ : ∞ (⟦ F ⟧f (ρ , (ν⁺ F ρ)) α) -> ν⁺ F ρ α
