@@ -135,9 +135,12 @@ _∨⁺_ : obj -> obj -> obj
              fid = λ { (inj₁ x) → cong inj₁ (obj.fid A x) ; (inj₂ y) -> cong inj₂ (obj.fid B y) }
            }
 
+⊤₁ : obj₁
+⊤₁ = λ x → Unit
+
 ⊤⁺ : obj
 ⊤⁺ = record {
-       A = λ x → Unit;
+       A = ⊤₁;
        ωmap = λ α≤ωβ x → tt;
        fcomp = λ β≤ωγ α≤ωβ x → refl;
        fid = λ x → refl
@@ -207,6 +210,12 @@ id⁺ A = (λ α x → x) , (λ β≤ωα x → refl)
 
 <_,_>⁺ : ∀ {A B C} -> A ⇒ B -> A ⇒ C -> A ⇒ (B ∧⁺ C)
 < (t , nt) , (u , nu) >⁺ = (λ α x → t α x , u α x) , (λ β≤ωα x → cong₂ _,_ (nt β≤ωα x) (nu β≤ωα x))
+
+tt⁺ : ∀ {Γ} -> Γ ⇒ ⊤⁺
+tt⁺ {Γ} = record {
+            η = λ α x → tt;
+            natural = λ β≤ωα x → refl
+          }
 
 ∧⁺-assoc' : ∀ A B C -> ((A ∧⁺ B) ∧⁺ C) ⇒ (A ∧⁺ (B ∧⁺ C))
 ∧⁺-assoc' A B C = < (π₁⁺ {B} {A} ∘⁺ π₁⁺ {C}) , (< (π₂⁺ {A} {B} ∘⁺ π₁⁺ {C}) , (π₂⁺ {A ∧⁺ B} {C}) >⁺) >⁺
@@ -278,15 +287,57 @@ dist⁻¹ {A} {B} = record {
     natural = dist₂⁻¹ {A} {B}
   }
 
+⊤dist₁⁻¹ : ⊤₁ ⇒₁ (○₁ ⊤₁)
+⊤dist₁⁻¹ (▹ zero) x = tt
+⊤dist₁⁻¹ (▹ (suc n)) x = tt
+⊤dist₁⁻¹ ω x = tt
+
+⊤dist₂⁻¹ : ⇒₂ ⊤⁺ (○⁺ ⊤⁺) ⊤dist₁⁻¹
+⊤dist₂⁻¹ {▹ zero} {▹ zero} (inj₁ z≤n) x = refl
+⊤dist₂⁻¹ {▹ zero} {▹ (suc n)} (inj₁ ()) x
+⊤dist₂⁻¹ {▹ (suc n)} {▹ zero} (inj₁ z≤n) x = refl
+⊤dist₂⁻¹ {▹ (suc n)} {▹ (suc n')} (inj₁ (s≤s m≤n)) x = refl
+⊤dist₂⁻¹ {▹ n} {ω} () x
+⊤dist₂⁻¹ {ω} {▹ zero} β≤ωα x = refl
+⊤dist₂⁻¹ {ω} {▹ (suc n)} β≤ωα x = refl
+⊤dist₂⁻¹ {ω} {ω} β≤ωα x = refl
+
+⊤dist⁻¹ : ⊤⁺ ⇒ (○⁺ ⊤⁺)
+⊤dist⁻¹  = record {
+    η = ⊤dist₁⁻¹;
+    natural = ⊤dist₂⁻¹
+  }
+
 let-◦⁺ : ∀ θ Γ T S -> ((○⁺ θ) ∧⁺ Γ) ⇒ (○⁺ S) -> ((○⁺ (θ ∧⁺ S)) ∧⁺ Γ) ⇒ T -> ((○⁺ θ) ∧⁺ Γ) ⇒ T
 let-◦⁺ θ Γ T S m n = n ∘⁺ < dist⁻¹ {θ} {S} ∘⁺ < π₁⁺ {Γ} {○⁺ θ} , m >⁺ , π₂⁺ {○⁺ θ} {Γ} >⁺
+
+◦₁ : ∀ {A B} -> A ⇒₁ B -> ○₁ A ⇒₁ ○₁ B
+◦₁ t (▹ zero) = id
+◦₁ t (▹ (suc n)) = t (▹ n)
+◦₁ t ω = t ω
+
+◦₂ : ∀ A B f -> ⇒₂ A B f -> ⇒₂ (○⁺ A) (○⁺ B) (◦₁ f)
+◦₂ A B f t {▹ zero} {▹ zero} β≤ωα x = refl
+◦₂ A B f t {▹ zero} {▹ (suc n)} (inj₁ ()) x
+◦₂ A B f t {▹ (suc n)} {▹ zero} (inj₁ z≤n) x = refl
+◦₂ A B f t {▹ (suc n)} {▹ (suc n')} (inj₁ (s≤s m≤n)) x = t (inj₁ m≤n) x
+◦₂ A B f t {▹ n} {ω} () x
+◦₂ A B f t {ω} {▹ zero} β≤ωα x = refl
+◦₂ A B f t {ω} {▹ (suc n)} β≤ωα x = t inj₂ x
+◦₂ A B f t {ω} {ω} β≤ωα x = t β≤ωα x
+
+◦⁺ : ∀ A B -> A ⇒ B -> ○⁺ A ⇒ ○⁺ B
+◦⁺ A B (t , nt) = record {
+             η = ◦₁ t;
+             natural = ◦₂ A B t nt
+           }
 
 eval : ∀ θ Γ T -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
 eval θ Γ T (▹ x) = {!!}
 eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M ∘⁺ (∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t))
 eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
 eval θ Γ T (let-◦ {S} M N) = let-◦⁺ ⟦ θ ⟧c ⟦ Γ ⟧c ⟦ T ⟧t ⟦ S ⟧t (eval θ Γ (○ S) M) (eval (θ , S) Γ T N)
-eval θ Γ .(○ A) (◦ {A} M) = {!!}
+eval θ Γ .(○ A) (◦ {A} M) = ◦⁺ ⟦ θ ⟧c ⟦ A ⟧t ((eval ⊡ θ A M) ∘⁺ < ⊤dist⁻¹ ∘⁺ tt⁺ , (id⁺ ⟦ θ ⟧c) >⁺) ∘⁺ (π₁⁺ {⟦ Γ ⟧c} {○⁺ ⟦ θ ⟧c} )
 eval θ Γ .(μ F) (inj {F} M) = {!!}
 eval θ Γ T (rec F M N) = {!!}
 eval θ Γ .([ tt , ν F ]p F) (out {F} M) = {!!}
