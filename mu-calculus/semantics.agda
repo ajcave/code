@@ -157,53 +157,44 @@ mutual
  ⟦_⟧f (A ∨ B) ρ = ⟦ A ⟧f ρ ∨⁺ ⟦ B ⟧f ρ
  ⟦_⟧f ⊤ ρ = ⊤⁺
 
-{-
 
 ⟦_⟧t : prop -> obj
 ⟦ A ⟧t = ⟦ A ⟧f tt
+
 
 ⟦_⟧c : ctx prop -> obj
 ⟦ ⊡ ⟧c = ⊤⁺
 ⟦ Γ , T ⟧c = ⟦ Γ ⟧c ∧⁺ ⟦ T ⟧t
 
-Functorial : obj -> Set
-Functorial A = ∀ {α β} -> β ≤ω α -> A α -> A β
 
 
-
-mutual
- ⟦_⟧mf : ∀ {Δ} (F : functor Δ) {ρ : gksubst Δ obj} (P : gsubst-pred Functorial ρ) -> Functorial (⟦ F ⟧f ρ)
- ⟦_⟧mf (▹ A) ρ = lookup-pred ρ A
- ⟦_⟧mf (μ F) ρ = {!!}
- ⟦_⟧mf (ν F) ρ = {!!}
- ⟦_⟧mf (○ A) ρ = ○⁺f (⟦ A ⟧mf ρ)
- ⟦_⟧mf (A ⊃ B) ρ = {!!}
- ⟦_⟧mf (A ∧ B) ρ = {!!}
- ⟦_⟧mf (A ∨ B) ρ = {!!}
- ⟦_⟧mf ⊤ ρ = {!!}
-
-_⇒_ : obj -> obj -> Set
-A ⇒ B = ∀ α → A α → B α
+record _⇒_ (A B : obj) : Set where
+ constructor _,_
+ field
+  η : ∀ α → (A ₁) α → (B ₁) α
+  .natural : ∀ {α β} (β≤ωα : β ≤ω α) -> ∀ x -> η β ((A ₂) β≤ωα x) ≡ (B ₂) β≤ωα (η α x) 
 
 _∘⁺_ : ∀ {A B C} -> B ⇒ C -> A ⇒ B -> A ⇒ C
-f ∘⁺ g = λ α x → f α (g α x)
+(η , natural) ∘⁺ (ε , natural') = (λ α x → η α (ε α x)) , (λ β≤ωα x → trans (cong (η _) (natural' β≤ωα x)) (natural β≤ωα (ε _ x)))
 
 id⁺ : ∀ A -> A ⇒ A
-id⁺ A α x = x
+id⁺ A = (λ α x → x) , (λ β≤ωα x → refl)
+
 
 π₁⁺ : ∀ {A B} -> (A ∧⁺ B) ⇒ A
-π₁⁺ α t = proj₁ t
+π₁⁺ = (λ α x → proj₁ x) , (λ β≤ωα x → refl)
+
 
 π₂⁺ : ∀ {A B} -> (A ∧⁺ B) ⇒ B
-π₂⁺ α t = proj₂ t
+π₂⁺ = (λ α t -> proj₂ t) , (λ β≤ωα x → refl)
 
 <_,_>⁺ : ∀ {A B C} -> A ⇒ B -> A ⇒ C -> A ⇒ (B ∧⁺ C)
-< t , u >⁺ α x = (t α x) , (u α x)
+< (t , nt) , (u , nu) >⁺ = (λ α x → t α x , u α x) , (λ β≤ωα x → cong₂ _,_ (nt β≤ωα x) (nu β≤ωα x))
 
--- TODO: Build up proofs of naturality at the same time by only using nice combinators
 ∧⁺-assoc' : ∀ A B C -> ((A ∧⁺ B) ∧⁺ C) ⇒ (A ∧⁺ (B ∧⁺ C))
-∧⁺-assoc' A B C = < π₁⁺ ∘⁺ π₁⁺ , < (π₂⁺ ∘⁺ π₁⁺) , π₂⁺ >⁺ >⁺
+∧⁺-assoc' A B C = < {!!} , {!!} >⁺ --< π₁⁺ ∘⁺ π₁⁺ , < (π₂⁺ ∘⁺ π₁⁺) , π₂⁺ >⁺ >⁺
 
+{-
 ∧⁺-assoc : ∀ {A B C} -> ((A ∧⁺ B) ∧⁺ C) ⇒ (A ∧⁺ (B ∧⁺ C))
 ∧⁺-assoc {A} {B} {C} = ∧⁺-assoc' A B C
 
