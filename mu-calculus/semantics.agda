@@ -88,7 +88,7 @@ record _⊃₁_ (A B : obj) (α : ω+1) : Set where
   .natural : ∀ {β γ} (β≤ωα : β ≤ω α) (γ≤ωβ : γ ≤ω β) -> ∀ x -> (B ₂) γ≤ωβ (f β β≤ωα x) ≡ f γ (β≤ωα ∘ω γ≤ωβ) ((A ₂) γ≤ωβ x)
 
 ⊃₁≡ : ∀ {A B : obj} {α : ω+1} {P Q : (A ⊃₁ B) α} ->  _⊃₁_.f P ≡ _⊃₁_.f Q -> P ≡ Q
-⊃₁≡ {A} {B} {α} {.f' , natural} {f' , natural'} refl = refl
+⊃₁≡ {A} {B} {α} {.f , natural} {f , natural'} refl = refl
 
 _⊃⁺_ : obj -> obj -> obj
 (A ⊃⁺ B) = record {
