@@ -116,10 +116,12 @@ _⊃⁺_ : obj -> obj -> obj
             fid = λ x → ⊃₁≡ {!!}
            }
 
+_∧₁_ : obj₁ -> obj₁ -> obj₁
+(A ∧₁ B) α = A α × B α
 
 _∧⁺_ : obj -> obj -> obj
 (A ∧⁺ B) = record {
-             A = λ α -> (A ₁) α × (B ₁) α;
+             A = (A ₁) ∧₁ (B ₁);
              ωmap = λ α≤ωβ x → (A ₂) α≤ωβ (proj₁ x) , (B ₂) α≤ωβ (proj₂ x);
              fcomp = λ β≤ωγ α≤ωβ x → cong₂ _,_ (obj.fcomp A β≤ωγ α≤ωβ (proj₁ x)) (obj.fcomp B β≤ωγ α≤ωβ (proj₂ x));
              fid = λ x → cong₂ _,_ (obj.fid A (proj₁ x)) (obj.fid B (proj₂ x))
@@ -179,11 +181,17 @@ mutual
 ⟦ ⊡ ⟧c = ⊤⁺
 ⟦ Γ , T ⟧c = ⟦ Γ ⟧c ∧⁺ ⟦ T ⟧t
 
+_⇒₁_ : obj₁ -> obj₁ -> Set
+(A ⇒₁ B) = ∀ α -> A α -> B α
+
+⇒₂ : ∀ A B -> (η : (A ₁) ⇒₁ (B ₁)) -> Set
+⇒₂ A B η = ∀ {α β} (β≤ωα : β ≤ω α) -> ∀ x -> η β ((A ₂) β≤ωα x) ≡ (B ₂) β≤ωα (η α x)
+
 record _⇒_ (A B : obj) : Set where
  constructor _,_
  field
-  η : ∀ α → (A ₁) α → (B ₁) α
-  natural : ∀ {α β} (β≤ωα : β ≤ω α) -> ∀ x -> η β ((A ₂) β≤ωα x) ≡ (B ₂) β≤ωα (η α x) 
+  η : (A ₁) ⇒₁ (B ₁)
+  natural : ⇒₂ A B η
 
 _∘⁺_ : ∀ {A B C} -> B ⇒ C -> A ⇒ B -> A ⇒ C
 (η , natural) ∘⁺ (ε , natural') = (λ α x → η α (ε α x)) , (λ β≤ωα x → trans (cong (η _) (natural' β≤ωα x)) (natural β≤ωα (ε _ x)))
@@ -228,11 +236,33 @@ _·⁺_ {Γ} (t , mt) (u , mu) = record {
        (sym (_⊃₁_.natural (t α x) ≤ω-refl β≤ωα (u α x)))
   }
 
+dist₁ : ∀ {A B} -> (○₁ (A ∧₁ B)) ⇒₁ ((○₁ A) ∧₁ (○₁ B))
+dist₁ (▹ zero) = λ x → tt , tt
+dist₁ (▹ (suc n)) = id
+dist₁ ω = id
+
+dist₂ : ∀ {A B} -> ⇒₂ (○⁺ (A ∧⁺ B)) ((○⁺ A) ∧⁺ (○⁺ B)) dist₁
+dist₂ {A} {B} {▹ zero} {▹ zero} β≤ωα x = refl
+dist₂ {A} {B} {▹ zero} {▹ (suc n)} (inj₁ ()) x
+dist₂ {A} {B} {▹ (suc n)} {▹ zero} β≤ωα x = refl
+dist₂ {A} {B} {▹ (suc n)} {▹ (suc n')} (inj₁ (s≤s m≤n)) x = refl
+dist₂ {A} {B} {▹ n} {ω} () x
+dist₂ {A} {B} {ω} {▹ zero} β≤ωα x = refl
+dist₂ {A} {B} {ω} {▹ (suc n)} β≤ωα x = refl
+dist₂ {A} {B} {ω} {ω} β≤ωα x = refl
+
+dist : ∀ {A B} -> (○⁺ (A ∧⁺ B)) ⇒ ((○⁺ A) ∧⁺ (○⁺ B))
+dist {A} {B} = record {
+    η = dist₁;
+    natural = dist₂ {A} {B}
+  }
+
 eval : ∀ θ Γ T -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
 eval θ Γ T (▹ x) = {!!}
 eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M ∘⁺ (∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t))
 eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
-eval θ Γ T (let-◦ M N) = {!!}
+eval θ Γ T (let-◦ {S} M N) with eval θ Γ (○ S) M | eval (θ , S) Γ T N
+... | q1 | q2 = {!!}
 eval θ Γ .(○ A) (◦ {A} M) = {!!}
 eval θ Γ .(μ F) (inj {F} M) = {!!}
 eval θ Γ T (rec F M N) = {!!}
