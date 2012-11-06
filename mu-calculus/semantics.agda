@@ -40,6 +40,12 @@ inj₂ ∘ω _ = inj₂
 ∘ω-assoc : ∀ {α β γ ε} {γ≤ωε : γ ≤ω ε} {β≤ωγ : β ≤ω γ} {α≤ωβ : α ≤ω β} -> ((γ≤ωε ∘ω β≤ωγ) ∘ω α≤ωβ) ≡ (γ≤ωε ∘ω (β≤ωγ ∘ω α≤ωβ))
 ∘ω-assoc = ≤ω-unique _ _
 
+∘ω-idl : ∀ {α β} (α≤ωβ : α ≤ω β) -> ≤ω-refl ∘ω α≤ωβ ≡ α≤ωβ
+∘ω-idl α≤ωβ = ≤ω-unique _ _
+
+∘ω-idr : ∀ {α β} (α≤ωβ : α ≤ω β) -> α≤ωβ ∘ω ≤ω-refl ≡ α≤ωβ
+∘ω-idr α≤ωβ = ≤ω-unique _ _
+
 obj₁ : Set₁
 obj₁ = ω+1 -> Set
 
@@ -90,6 +96,9 @@ record _⊃₁_ (A B : obj) (α : ω+1) : Set where
 ⊃₁≡ : ∀ {A B : obj} {α : ω+1} {P Q : (A ⊃₁ B) α} ->  _⊃₁_.f P ≡ _⊃₁_.f Q -> P ≡ Q
 ⊃₁≡ {A} {B} {α} {.f , natural} {f , natural'} refl = refl
 
+postulate
+ funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
+
 _⊃⁺_ : obj -> obj -> obj
 (A ⊃⁺ B) = record {
             -- TODO: Crap, this needs a naturality condition
@@ -99,7 +108,7 @@ _⊃⁺_ : obj -> obj -> obj
                                natural = λ β≤ωα' γ≤ωβ x → trans (_⊃₁_.natural F (β≤ωα ∘ω β≤ωα') γ≤ωβ x)
                                                                 (cong (λ ρ → _⊃₁_.f F _ ρ (obj.ωmap A γ≤ωβ x)) ∘ω-assoc) 
                               };
-            fcomp = λ β≤ωγ α≤ωβ x → ⊃₁≡ {!!};
+            fcomp = λ β≤ωγ α≤ωβ x → ⊃₁≡ (funext (λ ε → funext (λ ε≤ωα → funext (λ x1 → cong (λ ρ → _⊃₁_.f x ε ρ x1) ∘ω-assoc))));
             fid = λ x → ⊃₁≡ {!!}
            }
 
@@ -166,8 +175,6 @@ mutual
 ⟦ ⊡ ⟧c = ⊤⁺
 ⟦ Γ , T ⟧c = ⟦ Γ ⟧c ∧⁺ ⟦ T ⟧t
 
-
-
 record _⇒_ (A B : obj) : Set where
  constructor _,_
  field
@@ -180,10 +187,8 @@ _∘⁺_ : ∀ {A B C} -> B ⇒ C -> A ⇒ B -> A ⇒ C
 id⁺ : ∀ A -> A ⇒ A
 id⁺ A = (λ α x → x) , (λ β≤ωα x → refl)
 
-
-π₁⁺ : ∀ {A B} -> (A ∧⁺ B) ⇒ A
+π₁⁺ : ∀ {B A} -> (A ∧⁺ B) ⇒ A
 π₁⁺ = (λ α x → proj₁ x) , (λ β≤ωα x → refl)
-
 
 π₂⁺ : ∀ {A B} -> (A ∧⁺ B) ⇒ B
 π₂⁺ = (λ α t -> proj₂ t) , (λ β≤ωα x → refl)
@@ -192,17 +197,33 @@ id⁺ A = (λ α x → x) , (λ β≤ωα x → refl)
 < (t , nt) , (u , nu) >⁺ = (λ α x → t α x , u α x) , (λ β≤ωα x → cong₂ _,_ (nt β≤ωα x) (nu β≤ωα x))
 
 ∧⁺-assoc' : ∀ A B C -> ((A ∧⁺ B) ∧⁺ C) ⇒ (A ∧⁺ (B ∧⁺ C))
-∧⁺-assoc' A B C = < {!!} , {!!} >⁺ --< π₁⁺ ∘⁺ π₁⁺ , < (π₂⁺ ∘⁺ π₁⁺) , π₂⁺ >⁺ >⁺
+∧⁺-assoc' A B C = < (π₁⁺ {B} {A} ∘⁺ π₁⁺ {C}) , (< (π₂⁺ {A} {B} ∘⁺ π₁⁺ {C}) , (π₂⁺ {A ∧⁺ B} {C}) >⁺) >⁺
 
-{-
 ∧⁺-assoc : ∀ {A B C} -> ((A ∧⁺ B) ∧⁺ C) ⇒ (A ∧⁺ (B ∧⁺ C))
 ∧⁺-assoc {A} {B} {C} = ∧⁺-assoc' A B C
 
+
 λ⁺ : ∀ {Γ B C} -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ (B ⊃⁺ C)
-λ⁺ t α γ β β≤α b = t β ({!!} , b)
+λ⁺ {Γ} {B} {C} (t , nt) = record {
+        η = λ α γ -> record {
+              f = λ β β≤ωα b → t β ((Γ ₂) β≤ωα γ , b);
+              natural = (λ β≤ωα γ≤ωβ x → trans (sym (nt γ≤ωβ (obj.ωmap Γ β≤ωα γ , x))) (cong (t _) (cong₂ _,_ (sym (obj.fcomp Γ β≤ωα γ≤ωβ γ)) refl)))
+            };
+        natural = (λ β≤ωα x → ⊃₁≡ {!!})
+     }
 
 _·⁺_ : ∀ {Γ B C} -> Γ ⇒ (B ⊃⁺ C) -> Γ ⇒ B -> Γ ⇒ C
-(M ·⁺ N) α γ = M α γ α (≤ω-refl {α}) (N α γ)
+_·⁺_ {Γ} (t , mt) (u , mu) = record {
+    η = λ α γ → _⊃₁_.f (t α γ) α ≤ω-refl (u α γ);
+    natural = λ {α} {β} β≤ωα x → trans
+       (trans
+           (cong (λ ρ → _⊃₁_.f ρ β ≤ω-refl (u β (obj.ωmap Γ β≤ωα x))) (mt β≤ωα x))
+           (cong₂ (λ a b → _⊃₁_.f (t α x) β a b) (trans (∘ω-idr β≤ωα)
+                                                            (sym (∘ω-idl β≤ωα)))
+                                                     (mu β≤ωα x)))
+       (sym (_⊃₁_.natural (t α x) ≤ω-refl β≤ωα (u α x)))
+  }
+
 
 ⟦_⟧e : ∀ {θ Γ T} -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
 ⟦ ▹ x ⟧e = {!!}
@@ -221,4 +242,3 @@ _·⁺_ : ∀ {Γ B C} -> Γ ⇒ (B ⊃⁺ C) -> Γ ⇒ B -> Γ ⇒ C
 ⟦ inr M ⟧e = {!!}
 ⟦ case M N1 N2 ⟧e = {!!}
 ⟦ unit ⟧e = {!!}
--}
