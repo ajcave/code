@@ -89,6 +89,28 @@ mutual
 _⇒_ : obj -> obj -> Set
 A ⇒ B = ∀ α → A α → B α
 
+_∘⁺_ : ∀ {A B C} -> B ⇒ C -> A ⇒ B -> A ⇒ C
+f ∘⁺ g = λ α x → f α (g α x)
+
+id⁺ : ∀ A -> A ⇒ A
+id⁺ A α x = x
+
+π₁⁺ : ∀ {A B} -> (A ∧⁺ B) ⇒ A
+π₁⁺ α t = proj₁ t
+
+π₂⁺ : ∀ {A B} -> (A ∧⁺ B) ⇒ B
+π₂⁺ α t = proj₂ t
+
+<_,_>⁺ : ∀ {A B C} -> A ⇒ B -> A ⇒ C -> A ⇒ (B ∧⁺ C)
+< t , u >⁺ α x = (t α x) , (u α x)
+
+-- TODO: Build up proofs of naturality at the same time by only using nice combinators
+∧⁺-assoc' : ∀ A B C -> ((A ∧⁺ B) ∧⁺ C) ⇒ (A ∧⁺ (B ∧⁺ C))
+∧⁺-assoc' A B C = < π₁⁺ ∘⁺ π₁⁺ , < (π₂⁺ ∘⁺ π₁⁺) , π₂⁺ >⁺ >⁺
+
+∧⁺-assoc : ∀ {A B C} -> ((A ∧⁺ B) ∧⁺ C) ⇒ (A ∧⁺ (B ∧⁺ C))
+∧⁺-assoc {A} {B} {C} = ∧⁺-assoc' A B C
+
 λ⁺ : ∀ {Γ B C} -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ (B ⊃⁺ C)
 λ⁺ t α γ β β≤α b = t β ({!!} , b)
 
@@ -97,8 +119,7 @@ _·⁺_ : ∀ {Γ B C} -> Γ ⇒ (B ⊃⁺ C) -> Γ ⇒ B -> Γ ⇒ C
 
 ⟦_⟧e : ∀ {θ Γ T} -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
 ⟦ ▹ x ⟧e = {!!}
-⟦ ƛ M ⟧e with ⟦ M ⟧e
-... | q = λ⁺ {!!}
+⟦ ƛ M ⟧e = λ⁺ (⟦ M ⟧e ∘⁺ ∧⁺-assoc)
 ⟦ M · N ⟧e = ⟦ M ⟧e ·⁺ ⟦ N ⟧e
 ⟦ let-◦ M N ⟧e = {!!}
 ⟦ ◦ M ⟧e = {!!}
