@@ -257,12 +257,41 @@ dist {A} {B} = record {
     natural = dist₂ {A} {B}
   }
 
+dist₁⁻¹ : ∀ {A B} -> ((○₁ A) ∧₁ (○₁ B)) ⇒₁ (○₁ (A ∧₁ B))
+dist₁⁻¹ (▹ zero) = λ x → tt
+dist₁⁻¹ (▹ (suc n)) = id
+dist₁⁻¹ ω = id
+
+dist₂⁻¹ : ∀ {A B} -> ⇒₂ ((○⁺ A) ∧⁺ (○⁺ B)) (○⁺ (A ∧⁺ B)) dist₁⁻¹
+dist₂⁻¹ {A} {B} {▹ zero} {▹ zero} β≤ωα x = refl
+dist₂⁻¹ {A} {B} {▹ zero} {▹ (suc n)} (inj₁ ()) x
+dist₂⁻¹ {A} {B} {▹ (suc n)} {▹ zero} β≤ωα x = refl
+dist₂⁻¹ {A} {B} {▹ (suc n)} {▹ (suc n')} (inj₁ (s≤s m≤n)) x = refl
+dist₂⁻¹ {A} {B} {▹ n} {ω} () x
+dist₂⁻¹ {A} {B} {ω} {▹ zero} β≤ωα x = refl
+dist₂⁻¹ {A} {B} {ω} {▹ (suc n)} β≤ωα x = refl
+dist₂⁻¹ {A} {B} {ω} {ω} β≤ωα x = refl
+
+dist⁻¹ : ∀ {A B} -> ((○⁺ A) ∧⁺ (○⁺ B)) ⇒ (○⁺ (A ∧⁺ B))
+dist⁻¹ {A} {B} = record {
+    η = dist₁⁻¹;
+    natural = dist₂⁻¹ {A} {B}
+  }
+
 eval : ∀ θ Γ T -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
 eval θ Γ T (▹ x) = {!!}
 eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M ∘⁺ (∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t))
 eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
 eval θ Γ T (let-◦ {S} M N) with eval θ Γ (○ S) M | eval (θ , S) Γ T N
-... | q1 | q2 = {!!}
+... | q1 | q2 = _∘⁺_ {(○⁺ ⟦ θ ⟧c) ∧⁺ ⟦ Γ ⟧c} {(○⁺ (⟦ θ ⟧c ∧⁺ ⟦ S ⟧t)) ∧⁺ ⟦ Γ ⟧c} {⟦ T ⟧t}
+                      q2
+                     (<_,_>⁺ {(○⁺ ⟦ θ ⟧c) ∧⁺ ⟦ Γ ⟧c} {○⁺ (⟦ θ ⟧c ∧⁺ ⟦ S ⟧t)} {⟦ Γ ⟧c}
+                            (_∘⁺_ {(○⁺ ⟦ θ ⟧c) ∧⁺ ⟦ Γ ⟧c} {(○⁺ ⟦ θ ⟧c) ∧⁺ ○⁺ ⟦ S ⟧t} {○⁺ (⟦ θ ⟧c ∧⁺ ⟦ S ⟧t)}
+                                (dist⁻¹ {⟦ θ ⟧c} {⟦ S ⟧t})
+                                (<_,_>⁺ {(○⁺ ⟦ θ ⟧c) ∧⁺ ⟦ Γ ⟧c} {○⁺ ⟦ θ ⟧c} {○⁺ ⟦ S ⟧t}
+                                        (π₁⁺ {⟦ Γ ⟧c} {○⁺ ⟦ θ ⟧c})
+                                        q1))
+                            (π₂⁺ {○⁺ ⟦ θ ⟧c} {⟦ Γ ⟧c}))
 eval θ Γ .(○ A) (◦ {A} M) = {!!}
 eval θ Γ .(μ F) (inj {F} M) = {!!}
 eval θ Γ T (rec F M N) = {!!}
