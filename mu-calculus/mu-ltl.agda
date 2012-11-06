@@ -5,12 +5,11 @@ open ≡-Reasoning
 open import FinMap
 open import Product
 open import Unit
+open import Function
 
 const1 : ∀ {A : Set} {B : Set₁} -> B -> A -> B
 const1 b _ = b
 
-_∘_ : ∀ {A B C : Set} (g : B -> C) (f : A -> B) -> A -> C
-(g ∘ f) x = g (f x)
 
 swap : ∀ {A B C : Set} (f : A -> B -> C) -> B -> A -> C
 swap f b a = f a b 

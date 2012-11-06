@@ -8,32 +8,88 @@ open import Coinduction
 open import Product
 open import Unit
 open import Data.Empty
+open import Function
+open import Relation.Binary.PropositionalEquality
 
-ωnat : Set
-ωnat = ℕ ⊎ Unit
+open ≤-Reasoning
 
-data _≤ω_ : ωnat -> ωnat -> Set where
- inj₁ : ∀ {n m} -> (n≤m : n ≤ m) -> (inj₁ n) ≤ω (inj₁ m)
- inj₂ : ∀ {α} -> α ≤ω (inj₂ tt)
+data ω+1 : Set where
+ ▹ : (n : ℕ) -> ω+1
+ ω : ω+1
+
+data _≤ω_ : ω+1 -> ω+1 -> Set where
+ inj₁ : ∀ {n m} -> (n≤m : n ≤ m) -> (▹ n) ≤ω (▹ m)
+ inj₂ : ∀ {α} -> α ≤ω ω
 
 ≤ω-refl : ∀ {α} -> α ≤ω α
-≤ω-refl {inj₁ x} = {!!}
-≤ω-refl {inj₂ y} = inj₂
+≤ω-refl {▹ n} = inj₁ (begin n ∎)
+≤ω-refl {ω} = inj₂
 
-obj : Set₁
-obj = ωnat -> Set
+_∘ω_ : ∀ {α β γ} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β) -> α ≤ω γ
+inj₁ n≤m ∘ω inj₁ n≤m' = inj₁ (begin _ ≤⟨ n≤m' ⟩ _ ≤⟨ n≤m ⟩ (_ ∎))
+inj₂ ∘ω _ = inj₂
+
+obj₁ : Set₁
+obj₁ = ω+1 -> Set
+
+obj₂ : obj₁ -> Set
+obj₂ A = ∀ {α β} -> α ≤ω β -> A β -> A α
+
+record obj : Set₁ where
+ field
+  A : obj₁
+  ωmap : obj₂ A
+  .fcomp : ∀ {α β γ} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β)  -> (ωmap (β≤ωγ ∘ω α≤ωβ)) ≈ ((ωmap α≤ωβ) ∘ (ωmap β≤ωγ))
+  .fid : ∀ {α} -> ωmap (≤ω-refl {α}) ≈ id
+
+_₁ : obj -> obj₁
+A ₁ = obj.A A
+
+_₂ : ∀ (A : obj) -> obj₂ (A ₁)
+A ₂ = obj.ωmap A
+
+○₁ : obj₁ -> obj₁
+(○₁ A) (▹ zero) = Unit
+(○₁ A) (▹ (suc n)) = A (▹ n)
+(○₁ A) ω = A ω
+
+○₂ : ∀ {A} -> obj₂ A -> obj₂ (○₁ A)
+○₂ A' {▹ zero} {▹ n'} (inj₁ n≤m) = λ x → tt
+○₂ A' {▹ (suc n)} {▹ zero} (inj₁ ())
+○₂ A' {▹ (suc n)} {▹ (suc n')} (inj₁ (s≤s m≤n)) = A' (inj₁ m≤n)
+○₂ A' {▹ zero} {ω} α≤ωβ = λ x → tt
+○₂ A' {▹ (suc n)} {ω} α≤ωβ = A' inj₂
+○₂ A' {ω} {▹ n} ()
+○₂ A' {ω} {ω} α≤ωβ = A' α≤ωβ
 
 ○⁺ : obj -> obj
-○⁺ A (inj₁ zero) = Unit
-○⁺ A (inj₁ (suc n)) = A (inj₁ n)
-○⁺ A (inj₂ tt) = A (inj₂ tt)
+○⁺ A = record {
+        A = ○₁ (A ₁);
+        ωmap = ○₂ (A ₂);
+        fcomp = {!!};
+        fid = {!!}
+       }
+
 
 _⊃⁺_ : obj -> obj -> obj
-(A ⊃⁺ B) α = ∀ β → β ≤ω α → A β → B β
+(A ⊃⁺ B) = record {
+            -- TODO: Crap, this needs a naturality condition
+            A = λ α -> ∀ β → β ≤ω α → (A ₁) β → (B ₁) β;
+            ωmap = λ α≤ωβ F β' β'≤ωα x → F β' (α≤ωβ ∘ω β'≤ωα) x;
+            fcomp = λ β≤ωγ α≤ωβ x → {!!};
+            fid = λ x → {!!}
+           }
+
 
 _∧⁺_ : obj -> obj -> obj
-(A ∧⁺ B) α = A α × B α
+(A ∧⁺ B) = record {
+             A = λ α -> (A ₁) α × (B ₁) α;
+             ωmap = λ α≤ωβ x → (A ₂) α≤ωβ (proj₁ x) , (B ₂) α≤ωβ (proj₂ x);
+             fcomp = λ β≤ωγ α≤ωβ x → cong₂ _,_ (obj.fcomp A β≤ωγ α≤ωβ (proj₁ x)) (obj.fcomp B β≤ωγ α≤ωβ (proj₂ x));
+             fid = λ x → cong₂ _,_ (obj.fid A (proj₁ x)) (obj.fid B (proj₂ x))
+           }
 
+{-
 _∨⁺_ : obj -> obj -> obj
 (A ∨⁺ B) α = A α ⊎ B α
 
@@ -67,13 +123,7 @@ mutual
 Functorial : obj -> Set
 Functorial A = ∀ {α β} -> β ≤ω α -> A α -> A β
 
-○⁺f : ∀ {A} -> Functorial A -> Functorial (○⁺ A)
-○⁺f F {inj₁ n} {inj₁ .0} (inj₁ z≤n) = λ x → tt
-○⁺f F {inj₁ .(suc n)} {inj₁ .(suc m)} (inj₁ {suc m} {suc n} (s≤s m≤n)) = F (inj₁ m≤n)
-○⁺f F {inj₂ .tt} {inj₁ zero} inj₂ = λ x → tt
-○⁺f F {inj₂ .tt} {inj₁ (suc n)} inj₂ = F inj₂
-○⁺f F {inj₁ x} {inj₂ y} ()
-○⁺f F {inj₂ y} {inj₂ y'} x = λ x' → x'
+
 
 mutual
  ⟦_⟧mf : ∀ {Δ} (F : functor Δ) {ρ : gksubst Δ obj} (P : gsubst-pred Functorial ρ) -> Functorial (⟦ F ⟧f ρ)
@@ -133,4 +183,5 @@ _·⁺_ : ∀ {Γ B C} -> Γ ⇒ (B ⊃⁺ C) -> Γ ⇒ B -> Γ ⇒ C
 ⟦ inl M ⟧e = {!!}
 ⟦ inr M ⟧e = {!!}
 ⟦ case M N1 N2 ⟧e = {!!}
-⟦ unit ⟧e = λ α _ → tt
+⟦ unit ⟧e = {!!}
+-}
