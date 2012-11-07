@@ -371,5 +371,8 @@ eval θ Γ .T (fst {T} {B} M) = π₁⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (T ∧ B
 eval θ Γ .T (snd {B} {T} M) = π₂⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (B ∧ T) M
 eval θ Γ .(A ∨ B) (inl {A} {B} M) = inj₁⁺ ⟦ B ⟧t ∘⁺ (eval θ Γ A M)
 eval θ Γ .(A ∨ B) (inr {A} {B} M) = inj₂⁺ ⟦ A ⟧t ∘⁺ eval θ Γ B M
-eval θ Γ T (case M N1 N2) = {!!}
+eval θ Γ T (case {A} {B} M N1 N2) =
+    case⁺ (eval θ Γ (A ∨ B) M)
+          (eval θ (Γ , A) T N1 ∘⁺ ∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t)
+          (eval θ (Γ , B) T N2 ∘⁺ ∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ B ⟧t)
 eval θ Γ .⊤ unit = tt⁺
