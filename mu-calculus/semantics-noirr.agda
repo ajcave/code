@@ -229,7 +229,8 @@ tt⁺ {Γ} = record {
               f = λ β β≤ωα b → t β ((Γ ₂) β≤ωα γ , b);
               natural = (λ β≤ωα γ≤ωβ x → trans (sym (nt γ≤ωβ (obj.ωmap Γ β≤ωα γ , x))) (cong (t _) (cong₂ _,_ (sym (obj.fcomp Γ β≤ωα γ≤ωβ γ)) refl)))
             };
-        natural = (λ β≤ωα x → ⊃₁≡ {!!})
+        natural = (λ β≤ωα x → ⊃₁≡ (funext (λ γ → funext (λ γ≤ωβ → funext (λ b →
+                     cong (λ ρ → t γ (ρ , b)) (sym (obj.fcomp Γ β≤ωα γ≤ωβ x)))))))
      }
 
 _·⁺_ : ∀ {Γ B C} -> Γ ⇒ (B ⊃⁺ C) -> Γ ⇒ B -> Γ ⇒ C
