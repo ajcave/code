@@ -105,7 +105,6 @@ postulate
 
 _⊃⁺_ : obj -> obj -> obj
 (A ⊃⁺ B) = record {
-            -- TODO: Crap, this needs a naturality condition
             A = A ⊃₁ B;
             ωmap = λ β≤ωα F → record {
                                f = λ γ γ≤ωβ x → _⊃₁_.f F γ (β≤ωα ∘ω γ≤ωβ) x;
@@ -113,7 +112,7 @@ _⊃⁺_ : obj -> obj -> obj
                                                                 (cong (λ ρ → _⊃₁_.f F _ ρ (obj.ωmap A γ≤ωβ x)) ∘ω-assoc) 
                               };
             fcomp = λ β≤ωγ α≤ωβ x → ⊃₁≡ (funext (λ ε → funext (λ ε≤ωα → funext (λ x1 → cong (λ ρ → _⊃₁_.f x ε ρ x1) ∘ω-assoc))));
-            fid = λ x → ⊃₁≡ {!!}
+            fid = λ x → ⊃₁≡ (funext (λ γ → funext (λ γ≤ωα → funext (λ x1 → cong (λ ρ → _⊃₁_.f x γ ρ x1) (∘ω-idl γ≤ωα)))))
            }
 
 _∧₁_ : obj₁ -> obj₁ -> obj₁
