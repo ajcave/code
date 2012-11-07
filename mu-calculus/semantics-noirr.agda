@@ -376,14 +376,13 @@ fmap (A ∧ B) ρ1 ρ2 σ = {!!}
 fmap (A ∨ B) ρ1 ρ2 σ = {!!}
 fmap ⊤ ρ1 ρ2 σ = tt⁺
 
-fold₁ : ∀ F C -> (⟦ F ⟧f (tt , C) ₁) ⇒₁ (C ₁) -> μ₁ F tt ⇒₁ (C ₁)
-fold₁ F C t α ⟨ y ⟩ = {!!}
-
 fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> μ⁺ F tt ⇒ C
 fold⁺ F C (f , nf) = record {
-     η = λ α x → {!!};
+     η = fold₁;
      natural = {!!}
   }
+  where fold₁ : μ₁ F tt ⇒₁ (C ₁)
+        fold₁ α ⟨ y ⟩ = f α (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) α y)
 
 ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
 ⟦⟧f-comp σ F ρ = {!!}
