@@ -356,6 +356,12 @@ swap⁺ A B = < π₂⁺ {A} {B} , π₁⁺ {B} {A} >⁺
 case⁺ : ∀ {Γ A B C} -> Γ ⇒ (A ∨⁺ B) -> (Γ ∧⁺ A) ⇒ C -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ C
 case⁺ {Γ} {A} {B} {C} M N1 N2 = ([ (λ⁺ (N1 ∘⁺ swap⁺ A Γ)) , (λ⁺ (N2 ∘⁺ swap⁺ B Γ)) ]⁺ ∘⁺ M) ·⁺ (id⁺ Γ)
 
+inj⁺ : ∀ F -> ⟦ F ⟧f (tt , μ⁺ F tt) ⇒ μ⁺ F tt
+inj⁺ F = record {
+     η = λ α x → ⟨ x ⟩;
+     natural = λ β≤ωα x → refl
+   }
+
 ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
 ⟦⟧f-comp σ F ρ = {!!}
 
@@ -369,8 +375,7 @@ eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M 
 eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
 eval θ Γ T (let-◦ {S} M N) = let-◦⁺ ⟦ θ ⟧c ⟦ Γ ⟧c ⟦ T ⟧t ⟦ S ⟧t (eval θ Γ (○ S) M) (eval (θ , S) Γ T N)
 eval θ Γ .(○ A) (◦ {A} M) = ◦⁺ ⟦ θ ⟧c ⟦ A ⟧t ((eval ⊡ θ A M) ∘⁺ < ⊤dist⁻¹ ∘⁺ tt⁺ , (id⁺ ⟦ θ ⟧c) >⁺) ∘⁺ (π₁⁺ {⟦ Γ ⟧c} {○⁺ ⟦ θ ⟧c} )
-eval θ Γ .(μ F) (inj {F} M) with eval θ Γ ([ tt , μ F ]p F) M
-... | q = {!!} 
+eval θ Γ .(μ F) (inj {F} M) = (inj⁺ F) ∘⁺ (subst (λ α -> (○⁺ (⟦ θ ⟧c) ∧⁺ ⟦ Γ ⟧c) ⇒ α) (⟦⟧f-comp (tt , μ F) F tt) (eval θ Γ ([ tt , μ F ]p F) M))
 eval θ Γ T (rec F M N) = {!!}
 eval θ Γ .([ tt , ν F ]p F) (out {F} M) = {!!}
 eval θ Γ .(ν F) (unfold F M N) = {!!}
