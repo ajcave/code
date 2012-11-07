@@ -362,6 +362,29 @@ inj⁺ F = record {
      natural = λ β≤ωα x → refl
    }
 
+data arrow1 : ∀ {Δ} -> (ρ1 : gksubst Δ obj) -> (ρ2 : gksubst Δ obj) -> Set₁ where
+ ⊡ : arrow1 tt tt
+ _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ obj} (σ : arrow1 ρ1 ρ2) {A B} (N : A ⇒ B) -> arrow1 {Δ , #prop} (ρ1 , A) (ρ2 , B)
+
+fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow1 ρ1 ρ2) -> (⟦ F ⟧f ρ1) ⇒ (⟦ F ⟧f ρ2)
+fmap (▹ A) ρ1 ρ2 σ = {!!}
+fmap (μ F) ρ1 ρ2 σ = {!!}
+fmap (ν F) ρ1 ρ2 σ = {!!}
+fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
+fmap (A ⊃ B) ρ1 ρ2 σ = {!!}
+fmap (A ∧ B) ρ1 ρ2 σ = {!!}
+fmap (A ∨ B) ρ1 ρ2 σ = {!!}
+fmap ⊤ ρ1 ρ2 σ = tt⁺
+
+fold₁ : ∀ F C -> (⟦ F ⟧f (tt , C) ₁) ⇒₁ (C ₁) -> μ₁ F tt ⇒₁ (C ₁)
+fold₁ F C t α ⟨ y ⟩ = {!!}
+
+fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> μ⁺ F tt ⇒ C
+fold⁺ F C (f , nf) = record {
+     η = λ α x → {!!};
+     natural = {!!}
+  }
+
 ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
 ⟦⟧f-comp σ F ρ = {!!}
 
