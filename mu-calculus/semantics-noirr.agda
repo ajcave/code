@@ -201,6 +201,9 @@ _∘⁺_ : ∀ {A B C} -> B ⇒ C -> A ⇒ B -> A ⇒ C
 id⁺ : ∀ A -> A ⇒ A
 id⁺ A = (λ α x → x) , (λ β≤ωα x → refl)
 
+id⁺≡ : ∀ {A B} -> A ≡ B -> A ⇒ B
+id⁺≡ {A} refl = id⁺ A
+
 π₁⁺ : ∀ {B A} -> (A ∧⁺ B) ⇒ A
 π₁⁺ = (λ α x → proj₁ x) , (λ β≤ωα x → refl)
 
@@ -402,7 +405,7 @@ eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
 eval θ Γ T (let-◦ {S} M N) = let-◦⁺ ⟦ θ ⟧c ⟦ Γ ⟧c ⟦ T ⟧t ⟦ S ⟧t (eval θ Γ (○ S) M) (eval (θ , S) Γ T N)
 eval θ Γ .(○ A) (◦ {A} M) = ◦⁺ ⟦ θ ⟧c ⟦ A ⟧t ((eval ⊡ θ A M) ∘⁺ < ⊤dist⁻¹ ∘⁺ tt⁺ , (id⁺ ⟦ θ ⟧c) >⁺) ∘⁺ (π₁⁺ {⟦ Γ ⟧c} {○⁺ ⟦ θ ⟧c} )
 eval θ Γ .(μ F) (inj {F} M) = (inj⁺ F) ∘⁺ (subst (λ α -> (○⁺ (⟦ θ ⟧c) ∧⁺ ⟦ Γ ⟧c) ⇒ α) (⟦⟧f-comp (tt , μ F) F tt) (eval θ Γ ([ tt , μ F ]p F) M))
-eval θ Γ T (rec F M N) = {!!}
+eval θ Γ T (rec F M N) = (fold⁺ F ⟦ T ⟧t ((eval ⊡ (⊡ , [ tt , T ]p F) T N) ∘⁺ < (⊤dist⁻¹ ∘⁺ tt⁺) , < tt⁺ , id⁺≡ (sym (⟦⟧f-comp (tt , T) F tt)) >⁺ >⁺)) ∘⁺ (eval θ Γ (μ F) M)
 eval θ Γ .([ tt , ν F ]p F) (out {F} M) = {!!}
 eval θ Γ .(ν F) (unfold F M N) = {!!}
 eval θ Γ .(A ∧ B) (<_,_> {A} {B} M N) = < (eval θ Γ A M) , (eval θ Γ B N) >⁺
