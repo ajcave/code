@@ -379,7 +379,7 @@ fmap ⊤ ρ1 ρ2 σ = tt⁺
 fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> μ⁺ F tt ⇒ C
 fold⁺ F C (f , nf) = record {
      η = fold₁;
-     natural = {!!}
+     natural = fold₁nat
   }
   where fold₁ : μ₁ F tt ⇒₁ (C ₁)
         fold₁ α ⟨ y ⟩ = f α (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) α y)
