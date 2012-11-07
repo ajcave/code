@@ -398,6 +398,16 @@ out⁺ F = record {
      natural = λ β≤ωα → λ {⟨ y ⟩ → refl}
    }
 
+unfold⁺ : ∀ F C -> C ⇒ ⟦ F ⟧f (tt , C) -> C ⇒ ν⁺ F tt
+unfold⁺ F C (f , nf) = record {
+     η = unfold₁;
+     natural = {!!}
+  }
+  where unfold₁ : (C ₁) ⇒₁ ν₁ F tt
+        unfold₁ α c = ⟨ ♯ _⇒_.η (fmap F (tt , C) (tt , ν⁺ F tt) (⊡ , unfold⁺ F C (f , nf))) α (f α c) ⟩
+        unfold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : ν₁ F tt α) → {!!} --unfold₁ β (((⟦ ν F ⟧f tt) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (unfold₁ α x))
+        unfold₁nat β≤ωα x = {!!}
+
 ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
 ⟦⟧f-comp σ F ρ = {!!}
 
