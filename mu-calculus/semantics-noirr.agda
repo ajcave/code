@@ -409,7 +409,14 @@ unfold⁺ F C (f , nf) = record {
         unfold₁nat β≤ωα x = cong ⟨_⟩ {!!}
 
 ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
-⟦⟧f-comp σ F ρ = {!!}
+⟦⟧f-comp σ (▹ A) ρ = sym (lookup-gmap (λ x → ⟦ x ⟧f ρ) σ A)
+⟦⟧f-comp σ (μ F) ρ = {!!}
+⟦⟧f-comp σ (ν F) ρ = {!!}
+⟦⟧f-comp σ (○ A) ρ rewrite ⟦⟧f-comp σ A ρ = refl
+⟦⟧f-comp σ (A ⊃ B) ρ rewrite ⟦⟧f-comp σ B ρ = refl
+⟦⟧f-comp σ (A ∧ B) ρ rewrite ⟦⟧f-comp σ A ρ | ⟦⟧f-comp σ B ρ = refl
+⟦⟧f-comp σ (A ∨ B) ρ = {!!}
+⟦⟧f-comp σ ⊤ ρ = refl
 
 eval-var : ∀ Γ T -> var Γ T -> ⟦ Γ ⟧c ⇒ ⟦ T ⟧t
 eval-var .(Γ , T) T (top {Γ}) = π₂⁺ {⟦ Γ ⟧c}
