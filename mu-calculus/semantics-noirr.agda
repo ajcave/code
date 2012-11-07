@@ -350,7 +350,11 @@ inj₂⁺ B = record {
      natural = λ β≤ωα → λ {(inj₁ x) → nf β≤ωα x; (inj₂ y) → ng β≤ωα y}
    }
 
+swap⁺ : ∀ A B -> (A ∧⁺ B) ⇒ (B ∧⁺ A)
+swap⁺ A B = < π₂⁺ {A} {B} , π₁⁺ {B} {A} >⁺
 
+case⁺ : ∀ {Γ A B C} -> Γ ⇒ (A ∨⁺ B) -> (Γ ∧⁺ A) ⇒ C -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ C
+case⁺ {Γ} {A} {B} {C} M N1 N2 = ([ (λ⁺ (N1 ∘⁺ swap⁺ A Γ)) , (λ⁺ (N2 ∘⁺ swap⁺ B Γ)) ]⁺ ∘⁺ M) ·⁺ (id⁺ Γ)
 
 eval : ∀ θ Γ T -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
 eval θ Γ T (▹ x) = {!!}
