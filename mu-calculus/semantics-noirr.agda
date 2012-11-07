@@ -383,6 +383,10 @@ fold⁺ F C (f , nf) = record {
   }
   where fold₁ : μ₁ F tt ⇒₁ (C ₁)
         fold₁ α ⟨ y ⟩ = f α (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) α y)
+        fold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : μ₁ F tt α) → fold₁ β (((⟦ μ F ⟧f tt) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (fold₁ α x))
+        fold₁nat β≤ωα ⟨ y ⟩ = trans
+              (cong (f _) (_⇒_.natural (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) β≤ωα y))
+              (nf β≤ωα (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y))
 
 ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
 ⟦⟧f-comp σ F ρ = {!!}
