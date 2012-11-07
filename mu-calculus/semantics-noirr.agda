@@ -344,6 +344,14 @@ inj₂⁺ B = record {
             natural = λ β≤ωα x → refl
           }
 
+[_,_]⁺ : ∀ {A B C} -> B ⇒ A -> C ⇒ A -> (B ∨⁺ C) ⇒ A
+[ (f , nf) , (g , ng) ]⁺ = record {
+     η = λ α → λ {(inj₁ x) → f α x; (inj₂ y) → g α y};
+     natural = λ β≤ωα → λ {(inj₁ x) → nf β≤ωα x; (inj₂ y) → ng β≤ωα y}
+   }
+
+
+
 eval : ∀ θ Γ T -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
 eval θ Γ T (▹ x) = {!!}
 eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M ∘⁺ (∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t))
