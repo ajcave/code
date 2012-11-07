@@ -356,8 +356,12 @@ swap⁺ A B = < π₂⁺ {A} {B} , π₁⁺ {B} {A} >⁺
 case⁺ : ∀ {Γ A B C} -> Γ ⇒ (A ∨⁺ B) -> (Γ ∧⁺ A) ⇒ C -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ C
 case⁺ {Γ} {A} {B} {C} M N1 N2 = ([ (λ⁺ (N1 ∘⁺ swap⁺ A Γ)) , (λ⁺ (N2 ∘⁺ swap⁺ B Γ)) ]⁺ ∘⁺ M) ·⁺ (id⁺ Γ)
 
+eval-var : ∀ Γ T -> var Γ T -> ⟦ Γ ⟧c ⇒ ⟦ T ⟧t
+eval-var .(Γ , T) T (top {Γ}) = π₂⁺ {⟦ Γ ⟧c}
+eval-var .(Γ , S) T (pop {Γ} {.T} {S} y) = eval-var Γ T y ∘⁺ π₁⁺ {⟦ S ⟧t}
+
 eval : ∀ θ Γ T -> θ , Γ ⊢ T - true -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⇒ ⟦ T ⟧t
-eval θ Γ T (▹ x) = {!!}
+eval θ Γ T (▹ x) = eval-var Γ T x ∘⁺ π₂⁺ {○⁺ ⟦ θ ⟧c}
 eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M ∘⁺ (∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t))
 eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
 eval θ Γ T (let-◦ {S} M N) = let-◦⁺ ⟦ θ ⟧c ⟦ Γ ⟧c ⟦ T ⟧t ⟦ S ⟧t (eval θ Γ (○ S) M) (eval (θ , S) Γ T N)
