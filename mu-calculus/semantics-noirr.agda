@@ -359,12 +359,6 @@ swap⁺ A B = < π₂⁺ {A} {B} , π₁⁺ {B} {A} >⁺
 case⁺ : ∀ {Γ A B C} -> Γ ⇒ (A ∨⁺ B) -> (Γ ∧⁺ A) ⇒ C -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ C
 case⁺ {Γ} {A} {B} {C} M N1 N2 = ([ (λ⁺ (N1 ∘⁺ swap⁺ A Γ)) , (λ⁺ (N2 ∘⁺ swap⁺ B Γ)) ]⁺ ∘⁺ M) ·⁺ (id⁺ Γ)
 
-inj⁺ : ∀ F -> ⟦ F ⟧f (tt , μ⁺ F tt) ⇒ μ⁺ F tt
-inj⁺ F = record {
-     η = λ α x → ⟨ x ⟩;
-     natural = λ β≤ωα x → refl
-   }
-
 data arrow1 : ∀ {Δ} -> (ρ1 : gksubst Δ obj) -> (ρ2 : gksubst Δ obj) -> Set₁ where
  ⊡ : arrow1 tt tt
  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ obj} (σ : arrow1 ρ1 ρ2) {A B} (N : A ⇒ B) -> arrow1 {Δ , #prop} (ρ1 , A) (ρ2 , B)
@@ -379,6 +373,13 @@ fmap (A ∧ B) ρ1 ρ2 σ = {!!}
 fmap (A ∨ B) ρ1 ρ2 σ = {!!}
 fmap ⊤ ρ1 ρ2 σ = tt⁺
 
+inj⁺ : ∀ F -> ⟦ F ⟧f (tt , μ⁺ F tt) ⇒ μ⁺ F tt
+inj⁺ F = record {
+     η = λ α x → ⟨ x ⟩;
+     natural = λ β≤ωα x → refl
+   }
+
+
 fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> μ⁺ F tt ⇒ C
 fold⁺ F C (f , nf) = record {
      η = fold₁;
@@ -390,6 +391,12 @@ fold⁺ F C (f , nf) = record {
         fold₁nat β≤ωα ⟨ y ⟩ = trans
               (cong (f _) (_⇒_.natural (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) β≤ωα y))
               (nf β≤ωα (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y))
+
+out⁺ : ∀ F -> ν⁺ F tt ⇒ ⟦ F ⟧f (tt , ν⁺ F tt)
+out⁺ F = record {
+     η = λ α -> (λ {⟨ y ⟩ → ♭ y });
+     natural = λ β≤ωα → λ {⟨ y ⟩ → refl}
+   }
 
 ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
 ⟦⟧f-comp σ F ρ = {!!}
@@ -404,9 +411,9 @@ eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M 
 eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
 eval θ Γ T (let-◦ {S} M N) = let-◦⁺ ⟦ θ ⟧c ⟦ Γ ⟧c ⟦ T ⟧t ⟦ S ⟧t (eval θ Γ (○ S) M) (eval (θ , S) Γ T N)
 eval θ Γ .(○ A) (◦ {A} M) = ◦⁺ ⟦ θ ⟧c ⟦ A ⟧t ((eval ⊡ θ A M) ∘⁺ < ⊤dist⁻¹ ∘⁺ tt⁺ , (id⁺ ⟦ θ ⟧c) >⁺) ∘⁺ (π₁⁺ {⟦ Γ ⟧c} {○⁺ ⟦ θ ⟧c} )
-eval θ Γ .(μ F) (inj {F} M) = (inj⁺ F) ∘⁺ (subst (λ α -> (○⁺ (⟦ θ ⟧c) ∧⁺ ⟦ Γ ⟧c) ⇒ α) (⟦⟧f-comp (tt , μ F) F tt) (eval θ Γ ([ tt , μ F ]p F) M))
+eval θ Γ .(μ F) (inj {F} M) = (inj⁺ F) ∘⁺ (id⁺≡ (⟦⟧f-comp (tt , μ F) F tt) ∘⁺ eval θ Γ ([ tt , μ F ]p F) M)
 eval θ Γ T (rec F M N) = (fold⁺ F ⟦ T ⟧t ((eval ⊡ (⊡ , [ tt , T ]p F) T N) ∘⁺ < (⊤dist⁻¹ ∘⁺ tt⁺) , < tt⁺ , id⁺≡ (sym (⟦⟧f-comp (tt , T) F tt)) >⁺ >⁺)) ∘⁺ (eval θ Γ (μ F) M)
-eval θ Γ .([ tt , ν F ]p F) (out {F} M) = {!!}
+eval θ Γ .([ tt , ν F ]p F) (out {F} M) = ((id⁺≡ (sym (⟦⟧f-comp (tt , ν F) F tt))) ∘⁺ (out⁺ F)) ∘⁺ (eval θ Γ (ν F) M)
 eval θ Γ .(ν F) (unfold F M N) = {!!}
 eval θ Γ .(A ∧ B) (<_,_> {A} {B} M N) = < (eval θ Γ A M) , (eval θ Γ B N) >⁺
 eval θ Γ .T (fst {T} {B} M) = π₁⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (T ∧ B) M
