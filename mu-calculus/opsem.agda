@@ -40,9 +40,17 @@ data _⟶_ {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set 
                 ->           N ⟶ N'
                 -> ---------------------------
                      < (ninj V) , N > ⟶ < (ninj V) , N' >
- fst-red : ∀ {A B} (V1 : θ , Γ ⊢ A ↑) (V2 : θ , Γ ⊢ B ↑)
+ fst-red1 : ∀ {A B} (M M' : θ , Γ ⊢ (A ∧ B) - true)
+                ->           M ⟶ M'
+                -> --------------------------
+                      (fst M) ⟶ (fst M')
+ fst-red2 : ∀ {A B} (V1 : θ , Γ ⊢ A ↑) (V2 : θ , Γ ⊢ B ↑)
                 -> (fst < (ninj V1) , (ninj V2) >) ⟶ (ninj V1)
- snd-red : ∀ {A B} (V1 : θ , Γ ⊢ A ↑) (V2 : θ , Γ ⊢ B ↑)
+ snd-red1 : ∀ {A B} (M M' : θ , Γ ⊢ (A ∧ B) - true)
+                ->           M ⟶ M'
+                -> --------------------------
+                      (snd M) ⟶ (snd M')
+ snd-red2 : ∀ {A B} (V1 : θ , Γ ⊢ A ↑) (V2 : θ , Γ ⊢ B ↑)
                 -> (snd < (ninj V1) , (ninj V2) >) ⟶ (ninj V2)
  inl-red : ∀ {B A} (M M' : θ , Γ ⊢ A - true)
                 ->                M ⟶ M'
