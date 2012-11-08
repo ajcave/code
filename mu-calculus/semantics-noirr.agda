@@ -358,9 +358,16 @@ swap⁺ A B = < π₂⁺ {A} {B} , π₁⁺ {B} {A} >⁺
 case⁺ : ∀ {Γ A B C} -> Γ ⇒ (A ∨⁺ B) -> (Γ ∧⁺ A) ⇒ C -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ C
 case⁺ {Γ} {A} {B} {C} M N1 N2 = ([ (λ⁺ (N1 ∘⁺ swap⁺ A Γ)) , (λ⁺ (N2 ∘⁺ swap⁺ B Γ)) ]⁺ ∘⁺ M) ·⁺ (id⁺ Γ)
 
+-- Could generalize this with arrow in mu-ltl
 data arrow1 : ∀ {Δ} -> (ρ1 : gksubst Δ obj) -> (ρ2 : gksubst Δ obj) -> Set₁ where
  ⊡ : arrow1 tt tt
  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ obj} (σ : arrow1 ρ1 ρ2) {A B} (N : A ⇒ B) -> arrow1 {Δ , #prop} (ρ1 , A) (ρ2 , B)
+
+_∧̂⁺_ : ∀ {A1 A2 B1 B2} -> A1 ⇒ A2 -> B1 ⇒ B2 -> (A1 ∧⁺ B1) ⇒ (A2 ∧⁺ B2)
+_∧̂⁺_ {A1} {A2} {B1} {B2} f g = < (f ∘⁺ π₁⁺ {B1}) , (g ∘⁺ π₂⁺ {A1}) >⁺
+
+_∨̂⁺_ : ∀ {A1 A2 B1 B2} -> A1 ⇒ A2 -> B1 ⇒ B2 -> (A1 ∨⁺ B1) ⇒ (A2 ∨⁺ B2)
+_∨̂⁺_ {A1} {A2} {B1} {B2} f g = [ ((inj₁⁺ B2) ∘⁺ f) , ((inj₂⁺ A2) ∘⁺ g) ]⁺
 
 fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow1 ρ1 ρ2) -> (⟦ F ⟧f ρ1) ⇒ (⟦ F ⟧f ρ2)
 fmap (▹ A) ρ1 ρ2 σ = {!!}
@@ -368,8 +375,8 @@ fmap (μ F) ρ1 ρ2 σ = {!!}
 fmap (ν F) ρ1 ρ2 σ = {!!}
 fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
 fmap (A ⊃ B) ρ1 ρ2 σ = {!!}
-fmap (A ∧ B) ρ1 ρ2 σ = {!!}
-fmap (A ∨ B) ρ1 ρ2 σ = {!!}
+fmap (A ∧ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∧̂⁺ (fmap B ρ1 ρ2 σ)
+fmap (A ∨ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∨̂⁺ (fmap B ρ1 ρ2 σ)
 fmap ⊤ ρ1 ρ2 σ = tt⁺
 
 inj⁺ : ∀ F -> ⟦ F ⟧f (tt , ⟦ μ F ⟧t) ⇒ ⟦ μ F ⟧t
