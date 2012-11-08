@@ -407,11 +407,31 @@ unfold⁺ F C (f , nf) = record {
         unfold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : (C ₁) α) → unfold₁ β ((C ₂) β≤ωα x) ≡ (ν⁺ F tt ₂) β≤ωα (unfold₁ α x)
         unfold₁nat β≤ωα x = cong ⟨_⟩ {!!}
 
-_⋆v_ : ∀ {A} {Δ1 Δ2} (σ : vsub {A} Δ1 Δ2) (ρ : gksubst Δ1 obj) -> gksubst Δ2 obj
-σ ⋆v ρ = gmap (λ Y -> lookup ρ Y) σ
+-- TODO: Move into FinMap
+--lem3v' : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ1 Δ2} (σ : vsubst {a} {A} Δ2 Δ1) (ρ : gsubst Δ1 F) {T} (X : F T) -> (wkn-vsub ◆ σ) ⁌ (ρ , X) ≡ (ρ ⁌ σ)
+--lem3v' σ ρ X = ?
 
-⟦⟧f-compv : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ -> ⟦ [ σ ]pv F ⟧f ρ ≡ ⟦ F ⟧f (σ ⋆v ρ)
-⟦⟧f-compv σ F ρ = {!!}
+lem3v : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ1 Δ2} (σ : vsubst {a} {A} Δ2 Δ1) (ρ : gsubst Δ1 F) {T} (X : F T) -> (ρ , X) ⁌ (vsub-ext σ) ≡ (ρ ⁌ σ) , X
+lem3v σ ρ X = cong (λ α → α , X)
+    (begin
+      ((ρ , X) ⁌ (wkn σ)) ≡⟨ (gmap-funct σ) ⟩
+      ((ρ ⁌ σ)
+    ∎))
+
+⟦⟧f-compv : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ -> ⟦ [ σ ]pv F ⟧f ρ ≡ ⟦ F ⟧f (ρ ⁌ σ)
+⟦⟧f-compv σ (▹ A) ρ = sym (lookup-gmap (lookup ρ) σ A)
+⟦⟧f-compv σ (μ F) ρ = cong μ⁺ (funext (λ X →
+         begin (
+          ⟦ [ vsub-ext σ ]pv F ⟧f (ρ , X)) ≡⟨ (⟦⟧f-compv (vsub-ext σ) F (ρ , X)) ⟩
+          (⟦ F ⟧f ((ρ , X) ⁌ vsub-ext σ)   ≡⟨ (cong ⟦ F ⟧f (lem3v σ ρ X)) ⟩
+          (⟦ F ⟧f ((ρ ⁌ σ) , X)
+        ∎))))
+⟦⟧f-compv σ (ν F) ρ = {!!}
+⟦⟧f-compv σ (○ A) ρ = cong ○⁺ (⟦⟧f-compv σ A ρ)
+⟦⟧f-compv σ (A ⊃ B) ρ = cong (_⊃⁺_ ⟦ A ⟧t) (⟦⟧f-compv σ B ρ)
+⟦⟧f-compv σ (A ∧ B) ρ = cong₂ _∧⁺_ (⟦⟧f-compv σ A ρ) (⟦⟧f-compv σ B ρ)
+⟦⟧f-compv σ (A ∨ B) ρ = cong₂ _∨⁺_ (⟦⟧f-compv σ A ρ) (⟦⟧f-compv σ B ρ)
+⟦⟧f-compv σ ⊤ ρ = refl
 
 _⋆_ : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) (ρ : gksubst Δ1 obj) -> gksubst Δ2 obj
 σ ⋆ ρ = gmap (λ C -> ⟦ C ⟧f ρ) σ
@@ -419,9 +439,9 @@ _⋆_ : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) (ρ : gksubst Δ1 obj) -> gksubst Δ2 
 lem3 : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) (ρ : gksubst Δ1 obj) X -> (psub-ext σ) ⋆ (ρ , X) ≡ (σ ⋆ ρ) , X
 lem3 σ ρ X = cong (λ α -> α , X)
               (begin
-                ((gmap [ wkn-vsub ]pv σ) ⋆ (ρ , X))               ≡⟨ (gmap-funct σ) ⟩
+                ((wkn-vsub ◆ σ) ⋆ (ρ , X))                       ≡⟨ (gmap-funct σ) ⟩
                 ((gmap (λ C → ⟦ [ wkn-vsub ]pv C ⟧f (ρ , X)) σ)   ≡⟨ gmap-cong (λ C → ⟦⟧f-compv wkn-vsub C (ρ , X)) ⟩
-                (gmap (λ C → ⟦ C ⟧f (wkn-vsub ⋆v (ρ , X))) σ)     ≡⟨ gmap-cong (λ C → cong ⟦ C ⟧f (gmap-funct id-vsub)) ⟩
+                (gmap (λ C → ⟦ C ⟧f ((ρ , X) ⁌ wkn-vsub)) σ)      ≡⟨ gmap-cong (λ C → cong ⟦ C ⟧f (gmap-funct id-vsub)) ⟩
                 (gmap (λ C → ⟦ C ⟧f (ρ ⁌ id-vsub)) σ)             ≡⟨ gmap-cong (λ C → cong ⟦ C ⟧f (id-v-right ρ)) ⟩
                 (gmap (λ C → ⟦ C ⟧f ρ) σ
               ∎)))
@@ -435,10 +455,10 @@ lem3 σ ρ X = cong (λ α -> α , X)
            ⟦ F ⟧f ((σ ⋆ ρ) , X)
          ∎))
 ⟦⟧f-comp σ (ν F) ρ = {!!}
-⟦⟧f-comp σ (○ A) ρ rewrite ⟦⟧f-comp σ A ρ = refl
-⟦⟧f-comp σ (A ⊃ B) ρ rewrite ⟦⟧f-comp σ B ρ = refl
-⟦⟧f-comp σ (A ∧ B) ρ rewrite ⟦⟧f-comp σ A ρ | ⟦⟧f-comp σ B ρ = refl
-⟦⟧f-comp σ (A ∨ B) ρ = cong₂ _∨⁺_ {!!} {!!}
+⟦⟧f-comp σ (○ A) ρ = cong ○⁺ (⟦⟧f-comp σ A ρ)
+⟦⟧f-comp σ (A ⊃ B) ρ = cong (_⊃⁺_ ⟦ A ⟧t) (⟦⟧f-comp σ B ρ)
+⟦⟧f-comp σ (A ∧ B) ρ = cong₂ _∧⁺_ (⟦⟧f-comp σ A ρ) (⟦⟧f-comp σ B ρ)
+⟦⟧f-comp σ (A ∨ B) ρ = cong₂ _∨⁺_ (⟦⟧f-comp σ A ρ) (⟦⟧f-comp σ B ρ)
 ⟦⟧f-comp σ ⊤ ρ = refl
 
 eval-var : ∀ Γ T -> var Γ T -> ⟦ Γ ⟧c ⇒ ⟦ T ⟧t
