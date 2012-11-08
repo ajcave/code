@@ -11,7 +11,7 @@ open import Data.Empty
 open import Function
 open import Relation.Binary.PropositionalEquality
 
-open ≤-Reasoning
+open ≡-Reasoning
 
 data ω+1 : Set where
  ▹ : (n : ℕ) -> ω+1
@@ -22,11 +22,11 @@ data _≤ω_ : ω+1 -> ω+1 -> Set where
  inj₂ : ∀ {α} -> α ≤ω ω
 
 ≤ω-refl : ∀ {α} -> α ≤ω α
-≤ω-refl {▹ n} = inj₁ (begin n ∎)
+≤ω-refl {▹ n} = inj₁ {!!} --(begin n ∎)
 ≤ω-refl {ω} = inj₂
 
 _∘ω_ : ∀ {α β γ} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β) -> α ≤ω γ
-inj₁ n≤m ∘ω inj₁ n≤m' = inj₁ (begin _ ≤⟨ n≤m' ⟩ _ ≤⟨ n≤m ⟩ (_ ∎))
+inj₁ n≤m ∘ω inj₁ n≤m' = inj₁ {!!} --(begin _ ≤⟨ n≤m' ⟩ _ ≤⟨ n≤m ⟩ (_ ∎))
 inj₂ ∘ω _ = inj₂
 
 ≤-unique : ∀ {n m} (p1 p2 : n ≤ m) -> p1 ≡ p2
@@ -97,7 +97,7 @@ K : ∀ {A : Set} {x y : A} -> (p q : x ≡ y) -> p ≡ q
 K refl refl = refl
 
 postulate
- funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
+ funext : ∀ {a b} {A : Set a} {B : A -> Set b} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
  funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ {_} { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
 
 ⊃₁≡ : ∀ {A B : obj} {α : ω+1} {P Q : (A ⊃₁ B) α} ->  _⊃₁_.f P ≡ _⊃₁_.f Q -> P ≡ Q
@@ -155,26 +155,17 @@ mutual
   where νωmap : {β α : ω+1} → β ≤ω α → ν₁ F ρ α → ν₁ F ρ β
         νωmap β≤ωα ⟨ y ⟩ = ⟨ (♯ (⟦ F ⟧f (ρ , ν⁺ F ρ) ₂) β≤ωα (♭ y)) ⟩
 
- data μ₁' (F : obj -> obj) (α : ω+1) : Set where
-  ⟨_⟩ : ((F (μ⁺' F)) ₁) α -> μ₁' F α
+ data μ₁ (F : obj -> obj) (α : ω+1) : Set where
+  ⟨_⟩ : ((F (μ⁺ F)) ₁) α -> μ₁ F α
 
- data μ₁ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ω+1) : Set where
-  ⟨_⟩ : (⟦ F ⟧f (ρ , (μ⁺ F ρ)) ₁) α -> μ₁ F ρ α
-
-
- μ⁺ : ∀ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) -> obj
- μ⁺ F ρ = record { A = μ₁ F ρ; ωmap = μωmap; fcomp = {!!}; fid = {!!} }
-  where μωmap : {β α : ω+1} → β ≤ω α → μ₁ F ρ α → μ₁ F ρ β
-        μωmap β≤ωα ⟨ y ⟩ = ⟨ ((⟦ F ⟧f (ρ , (μ⁺ F ρ))) ₂) β≤ωα y ⟩
-
- μ⁺' : ∀ (F : obj -> obj) -> obj
- μ⁺' F = record { A = μ₁' F; ωmap = μωmap; fcomp = {!!}; fid = {!!} }
-  where μωmap : {β α : ω+1} → β ≤ω α → μ₁' F α → μ₁' F β
-        μωmap β≤ωα ⟨ y ⟩ = ⟨ ((F (μ⁺' F) ₂) β≤ωα y) ⟩
+ μ⁺ : ∀ (F : obj -> obj) -> obj
+ μ⁺ F = record { A = μ₁ F; ωmap = μωmap; fcomp = {!!}; fid = {!!} }
+  where μωmap : {β α : ω+1} → β ≤ω α → μ₁ F α → μ₁ F β
+        μωmap β≤ωα ⟨ y ⟩ = ⟨ ((F (μ⁺ F) ₂) β≤ωα y) ⟩
 
  ⟦_⟧f : ∀ {Δ} -> functor Δ -> (ρ : gksubst Δ obj) -> obj
  ⟦_⟧f (▹ A) ρ = lookup ρ A
- ⟦_⟧f (μ F) ρ = μ⁺' (λ X -> ⟦ F ⟧f (ρ , X))
+ ⟦_⟧f (μ F) ρ = μ⁺ (λ X -> ⟦ F ⟧f (ρ , X))
  ⟦_⟧f (ν F) ρ = ν⁺ F ρ
  ⟦_⟧f (○ A) ρ = ○⁺ (⟦ A ⟧f ρ)
  ⟦_⟧f (A ⊃ B) ρ = ⟦ A ⟧f tt ⊃⁺ ⟦ B ⟧f ρ
@@ -395,11 +386,10 @@ fold⁺ F C (f , nf) = record {
   }
   where fold₁ : (⟦ μ F ⟧t ₁) ⇒₁ (C ₁)
         fold₁ α ⟨ y ⟩ = f α (_⇒_.η (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) α y)
-        fold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : ((⟦ μ F ⟧f tt) ₁) α) → {!!} --fold₁ β (((⟦ μ F ⟧f tt) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (fold₁ α x))
-        fold₁nat β≤ωα ⟨ y ⟩ = {!!}
-       {-trans
-              (cong (f _) (_⇒_.natural (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) β≤ωα y))
-              (nf β≤ωα (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y)) -}
+        fold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : ((⟦ μ F ⟧t) ₁) α) → fold₁ β (((⟦ μ F ⟧t) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (fold₁ α x))
+        fold₁nat β≤ωα ⟨ y ⟩ = trans
+              (cong (f _) (_⇒_.natural (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) β≤ωα y))
+              (nf β≤ωα (_⇒_.η (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y))
 
 out⁺ : ∀ F -> ν⁺ F tt ⇒ ⟦ F ⟧f (tt , ν⁺ F tt)
 out⁺ F = record {
@@ -417,14 +407,38 @@ unfold⁺ F C (f , nf) = record {
         unfold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : (C ₁) α) → unfold₁ β ((C ₂) β≤ωα x) ≡ (ν⁺ F tt ₂) β≤ωα (unfold₁ α x)
         unfold₁nat β≤ωα x = cong ⟨_⟩ {!!}
 
-⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (gmap (λ C → ⟦ C ⟧f ρ) σ)
+_⋆v_ : ∀ {A} {Δ1 Δ2} (σ : vsub {A} Δ1 Δ2) (ρ : gksubst Δ1 obj) -> gksubst Δ2 obj
+σ ⋆v ρ = gmap (λ Y -> lookup ρ Y) σ
+
+⟦⟧f-compv : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ -> ⟦ [ σ ]pv F ⟧f ρ ≡ ⟦ F ⟧f (σ ⋆v ρ)
+⟦⟧f-compv σ F ρ = {!!}
+
+_⋆_ : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) (ρ : gksubst Δ1 obj) -> gksubst Δ2 obj
+σ ⋆ ρ = gmap (λ C -> ⟦ C ⟧f ρ) σ
+
+lem3 : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) (ρ : gksubst Δ1 obj) X -> (psub-ext σ) ⋆ (ρ , X) ≡ (σ ⋆ ρ) , X
+lem3 σ ρ X = cong (λ α -> α , X)
+              (begin
+                ((gmap [ wkn-vsub ]pv σ) ⋆ (ρ , X))               ≡⟨ (gmap-funct σ) ⟩
+                ((gmap (λ C → ⟦ [ wkn-vsub ]pv C ⟧f (ρ , X)) σ)   ≡⟨ gmap-cong (λ C → ⟦⟧f-compv wkn-vsub C (ρ , X)) ⟩
+                (gmap (λ C → ⟦ C ⟧f (wkn-vsub ⋆v (ρ , X))) σ)     ≡⟨ gmap-cong (λ C → cong ⟦ C ⟧f (gmap-funct id-vsub)) ⟩
+                (gmap (λ C → ⟦ C ⟧f (ρ ⁌ id-vsub)) σ)             ≡⟨ gmap-cong (λ C → cong ⟦ C ⟧f (id-v-right ρ)) ⟩
+                (gmap (λ C → ⟦ C ⟧f ρ) σ
+              ∎)))
+
+⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (σ ⋆ ρ)
 ⟦⟧f-comp σ (▹ A) ρ = sym (lookup-gmap (λ x → ⟦ x ⟧f ρ) σ A)
-⟦⟧f-comp σ (μ F) ρ = {!!}
+⟦⟧f-comp σ (μ F) ρ = cong μ⁺ (funext (λ X →
+         begin
+           ⟦ [ psub-ext σ ]p F ⟧f (ρ , X)     ≡⟨ ⟦⟧f-comp (psub-ext σ) F (ρ , X) ⟩
+           ⟦ F ⟧f ((psub-ext σ) ⋆ (ρ , X))    ≡⟨ cong ⟦ F ⟧f (lem3 σ ρ X) ⟩
+           ⟦ F ⟧f ((σ ⋆ ρ) , X)
+         ∎))
 ⟦⟧f-comp σ (ν F) ρ = {!!}
 ⟦⟧f-comp σ (○ A) ρ rewrite ⟦⟧f-comp σ A ρ = refl
 ⟦⟧f-comp σ (A ⊃ B) ρ rewrite ⟦⟧f-comp σ B ρ = refl
 ⟦⟧f-comp σ (A ∧ B) ρ rewrite ⟦⟧f-comp σ A ρ | ⟦⟧f-comp σ B ρ = refl
-⟦⟧f-comp σ (A ∨ B) ρ = {!!}
+⟦⟧f-comp σ (A ∨ B) ρ = cong₂ _∨⁺_ {!!} {!!}
 ⟦⟧f-comp σ ⊤ ρ = refl
 
 eval-var : ∀ Γ T -> var Γ T -> ⟦ Γ ⟧c ⇒ ⟦ T ⟧t

@@ -128,8 +128,8 @@ _•_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 
 _◦_ : ∀ {ζ1 ζ2 ζ3} (σ1 : psub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> psub ζ1 ζ3
 σ1 ◦ σ2 = sub-map [ σ1 ]v σ2
 
-_⁌_ : ∀ {A} {ζ2 ζ3} {exp : A -> Set} (σ1 : sub exp ζ2) (σ2 : vsub {A} ζ2 ζ3) -> sub exp ζ3
-σ1 ⁌ σ2 = sub-map [ σ1 ]v σ2
+_⁌_ : ∀ {a b} {A : Set a} {ζ2 ζ3} {exp : A -> Set b} (σ1 : gsubst ζ2 exp) (σ2 : vsubst {a} {A} ζ3 ζ2) -> gsubst ζ3 exp
+σ1 ⁌ σ2 = gmap [ σ1 ]v σ2
 
 _◆_ :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : psub ζ2 ζ3) -> psub ζ1 ζ3
 σ1 ◆ σ2 = sub-map [ σ1 ]pv σ2
@@ -151,13 +151,15 @@ sub-map-funct : ∀ {A : Set} {exp1 exp2 exp3 : A -> Set} (g : ∀ {T} -> exp2 T
  -> ∀ {Δ} (σ : sub exp1 Δ) -> (((sub-map g) ∘ (sub-map f)) σ) ≡ (sub-map (g ∘ f) σ)
 sub-map-funct g f σ = gmap-funct σ
 
-sub-map-resp-≈ :  ∀ {A : Set} {exp1 exp2 : A -> Set} {f g : ∀ {T} -> exp1 T -> exp2 T} {Δ}
- -> (∀ {T} -> f {T} ≈ g {T}) -> (σ : sub exp1 Δ) -> sub-map f σ ≡ sub-map g σ
+sub-map-resp-≈ :  ∀ {a} {A : Set a} {exp1 exp2 : A -> Set} {f g : ∀ {T} -> exp1 T -> exp2 T} {Δ}
+ -> (∀ {T} -> f {T} ≈ g {T}) -> (σ : gsubst Δ exp1) -> gmap f σ ≡ gmap g σ
 sub-map-resp-≈ H σ = gmap-cong H
 
-id-v-right : ∀ {ζ2 ζ1} (σ : psub ζ1 ζ2) -> (σ ◦ id-vsub) ≡ σ
-id-v-right {⊡} σ = refl
-id-v-right {ζ2 , T} (σ , M) = cong (λ α → α , M) (trans (gmap-funct id-vsub) (id-v-right σ))
+-- TODO: Move into FinMap
+id-v-right : ∀ {a b} {A : Set a} {F : A -> Set b} {ζ} (σ : gsubst ζ F) -> (σ ⁌ id-vsub) ≡ σ
+id-v-right {a} {b} {A} {F} {⊡} σ = refl
+id-v-right {a} {b} {A} {F} {ψ , T} (σ , M) = cong (λ α → α , M) (trans (gmap-funct id-vsub) (id-v-right σ))
+
 
 ext-wkn : ∀ {ζ1 ζ2} (σ1 : psub ζ1 ζ2) -> ((psub-ext σ1) ◦ wkn-vsub) ≡ (wkn-vsub ◆ σ1)
 ext-wkn σ1 = trans (sub-map-funct _ _ _) (id-v-right _)
@@ -165,21 +167,21 @@ ext-wkn σ1 = trans (sub-map-funct _ _ _) (id-v-right _)
 comma-wkn : ∀ {ζ1 ζ2} (σ1 : psub ζ1 ζ2) A -> ((σ1 , A) ◦ wkn-vsub) ≡ σ1
 comma-wkn σ1 A = trans (sub-map-funct _ _ _) (id-v-right _)
 
--- TODO: Could unify this with id-v-right and move it into FinMap
-id-v-right2 : ∀ {A} {ζ2 ζ1} (σ : vsub {A} ζ1 ζ2) -> (σ ⁌ id-vsub) ≡ σ
-id-v-right2 {A} {⊡} σ = refl
-id-v-right2 {A} {ψ , T} (σ , M) = cong (λ α → α , M) (trans (gmap-funct id-vsub) (id-v-right2 σ))
-
-
 map-lookup : ∀ {A} {ζ1 ζ2 ζ3} (f : ∀ {U : A} -> var ζ2 U -> var ζ3 U) (σ : vsub {A} ζ2 ζ1) {T} (y : var ζ1 T) -> [ sub-map f σ ]v y ≡ f ([ σ ]v y)
 map-lookup f σ = lookup-gmap f σ
 
-vsub-v-id : ∀ {A} {ζ T} (x : var ζ T) -> [ id-vsub {A} ]v x ≡ x
+vsub-v-id : ∀ {a} {A : Set a} {ζ T} (x : var ζ T) -> [ id-vsub {a} {A} ]v x ≡ x
 vsub-v-id top = refl
-vsub-v-id (pop y) = trans (map-lookup pop id-vsub y) (cong pop (vsub-v-id y))
+vsub-v-id (pop y) = trans (lookup-gmap pop id-vsub y) (cong pop (vsub-v-id y))
 
-ext-wkn2 : ∀ {A} {ζ1 ζ2} (σ1 : vsub {A} ζ1 ζ2) {T} -> ((vsub-ext {A} {T} σ1) ⁌ wkn-vsub) ≡ (wkn-vsub ⁌ σ1)
-ext-wkn2 σ1 = trans (sub-map-funct _ _ _) (trans (id-v-right2 (sub-map pop σ1)) (sub-map-resp-≈ (λ x → trans (cong pop (sym (vsub-v-id x))) (sym (map-lookup pop id-vsub x))) σ1))
+ext-wkn2 : ∀ {a} {A : Set a} {ζ1 ζ2} (σ1 : vsubst {a} {A} ζ2 ζ1) {T} -> ((vsub-ext {a} {A} {T} σ1) ⁌ wkn-vsub) ≡ (wkn-vsub ⁌ σ1)
+ext-wkn2 {a} σ1 =  begin
+                (vsub-ext σ1 ⁌ wkn-vsub) ≡⟨ (gmap-funct id-vsub) ⟩
+                (wkn σ1 ⁌ id-vsub) ≡⟨ id-v-right (wkn σ1) ⟩
+                (wkn σ1) ≡⟨ (gmap-cong (λ x → cong pop (sym (vsub-v-id x)))) ⟩
+                (gmap (λ z → pop (lookup id-vsub z)) σ1 ≡⟨ (gmap-cong {σ = σ1} (λ x → sym (lookup-gmap pop id-vsub x))) ⟩
+                (wkn-vsub ⁌ σ1)
+               ∎)
 
 -- TODO: Move into FinMap
 vsub-vsub-funct :  ∀ {A} {ζ2 ζ3} {exp : A -> Set} (σ1 : sub exp ζ2) (σ2 : vsub {A} ζ2 ζ3) {T} (x : var ζ3 T) -> ([ σ1 ]v ∘ [ σ2 ]v) x ≡ [ σ1 ⁌ σ2 ]v x
@@ -188,8 +190,8 @@ vsub-vsub-funct σ1 σ x = sym (lookup-gmap [ σ1 ]v σ x)
 assocvvv : ∀ {A} {ζ1 ζ2 ζ3 ζ4} (σ1 : vsub {A} ζ1 ζ2) (σ2 : vsub ζ2 ζ3) (σ3 : vsub ζ3 ζ4) -> (σ1 ⁌ (σ2 ⁌ σ3)) ≡ ((σ1 ⁌ σ2) ⁌ σ3)
 assocvvv σ1 σ2 σ3 = trans (sub-map-funct _ _ _) (sub-map-resp-≈ (vsub-vsub-funct σ1 σ2) σ3)
 
-ext-funct-vv : ∀ {A} {ζ1 ζ2 ζ3} {T} (σ1 : vsub {A} ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ((vsub-ext {A} {T} σ1) ⁌ (vsub-ext σ2)) ≡ vsub-ext (σ1 ⁌ σ2)
-ext-funct-vv σ1 σ2 = cong1st _,_ (trans (trans (sub-map-funct _ pop σ2) (sub-map-resp-≈ (map-lookup pop σ1) σ2)) (sym (sub-map-funct pop [ σ1 ]v σ2))) top
+ext-funct-vv : ∀ {a} {A : Set a} {ζ1 ζ2 ζ3} {T} (σ1 : vsubst {a} {A} ζ2 ζ1) (σ2 : vsubst ζ3 ζ2) -> ((vsub-ext {a} {A} {T} σ1) ⁌ (vsub-ext σ2)) ≡ vsub-ext (σ1 ⁌ σ2)
+ext-funct-vv σ1 σ2 = cong (λ α -> α , top) (trans (trans (gmap-funct σ2) (gmap-cong (lookup-gmap pop σ1))) (sym (gmap-funct σ2)))
 
 pvsub-pvsub-funct :  ∀ {ζ1 ζ2 ζ3} (σ1 : vsub ζ1 ζ2) (σ2 : vsub ζ2 ζ3) -> ([ σ1 ]pv ∘ [ σ2 ]pv) ≈ [ σ1 ⁌ σ2 ]pv
 pvsub-pvsub-funct σ1 σ2 (▹ A) = cong ▹ (vsub-vsub-funct σ1 σ2 A)

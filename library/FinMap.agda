@@ -72,26 +72,26 @@ lookup-gmap {A = A} {⊡} f σ ()
 lookup-gmap {A = A} {ψ , T} f σ top = refl
 lookup-gmap {A = A} {ψ , T} f σ (pop y) = lookup-gmap f (proj₁ σ) y
 
-vsubst : ∀ {A} -> ctx A -> ctx A -> Set
+vsubst : ∀ {a} {A : Set a} -> ctx A -> ctx A -> Set a
 vsubst Γ Δ = gsubst Γ (var Δ)
 
 [_]v : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ T} (σ : gsubst Δ F) -> var Δ T -> F T
 [ σ ]v x = lookup σ x
 
-wkn : ∀ {A} {Γ1 Γ2} {T : A} -> vsubst Γ1 Γ2 -> vsubst Γ1 (Γ2 , T)
+wkn : ∀ {a} {A : Set a} {Γ1 Γ2} {T : A} -> vsubst Γ1 Γ2 -> vsubst Γ1 (Γ2 , T)
 wkn σ = gmap pop σ
 
-id-vsub : ∀ {A} {Γ : ctx A} -> vsubst Γ Γ
-id-vsub {A} {⊡} = tt
-id-vsub {A} {Γ , T} = (wkn id-vsub) , top
+id-vsub : ∀ {a} {A : Set a} {Γ : ctx A} -> vsubst Γ Γ
+id-vsub {a} {A} {⊡} = tt
+id-vsub {a} {A} {Γ , T} = (wkn id-vsub) , top
 
-wkn-vsub : ∀ {A} {Γ : ctx A} {T} -> vsubst Γ (Γ , T)
-wkn-vsub {A} {Γ} {T} = wkn id-vsub
+wkn-vsub : ∀ {a} {A : Set a} {Γ : ctx A} {T} -> vsubst Γ (Γ , T)
+wkn-vsub {a} {A} {Γ} {T} = wkn id-vsub
 
-vsub-ext : ∀ {A T} {Γ1 Γ2 : ctx A} -> vsubst Γ1 Γ2 -> vsubst (Γ1 , T) (Γ2 , T)
+vsub-ext : ∀ {a} {A : Set a} {T} {Γ1 Γ2 : ctx A} -> vsubst Γ1 Γ2 -> vsubst (Γ1 , T) (Γ2 , T)
 vsub-ext σ = (gmap pop σ) , top
 
-_∘v_ : ∀ {A} {Δ Γ ψ : ctx A} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
+_∘v_ : ∀ {a} {A : Set a} {Δ Γ ψ : ctx A} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘v σ2) = gmap [ σ1 ]v σ2
 
 cmap : ∀ {a b} {A : Set a} {B : Set b} (f : A -> B) (Ψ : ctx A) -> ctx B
