@@ -426,6 +426,7 @@ arrow-lookup ⊡ ()
 arrow-lookup (θ , N) top = N
 arrow-lookup (θ , N) (pop y) = arrow-lookup θ y
 
+{-
 map : ∀ {ζ} F {σ1 σ2 : psub ⊡ ζ} (θ : arrow σ1 σ2) -> ⊡ , (⊡ , [ σ1 ]p F) ⊢ [ σ2 ]p F - true
 map (▹ A) θ = arrow-lookup θ A
 map (μ F) {σ1} {σ2} θ = rec ([ psub-ext σ1 ]p F) (▹ top) (inj {F = [ psub-ext σ2 ]p F } (subst2/3 (_,_⊢_-_ ⊡)
@@ -449,7 +450,7 @@ map2 : ∀ {ζ θ Γ} F {σ1 σ2 : psub ⊡ ζ} (ρ : arrow σ1 σ2) -> θ , Γ 
 map2 F ρ t = [ _ , t ]t ([ _ ]va map F ρ)
 
 map3 : ∀ {θ Γ A B} F -> (ρ : ⊡ , ⊡ , A ⊢ B - true) -> θ , Γ ⊢ [ A /x]p F - true -> θ , Γ ⊢ [ B /x]p F - true
-map3 F ρ t = map2 F (⊡ , ρ) t
+map3 F ρ t = map2 F (⊡ , ρ) t -}
 
 lem : ∀ {ζ1 ζ2 ζ3} F (σ1 : psub ζ2 ζ1) (σ2 : psub ζ3 ζ2) A -> ([ σ2 , A ]p ([ psub-ext σ1 ]p F)) ≡ ([ (σ2 • σ1) , A ]p F)
 lem F σ1 σ2 A = begin
@@ -466,10 +467,9 @@ lem2 F σ1 A = begin
   [ σ1 , A ]p F
   ∎
 
-{- 
+
 map2' : ∀ {ζ θ Γ} F {σ1 σ2 : psub ⊡ ζ} (ρ : arrow σ1 σ2) -> θ , Γ ⊢ [ σ1 ]p F - true -> θ , Γ ⊢ [ σ2 ]p F - true
-map2' (▸ P) ρ t = {!!}
-map2' (▹ A) ρ t = [ ⊡ , t ]t ([ ⊡ ]va (arrow-lookup ρ A))
+map2' (▹ A) ρ t = [ tt , t ]t ([ tt ]va (arrow-lookup ρ A))
 map2' (μ F) {σ1} {σ2} ρ t = rec ([ psub-ext σ1 ]p F) t (inj (subst2/3 (_,_⊢_-_ ⊡)
   (cong (_,_ ⊡) (lem2 F σ1 (μ ([ psub-ext σ2 ]p F))))
                 (lem2 F σ2 (μ ([ psub-ext σ2 ]p F))) true
@@ -480,27 +480,15 @@ map2' (ν F) {σ1} {σ2} ρ t = unfold ([ psub-ext σ2 ]p F) t
     (map2' F (ρ , ▹ top)
        (subst2/3 (_,_⊢_-_ ⊡) refl (sym (lem2 F σ1 (ν ([ psub-ext σ1 ]p F)))) true
     (out (▹ top)))))
-map2' (○ A) ρ t = {!!}
-map2' (A ⊃ B) ρ t = {!!}
-map2' (A ∧ B) ρ t = < (map2' A ρ (fst t)) , {!!} >
-map2' (A ∨ B) ρ t = {!!}
-map2' ⊤ ρ t = {!!}
+map2' (○ A) ρ t = let-◦ t (◦ (map2' A ρ (▹ top)))
+map2' (A ⊃ B) ρ t = ƛ (map2' B ρ (([ wkn-vsub ]tv t) · ▹ top))
+map2' (A ∧ B) ρ t = < (map2' A ρ (fst t)) , map2' B ρ (snd t) >
+map2' (A ∨ B) ρ t = case t (inl (map2' A ρ (▹ top))) (inr (map2' B ρ (▹ top)))
+map2' ⊤ ρ t = t
 
-map3' : ∀ {θ Γ A B} F -> (ρ : ⊡ , ⊡ , A ⊢ B - true) -> θ , Γ ⊢ [ A /x]p F - true -> θ , Γ ⊢ [ B /x]p F - true
-map3' (▸ P) ρ t = {!!}
-map3' (▹ A') ρ t = {!!}
-map3' (μ F) ρ t = rec ([ (⊡ , [ ⊡ ]pv _) , ▹ top ]p F) t (inj {!!})
-map3' (ν F) ρ t = {!!}
-map3' (○ A') ρ t = {!!}
-map3' (A' ⊃ B') ρ t = {!!}
-map3' (A' ∧ B') ρ t = < (map3' A' ρ (fst t)) , (map3' B' ρ (snd t)) >
-map3' (A' ∨ B') ρ t = {!!}
-map3' ⊤ ρ t = {!!} -}
+map3 : ∀ {θ Γ A B} F -> (ρ : ⊡ , ⊡ , A ⊢ B - true) -> θ , Γ ⊢ [ A /x]p F - true -> θ , Γ ⊢ [ B /x]p F - true
+map3 F ρ t = map2' F (⊡ , ρ) t
 
--- Other way to write it maybe concludes θ;Γ ⊢ F(A) -> θ;Γ ⊢ F(B) ?
-
--- Double check that this is the same way Baelde treats fixed points
--- Is there a slightly nicer way?
 data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set where
  box-red : ∀ {A C} (M : ⊡ , θ ⊢ A - true) (N : (θ , A) , Γ ⊢ C - true)
                 -> step (let-◦ (◦ M) N) ([ validsub-id , M ]va N)
@@ -515,7 +503,3 @@ data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set w
  snd-red : ∀ {A B} (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
                 -> step (snd < M , N >) N
 
-
- 
-
---⟦_⟧ : ∀ {θ Γ T} -> θ , Γ ⊢ T - true -> ∀ n
