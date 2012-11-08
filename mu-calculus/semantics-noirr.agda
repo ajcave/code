@@ -155,6 +155,9 @@ mutual
   where νωmap : {β α : ω+1} → β ≤ω α → ν₁ F ρ α → ν₁ F ρ β
         νωmap β≤ωα ⟨ y ⟩ = ⟨ (♯ (⟦ F ⟧f (ρ , ν⁺ F ρ) ₂) β≤ωα (♭ y)) ⟩
 
+ data μ₁' (F : obj -> obj) (α : ω+1) : Set where
+  ⟨_⟩ : ((F (μ⁺' F)) ₁) α -> μ₁' F α
+
  data μ₁ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ω+1) : Set where
   ⟨_⟩ : (⟦ F ⟧f (ρ , (μ⁺ F ρ)) ₁) α -> μ₁ F ρ α
 
@@ -164,9 +167,14 @@ mutual
   where μωmap : {β α : ω+1} → β ≤ω α → μ₁ F ρ α → μ₁ F ρ β
         μωmap β≤ωα ⟨ y ⟩ = ⟨ ((⟦ F ⟧f (ρ , (μ⁺ F ρ))) ₂) β≤ωα y ⟩
 
+ μ⁺' : ∀ (F : obj -> obj) -> obj
+ μ⁺' F = record { A = μ₁' F; ωmap = μωmap; fcomp = {!!}; fid = {!!} }
+  where μωmap : {β α : ω+1} → β ≤ω α → μ₁' F α → μ₁' F β
+        μωmap β≤ωα ⟨ y ⟩ = ⟨ ((F (μ⁺' F) ₂) β≤ωα y) ⟩
+
  ⟦_⟧f : ∀ {Δ} -> functor Δ -> (ρ : gksubst Δ obj) -> obj
  ⟦_⟧f (▹ A) ρ = lookup ρ A
- ⟦_⟧f (μ F) ρ = μ⁺ F ρ
+ ⟦_⟧f (μ F) ρ = μ⁺' (λ X -> ⟦ F ⟧f (ρ , X))
  ⟦_⟧f (ν F) ρ = ν⁺ F ρ
  ⟦_⟧f (○ A) ρ = ○⁺ (⟦ A ⟧f ρ)
  ⟦_⟧f (A ⊃ B) ρ = ⟦ A ⟧f tt ⊃⁺ ⟦ B ⟧f ρ
@@ -373,24 +381,25 @@ fmap (A ∧ B) ρ1 ρ2 σ = {!!}
 fmap (A ∨ B) ρ1 ρ2 σ = {!!}
 fmap ⊤ ρ1 ρ2 σ = tt⁺
 
-inj⁺ : ∀ F -> ⟦ F ⟧f (tt , μ⁺ F tt) ⇒ μ⁺ F tt
+inj⁺ : ∀ F -> ⟦ F ⟧f (tt , ⟦ μ F ⟧t) ⇒ ⟦ μ F ⟧t
 inj⁺ F = record {
      η = λ α x → ⟨ x ⟩;
      natural = λ β≤ωα x → refl
    }
 
 
-fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> μ⁺ F tt ⇒ C
+fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> ⟦ μ F ⟧t ⇒ C
 fold⁺ F C (f , nf) = record {
      η = fold₁;
      natural = fold₁nat
   }
-  where fold₁ : μ₁ F tt ⇒₁ (C ₁)
-        fold₁ α ⟨ y ⟩ = f α (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) α y)
-        fold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : μ₁ F tt α) → fold₁ β (((⟦ μ F ⟧f tt) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (fold₁ α x))
-        fold₁nat β≤ωα ⟨ y ⟩ = trans
+  where fold₁ : (⟦ μ F ⟧t ₁) ⇒₁ (C ₁)
+        fold₁ α ⟨ y ⟩ = f α (_⇒_.η (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) α y)
+        fold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : ((⟦ μ F ⟧f tt) ₁) α) → {!!} --fold₁ β (((⟦ μ F ⟧f tt) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (fold₁ α x))
+        fold₁nat β≤ωα ⟨ y ⟩ = {!!}
+       {-trans
               (cong (f _) (_⇒_.natural (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) β≤ωα y))
-              (nf β≤ωα (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y))
+              (nf β≤ωα (_⇒_.η (fmap F (tt , μ⁺ F tt) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y)) -}
 
 out⁺ : ∀ F -> ν⁺ F tt ⇒ ⟦ F ⟧f (tt , ν⁺ F tt)
 out⁺ F = record {
