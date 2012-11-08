@@ -435,7 +435,7 @@ eval θ Γ .(ν F) (unfold F {T} M N) = unfold⁺ F ⟦ T ⟧t (((id⁺≡ (⟦�
 eval θ Γ .(A ∧ B) (<_,_> {A} {B} M N) = < (eval θ Γ A M) , (eval θ Γ B N) >⁺
 eval θ Γ .T (fst {T} {B} M) = π₁⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (T ∧ B) M
 eval θ Γ .T (snd {B} {T} M) = π₂⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (B ∧ T) M
-eval θ Γ .(A ∨ B) (inl {A} {B} M) = inj₁⁺ ⟦ B ⟧t ∘⁺ (eval θ Γ A M)
+eval θ Γ .(A ∨ B) (inl {B} {A} M) = inj₁⁺ ⟦ B ⟧t ∘⁺ (eval θ Γ A M)
 eval θ Γ .(A ∨ B) (inr {A} {B} M) = inj₂⁺ ⟦ A ⟧t ∘⁺ eval θ Γ B M
 eval θ Γ T (case {A} {B} M N1 N2) =
     case⁺ (eval θ Γ (A ∨ B) M)

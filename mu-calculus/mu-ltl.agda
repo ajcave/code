@@ -315,7 +315,7 @@ mutual
   snd : ∀ {A B} -> (M : θ , Γ ⊢ (A ∧ B) - true)
                 -> -----------------------------
                        θ , Γ ⊢ B - true
-  inl : ∀ {A B} -> (M : θ , Γ ⊢ A - true)
+  inl : ∀ {B A} -> (M : θ , Γ ⊢ A - true)
                 -> ------------------------
                       θ , Γ ⊢ (A ∨ B) - true
   inr : ∀ {A B} -> (M : θ , Γ ⊢ B - true)
@@ -488,7 +488,7 @@ map2' ⊤ ρ t = t
 map3 : ∀ {θ Γ A B} F -> (ρ : ⊡ , ⊡ , A ⊢ B - true) -> θ , Γ ⊢ [ A /x]p F - true -> θ , Γ ⊢ [ B /x]p F - true
 map3 F ρ t = map2' F (⊡ , ρ) t
 
-data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set where
+{-data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set where
  box-red : ∀ {A C} (M : ⊡ , θ ⊢ A - true) (N : (θ , A) , Γ ⊢ C - true)
                 -> step (let-◦ (◦ M) N) ([ validsub-id , M ]va N)
  rec-red : ∀ {F C} (M : θ , Γ ⊢ ([ μ F /x]p F) - true) (N : ⊡ , (⊡ , [ C /x]p F) ⊢ C - true)
@@ -501,4 +501,5 @@ data step {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set w
                 -> step (fst < M , N >) M
  snd-red : ∀ {A B} (M : θ , Γ ⊢ A - true) (N : θ , Γ ⊢ B - true)
                 -> step (snd < M , N >) N
+-}
 
