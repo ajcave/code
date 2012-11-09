@@ -255,9 +255,9 @@ causal-implies-natural : ∀ A B (η : (A ₁) ⇒₁ (B ₁)) -> causal A B η 
 causal-implies-natural A B η f β≤α x =
     begin
       (η _ ((A ₂) β≤α x))                ≡⟨ (sym (obj.fid B (η _ ((A ₂) β≤α x)))) ⟩
-      (B ₂) ≤ω-refl (η _ ((A ₂) β≤α x)) ≡⟨ f ≤ω-refl β≤α ((A ₂) β≤α x) x
-                                            (trans (sym (obj.fcomp A β≤α ≤ω-refl x))
-                                                   (cong (λ ρ → (A ₂) ρ x) (∘ω-idr β≤α))) ⟩
+      (B ₂) ≤ω-refl (η _ ((A ₂) β≤α x))  ≡⟨ f ≤ω-refl β≤α ((A ₂) β≤α x) x
+                                             (trans (sym (obj.fcomp A β≤α ≤ω-refl x))
+                                                    (cong (λ ρ → (A ₂) ρ x) (∘ω-idr β≤α))) ⟩
       ((B ₂) β≤α (η _ x)
     ∎)
 
