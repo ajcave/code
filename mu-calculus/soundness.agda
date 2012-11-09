@@ -35,7 +35,8 @@ sound T (app-red3 {A} M V) =
   begin
     λ⁺' {⟦ A ⟧t} {⟦ ⊡ ⟧c} {⟦ ⊡ ⟧c} (eval ⊡ (⊡ , A) T M) ·⁺ eval ⊡ ⊡ A (ninj V)
          ≡⟨ λ⁺'β (eval ⊡ (⊡ , A) T M) (eval ⊡ ⊡ A (ninj V)) ⟩
-    {!!} ≡⟨ {!!} ⟩
+    (eval ⊡ (⊡ , A) T M) ∘⁺ < π₁⁺ {⊤⁺} {○⁺ ⊤⁺} , < π₂⁺ {○⁺ ⊤⁺} {⊤⁺} , eval ⊡ ⊡ A (ninj V) >⁺ >⁺
+         ≡⟨ {!!} ⟩
     eval ⊡ (⊡ , A) T M ∘⁺ < π₁⁺  , < tt⁺ , eval ⊡ ⊡ A (ninj V) >⁺ >⁺
          ≡⟨ sym (compositional M (tt , ninj V)) ⟩
     eval ⊡ ⊡ T ([ tt , ninj V ]t M)
