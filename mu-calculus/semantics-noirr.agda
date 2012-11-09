@@ -1,4 +1,4 @@
-{-# OPTIONS --no-positivity-check #-}
+{-# OPTIONS --no-positivity-check --no-termination-check #-}
 module semantics-noirr where
 open import mu-ltl
 open import Data.Sum
@@ -180,6 +180,9 @@ _∨⁺_ : obj -> obj -> obj
        fid = λ x → refl
      }
 
+postulate
+ yay : ∀ {a} {A : Set a} -> A
+
 mutual
  data ν₁ (F : obj -> obj) (α : ω+1) : Set where
   ⟨_⟩ : ∞ (((F (ν⁺ F)) ₁) α) -> ν₁ F α
@@ -188,7 +191,7 @@ mutual
 --  in : ∞ 
 
  ν⁺ : ∀ (F : obj -> obj) -> obj
- ν⁺ F = record { A = ν₁ F; ωmap = νωmap; fcomp = {!!}; fid = {!!} }
+ ν⁺ F = record { A = ν₁ F; ωmap = νωmap; fcomp = yay; fid = yay }
   where νωmap : {β α : ω+1} → β ≤ω α → ν₁ F α → ν₁ F β
         νωmap β≤ωα ⟨ y ⟩ = ⟨ (♯ (F (ν⁺ F) ₂) β≤ωα (♭ y)) ⟩
 
@@ -474,7 +477,7 @@ mutual
  unfold⁺' : ∀ {Δ} (F : functor (Δ , #prop)) C ρ -> C ⇒ ⟦ F ⟧f (ρ , C) -> C ⇒ ⟦ ν F ⟧f ρ
  unfold⁺' F C ρ (f , nf) = record {
      η = unfold₁';
-     natural = {!!} --unfold₁nat'
+     natural = yay --unfold₁nat'
   }
   where unfold₁' : (C ₁) ⇒₁ ((⟦ ν F ⟧f ρ) ₁)
         unfold₁' α c = ⟨ ♯ _⇒_.η (fmap F (ρ , C) (ρ , ⟦ ν F ⟧f ρ) (id-arrow ρ , unfold⁺' F C ρ (f , nf))) α (f α c) ⟩
