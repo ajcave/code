@@ -8,6 +8,7 @@ open import Unit
 open import normal
 open import Function
 open import Relation.Binary.PropositionalEquality
+open ≡-Reasoning
 
 -- Perhaps I should do this together with a θ-substitution?
 compositional : ∀ {θ Γ1 Γ2 T} (M : θ , Γ1 ⊢ T - true) (σ : truesub θ Γ2 Γ1)
@@ -26,7 +27,7 @@ compositional M σ = {!!}
 sound : ∀ T {N M : ⊡ , ⊡ ⊢ T - true} -> (N ⟶ M) -> eval ⊡ ⊡ T N ≡ eval ⊡ ⊡ T M
 sound T (app-red1 M M' N y) = cong₂ _·⁺_ (sound _ y) refl
 sound T (app-red2 V N N' y) = cong (_·⁺_ (eval ⊡ ⊡ _ (ninj V))) (sound _ y)
-sound T (app-red3 M V) = {!!}
+sound T (app-red3 M V) = begin {!!}
 sound .(A ∧ B) (pair-red1 {A} {B} M M' N y) = cong (flip <_,_>⁺ (eval ⊡ ⊡ B N)) (sound A y)
 sound .(A ∧ B) (pair-red2 {A} {B} V N N' y) = cong (<_,_>⁺ (eval ⊡ ⊡ A (ninj V))) (sound B y)
 sound T (fst-red1 {.T} {B} M M' y) = cong (_∘⁺_ (π₁⁺ {⟦ B ⟧t})) (sound _ y)
