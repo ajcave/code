@@ -18,6 +18,10 @@ compositional M σ = {!!}
 λ⁺β : ∀ {B Γ C} (m : (Γ ∧⁺ B) ⇒ C) (n : Γ ⇒ B) -> ((λ⁺ {B} m) ·⁺ n) ≡ m ∘⁺ < (id⁺ Γ) , n >⁺
 λ⁺β (m , mf) (n , nf) = {!use heterogeneous equality and a dependent cong₂?!}
 
+λ⁺'β : ∀ {B θ Γ C} (m : ((○⁺ θ) ∧⁺ (Γ ∧⁺ B)) ⇒ C) (n : ((○⁺ θ) ∧⁺ Γ) ⇒ B)
+ -> ((λ⁺' {B} {θ} {Γ} m) ·⁺ n) ≡ m ∘⁺ < π₁⁺ {Γ} {○⁺ θ} , < (π₂⁺ {○⁺ θ} {Γ}) , n >⁺ >⁺
+λ⁺'β m n = {!!}
+
 π₁β1 : ∀ {Γ A B} (m : Γ ⇒ A) (n : Γ ⇒ B) -> (π₁⁺ {B} ∘⁺ < m , n >⁺) ≡ m
 π₁β1 (m , mf) n = cong (_,_ m) (funext-imp (λ x → funext-imp (λ x' → funext (λ x0 → funext (λ x1 → K _ _)))))
 
@@ -30,7 +34,8 @@ sound T (app-red2 V N N' y) = cong (_·⁺_ (eval ⊡ ⊡ _ (ninj V))) (sound _ 
 sound T (app-red3 {A} M V) =
   begin
     λ⁺' {⟦ A ⟧t} {⟦ ⊡ ⟧c} {⟦ ⊡ ⟧c} (eval ⊡ (⊡ , A) T M) ·⁺ eval ⊡ ⊡ A (ninj V)
-         ≡⟨ {!!} ⟩
+         ≡⟨ λ⁺'β (eval ⊡ (⊡ , A) T M) (eval ⊡ ⊡ A (ninj V)) ⟩
+    {!!} ≡⟨ {!!} ⟩
     eval ⊡ (⊡ , A) T M ∘⁺ < π₁⁺  , < tt⁺ , eval ⊡ ⊡ A (ninj V) >⁺ >⁺
          ≡⟨ sym (compositional M (tt , ninj V)) ⟩
     eval ⊡ ⊡ T ([ tt , ninj V ]t M)
