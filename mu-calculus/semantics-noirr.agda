@@ -401,11 +401,14 @@ let-◦⁺ θ Γ T S m n = n ∘⁺ < dist⁻¹ {θ} {S} ∘⁺ < π₁⁺ {Γ} 
 ◦₂ A B f t {ω} {▹ (suc n)} β≤ωα x = t inj₂ x
 ◦₂ A B f t {ω} {ω} β≤ωα x = t β≤ωα x
 
-◦⁺ : ∀ A B -> A ⇒ B -> ○⁺ A ⇒ ○⁺ B
-◦⁺ A B (t , nt) = record {
+◦⁺' : ∀ A B -> A ⇒ B -> ○⁺ A ⇒ ○⁺ B
+◦⁺' A B (t , nt) = record {
              η = ◦₁ t;
              natural = ◦₂ A B t nt
            }
+
+◦⁺ : ∀ θ Γ A -> ((○⁺ ⊤⁺) ∧⁺ θ) ⇒ A -> ((○⁺ θ) ∧⁺ Γ) ⇒ ○⁺ A
+◦⁺ θ Γ A t = ◦⁺' θ A (t ∘⁺ < ⊤dist⁻¹ ∘⁺ tt⁺ , (id⁺ θ) >⁺) ∘⁺ (π₁⁺ {Γ} {○⁺ θ} )
 
 inj₁⁺ : ∀ B {A} -> A ⇒ (A ∨⁺ B)
 inj₁⁺ B = record {
@@ -477,7 +480,7 @@ mutual
  fmap (▹ A) ρ1 ρ2 σ = arrow-lookup1 σ A
  fmap (μ F) ρ1 ρ2 σ = fold⁺' F (⟦ μ F ⟧f ρ2) ρ1 ((inj⁺' F ρ2) ∘⁺ (fmap F (ρ1 , ⟦ μ F ⟧f ρ2) (ρ2 , ⟦ μ F ⟧f ρ2) (σ , (id⁺ (⟦ μ F ⟧f ρ2)))))
  fmap (ν F) ρ1 ρ2 σ = unfold⁺' F (⟦ ν F ⟧f ρ1) ρ2 ((fmap F (ρ1 , ⟦ ν F ⟧f ρ1) (ρ2 , ⟦ ν F ⟧f ρ1) (σ , id⁺ (⟦ ν F ⟧f ρ1))) ∘⁺ (out⁺' F ρ1))
- fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
+ fmap (○ A) ρ1 ρ2 σ = ◦⁺' (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
  fmap (A ⊃ B) ρ1 ρ2 σ = ⟦ A ⟧t ⊃̂⁺ fmap B ρ1 ρ2 σ
  fmap (A ∧ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∧̂⁺ (fmap B ρ1 ρ2 σ)
  fmap (A ∨ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∨̂⁺ (fmap B ρ1 ρ2 σ)
@@ -580,7 +583,7 @@ eval θ Γ T (▹ x) = eval-var Γ T x ∘⁺ π₂⁺ {○⁺ ⟦ θ ⟧c}
 eval θ Γ .(A ⊃ B) (ƛ {A} {B} M) = λ⁺ {⟦ A ⟧t} (eval θ (Γ , A) B M ∘⁺ (∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t))
 eval θ Γ T (M · N) = (eval θ Γ (_ ⊃ T) M) ·⁺ (eval θ Γ _ N)
 eval θ Γ T (let-◦ {S} M N) = let-◦⁺ ⟦ θ ⟧c ⟦ Γ ⟧c ⟦ T ⟧t ⟦ S ⟧t (eval θ Γ (○ S) M) (eval (θ , S) Γ T N)
-eval θ Γ .(○ A) (◦ {A} M) = ◦⁺ ⟦ θ ⟧c ⟦ A ⟧t ((eval ⊡ θ A M) ∘⁺ < ⊤dist⁻¹ ∘⁺ tt⁺ , (id⁺ ⟦ θ ⟧c) >⁺) ∘⁺ (π₁⁺ {⟦ Γ ⟧c} {○⁺ ⟦ θ ⟧c} )
+eval θ Γ .(○ A) (◦ {A} M) = ◦⁺ ⟦ θ ⟧c ⟦ Γ ⟧c ⟦ A ⟧t (eval ⊡ θ A M)
 eval θ Γ .(μ F) (inj {F} M) = (inj⁺ F) ∘⁺ (id⁺≡ (⟦⟧f-comp (tt , μ F) F tt) ∘⁺ eval θ Γ ([ tt , μ F ]p F) M)
 eval θ Γ T (rec F M N) = (fold⁺ F ⟦ T ⟧t ((eval ⊡ (⊡ , [ tt , T ]p F) T N) ∘⁺ < (⊤dist⁻¹ ∘⁺ tt⁺) , < tt⁺ , id⁺≡ (sym (⟦⟧f-comp (tt , T) F tt)) >⁺ >⁺)) ∘⁺ (eval θ Γ (μ F) M)
 eval θ Γ .([ tt , ν F ]p F) (out {F} M) = ((id⁺≡ (sym (⟦⟧f-comp (tt , ν F) F tt))) ∘⁺ (out⁺ F)) ∘⁺ (eval θ Γ (ν F) M)
