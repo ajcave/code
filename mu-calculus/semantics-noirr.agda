@@ -596,5 +596,7 @@ eval θ Γ T (case {A} {B} M N1 N2) =
           (eval θ (Γ , B) T N2 ∘⁺ ∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ B ⟧t)
 eval θ Γ .⊤ unit = tt⁺
 
+eval-natural : ∀ θ Γ T -> (N : θ , Γ ⊢ T - true) -> causal ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⟦ T ⟧t (_⇒_.η (eval θ Γ T N))
+eval-natural θ Γ T N = natural-implies-causal ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⟦ T ⟧t (_⇒_.η (eval θ Γ T N)) (_⇒_.natural (eval θ Γ T N))
 
 
