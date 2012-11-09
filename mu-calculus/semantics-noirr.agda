@@ -444,7 +444,7 @@ mutual
  fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow1 ρ1 ρ2) -> (⟦ F ⟧f ρ1) ⇒ (⟦ F ⟧f ρ2)
  fmap (▹ A) ρ1 ρ2 σ = {!!}
  fmap (μ F) ρ1 ρ2 σ = fold⁺' F (⟦ μ F ⟧f ρ2) ρ1 ((inj⁺' F ρ2) ∘⁺ (fmap F (ρ1 , ⟦ μ F ⟧f ρ2) (ρ2 , ⟦ μ F ⟧f ρ2) (σ , (id⁺ (⟦ μ F ⟧f ρ2)))))
- fmap (ν F) ρ1 ρ2 σ = {!!}
+ fmap (ν F) ρ1 ρ2 σ = unfold⁺' F (⟦ ν F ⟧f ρ1) ρ2 ((fmap F (ρ1 , ⟦ ν F ⟧f ρ1) (ρ2 , ⟦ ν F ⟧f ρ1) (σ , id⁺ (⟦ ν F ⟧f ρ1))) ∘⁺ (out⁺' F ρ1))
  fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
  fmap (A ⊃ B) ρ1 ρ2 σ = ⟦ A ⟧t ⊃̂⁺ fmap B ρ1 ρ2 σ
  fmap (A ∧ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∧̂⁺ (fmap B ρ1 ρ2 σ)
