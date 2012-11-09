@@ -182,13 +182,14 @@ _∨⁺_ : obj -> obj -> obj
 
 
 mutual
- data ν₁ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) (α : ω+1) : Set where
-  ⟨_⟩ : ∞ ((⟦ F ⟧f (ρ , (ν⁺ F ρ)) ₁) α) -> ν₁ F ρ α
 
- ν⁺ : ∀ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ obj) -> obj
- ν⁺ F ρ = record { A = ν₁ F ρ; ωmap = νωmap; fcomp = {!!}; fid = {!!} }
-  where νωmap : {β α : ω+1} → β ≤ω α → ν₁ F ρ α → ν₁ F ρ β
-        νωmap β≤ωα ⟨ y ⟩ = ⟨ (♯ (⟦ F ⟧f (ρ , ν⁺ F ρ) ₂) β≤ωα (♭ y)) ⟩
+ data ν₁ (F : obj -> obj) (α : ω+1) : Set where
+  ⟨_⟩ : ∞ (((F (ν⁺ F)) ₁) α) -> ν₁ F α
+
+ ν⁺ : ∀ (F : obj -> obj) -> obj
+ ν⁺ F = record { A = ν₁ F; ωmap = νωmap; fcomp = {!!}; fid = {!!} }
+  where νωmap : {β α : ω+1} → β ≤ω α → ν₁ F α → ν₁ F β
+        νωmap β≤ωα ⟨ y ⟩ = ⟨ (♯ (F (ν⁺ F) ₂) β≤ωα (♭ y)) ⟩
 
  data μ₁ (F : obj -> obj) (α : ω+1) : Set where
   ⟨_⟩ : ((F (μ⁺ F)) ₁) α -> μ₁ F α
@@ -205,7 +206,7 @@ mutual
  ⟦_⟧f : ∀ {Δ} -> functor Δ -> (ρ : gksubst Δ obj) -> obj
  ⟦_⟧f (▹ A) ρ = lookup ρ A
  ⟦_⟧f (μ F) ρ = μ⁺ (λ X -> ⟦ F ⟧f (ρ , X))
- ⟦_⟧f (ν F) ρ = ν⁺ F ρ
+ ⟦_⟧f (ν F) ρ = ν⁺ (λ X -> ⟦ F ⟧f (ρ , X))
  ⟦_⟧f (○ A) ρ = ○⁺ (⟦ A ⟧f ρ)
  ⟦_⟧f (A ⊃ B) ρ = ⟦ A ⟧f tt ⊃⁺ ⟦ B ⟧f ρ
  ⟦_⟧f (A ∧ B) ρ = ⟦ A ⟧f ρ ∧⁺ ⟦ B ⟧f ρ
@@ -440,20 +441,20 @@ fold⁺ F C (f , nf) = record {
               (cong (f _) (_⇒_.natural (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) β≤ωα y))
               (nf β≤ωα (_⇒_.η (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y))
 
-out⁺ : ∀ F -> ν⁺ F tt ⇒ ⟦ F ⟧f (tt , ν⁺ F tt)
+out⁺ : ∀ F -> ⟦ ν F ⟧t ⇒ ⟦ F ⟧f (tt , ⟦ ν F ⟧t)
 out⁺ F = record {
      η = λ α -> (λ {⟨ y ⟩ → ♭ y });
      natural = λ β≤ωα → λ {⟨ y ⟩ → refl}
    }
 
-unfold⁺ : ∀ F C -> C ⇒ ⟦ F ⟧f (tt , C) -> C ⇒ ν⁺ F tt
+unfold⁺ : ∀ F C -> C ⇒ ⟦ F ⟧f (tt , C) -> C ⇒ ⟦ ν F ⟧t
 unfold⁺ F C (f , nf) = record {
      η = unfold₁;
      natural = unfold₁nat
   }
-  where unfold₁ : (C ₁) ⇒₁ ν₁ F tt
-        unfold₁ α c = ⟨ ♯ _⇒_.η (fmap F (tt , C) (tt , ν⁺ F tt) (⊡ , unfold⁺ F C (f , nf))) α (f α c) ⟩
-        unfold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : (C ₁) α) → unfold₁ β ((C ₂) β≤ωα x) ≡ (ν⁺ F tt ₂) β≤ωα (unfold₁ α x)
+  where unfold₁ : (C ₁) ⇒₁ (⟦ ν F ⟧t ₁)
+        unfold₁ α c = ⟨ ♯ _⇒_.η (fmap F (tt , C) (tt , ⟦ ν F ⟧t) (⊡ , unfold⁺ F C (f , nf))) α (f α c) ⟩
+        unfold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : (C ₁) α) → unfold₁ β ((C ₂) β≤ωα x) ≡ (⟦ ν F ⟧t ₂) β≤ωα (unfold₁ α x)
         unfold₁nat β≤ωα x = cong ⟨_⟩ {!!}
 
 -- TODO: Move into FinMap
