@@ -20,7 +20,7 @@ compositional M σ = {!!}
 
 λ⁺'β : ∀ {B θ Γ C} (m : ((○⁺ θ) ∧⁺ (Γ ∧⁺ B)) ⇒ C) (n : ((○⁺ θ) ∧⁺ Γ) ⇒ B)
  -> ((λ⁺' {B} {θ} {Γ} m) ·⁺ n) ≡ m ∘⁺ < π₁⁺ {Γ} {○⁺ θ} , < (π₂⁺ {○⁺ θ} {Γ}) , n >⁺ >⁺
-λ⁺'β m n = {!!}
+λ⁺'β {B} {θ} {Γ} {C} m n = begin {!!} ≡⟨ (λ⁺β (m ∘⁺ ∧⁺-assoc' (○⁺ θ) Γ B) n) ⟩ {!!}
 
 π₁β1 : ∀ {Γ A B} (m : Γ ⇒ A) (n : Γ ⇒ B) -> (π₁⁺ {B} ∘⁺ < m , n >⁺) ≡ m
 π₁β1 (m , mf) n = cong (_,_ m) (funext-imp (λ x → funext-imp (λ x' → funext (λ x0 → funext (λ x1 → K _ _)))))
@@ -28,6 +28,7 @@ compositional M σ = {!!}
 π₂β1 : ∀ {Γ A B} (m : Γ ⇒ A) (n : Γ ⇒ B) -> (π₂⁺ {A} ∘⁺ < m , n >⁺) ≡ n
 π₂β1 m (n , nf) = cong (_,_ n) (funext-imp (λ x → funext-imp (λ x' → funext (λ x0 → funext (λ x1 → K _ _)))))
 
+-- TODO: Hmm isn't it sufficient to just prove that the _⇒_.η components are equal? Doesn't that make my life easier?
 sound : ∀ T {N M : ⊡ , ⊡ ⊢ T - true} -> (N ⟶ M) -> eval ⊡ ⊡ T N ≡ eval ⊡ ⊡ T M
 sound T (app-red1 M M' N y) = cong₂ _·⁺_ (sound _ y) refl
 sound T (app-red2 V N N' y) = cong (_·⁺_ (eval ⊡ ⊡ _ (ninj V))) (sound _ y)
