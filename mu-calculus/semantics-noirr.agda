@@ -409,6 +409,11 @@ data arrow1 : ∀ {Δ} -> (ρ1 : gksubst Δ obj) -> (ρ2 : gksubst Δ obj) -> Se
  ⊡ : arrow1 tt tt
  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ obj} (σ : arrow1 ρ1 ρ2) {A B} (N : A ⇒ B) -> arrow1 {Δ , #prop} (ρ1 , A) (ρ2 , B)
 
+arrow-lookup1 : ∀ {ζ} {σ1 σ2 : gksubst ζ obj} (θ : arrow1 σ1 σ2) (A : var ζ #prop) -> ([ σ1 ]v A) ⇒ ([ σ2 ]v A)
+arrow-lookup1 ⊡ ()
+arrow-lookup1 (σ , N) top = N
+arrow-lookup1 (σ , N) (pop y) = arrow-lookup1 σ y
+
 id-arrow : ∀ {Δ} (ρ : gksubst Δ obj) -> arrow1 ρ ρ
 id-arrow {⊡} tt = ⊡
 id-arrow {ψ , T} (ρ , C) = (id-arrow ρ) , (id⁺ C)
@@ -442,7 +447,7 @@ out⁺ F = out⁺' F tt
 
 mutual
  fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow1 ρ1 ρ2) -> (⟦ F ⟧f ρ1) ⇒ (⟦ F ⟧f ρ2)
- fmap (▹ A) ρ1 ρ2 σ = {!!}
+ fmap (▹ A) ρ1 ρ2 σ = arrow-lookup1 σ A
  fmap (μ F) ρ1 ρ2 σ = fold⁺' F (⟦ μ F ⟧f ρ2) ρ1 ((inj⁺' F ρ2) ∘⁺ (fmap F (ρ1 , ⟦ μ F ⟧f ρ2) (ρ2 , ⟦ μ F ⟧f ρ2) (σ , (id⁺ (⟦ μ F ⟧f ρ2)))))
  fmap (ν F) ρ1 ρ2 σ = unfold⁺' F (⟦ ν F ⟧f ρ1) ρ2 ((fmap F (ρ1 , ⟦ ν F ⟧f ρ1) (ρ2 , ⟦ ν F ⟧f ρ1) (σ , id⁺ (⟦ ν F ⟧f ρ1))) ∘⁺ (out⁺' F ρ1))
  fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
