@@ -532,7 +532,7 @@ mutual
  ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (σ ⋆ ρ)
  ⟦⟧f-comp σ (▹ A) ρ = sym (lookup-gmap (λ x → ⟦ x ⟧f ρ) σ A)
  ⟦⟧f-comp σ (μ F) ρ = cong μ⁺ (funext (lem5 σ F ρ))
- ⟦⟧f-comp σ (ν F) ρ = cong ν⁺ (funext {!!})
+ ⟦⟧f-comp σ (ν F) ρ = cong ν⁺ (funext (lem5 σ F ρ))
  ⟦⟧f-comp σ (○ A) ρ = cong ○⁺ (⟦⟧f-comp σ A ρ)
  ⟦⟧f-comp σ (A ⊃ B) ρ = cong (_⊃⁺_ ⟦ A ⟧t) (⟦⟧f-comp σ B ρ)
  ⟦⟧f-comp σ (A ∧ B) ρ = cong₂ _∧⁺_ (⟦⟧f-comp σ A ρ) (⟦⟧f-comp σ B ρ)
