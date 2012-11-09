@@ -434,6 +434,12 @@ swap⁺ A B = < π₂⁺ {A} {B} , π₁⁺ {B} {A} >⁺
 case⁺ : ∀ {Γ A B C} -> Γ ⇒ (A ∨⁺ B) -> (Γ ∧⁺ A) ⇒ C -> (Γ ∧⁺ B) ⇒ C -> Γ ⇒ C
 case⁺ {Γ} {A} {B} {C} M N1 N2 = ([ (λ⁺ (N1 ∘⁺ swap⁺ A Γ)) , (λ⁺ (N2 ∘⁺ swap⁺ B Γ)) ]⁺ ∘⁺ M) ·⁺ (id⁺ Γ)
 
+case⁺' : ∀ {θ Γ A B C} -> ((○⁺ θ) ∧⁺ Γ) ⇒ (A ∨⁺ B) -> ((○⁺ θ) ∧⁺ (Γ ∧⁺ A)) ⇒ C -> ((○⁺ θ) ∧⁺ (Γ ∧⁺ B)) ⇒ C -> ((○⁺ θ) ∧⁺ Γ) ⇒ C
+case⁺' {θ} {Γ} {A} {B} {C} M N1 N2 =
+       case⁺ M
+          (N1 ∘⁺ ∧⁺-assoc' (○⁺ θ) Γ A)
+          (N2 ∘⁺ ∧⁺-assoc' (○⁺ θ) Γ B)
+
 -- Could generalize this with arrow in mu-ltl
 data arrow1 : ∀ {Δ} -> (ρ1 : gksubst Δ obj) -> (ρ2 : gksubst Δ obj) -> Set₁ where
  ⊡ : arrow1 tt tt
@@ -593,10 +599,7 @@ eval θ Γ .T (fst {T} {B} M) = π₁⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (T ∧ B
 eval θ Γ .T (snd {B} {T} M) = π₂⁺ {⟦ B ⟧t} ∘⁺ eval θ Γ (B ∧ T) M
 eval θ Γ .(A ∨ B) (inl {B} {A} M) = inj₁⁺ ⟦ B ⟧t ∘⁺ (eval θ Γ A M)
 eval θ Γ .(A ∨ B) (inr {A} {B} M) = inj₂⁺ ⟦ A ⟧t ∘⁺ eval θ Γ B M
-eval θ Γ T (case {A} {B} M N1 N2) =
-    case⁺ (eval θ Γ (A ∨ B) M)
-          (eval θ (Γ , A) T N1 ∘⁺ ∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t)
-          (eval θ (Γ , B) T N2 ∘⁺ ∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ B ⟧t)
+eval θ Γ T (case {A} {B} M N1 N2) = case⁺' {⟦ θ ⟧c} {⟦ Γ ⟧c}  (eval θ Γ (A ∨ B) M) (eval θ (Γ , A) T N1) (eval θ (Γ , B) T N2)
 eval θ Γ .⊤ unit = tt⁺
 
 eval-causal : ∀ θ Γ T -> (N : θ , Γ ⊢ T - true) -> causal ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⟦ T ⟧t (_⇒_.η (eval θ Γ T N))
