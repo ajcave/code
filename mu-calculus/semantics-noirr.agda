@@ -194,9 +194,13 @@ mutual
   ⟨_⟩ : ((F (μ⁺ F)) ₁) α -> μ₁ F α
 
  μ⁺ : ∀ (F : obj -> obj) -> obj
- μ⁺ F = record { A = μ₁ F; ωmap = μωmap; fcomp = {!!}; fid = {!!} }
+ μ⁺ F = record { A = μ₁ F; ωmap = μωmap; fcomp = μcomp; fid = μid }
   where μωmap : {β α : ω+1} → β ≤ω α → μ₁ F α → μ₁ F β
         μωmap β≤ωα ⟨ y ⟩ = ⟨ ((F (μ⁺ F) ₂) β≤ωα y) ⟩
+        μcomp : {α β γ : ω+1} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β) (x : μ₁ F γ) → μωmap (β≤ωγ ∘ω α≤ωβ) x ≡ μωmap α≤ωβ (μωmap β≤ωγ x)
+        μcomp β≤ωγ α≤ωβ ⟨ y ⟩ = cong ⟨_⟩ (obj.fcomp (F (μ⁺ F)) β≤ωγ α≤ωβ y)
+        μid : {α : ω+1} (x : μ₁ F α) → μωmap ≤ω-refl x ≡ x
+        μid ⟨ y ⟩ = cong ⟨_⟩ (obj.fid (F (μ⁺ F)) y)
 
  ⟦_⟧f : ∀ {Δ} -> functor Δ -> (ρ : gksubst Δ obj) -> obj
  ⟦_⟧f (▹ A) ρ = lookup ρ A
