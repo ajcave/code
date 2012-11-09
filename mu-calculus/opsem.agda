@@ -101,3 +101,6 @@ data _⟶_ {θ Γ} : ∀ {A J} -> θ , Γ ⊢ A - J -> θ , Γ ⊢ A - J -> Set 
  out-red2 : ∀ {F C} (V : θ , Γ ⊢ C ↑) (M : ⊡ , ⊡ , C ⊢ [ C /x]p F - true)
                 -> (out (unfold F (ninj V) M)) ⟶ (map3 F (unfold F (▹ top) M) ([ tt , (ninj V) ]t ([ tt ]va M)))
  
+data _⟶*_ {θ Γ} {A} : θ , Γ ⊢ A - true -> θ , Γ ⊢ A - true -> Set where
+ refl : ∀ {M} -> M ⟶* M
+ trans1 : ∀ {M N P} -> M ⟶ N -> N ⟶* P -> M ⟶* P
