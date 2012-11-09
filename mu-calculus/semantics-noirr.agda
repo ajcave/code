@@ -521,20 +521,23 @@ lem3 σ ρ X = cong (λ α -> α , X)
                 (gmap (λ C → ⟦ C ⟧f ρ) σ
               ∎)))
 
-⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (σ ⋆ ρ)
-⟦⟧f-comp σ (▹ A) ρ = sym (lookup-gmap (λ x → ⟦ x ⟧f ρ) σ A)
-⟦⟧f-comp σ (μ F) ρ = cong μ⁺ (funext (λ X →
-         begin
-           ⟦ [ psub-ext σ ]p F ⟧f (ρ , X)     ≡⟨ ⟦⟧f-comp (psub-ext σ) F (ρ , X) ⟩
-           ⟦ F ⟧f ((psub-ext σ) ⋆ (ρ , X))    ≡⟨ cong ⟦ F ⟧f (lem3 σ ρ X) ⟩
-           ⟦ F ⟧f ((σ ⋆ ρ) , X)
-         ∎))
-⟦⟧f-comp σ (ν F) ρ = {!!}
-⟦⟧f-comp σ (○ A) ρ = cong ○⁺ (⟦⟧f-comp σ A ρ)
-⟦⟧f-comp σ (A ⊃ B) ρ = cong (_⊃⁺_ ⟦ A ⟧t) (⟦⟧f-comp σ B ρ)
-⟦⟧f-comp σ (A ∧ B) ρ = cong₂ _∧⁺_ (⟦⟧f-comp σ A ρ) (⟦⟧f-comp σ B ρ)
-⟦⟧f-comp σ (A ∨ B) ρ = cong₂ _∨⁺_ (⟦⟧f-comp σ A ρ) (⟦⟧f-comp σ B ρ)
-⟦⟧f-comp σ ⊤ ρ = refl
+mutual
+ lem5 : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ X -> ⟦ [ psub-ext σ ]p F ⟧f (ρ , X) ≡ ⟦ F ⟧f ((σ ⋆ ρ) , X)
+ lem5 σ F ρ X = begin
+            ⟦ [ psub-ext σ ]p F ⟧f (ρ , X)     ≡⟨ ⟦⟧f-comp (psub-ext σ) F (ρ , X) ⟩
+            ⟦ F ⟧f ((psub-ext σ) ⋆ (ρ , X))    ≡⟨ cong ⟦ F ⟧f (lem3 σ ρ X) ⟩
+            ⟦ F ⟧f ((σ ⋆ ρ) , X)
+          ∎
+
+ ⟦⟧f-comp : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) F ρ -> ⟦ [ σ ]p F ⟧f ρ ≡ ⟦ F ⟧f (σ ⋆ ρ)
+ ⟦⟧f-comp σ (▹ A) ρ = sym (lookup-gmap (λ x → ⟦ x ⟧f ρ) σ A)
+ ⟦⟧f-comp σ (μ F) ρ = cong μ⁺ (funext (lem5 σ F ρ))
+ ⟦⟧f-comp σ (ν F) ρ = cong ν⁺ (funext {!!})
+ ⟦⟧f-comp σ (○ A) ρ = cong ○⁺ (⟦⟧f-comp σ A ρ)
+ ⟦⟧f-comp σ (A ⊃ B) ρ = cong (_⊃⁺_ ⟦ A ⟧t) (⟦⟧f-comp σ B ρ)
+ ⟦⟧f-comp σ (A ∧ B) ρ = cong₂ _∧⁺_ (⟦⟧f-comp σ A ρ) (⟦⟧f-comp σ B ρ)
+ ⟦⟧f-comp σ (A ∨ B) ρ = cong₂ _∨⁺_ (⟦⟧f-comp σ A ρ) (⟦⟧f-comp σ B ρ)
+ ⟦⟧f-comp σ ⊤ ρ = refl
 
 eval-var : ∀ Γ T -> var Γ T -> ⟦ Γ ⟧c ⇒ ⟦ T ⟧t
 eval-var .(Γ , T) T (top {Γ}) = π₂⁺ {⟦ Γ ⟧c}
