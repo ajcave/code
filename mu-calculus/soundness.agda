@@ -27,7 +27,14 @@ compositional M σ = {!!}
 sound : ∀ T {N M : ⊡ , ⊡ ⊢ T - true} -> (N ⟶ M) -> eval ⊡ ⊡ T N ≡ eval ⊡ ⊡ T M
 sound T (app-red1 M M' N y) = cong₂ _·⁺_ (sound _ y) refl
 sound T (app-red2 V N N' y) = cong (_·⁺_ (eval ⊡ ⊡ _ (ninj V))) (sound _ y)
-sound T (app-red3 M V) = begin {!!}
+sound T (app-red3 {A} M V) =
+  begin
+    λ⁺' {⟦ A ⟧t} {⟦ ⊡ ⟧c} {⟦ ⊡ ⟧c} (eval ⊡ (⊡ , A) T M) ·⁺ eval ⊡ ⊡ A (ninj V)
+         ≡⟨ {!!} ⟩
+    eval ⊡ (⊡ , A) T M ∘⁺ < π₁⁺  , < tt⁺ , eval ⊡ ⊡ A (ninj V) >⁺ >⁺
+         ≡⟨ sym (compositional M (tt , ninj V)) ⟩
+    eval ⊡ ⊡ T ([ tt , ninj V ]t M)
+  ∎
 sound .(A ∧ B) (pair-red1 {A} {B} M M' N y) = cong (flip <_,_>⁺ (eval ⊡ ⊡ B N)) (sound A y)
 sound .(A ∧ B) (pair-red2 {A} {B} V N N' y) = cong (<_,_>⁺ (eval ⊡ ⊡ A (ninj V))) (sound B y)
 sound T (fst-red1 {.T} {B} M M' y) = cong (_∘⁺_ (π₁⁺ {⟦ B ⟧t})) (sound _ y)
