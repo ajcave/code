@@ -1,4 +1,5 @@
 {-# OPTIONS --no-positivity-check --no-termination-check #-}
+-- TODO: Should just disable termination checking for the functions where I need it (using Agda head)
 module semantics-noirr where
 open import mu-ltl
 open import Data.Sum
@@ -180,6 +181,7 @@ _∨⁺_ : obj -> obj -> obj
        fid = λ x → refl
      }
 
+-- TODO
 postulate
  yay : ∀ {a} {A : Set a} -> A
 
@@ -236,6 +238,28 @@ _⇒₁_ : obj₁ -> obj₁ -> Set
 
 ⇒₂ : ∀ A B -> (η : (A ₁) ⇒₁ (B ₁)) -> Set
 ⇒₂ A B η = ∀ {α β} (β≤ωα : β ≤ω α) -> ∀ x -> η β ((A ₂) β≤ωα x) ≡ (B ₂) β≤ωα (η α x)
+
+causal : ∀ A B -> (η : (A ₁) ⇒₁ (B ₁)) -> Set
+causal A B η = ∀ {α1 α2 β} (β≤α1 : β ≤ω α1) (β≤α2 : β ≤ω α2) -> ∀ x y -> ((A ₂) β≤α1 x) ≡ ((A ₂) β≤α2 y) -> (B ₂) β≤α1 (η α1 x) ≡ (B ₂) β≤α2 (η α2 y)
+
+natural-implies-causal : ∀ A B (η : (A ₁) ⇒₁ (B ₁)) -> ⇒₂ A B η -> causal A B η
+natural-implies-causal A B η η-nat β≤α1 β≤α2 x y p =
+    begin
+     (B ₂) β≤α1 (η _ x)      ≡⟨ sym (η-nat β≤α1 x) ⟩
+     (η _ ((A ₂) β≤α1 x))    ≡⟨ cong (η _) p ⟩
+     (η _ ((A ₂) β≤α2 y)     ≡⟨ (η-nat β≤α2 y) ⟩
+     ((B ₂) β≤α2 (η _ y)
+    ∎))
+
+causal-implies-natural : ∀ A B (η : (A ₁) ⇒₁ (B ₁)) -> causal A B η -> ⇒₂ A B η
+causal-implies-natural A B η f β≤α x =
+    begin
+      (η _ ((A ₂) β≤α x))                ≡⟨ (sym (obj.fid B (η _ ((A ₂) β≤α x)))) ⟩
+      (B ₂) ≤ω-refl (η _ ((A ₂) β≤α x)) ≡⟨ f ≤ω-refl β≤α ((A ₂) β≤α x) x
+                                            (trans (sym (obj.fcomp A β≤α ≤ω-refl x))
+                                                   (cong (λ ρ → (A ₂) ρ x) (∘ω-idr β≤α))) ⟩
+      ((B ₂) β≤α (η _ x)
+    ∎)
 
 record _⇒_ (A B : obj) : Set where
  constructor _,_
@@ -571,3 +595,6 @@ eval θ Γ T (case {A} {B} M N1 N2) =
           (eval θ (Γ , A) T N1 ∘⁺ ∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ A ⟧t)
           (eval θ (Γ , B) T N2 ∘⁺ ∧⁺-assoc' (○⁺ ⟦ θ ⟧c) ⟦ Γ ⟧c ⟦ B ⟧t)
 eval θ Γ .⊤ unit = tt⁺
+
+
+
