@@ -490,20 +490,23 @@ lem3v σ ρ X = cong (λ α → α , X)
 --lem3v' : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ1 Δ2} (σ : vsubst {a} {A} Δ2 Δ1) (ρ : gsubst Δ1 F) {T} (X : F T) -> (wkn-vsub ◆ σ) ⁌ (ρ , X) ≡ (ρ ⁌ σ)
 --lem3v' σ ρ X = ?
 
-⟦⟧f-compv : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ -> ⟦ [ σ ]pv F ⟧f ρ ≡ ⟦ F ⟧f (ρ ⁌ σ)
-⟦⟧f-compv σ (▹ A) ρ = sym (lookup-gmap (lookup ρ) σ A)
-⟦⟧f-compv σ (μ F) ρ = cong μ⁺ (funext (λ X →
-         begin (
+mutual
+ lem4 : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ X -> ⟦ [ vsub-ext σ ]pv F ⟧f (ρ , X) ≡ ⟦ F ⟧f ((ρ ⁌ σ) , X)
+ lem4 σ F ρ X = begin (
           ⟦ [ vsub-ext σ ]pv F ⟧f (ρ , X)) ≡⟨ (⟦⟧f-compv (vsub-ext σ) F (ρ , X)) ⟩
           (⟦ F ⟧f ((ρ , X) ⁌ vsub-ext σ)   ≡⟨ (cong ⟦ F ⟧f (lem3v σ ρ X)) ⟩
           (⟦ F ⟧f ((ρ ⁌ σ) , X)
-        ∎))))
-⟦⟧f-compv σ (ν F) ρ = {!!}
-⟦⟧f-compv σ (○ A) ρ = cong ○⁺ (⟦⟧f-compv σ A ρ)
-⟦⟧f-compv σ (A ⊃ B) ρ = cong (_⊃⁺_ ⟦ A ⟧t) (⟦⟧f-compv σ B ρ)
-⟦⟧f-compv σ (A ∧ B) ρ = cong₂ _∧⁺_ (⟦⟧f-compv σ A ρ) (⟦⟧f-compv σ B ρ)
-⟦⟧f-compv σ (A ∨ B) ρ = cong₂ _∨⁺_ (⟦⟧f-compv σ A ρ) (⟦⟧f-compv σ B ρ)
-⟦⟧f-compv σ ⊤ ρ = refl
+        ∎))
+
+ ⟦⟧f-compv : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ -> ⟦ [ σ ]pv F ⟧f ρ ≡ ⟦ F ⟧f (ρ ⁌ σ)
+ ⟦⟧f-compv σ (▹ A) ρ = sym (lookup-gmap (lookup ρ) σ A)
+ ⟦⟧f-compv σ (μ F) ρ = cong μ⁺ (funext (lem4 σ F ρ))
+ ⟦⟧f-compv σ (ν F) ρ = cong ν⁺ (funext (lem4 σ F ρ))
+ ⟦⟧f-compv σ (○ A) ρ = cong ○⁺ (⟦⟧f-compv σ A ρ)
+ ⟦⟧f-compv σ (A ⊃ B) ρ = cong (_⊃⁺_ ⟦ A ⟧t) (⟦⟧f-compv σ B ρ)
+ ⟦⟧f-compv σ (A ∧ B) ρ = cong₂ _∧⁺_ (⟦⟧f-compv σ A ρ) (⟦⟧f-compv σ B ρ)
+ ⟦⟧f-compv σ (A ∨ B) ρ = cong₂ _∨⁺_ (⟦⟧f-compv σ A ρ) (⟦⟧f-compv σ B ρ)
+ ⟦⟧f-compv σ ⊤ ρ = refl
 
 _⋆_ : ∀ {Δ1 Δ2} (σ : psub Δ1 Δ2) (ρ : gksubst Δ1 obj) -> gksubst Δ2 obj
 σ ⋆ ρ = gmap (λ C -> ⟦ C ⟧f ρ) σ
