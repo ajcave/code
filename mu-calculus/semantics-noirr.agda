@@ -422,23 +422,28 @@ _∨̂⁺_ {A1} {A2} {B1} {B2} f g = [ ((inj₁⁺ B2) ∘⁺ f) , ((inj₂⁺ A
 _⊃̂⁺_ : ∀ A {B1 B2} -> B1 ⇒ B2 -> (A ⊃⁺ B1) ⇒ (A ⊃⁺ B2)
 _⊃̂⁺_ A {B1} {B2} f = λ⁺ (f ∘⁺ (π₁⁺ {A} ·⁺ π₂⁺ {A ⊃⁺ B1}))
 
-
-inj⁺ : ∀ F -> ⟦ F ⟧f (tt , ⟦ μ F ⟧t) ⇒ ⟦ μ F ⟧t
-inj⁺ F = record {
+inj⁺' : ∀ {Δ} (F : functor (Δ , #prop)) ρ -> ⟦ F ⟧f (ρ , ⟦ μ F ⟧f ρ) ⇒ ⟦ μ F ⟧f ρ
+inj⁺' F ρ = record {
      η = λ α x → ⟨ x ⟩;
      natural = λ β≤ωα x → refl
    }
 
-out⁺ : ∀ F -> ⟦ ν F ⟧t ⇒ ⟦ F ⟧f (tt , ⟦ ν F ⟧t)
-out⁺ F = record {
+inj⁺ : ∀ F -> ⟦ F ⟧f (tt , ⟦ μ F ⟧t) ⇒ ⟦ μ F ⟧t
+inj⁺ F = inj⁺' F tt
+
+out⁺' : ∀ {Δ} (F : functor (Δ , #prop)) ρ -> ⟦ ν F ⟧f ρ ⇒ ⟦ F ⟧f (ρ , ⟦ ν F ⟧f ρ)
+out⁺' F ρ = record {
      η = λ α -> (λ {⟨ y ⟩ → ♭ y });
      natural = λ β≤ωα → λ {⟨ y ⟩ → refl}
    }
 
+out⁺ : ∀ F -> ⟦ ν F ⟧t ⇒ ⟦ F ⟧f (tt , ⟦ ν F ⟧t)
+out⁺ F = out⁺' F tt
+
 mutual
  fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow1 ρ1 ρ2) -> (⟦ F ⟧f ρ1) ⇒ (⟦ F ⟧f ρ2)
  fmap (▹ A) ρ1 ρ2 σ = {!!}
- fmap (μ F) ρ1 ρ2 σ = fold⁺ {!!} {!!} {!!}
+ fmap (μ F) ρ1 ρ2 σ = fold⁺' F (⟦ μ F ⟧f ρ2) ρ1 ((inj⁺' F ρ2) ∘⁺ (fmap F (ρ1 , ⟦ μ F ⟧f ρ2) (ρ2 , ⟦ μ F ⟧f ρ2) (σ , (id⁺ (⟦ μ F ⟧f ρ2)))))
  fmap (ν F) ρ1 ρ2 σ = {!!}
  fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
  fmap (A ⊃ B) ρ1 ρ2 σ = ⟦ A ⟧t ⊃̂⁺ fmap B ρ1 ρ2 σ
