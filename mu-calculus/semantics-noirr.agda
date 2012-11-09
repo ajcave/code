@@ -109,12 +109,17 @@ A ₂ = obj.ωmap A
 ○₂-comp A {▹ (suc n)} {ω} {ω} inj₂ inj₂ x = obj.fcomp A inj₂ inj₂ x
 ○₂-comp A {ω} {ω} {ω} inj₂ inj₂ x = obj.fcomp A inj₂ inj₂ x
 
+○₂-id : ∀ (A : obj) {α : ω+1} x -> ○₂ (A ₂) (≤ω-refl {α}) x ≡ x
+○₂-id A {▹ zero} x = refl
+○₂-id A {▹ (suc n)} x = obj.fid A x
+○₂-id A {ω} x = obj.fid A x
+
 ○⁺ : obj -> obj
 ○⁺ A = record {
         A = ○₁ (A ₁);
         ωmap = ○₂ (A ₂);
-        fcomp = {!!};
-        fid = λ x → {!!}
+        fcomp = ○₂-comp A;
+        fid = λ {α} x -> ○₂-id A {α} x
        }
 
 record _⊃₁_ (A B : obj) (α : ω+1) : Set where
