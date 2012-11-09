@@ -17,16 +17,25 @@ data ω+1 : Set where
  ▹ : (n : ℕ) -> ω+1
  ω : ω+1
 
+≤-refl : ∀ {n} -> n ≤ n
+≤-refl {zero} = z≤n
+≤-refl {suc n} = s≤s ≤-refl
+
+≤-trans : ∀ {n m q} -> m ≤ q -> n ≤ m -> n ≤ q
+≤-trans z≤n z≤n = z≤n
+≤-trans (s≤s m≤n) z≤n = z≤n
+≤-trans (s≤s m≤n) (s≤s m≤n') = s≤s (≤-trans m≤n m≤n')
+
 data _≤ω_ : ω+1 -> ω+1 -> Set where
  inj₁ : ∀ {n m} -> (n≤m : n ≤ m) -> (▹ n) ≤ω (▹ m)
  inj₂ : ∀ {α} -> α ≤ω ω
 
 ≤ω-refl : ∀ {α} -> α ≤ω α
-≤ω-refl {▹ n} = inj₁ {!!} --(begin n ∎)
+≤ω-refl {▹ n} = inj₁ ≤-refl
 ≤ω-refl {ω} = inj₂
 
 _∘ω_ : ∀ {α β γ} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β) -> α ≤ω γ
-inj₁ n≤m ∘ω inj₁ n≤m' = inj₁ {!!} --(begin _ ≤⟨ n≤m' ⟩ _ ≤⟨ n≤m ⟩ (_ ∎))
+inj₁ n≤m ∘ω inj₁ n≤m' = inj₁ (≤-trans n≤m n≤m') 
 inj₂ ∘ω _ = inj₂
 
 ≤-unique : ∀ {n m} (p1 p2 : n ≤ m) -> p1 ≡ p2
@@ -79,11 +88,32 @@ A ₂ = obj.ωmap A
 ○₂ A' {ω} {▹ n} ()
 ○₂ A' {ω} {ω} α≤ωβ = A' α≤ωβ
 
+○₂-comp : ∀ (A : obj) {α β γ : ω+1} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β) x →
+      ○₂ (A ₂) (β≤ωγ ∘ω α≤ωβ) x ≡ ○₂ (A ₂) α≤ωβ (○₂ (A ₂) β≤ωγ x)
+○₂-comp A {▹ zero} {▹ zero} {▹ zero} (inj₁ n≤m) (inj₁ n≤m') x = refl
+○₂-comp A {▹ zero} {▹ zero} {▹ (suc n)} (inj₁ n≤m) (inj₁ n≤m') x = refl
+○₂-comp A {▹ zero} {▹ (suc n)} {▹ n0} (inj₁ n≤m) (inj₁ n≤m') x = refl
+○₂-comp A {▹ (suc n)} {▹ zero} {▹ zero} (inj₁ n≤m) (inj₁ ()) x
+○₂-comp A {▹ (suc n)} {▹ zero} {▹ (suc n')} (inj₁ n≤m) (inj₁ ()) x 
+○₂-comp A {▹ (suc n)} {▹ (suc n')} {▹ zero} (inj₁ ()) (inj₁ (s≤s m≤n)) x
+○₂-comp A {▹ (suc n)} {▹ (suc n')} {▹ (suc n0)} (inj₁ (s≤s m≤n)) (inj₁ (s≤s m≤n')) x = obj.fcomp A (inj₁ m≤n) (inj₁ m≤n') x
+○₂-comp A {▹ n} {ω} {▹ n'} () α≤ωβ x
+○₂-comp A {ω} {▹ n} {▹ n'} β≤ωγ () x
+○₂-comp A {ω} {ω} {▹ n} () α≤ωβ x
+○₂-comp A {▹ zero} {▹ zero} {ω} inj₂ (inj₁ n≤m) x = refl
+○₂-comp A {▹ zero} {▹ (suc n)} {ω} inj₂ (inj₁ n≤m) x = refl
+○₂-comp A {▹ (suc n)} {▹ zero} {ω} inj₂ (inj₁ ()) x
+○₂-comp A {▹ (suc n)} {▹ (suc n')} {ω} inj₂ (inj₁ (s≤s m≤n)) x = obj.fcomp A inj₂ (inj₁ m≤n) x
+○₂-comp A {ω} {▹ n} {ω} inj₂ () x
+○₂-comp A {▹ zero} {ω} {ω} inj₂ inj₂ x = refl
+○₂-comp A {▹ (suc n)} {ω} {ω} inj₂ inj₂ x = obj.fcomp A inj₂ inj₂ x
+○₂-comp A {ω} {ω} {ω} inj₂ inj₂ x = obj.fcomp A inj₂ inj₂ x
+
 ○⁺ : obj -> obj
 ○⁺ A = record {
         A = ○₁ (A ₁);
         ωmap = ○₂ (A ₂);
-        fcomp = λ β≤ωγ α≤ωβ x → {!!};
+        fcomp = {!!};
         fid = λ x → {!!}
        }
 
