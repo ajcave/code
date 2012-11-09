@@ -9,7 +9,8 @@ open import normal
 open import Function
 open import Relation.Binary.PropositionalEquality
 
-compositional : ∀ {θ Γ1 Γ2 T} (M : θ , Γ1 ⊢ T - true) (σ : truesub θ Γ2 Γ1) -> eval θ Γ2 T ([ σ ]t M) ≡ (eval θ Γ1 T M) ∘⁺ {!!}
+compositional : ∀ {θ Γ1 Γ2 T} (M : θ , Γ1 ⊢ T - true) (σ : truesub θ Γ2 Γ1)
+  -> eval θ Γ2 T ([ σ ]t M) ≡ (eval θ Γ1 T M) ∘⁺ < (π₁⁺ {⟦ Γ2 ⟧c} {○⁺ ⟦ θ ⟧c} ) , (evals θ Γ2 Γ1 σ) >⁺
 compositional M σ = {!!}
 
 λ⁺β : ∀ {B Γ C} (m : (Γ ∧⁺ B) ⇒ C) (n : Γ ⇒ B) -> ((λ⁺ {B} m) ·⁺ n) ≡ m ∘⁺ < (id⁺ Γ) , n >⁺
