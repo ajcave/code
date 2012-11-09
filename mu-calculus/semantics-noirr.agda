@@ -180,17 +180,23 @@ _∨⁺_ : obj -> obj -> obj
        fid = λ x → refl
      }
 
-
 mutual
-
  data ν₁ (F : obj -> obj) (α : ω+1) : Set where
   ⟨_⟩ : ∞ (((F (ν⁺ F)) ₁) α) -> ν₁ F α
+ 
+-- data bisim (F : obj -> obj) (α : ω+1) : ν₁ F α -> ν₁ F α -> Set where
+--  in : ∞ 
 
  ν⁺ : ∀ (F : obj -> obj) -> obj
  ν⁺ F = record { A = ν₁ F; ωmap = νωmap; fcomp = {!!}; fid = {!!} }
   where νωmap : {β α : ω+1} → β ≤ω α → ν₁ F α → ν₁ F β
         νωmap β≤ωα ⟨ y ⟩ = ⟨ (♯ (F (ν⁺ F) ₂) β≤ωα (♭ y)) ⟩
 
+ -- TODO: ugly bisimilation and stuff
+--postulate
+-- νcomp : {α β γ : ω+1} (β≤ωγ : β ≤ω γ) (α≤ωβ : α ≤ω β) (x : ν₁ F γ) → νωmap (β≤ωγ ∘ω α≤ωβ) x ≡ νωmap α≤ωβ (νωmap β≤ωγ x)
+
+mutual
  data μ₁ (F : obj -> obj) (α : ω+1) : Set where
   ⟨_⟩ : ((F (μ⁺ F)) ₁) α -> μ₁ F α
 
@@ -203,6 +209,7 @@ mutual
         μid : {α : ω+1} (x : μ₁ F α) → μωmap ≤ω-refl x ≡ x
         μid ⟨ y ⟩ = cong ⟨_⟩ (obj.fid (F (μ⁺ F)) y)
 
+mutual
  ⟦_⟧f : ∀ {Δ} -> functor Δ -> (ρ : gksubst Δ obj) -> obj
  ⟦_⟧f (▹ A) ρ = lookup ρ A
  ⟦_⟧f (μ F) ρ = μ⁺ (λ X -> ⟦ F ⟧f (ρ , X))
@@ -212,7 +219,6 @@ mutual
  ⟦_⟧f (A ∧ B) ρ = ⟦ A ⟧f ρ ∧⁺ ⟦ B ⟧f ρ
  ⟦_⟧f (A ∨ B) ρ = ⟦ A ⟧f ρ ∨⁺ ⟦ B ⟧f ρ
  ⟦_⟧f ⊤ ρ = ⊤⁺
-
 
 ⟦_⟧t : prop -> obj
 ⟦ A ⟧t = ⟦ A ⟧f tt
@@ -403,6 +409,10 @@ data arrow1 : ∀ {Δ} -> (ρ1 : gksubst Δ obj) -> (ρ2 : gksubst Δ obj) -> Se
  ⊡ : arrow1 tt tt
  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ obj} (σ : arrow1 ρ1 ρ2) {A B} (N : A ⇒ B) -> arrow1 {Δ , #prop} (ρ1 , A) (ρ2 , B)
 
+id-arrow : ∀ {Δ} (ρ : gksubst Δ obj) -> arrow1 ρ ρ
+id-arrow {⊡} tt = ⊡
+id-arrow {ψ , T} (ρ , C) = (id-arrow ρ) , (id⁺ C)
+
 _∧̂⁺_ : ∀ {A1 A2 B1 B2} -> A1 ⇒ A2 -> B1 ⇒ B2 -> (A1 ∧⁺ B1) ⇒ (A2 ∧⁺ B2)
 _∧̂⁺_ {A1} {A2} {B1} {B2} f g = < (f ∘⁺ π₁⁺ {B1}) , (g ∘⁺ π₂⁺ {A1}) >⁺
 
@@ -412,15 +422,6 @@ _∨̂⁺_ {A1} {A2} {B1} {B2} f g = [ ((inj₁⁺ B2) ∘⁺ f) , ((inj₂⁺ A
 _⊃̂⁺_ : ∀ A {B1 B2} -> B1 ⇒ B2 -> (A ⊃⁺ B1) ⇒ (A ⊃⁺ B2)
 _⊃̂⁺_ A {B1} {B2} f = λ⁺ (f ∘⁺ (π₁⁺ {A} ·⁺ π₂⁺ {A ⊃⁺ B1}))
 
-fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow1 ρ1 ρ2) -> (⟦ F ⟧f ρ1) ⇒ (⟦ F ⟧f ρ2)
-fmap (▹ A) ρ1 ρ2 σ = {!!}
-fmap (μ F) ρ1 ρ2 σ = {!!}
-fmap (ν F) ρ1 ρ2 σ = {!!}
-fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
-fmap (A ⊃ B) ρ1 ρ2 σ = ⟦ A ⟧t ⊃̂⁺ fmap B ρ1 ρ2 σ
-fmap (A ∧ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∧̂⁺ (fmap B ρ1 ρ2 σ)
-fmap (A ∨ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∨̂⁺ (fmap B ρ1 ρ2 σ)
-fmap ⊤ ρ1 ρ2 σ = tt⁺
 
 inj⁺ : ∀ F -> ⟦ F ⟧f (tt , ⟦ μ F ⟧t) ⇒ ⟦ μ F ⟧t
 inj⁺ F = record {
@@ -428,27 +429,40 @@ inj⁺ F = record {
      natural = λ β≤ωα x → refl
    }
 
-
-fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> ⟦ μ F ⟧t ⇒ C
-fold⁺ F C (f , nf) = record {
-     η = fold₁;
-     natural = fold₁nat
-  }
-  where fold₁ : (⟦ μ F ⟧t ₁) ⇒₁ (C ₁)
-        fold₁ α ⟨ y ⟩ = f α (_⇒_.η (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) α y)
-        fold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : ((⟦ μ F ⟧t) ₁) α) → fold₁ β (((⟦ μ F ⟧t) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (fold₁ α x))
-        fold₁nat β≤ωα ⟨ y ⟩ = trans
-              (cong (f _) (_⇒_.natural (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , (fold⁺ F C (f , nf)))) β≤ωα y))
-              (nf β≤ωα (_⇒_.η (fmap F (tt , ⟦ μ F ⟧t) (tt , C) (⊡ , fold⁺ F C (f , nf))) _ y))
-
 out⁺ : ∀ F -> ⟦ ν F ⟧t ⇒ ⟦ F ⟧f (tt , ⟦ ν F ⟧t)
 out⁺ F = record {
      η = λ α -> (λ {⟨ y ⟩ → ♭ y });
      natural = λ β≤ωα → λ {⟨ y ⟩ → refl}
    }
 
-unfold⁺ : ∀ F C -> C ⇒ ⟦ F ⟧f (tt , C) -> C ⇒ ⟦ ν F ⟧t
-unfold⁺ F C (f , nf) = record {
+mutual
+ fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow1 ρ1 ρ2) -> (⟦ F ⟧f ρ1) ⇒ (⟦ F ⟧f ρ2)
+ fmap (▹ A) ρ1 ρ2 σ = {!!}
+ fmap (μ F) ρ1 ρ2 σ = fold⁺ {!!} {!!} {!!}
+ fmap (ν F) ρ1 ρ2 σ = {!!}
+ fmap (○ A) ρ1 ρ2 σ = ◦⁺ (⟦ A ⟧f ρ1) (⟦ A ⟧f ρ2) (fmap A ρ1 ρ2 σ)
+ fmap (A ⊃ B) ρ1 ρ2 σ = ⟦ A ⟧t ⊃̂⁺ fmap B ρ1 ρ2 σ
+ fmap (A ∧ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∧̂⁺ (fmap B ρ1 ρ2 σ)
+ fmap (A ∨ B) ρ1 ρ2 σ = (fmap A ρ1 ρ2 σ) ∨̂⁺ (fmap B ρ1 ρ2 σ)
+ fmap ⊤ ρ1 ρ2 σ = tt⁺
+
+ fold⁺' : ∀ {Δ} (F : functor (Δ , #prop)) C ρ -> ⟦ F ⟧f (ρ , C) ⇒ C -> ⟦ μ F ⟧f ρ ⇒ C
+ fold⁺' F C ρ (f , nf) = record {
+     η = fold₁';
+     natural = fold₁nat'
+  }
+  where fold₁' : ((⟦ μ F ⟧f ρ) ₁) ⇒₁ (C ₁)
+        fold₁' α ⟨ y ⟩ = f α (_⇒_.η (fmap F (ρ , ⟦ μ F ⟧f ρ) (ρ , C) (id-arrow ρ , fold⁺' F C ρ (f , nf))) α y)
+        fold₁nat' : {α β : ω+1} (β≤ωα : β ≤ω α) (x : ((⟦ μ F ⟧f ρ) ₁) α) → fold₁' β (((⟦ μ F ⟧f ρ) ₂) β≤ωα x) ≡ ((C ₂) β≤ωα (fold₁' α x))
+        fold₁nat' β≤α ⟨ y ⟩ = trans
+              (cong (f _) (_⇒_.natural (fmap F (ρ , ⟦ μ F ⟧f ρ) (ρ , C) (id-arrow ρ , fold⁺' F C ρ (f , nf))) β≤α y))
+              (nf β≤α (_⇒_.η (fmap F (ρ , ⟦ μ F ⟧f ρ) (ρ , C) ((id-arrow ρ) , (fold⁺' F C ρ (f , nf)))) _ y))
+
+ fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> ⟦ μ F ⟧t ⇒ C
+ fold⁺ F C f = fold⁺' F C tt f
+
+ unfold⁺ : ∀ F C -> C ⇒ ⟦ F ⟧f (tt , C) -> C ⇒ ⟦ ν F ⟧t
+ unfold⁺ F C (f , nf) = record {
      η = unfold₁;
      natural = unfold₁nat
   }
