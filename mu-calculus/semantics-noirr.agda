@@ -466,19 +466,18 @@ mutual
  fold⁺ : ∀ F C -> ⟦ F ⟧f (tt , C) ⇒ C -> ⟦ μ F ⟧t ⇒ C
  fold⁺ F C f = fold⁺' F C tt f
 
- unfold⁺ : ∀ F C -> C ⇒ ⟦ F ⟧f (tt , C) -> C ⇒ ⟦ ν F ⟧t
- unfold⁺ F C (f , nf) = record {
-     η = unfold₁;
-     natural = unfold₁nat
+ unfold⁺' : ∀ {Δ} (F : functor (Δ , #prop)) C ρ -> C ⇒ ⟦ F ⟧f (ρ , C) -> C ⇒ ⟦ ν F ⟧f ρ
+ unfold⁺' F C ρ (f , nf) = record {
+     η = unfold₁';
+     natural = {!!} --unfold₁nat'
   }
-  where unfold₁ : (C ₁) ⇒₁ (⟦ ν F ⟧t ₁)
-        unfold₁ α c = ⟨ ♯ _⇒_.η (fmap F (tt , C) (tt , ⟦ ν F ⟧t) (⊡ , unfold⁺ F C (f , nf))) α (f α c) ⟩
-        unfold₁nat : {α β : ω+1} (β≤ωα : β ≤ω α) (x : (C ₁) α) → unfold₁ β ((C ₂) β≤ωα x) ≡ (⟦ ν F ⟧t ₂) β≤ωα (unfold₁ α x)
-        unfold₁nat β≤ωα x = cong ⟨_⟩ {!!}
+  where unfold₁' : (C ₁) ⇒₁ ((⟦ ν F ⟧f ρ) ₁)
+        unfold₁' α c = ⟨ ♯ _⇒_.η (fmap F (ρ , C) (ρ , ⟦ ν F ⟧f ρ) (id-arrow ρ , unfold⁺' F C ρ (f , nf))) α (f α c) ⟩
+
+ unfold⁺ : ∀ F C -> C ⇒ ⟦ F ⟧f (tt , C) -> C ⇒ ⟦ ν F ⟧t
+ unfold⁺ F C f = unfold⁺' F C tt f
 
 -- TODO: Move into FinMap
---lem3v' : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ1 Δ2} (σ : vsubst {a} {A} Δ2 Δ1) (ρ : gsubst Δ1 F) {T} (X : F T) -> (wkn-vsub ◆ σ) ⁌ (ρ , X) ≡ (ρ ⁌ σ)
---lem3v' σ ρ X = ?
 
 lem3v : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ1 Δ2} (σ : vsubst {a} {A} Δ2 Δ1) (ρ : gsubst Δ1 F) {T} (X : F T) -> (ρ , X) ⁌ (vsub-ext σ) ≡ (ρ ⁌ σ) , X
 lem3v σ ρ X = cong (λ α → α , X)
@@ -486,6 +485,10 @@ lem3v σ ρ X = cong (λ α → α , X)
       ((ρ , X) ⁌ (wkn σ)) ≡⟨ (gmap-funct σ) ⟩
       ((ρ ⁌ σ)
     ∎))
+
+-- Perhaps a simpler lemma:
+--lem3v' : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ1 Δ2} (σ : vsubst {a} {A} Δ2 Δ1) (ρ : gsubst Δ1 F) {T} (X : F T) -> (wkn-vsub ◆ σ) ⁌ (ρ , X) ≡ (ρ ⁌ σ)
+--lem3v' σ ρ X = ?
 
 ⟦⟧f-compv : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ -> ⟦ [ σ ]pv F ⟧f ρ ≡ ⟦ F ⟧f (ρ ⁌ σ)
 ⟦⟧f-compv σ (▹ A) ρ = sym (lookup-gmap (lookup ρ) σ A)
