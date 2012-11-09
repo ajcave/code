@@ -605,4 +605,6 @@ eval θ Γ .⊤ unit = tt⁺
 eval-causal : ∀ θ Γ T -> (N : θ , Γ ⊢ T - true) -> causal ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⟦ T ⟧t (_⇒_.η (eval θ Γ T N))
 eval-causal θ Γ T N = natural-implies-causal ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ ⟧c) ⟦ T ⟧t (_⇒_.η (eval θ Γ T N)) (_⇒_.natural (eval θ Γ T N))
 
-
+evals : ∀ θ Γ1 Γ2 -> truesub θ Γ1 Γ2 -> ((○⁺ (⟦ θ ⟧c)) ∧⁺ ⟦ Γ1 ⟧c) ⇒ ⟦ Γ2 ⟧c
+evals θ Γ1 ⊡ σ = tt⁺
+evals θ Γ1 (Γ2 , T) σ = < evals θ Γ1 Γ2 (proj₁ σ) , eval θ Γ1 T (proj₂ σ) >⁺

@@ -9,6 +9,9 @@ open import normal
 open import Function
 open import Relation.Binary.PropositionalEquality
 
+compositional : ∀ {θ Γ1 Γ2 T} (M : θ , Γ1 ⊢ T - true) (σ : truesub θ Γ2 Γ1) -> eval θ Γ2 T ([ σ ]t M) ≡ (eval θ Γ1 T M) ∘⁺ {!!}
+compositional M σ = {!!}
+
 λ⁺β : ∀ {B Γ C} (m : (Γ ∧⁺ B) ⇒ C) (n : Γ ⇒ B) -> ((λ⁺ {B} m) ·⁺ n) ≡ m ∘⁺ < (id⁺ Γ) , n >⁺
 λ⁺β (m , mf) (n , nf) = {!use heterogeneous equality and a dependent cong₂?!}
 
@@ -30,7 +33,7 @@ sound T (snd-red1 {A} M M' y) = cong (_∘⁺_ (π₂⁺ {⟦ A ⟧t})) (sound _
 sound T (snd-red2 V1 V2) = π₂β1 (eval ⊡ ⊡ _ (ninj V1)) (eval ⊡ ⊡ _ (ninj V2))
 sound .(A ∨ B) (inl-red {B} {A} M M' y) = cong (_∘⁺_ (inj₁⁺ ⟦ B ⟧t)) (sound A y)
 sound .(A ∨ B) (inr-red {A} {B} M M' y) = cong (_∘⁺_ (inj₂⁺ ⟦ A ⟧t)) (sound B y)
-sound T (case-red1 {A} {B} M M' N1 N2 y) = cong (λ α → case⁺' {⊤⁺} {⊤⁺} α (eval ⊡ (⊡ , A) T N1) (eval ⊡ (⊡ , B) T N2)) (sound (A ∨ B) y)
+sound T (case-red1 {A} {B} M M' N1 N2 y) = {!!} --cong (λ α → case⁺' {⟦ ⊡ ⟧c} {⟦ ⊡ ⟧c} α (eval ⊡ (⊡ , A) T N1) (eval ⊡ (⊡ , B) T N2)) (sound (A ∨ B) y)
 sound T (case-red2 V N1 N2) = {!!}
 sound T (case-red3 V N1 N2) = {!!}
 sound .(○ A) (circ-red {A} M M' y) = cong (◦⁺ ⟦ ⊡ ⟧c ⟦ ⊡ ⟧c ⟦ A ⟧t) (sound A y) 
