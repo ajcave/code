@@ -494,9 +494,9 @@ mutual
  lem4 : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ X -> ⟦ [ vsub-ext σ ]pv F ⟧f (ρ , X) ≡ ⟦ F ⟧f ((ρ ⁌ σ) , X)
  lem4 σ F ρ X = begin (
           ⟦ [ vsub-ext σ ]pv F ⟧f (ρ , X)) ≡⟨ (⟦⟧f-compv (vsub-ext σ) F (ρ , X)) ⟩
-          (⟦ F ⟧f ((ρ , X) ⁌ vsub-ext σ)   ≡⟨ (cong ⟦ F ⟧f (lem3v σ ρ X)) ⟩
-          (⟦ F ⟧f ((ρ ⁌ σ) , X)
-        ∎))
+          ⟦ F ⟧f ((ρ , X) ⁌ vsub-ext σ)    ≡⟨ (cong ⟦ F ⟧f (lem3v σ ρ X)) ⟩
+          ⟦ F ⟧f ((ρ ⁌ σ) , X)
+        ∎
 
  ⟦⟧f-compv : ∀ {Δ1 Δ2} (σ : vsub Δ1 Δ2) F ρ -> ⟦ [ σ ]pv F ⟧f ρ ≡ ⟦ F ⟧f (ρ ⁌ σ)
  ⟦⟧f-compv σ (▹ A) ρ = sym (lookup-gmap (lookup ρ) σ A)
