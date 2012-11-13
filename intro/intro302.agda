@@ -20,6 +20,12 @@ infixr 9 _∷_ -- cons should be right associative with some arbitrary precedenc
 example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
 
+vector-add : list number -> list number -> list number
+vector-add [] [] = []
+vector-add (x ∷ xs) (y ∷ ys) = (x + y) ∷ vector-add xs ys
+vector-add [] (y ∷ y') = {!!}
+vector-add (x ∷ xs) [] = {!!}
+
 -- The {}s mean that A, B and C are implicit arguments
 -- Place the cursor in the hole and use C-c C-, to see the goal type and context
 -- Use C-c C-c to do a case split
