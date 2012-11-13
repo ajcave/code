@@ -121,18 +121,6 @@ rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
 
-congruence' : {A B : Set} (f : A -> B) (x y : A) -> x ≡ y -> f x ≡ f y
-congruence' f .y y refl = refl
-
--- By induction on n
-plus-succ-lemma : ∀ n m -> (n + (suc m)) ≡ suc (n + m)
-plus-succ-lemma zero m = refl
-plus-succ-lemma (suc n) m = congruence suc (plus-succ-lemma n m)
--- What happens if you use the induction hypothesis "badly"?
-
-eq-elim : {A : Set} (P : A -> Set) {x y : A} -> x ≡ y -> P x -> P y
-eq-elim P refl t = t
-
 -- Append two lists
 _⋆_ : {A : Set} -> list A -> list A -> list A
 [] ⋆ ys = ys
@@ -173,6 +161,8 @@ lemma1 (x ∷ xs) acc =
    rev-tl xs (x ∷ acc)
                           ≡⟨ lemma1 xs (x ∷ acc) ⟩
    (rev xs) ⋆ (x ∷ acc)
+                          ≡⟨ program ⟩
+   (rev xs) ⋆ ((x ∷ []) ⋆ acc)
                           ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
    ((rev xs) ⋆ (x ∷ [])) ⋆ acc
                           ≡⟨ program ⟩
@@ -202,4 +192,4 @@ theorem1' xs =
   ∎
 
 -- TODO: Be very careful with the syntax you use. Be uniform
--- TODO: Show them termination checking
+-- TODO: Show them termination checking and coverage checking (failure)
