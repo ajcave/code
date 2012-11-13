@@ -11,9 +11,9 @@ And unicode! Type \:: to get ∷
 Place the cursor over ∷ and hit C-u C-x = to find out how to write it
 
 datatype 'a list = Nil | Cons of 'a * 'a list -}
-data list A : Set where
- [] : list A
- _∷_ : A -> list A -> list A
+data list a' : Set where
+ [] : list a'
+ _∷_ : a' -> list a' -> list a'
 -- Could simply write _∷_ : A -> list A -> list A
 
 infixr 9 _∷_ -- cons should be right associative with some arbitrary precedence
