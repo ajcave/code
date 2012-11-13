@@ -131,14 +131,6 @@ _⋆_ : {a' : Set} -> list a' -> list a' -> list a'
 [] ⋆ ys = ys
 (x ∷ xs) ⋆ ys = x ∷ (xs ⋆ ys)
 
-⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a') -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
-⋆-associativity [] ys zs = reflexivity
-⋆-associativity (x ∷ xs) ys zs = congruence (_∷_ x) (⋆-associativity xs ys zs)
-
-⋆-unit-right : ∀ {a' : Set} (xs : list a') -> (xs ⋆ []) ≡ xs
-⋆-unit-right [] = reflexivity
-⋆-unit-right (x ∷ xs) = congruence (_∷_ x) (⋆-unit-right xs)
-
 rev : {a' : Set} -> list a' -> list a'
 rev [] = []
 rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
@@ -146,6 +138,14 @@ rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
 rev-tl : {a' : Set} -> list a' -> list a' -> list a'
 rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
+
+⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a') -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
+⋆-associativity [] ys zs = reflexivity
+⋆-associativity (x ∷ xs) ys zs = congruence (_∷_ x) (⋆-associativity xs ys zs)
+
+⋆-unit-right : ∀ {a' : Set} (xs : list a') -> (xs ⋆ []) ≡ xs
+⋆-unit-right [] = reflexivity
+⋆-unit-right (x ∷ xs) = congruence (_∷_ x) (⋆-unit-right xs)
 
 -- Induction is just recursion!
 lemma1 : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
