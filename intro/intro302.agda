@@ -28,9 +28,9 @@ example1 = 1 ∷ 2 ∷ 3 ∷ []
 zipWith : {a' b' c' : Set} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
 zipWith f xs ys = {!!}
 
-data vec A : number -> Set where
- [] : vec A 0
- _∷_ : {n : number} -> A -> vec A n -> vec A (1 + n)
+data vec a' : number -> Set where
+ [] : vec a' 0
+ _∷_ : {n : number} -> a' -> vec a' n -> vec a' (1 + n)
 
 example2 : vec number 2
 example2 = zero ∷ zero ∷ []
