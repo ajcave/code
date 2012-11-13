@@ -25,7 +25,7 @@ example1 = 1 ∷ 2 ∷ 3 ∷ []
 -- Place the cursor in the hole and use C-c C-, to see the goal type and context
 -- Use C-c C-c to do a case split
 -- Type in the hole and use C-c C-r to attempt to refine
-zipWith : {A B C : Set} -> (A -> B -> C) -> list A -> list B -> list C
+zipWith : {a' b' c' : Set} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
 zipWith f xs ys = {!!}
 
 data vec A : number -> Set where
@@ -41,11 +41,11 @@ example3 = zero ∷ zero ∷ zero ∷ []
 -}
 
 -- Now it discards the impossible cases for us!
-zipWith2 : {A B C : Set} -> {n : number} -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
+zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith2 f [] [] = []
 zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
 
-zipWith4 : {A B C : Set} -> (n : number) -> (A -> B -> C) -> vec A n -> vec B n -> vec C n
+zipWith4 : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith4 zero f [] ys = {!!}
 zipWith4 (suc n) f (x ∷ xs) ys = {!!}
 
@@ -109,12 +109,12 @@ example6 = eval example4
 
 -- We can put computations in types (unlike present-day Beluga), and they simplify
 -- We'll see that this lets you prove properties of your functions!
-_++_ : {A : Set} {n m : number} -> vec A n -> vec A m -> vec A (n + m)
+_++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 [] ++ ys = ys
 (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
 
 -- But it can get hairy
-rev-acc : {A : Set} {n m : number} -> vec A n -> vec A m -> vec A (n + m)
+rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 rev-acc [] ys = ys
 rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 
@@ -122,28 +122,28 @@ congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
 
 -- Append two lists
-_⋆_ : {A : Set} -> list A -> list A -> list A
+_⋆_ : {a' : Set} -> list a' -> list a' -> list a'
 [] ⋆ ys = ys
 (x ∷ xs) ⋆ ys = x ∷ (xs ⋆ ys)
 
-⋆-associativity : ∀ {A : Set} (xs : list A) (ys : list A) (zs : list A) -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
+⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a') -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
 ⋆-associativity [] ys zs = reflexivity
 ⋆-associativity (x ∷ xs) ys zs = congruence (_∷_ x) (⋆-associativity xs ys zs)
 
-⋆-unit-right : ∀ {A : Set} (xs : list A) -> (xs ⋆ []) ≡ xs
+⋆-unit-right : ∀ {a' : Set} (xs : list a') -> (xs ⋆ []) ≡ xs
 ⋆-unit-right [] = reflexivity
 ⋆-unit-right (x ∷ xs) = congruence (_∷_ x) (⋆-unit-right xs)
 
-rev : {A : Set} -> list A -> list A
+rev : {a' : Set} -> list a' -> list a'
 rev [] = []
 rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
 
-rev-tl : {A : Set} -> list A -> list A -> list A
+rev-tl : {a' : Set} -> list a' -> list a' -> list a'
 rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 
 -- Induction is just recursion!
-lemma1 : {A : Set} (xs : list A) (acc : list A) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
+lemma1 : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1 [] acc =
   begin
    rev-tl [] acc
@@ -170,7 +170,7 @@ lemma1 (x ∷ xs) acc =
   ∎
 
 -- Actually all the "by program" steps are automatic
-lemma1' : {A : Set} (xs : list A) (acc : list A) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
+lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1' [] acc = reflexivity
 lemma1' (x ∷ xs) acc =
   begin
@@ -181,7 +181,7 @@ lemma1' (x ∷ xs) acc =
    ((rev xs) ⋆ (x ∷ [])) ⋆ acc
   ∎
 
-theorem1' : {A : Set} (xs : list A) -> rev-tl xs [] ≡ rev xs
+theorem1' : {a' : Set} (xs : list a') -> rev-tl xs [] ≡ rev xs
 theorem1' xs =
   begin
    rev-tl xs []
