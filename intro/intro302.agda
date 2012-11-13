@@ -14,7 +14,6 @@ datatype 'a list = Nil | Cons of 'a * 'a list -}
 data list a' : Set where
  [] : list a'
  _∷_ : a' -> list a' -> list a'
--- Could simply write _∷_ : A -> list A -> list A
 
 infixr 9 _∷_ -- cons should be right associative with some arbitrary precedence
 
