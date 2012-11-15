@@ -69,6 +69,11 @@ zipWith-bad f [] [] = []
 zipWith-bad f (x ∷ xs) (y ∷ ys) = zipWith-bad f xs ys
 -}
 
+-- Agda performs termination checking, and this fails!
+zipWith-bad2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
+zipWith-bad2 f [] [] = []
+zipWith-bad2 f (x ∷ xs) (y ∷ ys) = zipWith-bad2 f (x ∷ xs) (y ∷ ys)
+
 -- Can find solution automatically!
 
 {- Dot product:
