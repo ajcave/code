@@ -294,6 +294,10 @@ theorem1' xs =
    rev xs
   ∎
 
+-- Termination checking is even more important when proving theorems:
+theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
+theorem1'' xs = theorem1'' xs -- By "induction"
+
 {-======================================================================-}
 
 matrix : ∀ a' -> number -> number -> Set
