@@ -122,7 +122,7 @@ _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 rev-acc [] acc = acc
 rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
--- We'd have to *prove* to Agda that suc (n + m) = n + (suc m)
+-- We'd have to *prove* to Agda that 1 + (n + m) = n + (1 + m)
 
 {- bounded n is the type of numbers strictly less than n
    i.e. zero is a "bounded-num 1" and a "bounded-num 2" and a "bounded-num 3", ...
