@@ -22,6 +22,10 @@ infixr 9 _∷_ -- cons should be right associative with some arbitrary precedenc
 example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
 
+map : ∀ {A B} -> (A -> B) -> list A -> list B
+map f [] = []
+map f (x ∷ xs) = f x ∷ map f xs
+
 vector-add : list number -> list number -> list number
 vector-add xs ys = {!!}
 
@@ -61,6 +65,7 @@ zipWith' n f xs ys = {!!}
 -- Passing the n implicitly
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith2 f xs ys = {!!}
+-- Can find solution automatically!
 
 -- This is a type error!
 {-
@@ -74,7 +79,23 @@ zipWith-bad2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n 
 zipWith-bad2 f [] [] = []
 zipWith-bad2 f (x ∷ xs) (y ∷ ys) = zipWith-bad2 f (x ∷ xs) (y ∷ ys)
 
--- Can find solution automatically!
+-- It is not perfect:
+{-
+ inc takes a list and
+ adds 0 to the first element
+ adds 1 to the second
+ adds 2 to the third
+ ...
+-}
+inc : list number -> list number
+inc [] = []
+inc (x ∷ xs) = x ∷ inc (map (λ y → y + 1) xs)
+
+-- But usually we can rewrite them to pass the termination checker:
+inc' : list number -> list number
+inc' [] = []
+inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
+
 
 {- Dot product:
  [1,2,3,4] • [5,6,7,8] = 1*5 + 2*6 + 3*7 + 4*8
@@ -83,9 +104,9 @@ _•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
 (x ∷ xs) • (y ∷ ys) = x * y + xs • ys
 
-map : ∀ {a' b' n} -> (a' -> b') -> vec a' n -> vec b' n
-map f [] = []
-map f (x ∷ xs) = f x ∷ map f xs
+vmap : ∀ {a' b' n} -> (a' -> b') -> vec a' n -> vec b' n
+vmap f [] = []
+vmap f (x ∷ xs) = f x ∷ vmap f xs
 
 -- We can put computations in types, and they simplify
 -- We'll see that this lets you prove properties of your functions!
@@ -293,7 +314,7 @@ gives:
 
 transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
 transpose {m = zero}   xss = []
-transpose {m = suc m'} xss = (map hd xss) ∷ (transpose (map tl xss))
+transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 -- Here we know for sure that hd is safe (and the compiler can check it!)
 
 -- We can't accidentally forget the base case:
@@ -302,7 +323,7 @@ transpose {m = suc m'} xss = (map hd xss) ∷ (transpose (map tl xss))
 
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
 mult-transpose [] ys = []
-mult-transpose (xs ∷ xss) yss = (map (λ ys -> xs • ys) yss) ∷ (mult-transpose xss yss)
+mult-transpose (xs ∷ xss) yss = (vmap (λ ys -> xs • ys) yss) ∷ (mult-transpose xss yss)
 
 mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
 mult xss yss = mult-transpose xss (transpose yss)
