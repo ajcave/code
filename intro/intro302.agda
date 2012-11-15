@@ -158,7 +158,7 @@ transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 -- We can put computations in types, and they simplify
 -- We'll see that this lets you prove properties of your functions!
 _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
-xs ++ ys = ?
+xs ++ ys = {!!}
 
 -- But it can get hairy
 rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
