@@ -53,7 +53,6 @@ hd (x ∷ xs) = x
 tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
 tl (x ∷ xs) = xs
 
-
 -- Now it discards the impossible cases for us!
 zipWith' : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith' n f xs ys = {!!}
@@ -122,6 +121,20 @@ first xs = lookup zero xs
 maybe-first : {n : number} {a' : Set} -> vec a' n -> option a'
 maybe-first {zero} xs = NONE
 maybe-first {suc n} xs = SOME (lookup zero xs)
+
+-- Converts m into a bounded-num n (if possible)
+-- Another name for this is testing if m < n
+_<?_ : ∀ (m n : number) -> option (bounded-num n)
+zero <? suc n = SOME zero
+m    <? zero = NONE
+suc n <? suc n' with n <? n'
+suc n <? suc n' | SOME m = SOME (succ m)
+suc n <? suc n' | NONE = NONE
+
+lookup' : {a' : Set} (n m : number) -> vec a' n -> option a'
+lookup' n m xs with m <? n
+lookup' n m xs | SOME m' = SOME (lookup m' xs)
+lookup' n m xs | NONE = NONE
 
 {-======================================================================================-}
 
