@@ -221,7 +221,6 @@ transpose : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose [] = repeat []
 transpose (xs ∷ xss) = addColumn xs (transpose xss)
 
-
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
 mult-transpose [] ys = []
 mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
