@@ -210,6 +210,10 @@ theorem1' xs =
 matrix : ∀ a' -> number -> number -> Set
 matrix a' m n = vec (vec a' n) m
 
+mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
+mult-transpose [] ys = []
+mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
+
 repeat : ∀ {a' n} -> a' -> vec a' n
 repeat {n = 0} x = []
 repeat {n = suc m} x = x ∷ repeat x
@@ -220,10 +224,6 @@ addColumn xs yss = zipWith2 (_∷_) xs yss
 transpose : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose [] = repeat []
 transpose (xs ∷ xss) = addColumn xs (transpose xss)
-
-mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
-mult-transpose [] ys = []
-mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
 
 mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
 mult xss yss = mult-transpose xss (transpose yss)
