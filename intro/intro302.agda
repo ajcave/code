@@ -112,6 +112,32 @@ vmap : ∀ {a' b' n} -> (a' -> b') -> vec a' n -> vec b' n
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
 
+
+matrix : ∀ a' -> number -> number -> Set
+matrix a' m n = vec (vec a' n) m
+
+{-
+Transposing:
+
+[[1,2],
+ [3,4],
+ [5,6]]
+
+gives:
+
+[[1,3,5],
+ [2,4,6]]
+-}
+
+transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
+transpose {m = zero}   xss = []
+transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
+-- Here we know for sure that hd is safe (and the compiler can check it!)
+
+-- We can't accidentally forget the base case:
+--transpose-bad :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
+--transpose-bad xss = (map hd xss) ∷ (transpose (map tl xss))
+
 -- We can put computations in types, and they simplify
 -- We'll see that this lets you prove properties of your functions!
 _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
@@ -307,30 +333,6 @@ theorem1'' xs = theorem1'' xs -- By "induction"
 
 {-======================================================================-}
 
-matrix : ∀ a' -> number -> number -> Set
-matrix a' m n = vec (vec a' n) m
-
-{-
-Transposing:
-
-[[1,2],
- [3,4],
- [5,6]]
-
-gives:
-
-[[1,3,5],
- [2,4,6]]
--}
-
-transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
-transpose {m = zero}   xss = []
-transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
--- Here we know for sure that hd is safe (and the compiler can check it!)
-
--- We can't accidentally forget the base case:
---transpose-bad :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
---transpose-bad xss = (map hd xss) ∷ (transpose (map tl xss))
 
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
 mult-transpose [] ys = []
