@@ -107,6 +107,7 @@ _•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
 (x ∷ xs) • (y ∷ ys) = x * y + xs • ys
 
+-- vmap preserves the length!
 vmap : ∀ {a' b' n} -> (a' -> b') -> vec a' n -> vec b' n
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
