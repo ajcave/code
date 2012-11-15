@@ -212,7 +212,7 @@ matrix a' m n = vec (vec a' n) m
 
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
 mult-transpose [] ys = []
-mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
+mult-transpose (xs ∷ xss) yss = (map (λ ys -> xs • ys) yss) ∷ (mult-transpose xss yss)
 
 repeat : ∀ {a' n} -> a' -> vec a' n
 repeat {n = 0} x = []
