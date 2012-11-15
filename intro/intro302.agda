@@ -329,7 +329,16 @@ theorem1' xs =
 
 -- Termination checking is even more important when proving theorems:
 theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
-theorem1'' xs = theorem1'' xs -- By "induction"
+theorem1'' [] =
+  begin
+    rev []      ≡⟨ program ⟩
+    []
+  ∎
+theorem1'' (x ∷ xs) =
+  begin
+    rev (x ∷ xs)     ≡⟨ theorem1'' (x ∷ xs) ⟩ -- By "induction"
+    (x ∷ xs)
+  ∎
 
 {-======================================================================-}
 
