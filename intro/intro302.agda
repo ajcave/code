@@ -269,6 +269,10 @@ transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
 transpose {m = zero}   xss = []
 transpose {m = suc m'} xss = (map hd xss) ∷ (transpose (map tl xss))
 
+-- We can't accidentally forget the base case:
+--transpose-bad :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
+--transpose-bad xss = (map hd xss) ∷ (transpose (map tl xss))
+
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
 mult-transpose [] ys = []
 mult-transpose (xs ∷ xss) yss = (map (λ ys -> xs • ys) yss) ∷ (mult-transpose xss yss)
