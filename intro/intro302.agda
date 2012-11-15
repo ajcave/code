@@ -127,9 +127,9 @@ maybe-first {suc n} xs = SOME (lookup zero xs)
 _<?_ : ∀ (m n : number) -> option (bounded-num n)
 zero <? suc n = SOME zero
 m    <? zero = NONE
-suc n <? suc n' with n <? n'
-suc n <? suc n' | SOME m = SOME (succ m)
-suc n <? suc n' | NONE = NONE
+suc m' <? suc n with m' <? n
+suc m' <? suc n | SOME m'' = SOME (succ m'')
+suc m' <? suc n | NONE = NONE
 
 lookup' : {a' : Set} (n m : number) -> vec a' n -> option a'
 lookup' n m xs with m <? n
@@ -281,6 +281,7 @@ gives:
 transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
 transpose {m = zero}   xss = []
 transpose {m = suc m'} xss = (map hd xss) ∷ (transpose (map tl xss))
+-- Here we know for sure that hd is safe (and the compiler can check it!)
 
 -- We can't accidentally forget the base case:
 --transpose-bad :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
