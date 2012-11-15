@@ -38,6 +38,27 @@ vector-add xs ys = {!!}
 zipWith : {a' b' c' : Set} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
 zipWith f xs ys = {!!}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 data vec a' : number -> Set where
  [] : vec a' 0
  _∷_ : {n : number} -> a' -> vec a' n -> vec a' (1 + n)
