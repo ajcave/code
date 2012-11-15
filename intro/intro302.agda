@@ -83,8 +83,8 @@ _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 
 -- But it can get hairy
 rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
-rev-acc [] ys = ys
-rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
+rev-acc [] acc = acc
+rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 {-======================================================================================-}
 
