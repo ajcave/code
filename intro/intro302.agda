@@ -109,6 +109,9 @@ example5 : expr natural
 example5 = if zero then true else false
 -}
 
+{- In SML, this would be something like:
+datatype value = Zero | Succ of value | True | False
+-}
 data value : type -> Set where
  zero : value int
  succ : value int -> value int
@@ -119,12 +122,20 @@ _+v_ : value int -> value int -> value int
 zero +v m = m
 (succ n) +v m = succ (n +v m)
 
-_=v_ : ∀ {t : type} -> value t -> value t -> value bool
+_=v_ : {t : type} -> value t -> value t -> value bool
 t =v u = {!!}
 -- Notice that the ill-typed cases are ruled out!
 
 eval : {t : type} -> expr t -> value t
-eval x = {!!}
+eval zero = zero
+eval (succ n) = succ (eval n)
+eval (if cond then t1 else t2) with eval cond
+eval (if cond then t1 else t2) | true = eval t1
+eval (if cond then t1 else t2) | false = eval t2
+eval true = true
+eval false = true
+eval (n ⊕ m) = {!!}
+eval (t1 == t2) = {!!}
 -- Again the ill-typed cases are ruled out!
 
 
