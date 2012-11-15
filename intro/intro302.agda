@@ -56,7 +56,7 @@ tl (x ∷ xs) = xs
 
 -- Now it discards the impossible cases for us!
 zipWith' : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith' n f xs ys = ?
+zipWith' n f xs ys = {!!}
 
 -- Passing the n implicitly
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
@@ -75,6 +75,16 @@ map : ∀ {a' b' n} -> (a' -> b') -> vec a' n -> vec b' n
 map f [] = []
 map f (x ∷ xs) = f x ∷ map f xs
 
+-- We can put computations in types, and they simplify
+-- We'll see that this lets you prove properties of your functions!
+_++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
+[] ++ ys = ys
+(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+
+-- But it can get hairy
+rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
+rev-acc [] ys = ys
+rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 
 {-======================================================================================-}
 
@@ -125,16 +135,6 @@ example6 = eval example4
 
 {-======================================================================-}
 
--- We can put computations in types, and they simplify
--- We'll see that this lets you prove properties of your functions!
-_++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
-[] ++ ys = ys
-(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
-
--- But it can get hairy
-rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
-rev-acc [] ys = ys
-rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 
 
 -- Append two lists
