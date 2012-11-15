@@ -54,6 +54,7 @@ tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
 tl (x ∷ xs) = xs
 
 -- Now it discards the impossible cases for us!
+-- Notice the extra information we get to help us find the right solution
 zipWith' : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith' n f xs ys = {!!}
 
