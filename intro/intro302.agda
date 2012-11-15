@@ -132,7 +132,7 @@ gives:
 transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
 transpose {m = zero}   xss = []
 transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
--- Here we know for sure that hd is safe (and the compiler can check it!)
+-- Here we know for sure that hd is safe (and the typechecker can check it!)
 
 -- We can't accidentally forget the base case:
 --transpose-bad :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
