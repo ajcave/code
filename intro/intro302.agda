@@ -272,6 +272,8 @@ lemma1 (x ∷ xs) acc =
    (rev (x ∷ xs)) ⋆ acc
   ∎
 
+-- What happens if we skip a step?
+
 -- Actually all the "by program" steps are automatic
 lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1' [] acc = reflexivity
