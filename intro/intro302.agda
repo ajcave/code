@@ -26,15 +26,18 @@ map : ∀ {A B} -> (A -> B) -> list A -> list B
 map f [] = []
 map f (x ∷ xs) = f x ∷ map f xs
 
-vector-add : list number -> list number -> list number
-vector-add xs ys = {!!}
-
 {- The {}s mean that A, B and C are implicit arguments
    Place the cursor in the hole and use C-c C-, to see the goal type and context
    Use C-c C-c to do a case split
    Type in the hole and use C-c C-r to attempt to refine
+-}
+vector-add : list number -> list number -> list number
+vector-add xs ys = {!!}
 
+{-
    zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
+
+   e.g. vector-add is just zipWith _+_
 -}
 zipWith : {a' b' c' : Set} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
 zipWith f xs ys = {!!}
