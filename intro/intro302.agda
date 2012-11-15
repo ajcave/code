@@ -295,7 +295,15 @@ mult-transpose (xs ∷ xss) yss = (map (λ ys -> xs • ys) yss) ∷ (mult-trans
 mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
 mult xss yss = mult-transpose xss (transpose yss)
 
-{-
+
+
+
+
+
+
+{-======================================================================-}
+
+-- An alternate way to implement transpose
 repeat : ∀ {a' n} -> a' -> vec a' n
 repeat {n = 0} x = []
 repeat {n = suc m} x = x ∷ repeat x
@@ -303,7 +311,6 @@ repeat {n = suc m} x = x ∷ repeat x
 addColumn : ∀ {a' n m} -> vec a' n -> matrix a' n m -> matrix a' n (1 + m)
 addColumn xs yss = zipWith2 (_∷_) xs yss
 
-transpose : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
-transpose [] = repeat []
-transpose (xs ∷ xss) = addColumn xs (transpose xss)
--}
+transpose' : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
+transpose' [] = repeat []
+transpose' (xs ∷ xss) = addColumn xs (transpose' xss)
