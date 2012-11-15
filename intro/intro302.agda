@@ -293,7 +293,6 @@ congruence f refl = refl
 ⋆-unit-right [] = reflexivity
 ⋆-unit-right (x ∷ xs) = congruence (_∷_ x) (⋆-unit-right xs)
 
--- Induction is just recursion!
 lemma1 : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1 [] acc =
   begin
@@ -310,7 +309,7 @@ lemma1 (x ∷ xs) acc =
    rev-tl (x ∷ xs) acc
                           ≡⟨ program ⟩
    rev-tl xs (x ∷ acc)
-                          ≡⟨ lemma1 xs (x ∷ acc) ⟩
+                          ≡⟨ lemma1 xs (x ∷ acc) ⟩ -- Induction is just recursion!
    (rev xs) ⋆ (x ∷ acc)
                           ≡⟨ program ⟩
    (rev xs) ⋆ ((x ∷ []) ⋆ acc)
