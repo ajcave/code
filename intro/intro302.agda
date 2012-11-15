@@ -23,10 +23,7 @@ example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
 
 vector-add : list number -> list number -> list number
-vector-add [] [] = []
-vector-add (x ∷ xs) (y ∷ ys) = (x + y) ∷ vector-add xs ys
-vector-add [] (y ∷ y') = {!!}
-vector-add (x ∷ xs) [] = {!!}
+vector-add xs ys = {!!}
 
 {- The {}s mean that A, B and C are implicit arguments
    Place the cursor in the hole and use C-c C-, to see the goal type and context
@@ -47,7 +44,7 @@ example2 = 7 ∷ 10 ∷ []
 
 {- This is a type error: 
 example3 : vec number 3
-example3 = 10 ∷ 8 ∷ 12 ∷ []
+example3 = 7 ∷ 10 ∷ []
 -}
 
 hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
@@ -59,8 +56,7 @@ tl (x ∷ xs) = xs
 
 -- Now it discards the impossible cases for us!
 zipWith' : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith' zero f [] ys = []
-zipWith' (suc n) f (x ∷ xs) ys = {!!}
+zipWith' n f xs ys = ?
 
 -- Passing the n implicitly
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
