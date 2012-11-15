@@ -159,8 +159,8 @@ maybe-first {suc n} xs = SOME (lookup zero xs)
 -- Converts m into a bounded-num n (if possible)
 -- Also known as: Testing if m < n
 _<?_ : ∀ (m n : number) -> option (bounded-num n)
-zero <? suc n = SOME zero
-m    <? zero = NONE
+zero   <? suc n = SOME zero
+m      <? zero = NONE
 suc m' <? suc n with m' <? n
 suc m' <? suc n | SOME m'' = SOME (succ m'')
 suc m' <? suc n | NONE = NONE
