@@ -87,17 +87,17 @@ rev-acc [] acc = acc
 rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 {- bounded n is the type of numbers strictly less than n
-   i.e. zero is a "bounded 1" and a "bounded 2" and a "bounded 3", ...
-        succ zero is a "bounded 2" and a "bounded 3", but *not* a "bounded 1"
+   i.e. zero is a "bounded-num 1" and a "bounded-num 2" and a "bounded-num 3", ...
+        succ zero is a "bounded-num 2" and a "bounded-num 3", but *not* a "bounded-num 1"
 -}
-data bounded : number -> Set where
- zero : {n : number} -> bounded (1 + n)
- succ : {n : number} -> bounded n -> bounded (1 + n)
+data bounded-num : number -> Set where
+ zero : {n : number} -> bounded-num (1 + n)
+ succ : {n : number} -> bounded-num n -> bounded-num (1 + n)
 
 {- Given a number i < n and a vector xs of length n, looks up
    the ith element of xs
 -}
-lookup : {a' : Set} {n : number} -> bounded n -> vec a' n -> a'
+lookup : {a' : Set} {n : number} -> bounded-num n -> vec a' n -> a'
 lookup i xs = {!!}
 
 -- No such thing as "index out of bounds!"
@@ -110,6 +110,12 @@ good = lookup (succ zero) (1 ∷ 2 ∷ [])
 {-
 bad : number
 bad = lookup (succ zero) (1 ∷ [])
+-}
+
+-- So is this:
+{-
+first : {a' : Set} {n : number} -> vec a' n -> a'
+first xs = lookup zero xs
 -}
 
 {-======================================================================================-}
