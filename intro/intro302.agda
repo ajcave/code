@@ -7,17 +7,18 @@ http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.UnicodeInput
 -}
 
 {-
-Unicode! Type \:: to get ∷
-Place the cursor over ∷ and hit C-u C-x = to find out how to write it
-
 In SML, this would be:
  datatype 'a list = Nil | Cons of 'a * 'a list
 -}
 data list a' : Set where
  [] : list a'
  _∷_ : a' -> list a' -> list a'
+{-
+  Unicode! Type \:: to get ∷
+  Place the cursor over ∷ and hit C-u C-x = to find out how to write it
+-}
 
-infixr 9 _∷_ -- cons should be right associative with some arbitrary precedence
+infixr 9 _∷_ -- cons should be right associative with some arbitrary precedence (9)
 
 example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
