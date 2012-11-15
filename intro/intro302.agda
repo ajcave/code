@@ -62,6 +62,13 @@ zipWith' n f xs ys = {!!}
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith2 f xs ys = {!!}
 
+-- This is a type error!
+{-
+zipWith-bad : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
+zipWith-bad f [] [] = []
+zipWith-bad f (x ∷ xs) (y ∷ ys) = zipWith-bad f xs ys
+-}
+
 -- Can find solution automatically!
 
 {- Dot product:
