@@ -11,3 +11,7 @@ reflexivity = refl
 
 program : ∀ {a} {A : Set a} {x : A} -> x ≡ x
 program = refl
+
+data option a' : Set where
+ NONE : option a'
+ SOME : (x : a') -> option a'

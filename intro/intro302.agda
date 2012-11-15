@@ -118,6 +118,11 @@ first : {a' : Set} {n : number} -> vec a' n -> a'
 first xs = lookup zero xs
 -}
 
+-- This is OK:
+maybe-first : {a' : Set} {n : number} -> vec a' n -> option a'
+maybe-first [] = NONE
+maybe-first (x ∷ xs) = SOME x
+
 {-======================================================================================-}
 
 data type : Set where
