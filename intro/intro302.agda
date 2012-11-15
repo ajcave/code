@@ -40,21 +40,22 @@ data vec a' : number -> Set where
 example2 : vec number 2
 example2 = zero ∷ zero ∷ []
 
-hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
-hd (x ∷ xs) = x
-
-tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
-tl (x ∷ xs) = xs
 
 {- This is a type error: 
 example3 : vec nat (succ (succ zero))
 example3 = zero ∷ zero ∷ zero ∷ []
 -}
 
+hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
+hd (x ∷ xs) = x
+
+tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
+tl (x ∷ xs) = xs
+
 -- Now it discards the impossible cases for us!
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith2 f [] [] = []
-zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
+zipWith2 f (x ∷ xs) (x' ∷ xs') = {!!}
 
 -- Can find solution automatically!
 
@@ -130,10 +131,8 @@ _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 -- But it can get hairy
 rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 rev-acc [] ys = ys
-rev-acc (x ∷ xs) ys = ? --rev-acc xs (x ∷ ys)
+rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
 
-congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
-congruence f refl = refl
 
 -- Append two lists
 _⋆_ : {a' : Set} -> list a' -> list a' -> list a'
@@ -147,6 +146,9 @@ rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
 rev-tl : {a' : Set} -> list a' -> list a' -> list a'
 rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
+
+congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+congruence f refl = refl
 
 ⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a') -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
 ⋆-associativity [] ys zs = reflexivity
