@@ -62,34 +62,14 @@ zipWith4 (suc n) f (x ∷ xs) ys = {!!}
 
 -- Can find solution automatically!
 
-map : ∀ {a' b'} {n} -> (a' -> b') -> vec a' n -> vec b' n
-map f [] = []
-map f (x ∷ xs) = f x ∷ map f xs
-
-matrix : ∀ a' -> number -> number -> Set
-matrix a' m n = vec (vec a' n) m
-
-repeat : ∀ {a' n} -> a' -> vec a' n
-repeat {n = 0} x = []
-repeat {n = suc m} x = x ∷ repeat x
-
-glue : ∀ {a' n m} -> vec a' n -> matrix a' n m -> matrix a' n (1 + m)
-glue xs yss = zipWith2 (_∷_) xs yss
-
-transpose : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
-transpose [] = repeat []
-transpose (xs ∷ xss) = glue xs (transpose xss)
-
 _•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
 (x ∷ xs) • (y ∷ ys) = x * y + xs • ys
 
-mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
-mult-transpose [] ys = []
-mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
+map : ∀ {a' b'} {n} -> (a' -> b') -> vec a' n -> vec b' n
+map f [] = []
+map f (x ∷ xs) = f x ∷ map f xs
 
-mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
-mult xss yss = mult-transpose xss (transpose yss)
 
 {-======================================================================================-}
 
@@ -226,3 +206,25 @@ theorem1' xs =
 
 -- TODO: Be very careful with the syntax you use. Be uniform
 -- TODO: Show them termination checking and coverage checking (failure)
+
+matrix : ∀ a' -> number -> number -> Set
+matrix a' m n = vec (vec a' n) m
+
+repeat : ∀ {a' n} -> a' -> vec a' n
+repeat {n = 0} x = []
+repeat {n = suc m} x = x ∷ repeat x
+
+addColumn : ∀ {a' n m} -> vec a' n -> matrix a' n m -> matrix a' n (1 + m)
+addColumn xs yss = zipWith2 (_∷_) xs yss
+
+transpose : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
+transpose [] = repeat []
+transpose (xs ∷ xss) = addColumn xs (transpose xss)
+
+
+mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
+mult-transpose [] ys = []
+mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
+
+mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
+mult xss yss = mult-transpose xss (transpose yss)
