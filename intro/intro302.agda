@@ -94,6 +94,9 @@ data bounded : number -> Set where
  zero : {n : number} -> bounded (1 + n)
  succ : {n : number} -> bounded n -> bounded (1 + n)
 
+{- Given a number i < n and a vector xs of length n, looks up
+   the ith element of xs
+-}
 lookup : {a' : Set} {n : number} -> bounded n -> vec a' n -> a'
 lookup i xs = {!!}
 
