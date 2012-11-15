@@ -86,6 +86,19 @@ rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 rev-acc [] acc = acc
 rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
+{- bounded n is the type of numbers strictly less than n
+   i.e. zero is a "bounded 1" and a "bounded 2" and a "bounded 3", ...
+        succ zero is a "bounded 2" and a "bounded 3", but *not* a "bounded 1"
+-}
+data bounded : number -> Set where
+ zero : {n : number} -> bounded (1 + n)
+ succ : {n : number} -> bounded n -> bounded (1 + n)
+
+lookup : {a' : Set} {n : number} -> bounded n -> vec a' n -> a'
+lookup i xs = {!!}
+{- No such thing as "index out of bounds!" -}
+
+
 {-======================================================================================-}
 
 data type : Set where
@@ -220,6 +233,8 @@ theorem1' xs =
                   ≡⟨ ⋆-unit-right (rev xs) ⟩
    rev xs
   ∎
+
+{-======================================================================-}
 
 matrix : ∀ a' -> number -> number -> Set
 matrix a' m n = vec (vec a' n) m
