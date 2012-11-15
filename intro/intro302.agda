@@ -88,6 +88,9 @@ mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix
 mult-transpose [] ys = []
 mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
 
+mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
+mult xss yss = mult-transpose xss (transpose yss)
+
 {-======================================================================================-}
 
 data type : Set where
