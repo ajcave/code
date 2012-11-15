@@ -96,8 +96,18 @@ data bounded : number -> Set where
 
 lookup : {a' : Set} {n : number} -> bounded n -> vec a' n -> a'
 lookup i xs = {!!}
-{- No such thing as "index out of bounds!" -}
 
+-- No such thing as "index out of bounds!"
+-- This is OK:
+
+good : number
+good = lookup (succ zero) (1 ∷ 2 ∷ [])
+
+-- This is a type error at compile time:
+{-
+bad : number
+bad = lookup (succ zero) (1 ∷ [])
+-}
 
 {-======================================================================================-}
 
