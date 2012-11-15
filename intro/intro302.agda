@@ -66,7 +66,7 @@ _•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
 (x ∷ xs) • (y ∷ ys) = x * y + xs • ys
 
-map : ∀ {a' b'} {n} -> (a' -> b') -> vec a' n -> vec b' n
+map : ∀ {a' b' n} -> (a' -> b') -> vec a' n -> vec b' n
 map f [] = []
 map f (x ∷ xs) = f x ∷ map f xs
 
