@@ -13,10 +13,8 @@ In SML, this would be:
 data list a' : Set where
  [] : list a'
  _∷_ : a' -> list a' -> list a'
-{-
-  Unicode! Type \:: to get ∷
-  Place the cursor over ∷ and hit C-u C-x = to find out how to write it
--}
+-- Unicode! Type \:: to get ∷
+-- Place the cursor over ∷ and hit C-u C-x = to find out how to write it
 
 infixr 9 _∷_ -- cons should be right associative with some arbitrary precedence (9)
 
