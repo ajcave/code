@@ -56,11 +56,12 @@ zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> v
 zipWith2 f [] [] = []
 zipWith2 f (x ∷ xs) (x' ∷ xs') = f x x' ∷ zipWith2 f xs xs'
 
+-- Can find solution automatically!
+
 zipWith4 : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith4 zero f [] ys = {!!}
+zipWith4 zero f [] ys = []
 zipWith4 (suc n) f (x ∷ xs) ys = {!!}
 
--- Can find solution automatically!
 
 _•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
