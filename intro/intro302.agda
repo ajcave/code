@@ -150,7 +150,7 @@ bad : number
 bad = lookup (succ zero) (1 ∷ [])
 -}
 
--- So is this:
+-- So is this, even though it might be OK sometimes (for n > 0)
 {-
 first : {a' : Set} {n : number} -> vec a' n -> a'
 first xs = lookup zero xs
