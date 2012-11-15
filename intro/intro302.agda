@@ -7,10 +7,12 @@ http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.UnicodeInput
 -}
 
 {-
-And unicode! Type \:: to get ∷
+Unicode! Type \:: to get ∷
 Place the cursor over ∷ and hit C-u C-x = to find out how to write it
 
-datatype 'a list = Nil | Cons of 'a * 'a list -}
+In SML, this would be:
+ datatype 'a list = Nil | Cons of 'a * 'a list
+-}
 data list a' : Set where
  [] : list a'
  _∷_ : a' -> list a' -> list a'
@@ -26,10 +28,13 @@ vector-add (x ∷ xs) (y ∷ ys) = (x + y) ∷ vector-add xs ys
 vector-add [] (y ∷ y') = {!!}
 vector-add (x ∷ xs) [] = {!!}
 
--- The {}s mean that A, B and C are implicit arguments
--- Place the cursor in the hole and use C-c C-, to see the goal type and context
--- Use C-c C-c to do a case split
--- Type in the hole and use C-c C-r to attempt to refine
+{- The {}s mean that A, B and C are implicit arguments
+   Place the cursor in the hole and use C-c C-, to see the goal type and context
+   Use C-c C-c to do a case split
+   Type in the hole and use C-c C-r to attempt to refine
+
+   zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
+-}
 zipWith : {a' b' c' : Set} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
 zipWith f xs ys = {!!}
 
@@ -38,12 +43,11 @@ data vec a' : number -> Set where
  _∷_ : {n : number} -> a' -> vec a' n -> vec a' (1 + n)
 
 example2 : vec number 2
-example2 = zero ∷ zero ∷ []
-
+example2 = 7 ∷ 10 ∷ []
 
 {- This is a type error: 
-example3 : vec nat (succ (succ zero))
-example3 = zero ∷ zero ∷ zero ∷ []
+example3 : vec number 3
+example3 = 10 ∷ 8 ∷ 12 ∷ []
 -}
 
 hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
@@ -52,18 +56,21 @@ hd (x ∷ xs) = x
 tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
 tl (x ∷ xs) = xs
 
+
 -- Now it discards the impossible cases for us!
+zipWith' : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
+zipWith' zero f [] ys = []
+zipWith' (suc n) f (x ∷ xs) ys = {!!}
+
+-- Passing the n implicitly
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith2 f [] [] = []
-zipWith2 f (x ∷ xs) (x' ∷ xs') = {!!}
+zipWith2 f xs ys = {!!}
 
 -- Can find solution automatically!
 
-zipWith4 : {a' b' c' : Set} -> (n : number) -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith4 zero f [] ys = []
-zipWith4 (suc n) f (x ∷ xs) ys = {!!}
-
-
+{- Dot product:
+ [1,2,3,4] • [5,6,7,8] = 1*5 + 2*6 + 3*7 + 4*8
+-}
 _•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
 (x ∷ xs) • (y ∷ ys) = x * y + xs • ys
@@ -77,18 +84,18 @@ map f (x ∷ xs) = f x ∷ map f xs
 
 data type : Set where
  bool : type
- natural : type
+ int : type
 
 data expr : type -> Set where
- zero : expr natural
- succ : (n : expr natural) -> expr natural 
+ zero : expr int
+ succ : (n : expr int) -> expr int
  if_then_else_ : {t : type} (cond : expr bool) (t1 : expr t) (t2 : expr t) -> expr t
  true : expr bool
  false : expr bool
- _⊕_ : (n : expr natural) (m : expr natural) -> expr natural
+ _⊕_ : (n : expr int) (m : expr int) -> expr int
  _==_ : {t : type} (t1 : expr t) (t2 : expr t) -> expr bool 
 
-example4 : expr natural
+example4 : expr int
 example4 = if ((zero ⊕ succ zero) == (succ zero)) then zero else (succ zero)
 
 {- This is a type error:
@@ -97,14 +104,14 @@ example5 = if zero then true else false
 -}
 
 data value : type -> Set where
- zero : value natural
- succ : value natural -> value natural
+ zero : value int
+ succ : value int -> value int
  true : value bool
  false : value bool
 
-_+v_ : value natural -> value natural -> value natural
+_+v_ : value int -> value int -> value int
 zero +v m = m
-succ n +v m = succ (n +v m)
+(succ n) +v m = succ (n +v m)
 
 _=v_ : ∀ {t : type} -> value t -> value t -> value bool
 t =v u = {!!}
@@ -115,7 +122,7 @@ eval x = {!!}
 -- Again the ill-typed cases are ruled out!
 
 
-example6 : value natural
+example6 : value int
 example6 = eval example4
 -- C-c C-n will let you evaluate a term to *n*ormal form
 -- it will show us that example6 is zero, as expected
@@ -207,16 +214,34 @@ theorem1' xs =
    rev xs
   ∎
 
--- TODO: Be very careful with the syntax you use. Be uniform
--- TODO: Show them termination checking and coverage checking (failure)
-
 matrix : ∀ a' -> number -> number -> Set
 matrix a' m n = vec (vec a' n) m
+
+{-
+Transposing:
+
+[[1,2],
+ [3,4],
+ [5,6]]
+
+gives:
+
+[[1,3,5],
+ [2,4,6]]
+-}
+
+transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
+transpose {m = zero}   xss = []
+transpose {m = suc m'} xss = (map hd xss) ∷ (transpose (map tl xss))
 
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
 mult-transpose [] ys = []
 mult-transpose (xs ∷ xss) yss = (map (λ ys -> xs • ys) yss) ∷ (mult-transpose xss yss)
 
+mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
+mult xss yss = mult-transpose xss (transpose yss)
+
+{-
 repeat : ∀ {a' n} -> a' -> vec a' n
 repeat {n = 0} x = []
 repeat {n = suc m} x = x ∷ repeat x
@@ -227,6 +252,4 @@ addColumn xs yss = zipWith2 (_∷_) xs yss
 transpose : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose [] = repeat []
 transpose (xs ∷ xss) = addColumn xs (transpose xss)
-
-mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
-mult xss yss = mult-transpose xss (transpose yss)
+-}
