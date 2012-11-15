@@ -130,7 +130,7 @@ _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 -- But it can get hairy
 rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 rev-acc [] ys = ys
-rev-acc (x ∷ xs) ys = {!!} --rev-acc xs (x ∷ ys)
+rev-acc (x ∷ xs) ys = ? --rev-acc xs (x ∷ ys)
 
 congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
