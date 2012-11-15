@@ -40,6 +40,12 @@ data vec a' : number -> Set where
 example2 : vec number 2
 example2 = zero ∷ zero ∷ []
 
+hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
+hd (x ∷ xs) = x
+
+tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
+tl (x ∷ xs) = xs
+
 {- This is a type error: 
 example3 : vec nat (succ (succ zero))
 example3 = zero ∷ zero ∷ zero ∷ []
@@ -55,6 +61,32 @@ zipWith4 zero f [] ys = {!!}
 zipWith4 (suc n) f (x ∷ xs) ys = {!!}
 
 -- Can find solution automatically!
+
+map : ∀ {a' b'} {n} -> (a' -> b') -> vec a' n -> vec b' n
+map f [] = []
+map f (x ∷ xs) = f x ∷ map f xs
+
+matrix : ∀ a' -> number -> number -> Set
+matrix a' m n = vec (vec a' n) m
+
+repeat : ∀ {a' n} -> a' -> vec a' n
+repeat {n = 0} x = []
+repeat {n = suc m} x = x ∷ repeat x
+
+glue : ∀ {a' n m} -> vec a' n -> matrix a' n m -> matrix a' n (1 + m)
+glue xs yss = zipWith2 (_∷_) xs yss
+
+transpose : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
+transpose [] = repeat []
+transpose (xs ∷ xss) = glue xs (transpose xss)
+
+_•_ : ∀ {n} -> vec number n -> vec number n -> number
+[] • [] = 0
+(x ∷ xs) • (y ∷ ys) = x * y + xs • ys
+
+mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
+mult-transpose [] ys = []
+mult-transpose (xs ∷ xss) yss = map (_•_ xs) yss ∷ (mult-transpose xss yss)
 
 {-======================================================================================-}
 
@@ -90,14 +122,7 @@ zero +v m = m
 succ n +v m = succ (n +v m)
 
 _=v_ : ∀ {t : type} -> value t -> value t -> value bool
-zero =v zero = true
-zero =v succ y = false
-succ y =v zero = false
-succ y =v succ y' = y =v y'
-true =v true = {!!}
-true =v false = {!!}
-false =v true = {!!}
-false =v false = {!!}
+t =v u = {!!}
 -- Notice that the ill-typed cases are ruled out!
 
 eval : {t : type} -> expr t -> value t
@@ -112,7 +137,7 @@ example6 = eval example4
 
 {-======================================================================-}
 
--- We can put computations in types (unlike present-day Beluga), and they simplify
+-- We can put computations in types, and they simplify
 -- We'll see that this lets you prove properties of your functions!
 _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 [] ++ ys = ys
