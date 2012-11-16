@@ -46,3 +46,5 @@ mutual
  fmap (▹ A) ρ1 ρ2 σ x = arrow-lookup σ A x
  fmap (μ F) ρ1 ρ2 σ x = μmap F ρ1 ρ2 σ x
  fmap (A ∧ B) ρ1 ρ2 σ (x₁ , x₂) = (fmap A ρ1 ρ2 σ x₁) , (fmap B ρ1 ρ2 σ x₂)
+
+-- Need to try a one-variable-at-a-time version

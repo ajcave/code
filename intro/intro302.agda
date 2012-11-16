@@ -21,7 +21,7 @@ infixr 9 _∷_ -- cons should be right associative with some arbitrary precedenc
 example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
 
-map : ∀ {A B} -> (A -> B) -> list A -> list B
+map : {a' : Set} {b' : Set} -> (a' -> b') -> list a' -> list b'
 map f [] = []
 map f (x ∷ xs) = f x ∷ map f xs
 
@@ -125,12 +125,12 @@ _•_ : ∀ {n} -> vec number n -> vec number n -> number
 (x ∷ xs) • (y ∷ ys) = x * y + xs • ys
 
 -- vmap preserves the length!
-vmap : ∀ {a' b' n} -> (a' -> b') -> vec a' n -> vec b' n
+vmap : {a' b' : Set} {n : number} -> (a' -> b') -> vec a' n -> vec b' n
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
 
 
-matrix : ∀ a' -> number -> number -> Set
+matrix : (a' : Set) -> number -> number -> Set
 matrix a' m n = vec (vec a' n) m
 
 {-
@@ -146,7 +146,7 @@ gives:
  [2,4,6]]
 -}
 
-transpose :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
+transpose : {m : number} {a' : Set} {n : number} -> matrix a' n m -> matrix a' m n
 transpose {m = zero}   xss = []
 transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
@@ -204,8 +204,8 @@ maybe-first {zero} xs = NONE
 maybe-first {suc n} xs = SOME (lookup zero xs)
 
 -- Converts m into a bounded-num n (if possible)
--- Also known as: Testing if m < n
-_<?_ : ∀ (m n : number) -> option (bounded-num n)
+-- Also known as testing if m < n
+_<?_ : (m n : number) -> option (bounded-num n)
 zero   <? suc n = SOME zero
 m      <? zero = NONE
 suc m' <? suc n with m' <? n
@@ -266,6 +266,24 @@ example6 = eval example4
 -- C-c C-n will let you evaluate a term to *n*ormal form
 -- it will show us that example6 is zero, as expected
 
+data unit : Set where
+ ₍₎ : unit
+
+-- empty has no constructors, so there is nothing of type empty
+data empty : Set where
+
+is-true : value bool -> Set
+is-true true = unit
+is-true false = empty
+
+test1 : is-true ((eval example4) =v zero)
+test1 = {!!}
+
+bad-test : is-true ((eval example4) =v (succ zero))
+bad-test = {!!}
+
+-- These serve as unit tests!
+
 {-======================================================================-}
 
 -- Append two lists
@@ -281,15 +299,20 @@ rev-tl : {a' : Set} -> list a' -> list a' -> list a'
 rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 
-congruence : {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
+-- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
+data _≡'_ {a' : Set} : a' -> a' -> Set where
+ refl : {x : a'} -> x ≡' x
+-- refl is short for "reflexivity"
+
+congruence : {a' b' : Set} (f : a' -> b') {x y : a'} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
 
 ⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a') -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
-⋆-associativity [] ys zs = reflexivity
+⋆-associativity [] ys zs = refl
 ⋆-associativity (x ∷ xs) ys zs = congruence (_∷_ x) (⋆-associativity xs ys zs)
 
 ⋆-unit-right : ∀ {a' : Set} (xs : list a') -> (xs ⋆ []) ≡ xs
-⋆-unit-right [] = reflexivity
+⋆-unit-right [] = refl
 ⋆-unit-right (x ∷ xs) = congruence (_∷_ x) (⋆-unit-right xs)
 
 lemma1 : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
@@ -384,3 +407,9 @@ addColumn xs yss = zipWith2 (_∷_) xs yss
 transpose' : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose' [] = repeat []
 transpose' (xs ∷ xss) = addColumn xs (transpose' xss)
+
+{-
+ Other things we can do with dependent types:
+   * Check if database (SQL) queries are well-formed during typechecking (before you ever run them)
+   * 
+-}
