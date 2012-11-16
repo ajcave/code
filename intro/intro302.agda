@@ -275,6 +275,7 @@ data _≡'_ {a' : Set} : a' -> a' -> Set where
  refl : {x : a'} -> x ≡' x
 -- refl is short for "reflexivity"
 
+-- The type simplified!
 test1 : (eval example4) ≡' zero
 test1 = {!!}
 
