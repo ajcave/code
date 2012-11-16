@@ -284,10 +284,11 @@ transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 
 
 -- We can put computations in types, and they simplify
--- We'll see that this lets you prove properties of your functions!
+-- Vector append:
 _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 xs ++ ys = {!!}
 
+-- We'll see that this lets you prove properties of your functions!
 
 
 
@@ -307,6 +308,17 @@ rev-acc [] acc = acc
 rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 -- We'd have to *prove* to Agda that 1 + (n + m) = n + (1 + m)
 
+
+
+
+
+
+
+
+
+
+
+
 {- bounded n is the type of numbers strictly less than n
    i.e. zero is a "bounded-num 1" and a "bounded-num 2" and a "bounded-num 3", ...
         succ zero is a "bounded-num 2" and a "bounded-num 3", but *not* a "bounded-num 1"
@@ -321,7 +333,7 @@ data bounded-num : number -> Set where
 lookup : {a' : Set} {n : number} -> bounded-num n -> vec a' n -> a'
 lookup i xs = {!!}
 
--- No such thing as "index out of bounds!"
+-- No such thing as "index out of bounds"!
 -- This is OK:
 
 good : number
