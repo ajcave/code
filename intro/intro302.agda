@@ -498,10 +498,10 @@ congruence f refl = refl
 
 ⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a')
                   -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
-⋆-associativity xs ys zs = ?
+⋆-associativity xs ys zs = {!!}
 
 ⋆-unit-right : ∀ {a' : Set} (xs : list a') -> (xs ⋆ []) ≡ xs
-⋆-unit-right xs = ?
+⋆-unit-right xs = {!!}
 
 lemma1 : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1 [] acc =
@@ -531,6 +531,16 @@ lemma1 (x ∷ xs) acc =
 
 -- What happens if we skip a step?
 
+
+
+
+
+
+
+
+
+
+
 -- Actually all the "by program" steps are automatic
 lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1' [] acc = reflexivity
@@ -553,6 +563,16 @@ theorem1' xs =
    rev xs
   ∎
 
+
+
+
+
+
+
+
+
+
+
 -- Termination checking is even more important when proving theorems:
 theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
 theorem1'' [] =
@@ -567,6 +587,19 @@ theorem1'' (x ∷ xs) =
   ∎
 
 {-======================================================================-}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
@@ -599,5 +632,6 @@ transpose' (xs ∷ xss) = addColumn xs (transpose' xss)
 {-
  Other things we can do with dependent types:
    * Check if database (SQL) queries are well-formed during typechecking (before you ever run them)
-   * Write a serialization library
+   * Write a serialization library (convert values of arbitary datatypes into strings to save
+       to a file)
 -}
