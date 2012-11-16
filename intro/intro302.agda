@@ -6,6 +6,19 @@ http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.EmacsModeKeyCombinations
 http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.UnicodeInput
 -}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 {-
 In SML, this would be:
  datatype 'a list = Nil | Cons of 'a * 'a list
@@ -21,10 +34,29 @@ infixr 9 _∷_ -- cons should be right associative with some arbitrary precedenc
 example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
 
+
+
+
+
+
+
+
+
+
+
 -- In SML, this would be just map : ('a -> 'b) -> 'a list -> 'b list
 map : {a' : Set} {b' : Set} -> (a' -> b') -> list a' -> list b'
 map f [] = []
 map f (x ∷ xs) = f x ∷ map f xs
+
+
+
+
+
+
+
+
+
 
 {- The {}s mean that A, B and C are implicit arguments
    Place the cursor in the hole and use C-c C-, to see the goal type and context
@@ -33,6 +65,16 @@ map f (x ∷ xs) = f x ∷ map f xs
 -}
 vector-add : list number -> list number -> list number
 vector-add xs ys = {!!}
+
+
+
+
+
+
+
+
+
+
 
 -- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
 -- e.g. vector-add is just zipWith _+_
@@ -54,12 +96,7 @@ zipWith f xs ys = {!!}
 
 
 
-
-
-
-
-
--- We _index_ lists by their length
+-- Solution: We _index_ lists by their length
 data vec a' : number -> Set where
  [] : vec a' 0
  _∷_ : {n : number} -> a' -> vec a' n -> vec a' (1 + n)
@@ -67,16 +104,24 @@ data vec a' : number -> Set where
 example2 : vec number 2
 example2 = 7 ∷ 10 ∷ []
 
-{- This is a type error: 
-example3 : vec number 3
-example3 = 7 ∷ 10 ∷ []
--}
+-- This is a type error: 
+-- example3 : vec number 3
+-- example3 = 7 ∷ 10 ∷ []
 
 hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
 hd (x ∷ xs) = x
 
 tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
 tl (x ∷ xs) = xs
+
+
+
+
+
+
+
+
+
 
 -- Now it discards the impossible cases for us!
 -- Notice the extra information we get to help us find the right solution
@@ -87,9 +132,28 @@ zipWith' n f xs ys = {!!}
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith2 f xs ys = {!!}
 
--- Can even find the solution automatically!
+
+
+
+
+
+
+
+
+
+
+-- C-c C-a
 zipWith3 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith3 f xs ys = {!!}
+
+
+
+
+
+
+
+
+
 
 -- This is a type error!
 {-
@@ -98,10 +162,27 @@ zipWith-bad f [] [] = []
 zipWith-bad f (x ∷ xs) (y ∷ ys) = zipWith-bad f xs ys
 -}
 
+
+
+
+
+
+
+
+
 -- Agda performs termination checking, and this fails!
 zipWith-bad2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith-bad2 f [] [] = []
 zipWith-bad2 f (x ∷ xs) (y ∷ ys) = zipWith-bad2 f (x ∷ xs) (y ∷ ys)
+
+
+
+
+
+
+
+
+
 
 -- It is not perfect:
 {-
@@ -115,10 +196,30 @@ inc : list number -> list number
 inc [] = []
 inc (x ∷ xs) = x ∷ inc (map (λ y → y + 1) xs)
 
--- But usually we can rewrite them to pass the termination checker:
+
+
+
+
+
+
+
+
+
+
+-- But usually we can rewrite our functions to pass the termination checker:
 inc' : list number -> list number
 inc' [] = []
 inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
+-- This is like (machine-checkable!) documentation!
+-- It communicates *why* something terminates to your coworkers
+
+
+
+
+
+
+
+
 
 
 {- Dot product:
@@ -128,27 +229,37 @@ _•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
 (x ∷ xs) • (y ∷ ys) = x * y + xs • ys
 
+
+
+
+
+
+
+
 -- vmap preserves the length!
 vmap : {a' b' : Set} {n : number} -> (a' -> b') -> vec a' n -> vec b' n
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
 
 
+
+
+
+
+
+
+
+
+
 matrix : (a' : Set) -> number -> number -> Set
 matrix a' m n = vec (vec a' n) m
 
-{-
-Transposing:
-
-[[1,2],
- [3,4],
- [5,6]]
-
+{- Transposing:    [[1,2],
+                    [3,4],
+                    [5,6]]
 gives:
-
-[[1,3,5],
- [2,4,6]]
--}
+                   [[1,3,5],
+                    [2,4,6]]      -}
 
 transpose : {m : number} {a' : Set} {n : number} -> matrix a' n m -> matrix a' m n
 transpose {m = zero}   xss = []
@@ -159,10 +270,36 @@ transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 --transpose-bad :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
 --transpose-bad xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- We can put computations in types, and they simplify
 -- We'll see that this lets you prove properties of your functions!
 _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 xs ++ ys = {!!}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 -- But it can get hairy
 rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
