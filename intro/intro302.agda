@@ -45,7 +45,8 @@ example1 = 1 ∷ 2 ∷ 3 ∷ []
 
 
 
--- In SML, this would be just map : ('a -> 'b) -> 'a list -> 'b list
+-- In SML, this would be just
+-- map : ('a -> 'b) -> 'a list -> 'b list
 map : {a' : Set} {b' : Set} -> (a' -> b') -> list a' -> list b'
 map f [] = []
 map f (x ∷ xs) = f x ∷ map f xs
