@@ -23,6 +23,7 @@ http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.UnicodeInput
 In SML, this would be:
  datatype 'a list = Nil | Cons of 'a * 'a list
 -}
+
 data list a' : Set where
  [] : list a'
  _∷_ : a' -> list a' -> list a'
