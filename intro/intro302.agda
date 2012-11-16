@@ -59,7 +59,7 @@ zipWith f xs ys = {!!}
 
 
 
--- We _index* lists by their length
+-- We _index_ lists by their length
 data vec a' : number -> Set where
  [] : vec a' 0
  _∷_ : {n : number} -> a' -> vec a' n -> vec a' (1 + n)
@@ -275,9 +275,9 @@ data _≡'_ {a' : Set} : a' -> a' -> Set where
  refl : {x : a'} -> x ≡' x
 -- refl is short for "reflexivity"
 
--- The type simplified!
 test1 : (eval example4) ≡' zero
 test1 = {!!}
+-- The type simplified!
 
 bad-test : (eval example4) ≡' (succ zero)
 bad-test = {!!}
