@@ -356,19 +356,34 @@ maybe-first : {n : number} {a' : Set} -> vec a' n -> option a'
 maybe-first {zero} xs = NONE
 maybe-first {suc n} xs = SOME (lookup zero xs)
 
+
+
+
+
+
+
+
+
+
 -- Converts m into a bounded-num n (if possible)
 -- Also known as testing if m < n
 _<?_ : (m n : number) -> option (bounded-num n)
-zero   <? suc n = SOME zero
-m      <? zero = NONE
-suc m' <? suc n with m' <? n
-suc m' <? suc n | SOME m'' = SOME (succ m'')
-suc m' <? suc n | NONE = NONE
+m <? n = {!!}
 
-lookup' : {a' : Set} (n m : number) -> vec a' n -> option a'
-lookup' n m xs with m <? n
-lookup' n m xs | SOME m' = SOME (lookup m' xs)
-lookup' n m xs | NONE = NONE
+lookup' : {a' : Set} (m : number) {n : number} -> vec a' n -> option a'
+lookup' m {n} xs = ?
+
+
+
+
+
+
+
+
+
+
+
+
 
 {-======================================================================================-}
 
