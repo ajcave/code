@@ -620,6 +620,7 @@ mult xss yss = mult-transpose xss (transpose yss)
    * Check if database (SQL) queries are well-formed during typechecking (before you ever run them)
    * Write a serialization library (convert values of arbitary datatypes into strings to save
        to a file)
+   * Enforce datastructure invariants with the typechecker (e.g. heap invariant from HW1)
 -}
 
 
