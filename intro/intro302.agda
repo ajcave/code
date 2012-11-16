@@ -307,6 +307,7 @@ rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 rev-acc [] acc = acc
 rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 -- We'd have to *prove* to Agda that 1 + (n + m) = n + (1 + m)
+-- Other systems will solve this automatically (but have other downsides)
 
 
 
