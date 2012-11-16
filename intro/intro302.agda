@@ -60,8 +60,7 @@ map f (x ∷ xs) = f x ∷ map f xs
 
 
 
-{- The {}s mean that A, B and C are implicit arguments
-   Place the cursor in the hole and use C-c C-, to see the goal type and context
+{- Place the cursor in the hole and use C-c C-, to see the goal type and context
    Use C-c C-c to do a case split
    Type in the hole and use C-c C-r to attempt to refine
 -}
@@ -110,6 +109,8 @@ example2 = 7 ∷ 10 ∷ []
 -- example3 : vec number 3
 -- example3 = 7 ∷ 10 ∷ []
 
+
+--The {}s mean that n is an implicit argument
 hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
 hd (x ∷ xs) = x
 
