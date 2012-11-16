@@ -21,6 +21,7 @@ infixr 9 _∷_ -- cons should be right associative with some arbitrary precedenc
 example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
 
+-- In SML, this would be just map : ('a -> 'b) -> 'a list -> 'b list
 map : {a' : Set} {b' : Set} -> (a' -> b') -> list a' -> list b'
 map f [] = []
 map f (x ∷ xs) = f x ∷ map f xs
@@ -58,7 +59,7 @@ zipWith f xs ys = {!!}
 
 
 
-
+-- We _index* lists by their length
 data vec a' : number -> Set where
  [] : vec a' 0
  _∷_ : {n : number} -> a' -> vec a' n -> vec a' (1 + n)
@@ -85,7 +86,10 @@ zipWith' n f xs ys = {!!}
 -- Passing the n implicitly
 zipWith2 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
 zipWith2 f xs ys = {!!}
--- Can find solution automatically!
+
+-- Can even find the solution automatically!
+zipWith3 : {a' b' c' : Set} -> {n : number} -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
+zipWith3 f xs ys = {!!}
 
 -- This is a type error!
 {-
@@ -266,20 +270,15 @@ example6 = eval example4
 -- C-c C-n will let you evaluate a term to *n*ormal form
 -- it will show us that example6 is zero, as expected
 
-data unit : Set where
- ₍₎ : unit
+-- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
+data _≡'_ {a' : Set} : a' -> a' -> Set where
+ refl : {x : a'} -> x ≡' x
+-- refl is short for "reflexivity"
 
--- empty has no constructors, so there is nothing of type empty
-data empty : Set where
-
-is-true : value bool -> Set
-is-true true = unit
-is-true false = empty
-
-test1 : is-true ((eval example4) =v zero)
+test1 : (eval example4) ≡' zero
 test1 = {!!}
 
-bad-test : is-true ((eval example4) =v (succ zero))
+bad-test : (eval example4) ≡' (succ zero)
 bad-test = {!!}
 
 -- These serve as unit tests!
@@ -298,11 +297,6 @@ rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
 rev-tl : {a' : Set} -> list a' -> list a' -> list a'
 rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
-
--- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
-data _≡'_ {a' : Set} : a' -> a' -> Set where
- refl : {x : a'} -> x ≡' x
--- refl is short for "reflexivity"
 
 congruence : {a' b' : Set} (f : a' -> b') {x y : a'} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
@@ -411,5 +405,5 @@ transpose' (xs ∷ xss) = addColumn xs (transpose' xss)
 {-
  Other things we can do with dependent types:
    * Check if database (SQL) queries are well-formed during typechecking (before you ever run them)
-   * 
+   * Write a serialization library
 -}
