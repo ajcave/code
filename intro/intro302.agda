@@ -371,7 +371,7 @@ _<?_ : (m n : number) -> option (bounded-num n)
 m <? n = {!!}
 
 lookup' : {a' : Set} (m : number) {n : number} -> vec a' n -> option a'
-lookup' m {n} xs = ?
+lookup' m {n} xs = {!!}
 
 
 
@@ -431,8 +431,21 @@ eval t = {!!}
 
 example6 : value int
 example6 = eval example4
--- C-c C-n will let you evaluate a term to *n*ormal form
+-- C-c C-n will let you evaluate a term
 -- it will show us that example6 is zero, as expected
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 -- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
 data _≡'_ {a' : Set} : a' -> a' -> Set where
@@ -448,6 +461,15 @@ bad-test = {!!}
 
 -- These serve as unit tests!
 
+
+
+
+
+
+
+
+
+
 {-======================================================================-}
 
 -- Append two lists
@@ -462,6 +484,13 @@ rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
 rev-tl : {a' : Set} -> list a' -> list a' -> list a'
 rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
+
+
+
+
+
+
+
 
 congruence : {a' b' : Set} (f : a' -> b') {x y : a'} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
