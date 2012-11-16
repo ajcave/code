@@ -490,18 +490,18 @@ rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 
 
 
-
+congruence' : {a' b' : Set} (f : a' -> b') (x y : a') -> x ≡ y -> f x ≡ f y
+congruence' f .y y refl = refl
 
 congruence : {a' b' : Set} (f : a' -> b') {x y : a'} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
 
-⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a') -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
-⋆-associativity [] ys zs = refl
-⋆-associativity (x ∷ xs) ys zs = congruence (_∷_ x) (⋆-associativity xs ys zs)
+⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a')
+                  -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
+⋆-associativity xs ys zs = ?
 
 ⋆-unit-right : ∀ {a' : Set} (xs : list a') -> (xs ⋆ []) ≡ xs
-⋆-unit-right [] = refl
-⋆-unit-right (x ∷ xs) = congruence (_∷_ x) (⋆-unit-right xs)
+⋆-unit-right xs = ?
 
 lemma1 : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1 [] acc =
