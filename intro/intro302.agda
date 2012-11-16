@@ -615,6 +615,20 @@ mult xss yss = mult-transpose xss (transpose yss)
 
 
 
+{-
+ Other things we can do with dependent types:
+   * Check if database (SQL) queries are well-formed during typechecking (before you ever run them)
+   * Write a serialization library (convert values of arbitary datatypes into strings to save
+       to a file)
+-}
+
+
+
+
+
+
+
+
 {-======================================================================-}
 
 -- An alternate way to implement transpose
@@ -628,10 +642,3 @@ addColumn xs yss = zipWith2 (_∷_) xs yss
 transpose' : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose' [] = repeat []
 transpose' (xs ∷ xss) = addColumn xs (transpose' xss)
-
-{-
- Other things we can do with dependent types:
-   * Check if database (SQL) queries are well-formed during typechecking (before you ever run them)
-   * Write a serialization library (convert values of arbitary datatypes into strings to save
-       to a file)
--}
