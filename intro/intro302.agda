@@ -34,8 +34,7 @@ infixr 9 _∷_ -- cons should be right associative with some arbitrary precedenc
 
 example1 : list number
 example1 = 1 ∷ 2 ∷ 3 ∷ []
-
-
+-- In SML notation: [1,2,3]
 
 
 
