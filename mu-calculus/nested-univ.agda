@@ -49,22 +49,22 @@ mutual
 
 -- Need to try a one-variable-at-a-time version
 
+mutual
+ data arr1 : Set -> Set -> Set₁ where
+  ▸ : ∀ {A B} -> (A -> B) -> arr1 A B
+  fold⁻ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (F : functor (Δ , #prop)) (σ : arrow' ρ1 ρ2) {C} (m : ⟦ F ⟧f (ρ2 , C) -> C)
+       -> arr1 (⟦ μ F ⟧f ρ1) C
 
-
-data arrow' : ∀ {Δ} -> (ρ1 : gksubst Δ Set) -> (ρ2 : gksubst Δ Set) -> Set₁ where
- ⊡ : arrow' tt tt
- _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) {A B} (N : A -> B) -> arrow' {Δ , #prop} (ρ1 , A) (ρ2 , B)
- alg : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) (F : functor (Δ , #prop)) {C} (m : ⟦ F ⟧f (ρ2 , C) -> C)
-       -> arrow' {Δ , #prop} (ρ1 , ⟦ μ F ⟧f ρ1) (ρ2 , C)
- -- Could put the common parts together, think of it genuinely as a "syntactic arrow"
+ data arrow' : ∀ {Δ} -> (ρ1 : gksubst Δ Set) -> (ρ2 : gksubst Δ Set) -> Set₁ where
+  ⊡ : arrow' tt tt
+  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) {A B} (N : arr1 A B) -> arrow' {Δ , #prop} (ρ1 , A) (ρ2 , B)
 
 mutual
  arrow-lookup' : ∀ {ζ} {σ1 σ2 : gksubst ζ Set} (θ : arrow' σ1 σ2) (A : var ζ #prop) -> [ σ1 ]v A -> [ σ2 ]v A
  arrow-lookup' ⊡ () x
- arrow-lookup' (σ , N) top x = N x
+ arrow-lookup' (σ , ▸ N) top x = N x
+ arrow-lookup' (σ , fold⁻ F σ' m) top x = fold F σ' m x
  arrow-lookup' (σ , N) (pop y) x = arrow-lookup' σ y x
- arrow-lookup' (alg σ F m) top x = fold F σ m x
- arrow-lookup' (alg σ F m) (pop y) x = arrow-lookup' σ y x
  
  fmap' : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow' ρ1 ρ2) -> (⟦ F ⟧f ρ1) -> (⟦ F ⟧f ρ2)
  fmap' (▹ A) ρ1 ρ2 σ x = arrow-lookup' σ A x
@@ -72,6 +72,6 @@ mutual
  fmap' (A ∧ B) ρ1 ρ2 σ (x₁ , x₂) = fmap' A ρ1 ρ2 σ x₁ , fmap' B ρ1 ρ2 σ x₂
 
  fold : ∀ {Δ} (F : functor (Δ , #prop)) {C} {ρ1 ρ2} (θ : arrow' ρ1 ρ2) -> (⟦ F ⟧f (ρ2 , C) -> C) -> ⟦ μ F ⟧f ρ1 -> C
- fold F θ m ⟨ y ⟩ = m (fmap' F _ _ (alg θ F m) y)
+ fold F θ m ⟨ y ⟩ = m (fmap' F _ _ (θ , fold⁻ F θ m) y)
 
 --conv :  ∀ {ζ} {σ1 σ2 : gksubst ζ Set} (θ : arrow' σ1 σ2)
