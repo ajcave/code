@@ -84,11 +84,11 @@ mutual
  fmap' (ν F) ρ1 ρ2 σ y = unfold F σ out y
  fmap' (A ∧ B) ρ1 ρ2 σ (x₁ , x₂) = fmap' A ρ1 ρ2 σ x₁ , fmap' B ρ1 ρ2 σ x₂
 
- fold : ∀ {Δ} (F : functor (Δ , #prop)) {C} {ρ1 ρ2} (θ : arrow' ρ1 ρ2) -> (⟦ F ⟧f (ρ2 , C) -> C) -> ⟦ μ F ⟧f ρ1 -> C
- fold F θ m ⟨ y ⟩ = m (fmap' F _ _ (θ , fold⁻ F θ m) y)
+ fold : ∀ {Δ} (F : functor (Δ , #prop)) {C} {ρ1 ρ2} (σ : arrow' ρ1 ρ2) -> (⟦ F ⟧f (ρ2 , C) -> C) -> ⟦ μ F ⟧f ρ1 -> C
+ fold F σ m ⟨ y ⟩ = m (fmap' F _ _ (σ , fold⁻ F σ m) y)
 
- unfold : ∀ {Δ} (F : functor (Δ , #prop)) {C} {ρ1 ρ2} (θ : arrow' ρ1 ρ2) -> (C -> ⟦ F ⟧f (ρ1 , C)) -> C -> ⟦ ν F ⟧f ρ2
- unfold F θ m y = ⟨ (♯ fmap' F _ _ (θ , unfold⁻ F θ m) (m y)) ⟩
+ unfold : ∀ {Δ} (F : functor (Δ , #prop)) {C} {ρ1 ρ2} (σ : arrow' ρ1 ρ2) -> (C -> ⟦ F ⟧f (ρ1 , C)) -> C -> ⟦ ν F ⟧f ρ2
+ unfold F σ m y = ⟨ (♯ fmap' F _ _ (σ , unfold⁻ F σ m) (m y)) ⟩
 -- TODO: I think we could get rid of the θ part by doing another fmap?
 
 --conv :  ∀ {ζ} {σ1 σ2 : gksubst ζ Set} (θ : arrow' σ1 σ2)
