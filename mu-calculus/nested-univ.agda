@@ -48,3 +48,26 @@ mutual
  fmap (A ∧ B) ρ1 ρ2 σ (x₁ , x₂) = (fmap A ρ1 ρ2 σ x₁) , (fmap B ρ1 ρ2 σ x₂)
 
 -- Need to try a one-variable-at-a-time version
+
+data arrow' : ∀ {Δ} -> (ρ1 : gksubst Δ Set) -> (ρ2 : gksubst Δ Set) -> Set₁ where
+ ⊡ : arrow' tt tt
+ _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) {A B} (N : A -> B) -> arrow' {Δ , #prop} (ρ1 , A) (ρ2 , B)
+ _!_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) (F : functor (Δ , #prop))
+       -> arrow' {Δ , #prop} (ρ1 , ⟦ μ F ⟧f ρ1) (ρ2 , ⟦ μ F ⟧f ρ2)
+-- alg : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) (F : functor (Δ , #prop))
+
+mutual
+ arrow-lookup' : ∀ {ζ} {σ1 σ2 : gksubst ζ Set} (θ : arrow' σ1 σ2) (A : var ζ #prop) -> [ σ1 ]v A -> [ σ2 ]v A
+ arrow-lookup' ⊡ () x
+ arrow-lookup' (σ , N) top x = N x
+ arrow-lookup' (σ , N) (pop y) x = arrow-lookup' σ y x
+ arrow-lookup' (σ ! F) top ⟨ y ⟩ = ⟨ (fmap' F _ _ (σ ! F) y) ⟩ -- fmap' (μ F) _ _ (σ ! F) x if we don't pattern match x to ⟨ y ⟩
+ arrow-lookup' (σ ! F) (pop y) x = arrow-lookup' σ y x
+ 
+ fmap' : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow' ρ1 ρ2) -> (⟦ F ⟧f ρ1) -> (⟦ F ⟧f ρ2)
+ fmap' (▹ A) ρ1 ρ2 σ x = arrow-lookup' σ A x
+ fmap' (μ F) ρ1 ρ2 σ ⟨ y ⟩ = ⟨ (fmap' F (ρ1 , μ⁺ F ρ1) (ρ2 , μ⁺ F ρ2) (σ ! F) y) ⟩
+ fmap' (A ∧ B) ρ1 ρ2 σ (x₁ , x₂) = fmap' A ρ1 ρ2 σ x₁ , fmap' B ρ1 ρ2 σ x₂
+
+
+--conv :  ∀ {ζ} {σ1 σ2 : gksubst ζ Set} (θ : arrow' σ1 σ2)

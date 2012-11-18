@@ -189,7 +189,7 @@ IMeth F g h P o = (xrs : [ F o ] (g , Mu F g)) ->
 induction : {G : Cx}{O : Set}{F : O -> Desc (G , O)}
             {g : Env G}{h : Env (CxS G g)}(ms : g => h)
             (P : Sig O (Mu F g) -> Set)
-            (m : (o : O) -> IMeth F g h P o)
+            (m : (o : O) -> IMeth F g h P o).
             (o : O)(x : Mu F g o) -> P (o , x)
 -}
 
