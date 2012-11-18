@@ -49,11 +49,14 @@ mutual
 
 -- Need to try a one-variable-at-a-time version
 
+
+
 data arrow' : ∀ {Δ} -> (ρ1 : gksubst Δ Set) -> (ρ2 : gksubst Δ Set) -> Set₁ where
  ⊡ : arrow' tt tt
  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) {A B} (N : A -> B) -> arrow' {Δ , #prop} (ρ1 , A) (ρ2 , B)
  alg : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) (F : functor (Δ , #prop)) {C} (m : ⟦ F ⟧f (ρ2 , C) -> C)
        -> arrow' {Δ , #prop} (ρ1 , ⟦ μ F ⟧f ρ1) (ρ2 , C)
+ -- Could put the common parts together, think of it genuinely as a "syntactic arrow"
 
 mutual
  arrow-lookup' : ∀ {ζ} {σ1 σ2 : gksubst ζ Set} (θ : arrow' σ1 σ2) (A : var ζ #prop) -> [ σ1 ]v A -> [ σ2 ]v A
