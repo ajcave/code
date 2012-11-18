@@ -54,7 +54,8 @@ data arrow' : ∀ {Δ} -> (ρ1 : gksubst Δ Set) -> (ρ2 : gksubst Δ Set) -> Se
  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) {A B} (N : A -> B) -> arrow' {Δ , #prop} (ρ1 , A) (ρ2 , B)
  _!_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) (F : functor (Δ , #prop))
        -> arrow' {Δ , #prop} (ρ1 , ⟦ μ F ⟧f ρ1) (ρ2 , ⟦ μ F ⟧f ρ2)
--- alg : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) (F : functor (Δ , #prop))
+ alg : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow' ρ1 ρ2) (F : functor (Δ , #prop)) {C} (m : ⟦ F ⟧f (ρ2 , C) -> C)
+       -> arrow' {Δ , #prop} (ρ1 , ⟦ μ F ⟧f ρ1) (ρ2 , C)
 
 mutual
  arrow-lookup' : ∀ {ζ} {σ1 σ2 : gksubst ζ Set} (θ : arrow' σ1 σ2) (A : var ζ #prop) -> [ σ1 ]v A -> [ σ2 ]v A
@@ -63,6 +64,8 @@ mutual
  arrow-lookup' (σ , N) (pop y) x = arrow-lookup' σ y x
  arrow-lookup' (σ ! F) top ⟨ y ⟩ = ⟨ (fmap' F _ _ (σ ! F) y) ⟩ -- fmap' (μ F) _ _ (σ ! F) x if we don't pattern match x to ⟨ y ⟩
  arrow-lookup' (σ ! F) (pop y) x = arrow-lookup' σ y x
+ arrow-lookup' (alg σ F m) top ⟨ x ⟩ = m (fmap' F _ _ (alg σ F m) x)
+ arrow-lookup' (alg σ F m) (pop y) x = arrow-lookup' σ y x
  
  fmap' : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow' ρ1 ρ2) -> (⟦ F ⟧f ρ1) -> (⟦ F ⟧f ρ2)
  fmap' (▹ A) ρ1 ρ2 σ x = arrow-lookup' σ A x

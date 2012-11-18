@@ -234,7 +234,7 @@ all (sig S T) g h ms (s , xs) = all (T s) g h ms xs
 all (pi S T) g h ms f = \ s -> all (T s) g h ms (f s)
 all one g h ms _ = _
 all (mu O F o) g h ms < xrs > =
-  < all (F o) (g , _) (h , _) (ms ! F) xrs >
+  < all (F o) (g , _) (h , _) (ms ! F) xrs > 
 
 induction : {G : Cx}{O : Set}{F : O -> Desc (G , O)}
             {g : Env G}{h : Env (CxS G g)}(ms : g => h)
