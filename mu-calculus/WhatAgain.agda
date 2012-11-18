@@ -207,10 +207,6 @@ data _=>_ : {G : Cx}(g : Env G)(h : Env (CxS G g)) -> Set1 where
          {P : Sig O (Mu F g) -> Set}  ->
          (m : (o : O) -> IMeth F g h P o) ->
          (g , Mu F g) => (h , P)
-  _!_ : {G : Cx}{g : Env G}{h : Env (CxS G g)}{O : Set}
-       (ms : g => h)
-       (F : O -> Desc (G , O)) ->
-       (g , Mu F g) => (h , Mu (\ ox -> All (F (fst ox)) (g , Mu F g) (out (snd ox))) h)
 
 
 apply : {G : Cx}(g : Env G)(h : Env (CxS G g))(m : g => h)
@@ -226,15 +222,13 @@ apply (g , X) (h , Y) (ms , m) (pop n) i x = apply g h ms n i x
 apply (g , .(Mu F g)) (h , P) (alg ms F m) top o < xrs >
   = m o xrs (all (F o) (g , _) (h , _) (alg ms F m) xrs)
 apply (g , .(Mu F g)) (h , P) (alg ms F m) (pop n) i x = apply g h ms n i x
-apply (g , ._) (h , ._) (ms ! F) top o x = all (mu _ F o) g h ms x 
-apply (g , ._) (h , ._) (ms ! F) (pop n) i x = apply g h ms n i x
 
 all (var n i) g h ms x = apply g h ms n i x
 all (sig S T) g h ms (s , xs) = all (T s) g h ms xs
 all (pi S T) g h ms f = \ s -> all (T s) g h ms (f s)
 all one g h ms _ = _
 all (mu O F o) g h ms < xrs > =
-  < all (F o) (g , _) (h , _) (ms ! F) xrs > 
+  < all (F o) (g , _) (h , _) (alg ms F (λ _ _ x → < x >)) xrs > 
 
 induction : {G : Cx}{O : Set}{F : O -> Desc (G , O)}
             {g : Env G}{h : Env (CxS G g)}(ms : g => h)
