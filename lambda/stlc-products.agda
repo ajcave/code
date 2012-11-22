@@ -96,6 +96,10 @@ fst* : ∀ {T S} {M M' : tm ⊡ (T * S)} (s : M ⟶β* M')   -> (fst M) ⟶β* (
 fst* (refl M') = refl (fst M')
 fst* (step y y') = step (fst y) (fst* y')
 
+snd* : ∀ {T S} {M M' : tm ⊡ (T * S)} (s : M ⟶β* M')   -> (snd M) ⟶β* (snd M')
+snd* (refl M') = refl (snd M')
+snd* (step y y') = step (snd y) (snd* y')
+
 
 
 
