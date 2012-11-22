@@ -74,6 +74,9 @@ data _⟶β*_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
  refl : ∀ {T} (M : tm ⊡ T) -> M ⟶β* M
  step : ∀ {T} {M1 M2 M3 : tm ⊡ T} -> M1 ⟶β M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3
 
+step1 : ∀ {T} {M1 M2 : tm ⊡ T} -> M1 ⟶β M2 -> M1 ⟶β* M2
+step1 s = step s (refl _)
+
 ⟶β*-trans : ∀ {T} {M1 M2 M3 : tm ⊡ T} -> M1 ⟶β* M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3 
 ⟶β*-trans (refl M2) s2 = s2
 ⟶β*-trans (step y y') s2 = step y (⟶β*-trans y' s2)
@@ -88,6 +91,12 @@ M ·₂* step y y' = step (M ·₂ y) (M ·₂* y')
 
 _·*_ : ∀ {T S} {M M' : tm ⊡ (T ⇝ S)} (sm : M ⟶β* M') {N N' : tm ⊡ T} (sn : N ⟶β* N') -> (M · N) ⟶β* (M' · N')
 sm ·* sn = ⟶β*-trans (sm ·₁* _) (_ ·₂* sn)
+
+fst* : ∀ {T S} {M M' : tm ⊡ (T * S)} (s : M ⟶β* M')   -> (fst M) ⟶β* (fst M')
+fst* (refl M') = refl (fst M')
+fst* (step y y') = step (fst y) (fst* y')
+
+
 
 
 

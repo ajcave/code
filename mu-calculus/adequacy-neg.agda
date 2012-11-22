@@ -46,14 +46,17 @@ Vc : ∀ {Γ} (ρ : gsubst Γ ⟦_⟧t) (σ : gsubst Γ value)  -> Set
 Vc {⊡} tt tt = Unit
 Vc {Γ , T} (ρ₁ , x) (σ₁ , t) = Vc ρ₁ σ₁ × (V T x t)
 
+-- TODO: What happens in a deterministic call-by-value setting?
+-- TODO: Can we use this technique to do weak normalization with sums (where we don't care about unique normal forms)?
 lemma : ∀ {Γ T} (t : tm Γ T) (σ : gsubst Γ value) (ρ : gsubst Γ ⟦_⟧t) -> Vc ρ σ -> E T (⟦ t ⟧m ρ) ([ gmap inj σ ]t t)
 lemma (▹ x) σ ρ x' = {!!}
 lemma (M · N) σ ρ x with lemma M σ ρ x | lemma N σ ρ x
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v vv' with vv v' (⟦ N ⟧m ρ) vv'
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v' vv' | ev v0 t⟶v vv0 = ev v0 (⟶β*-trans (v⟶m ·* t⟶v') t⟶v) vv0
-lemma (ƛ M) σ ρ x = {!!}
+lemma (ƛ M) σ ρ x = ev {!!} {!!} {!!}
 lemma < M1 , M2 > σ ρ x = {!!}
-lemma (fst M) σ ρ x = {!!}
+lemma (fst M) σ ρ x with lemma M σ ρ x
+lemma (fst M) σ ρ x | ev < M1 , M2 > t⟶v (proj₁ , proj₂) = ev M1 (⟶β*-trans (fst* t⟶v) (step1 (β*1 (inj M1) (inj M2)))) proj₁
 lemma (snd M) σ ρ x = {!!}
 lemma tt σ ρ x = ev tt (refl tt) tt
 lemma (bconst y) σ ρ x = ev (bconst y) (refl (bconst y)) refl
