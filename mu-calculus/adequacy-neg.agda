@@ -55,7 +55,7 @@ lemma (ƛ M) σ ρ x = {!!}
 lemma < M1 , M2 > σ ρ x = {!!}
 lemma (fst M) σ ρ x = {!!}
 lemma (snd M) σ ρ x = {!!}
-lemma tt σ ρ x = {!!}
-lemma (bconst y) σ ρ x = {!!}
+lemma tt σ ρ x = ev tt (refl tt) tt
+lemma (bconst y) σ ρ x = ev (bconst y) (refl (bconst y)) refl
 
 
