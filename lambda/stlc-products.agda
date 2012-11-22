@@ -2,6 +2,7 @@ module stlc-products where
 open import Product
 open import FinMap
 open import Unit
+open import Data.Bool
 
 data tp : Set where
  _⇝_ : (T S : tp) -> tp
@@ -17,7 +18,7 @@ data tm (Γ : ctx tp) : (T : tp) -> Set where
  fst : ∀ {T S} (M : tm Γ (T * S)) -> tm Γ T
  snd : ∀ {T S} (M : tm Γ (T * S)) -> tm Γ S
  tt : tm Γ unit
- true false : tm Γ bool
+ bconst : Bool -> tm Γ bool
 
 [_]r : ∀ {Γ Δ T} (σ : vsubst Γ Δ) -> (M : tm Γ T) -> tm Δ T
 [_]r σ (▹ x) = ▹ (lookup σ x)
@@ -27,8 +28,7 @@ data tm (Γ : ctx tp) : (T : tp) -> Set where
 [ σ ]r (fst M) = fst ([ σ ]r M)
 [ σ ]r (snd M) = snd ([ σ ]r M)
 [ σ ]r tt = tt
-[ σ ]r true = true
-[ σ ]r false = false
+[ σ ]r (bconst b) = bconst b
 
 
 tsubst : ctx tp -> ctx tp -> Set
@@ -42,8 +42,7 @@ tsubst Γ Δ = gsubst Γ (tm Δ)
 [ σ ]t (fst M) = fst ([ σ ]t M)
 [ σ ]t (snd M) = snd ([ σ ]t M)
 [ σ ]t tt = tt
-[ σ ]t true = true
-[ σ ]t false = false
+[ σ ]t (bconst b) = bconst b
 
 id-tsubst : ∀ {Γ} -> tsubst Γ Γ
 id-tsubst = interp ▹
@@ -52,14 +51,13 @@ data value : tp -> Set where
  ƛ : ∀ {T S} -> (M : tm (⊡ , T) S) -> value (T ⇝ S)
  <_,_> : ∀ {T S} (M1 : value T) (M2 : value S) -> value (T * S)
  tt : value unit
- true false : value bool
+ bconst : Bool -> value bool
 
 inj : ∀ {T} -> value T -> tm ⊡ T
 inj (ƛ M) = ƛ M
 inj < M1 , M2 > = < (inj M1) , (inj M2) >
 inj tt = tt
-inj true = true
-inj false = false
+inj (bconst b) = bconst b
 
 data _⟶β_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
  β : ∀ {T S} (M : tm (⊡ , T) S) (N : tm ⊡ T) -> ((ƛ M) · N) ⟶β [ tt , N ]t M
@@ -75,7 +73,23 @@ data _⟶β_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
 data _⟶β*_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
  refl : ∀ {T} (M : tm ⊡ T) -> M ⟶β* M
  step : ∀ {T} {M1 M2 M3 : tm ⊡ T} -> M1 ⟶β M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3
- 
+
+⟶β*-trans : ∀ {T} {M1 M2 M3 : tm ⊡ T} -> M1 ⟶β* M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3 
+⟶β*-trans (refl M2) s2 = s2
+⟶β*-trans (step y y') s2 = step y (⟶β*-trans y' s2)
+
+_·₁*_ : ∀ {T S} {M M' : tm ⊡ (T ⇝ S)} (s : M ⟶β* M') (N : tm ⊡ T)  -> (M · N) ⟶β* (M' · N)
+_·₁*_ (refl M') N = refl (M' · N)
+step y y' ·₁* N = step (y ·₁ N) (y' ·₁* N)
+
+_·₂*_ : ∀ {T S} (M : tm ⊡ (T ⇝ S)) {N N' : tm ⊡ T} (s : N ⟶β* N') -> (M · N) ⟶β* (M · N')
+_·₂*_ M (refl N') = refl (M · N')
+M ·₂* step y y' = step (M ·₂ y) (M ·₂* y')
+
+_·*_ : ∀ {T S} {M M' : tm ⊡ (T ⇝ S)} (sm : M ⟶β* M') {N N' : tm ⊡ T} (sn : N ⟶β* N') -> (M · N) ⟶β* (M' · N')
+sm ·* sn = ⟶β*-trans (sm ·₁* _) (_ ·₂* sn)
+
+
 
  
 
