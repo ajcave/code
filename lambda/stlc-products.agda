@@ -1,4 +1,5 @@
 module stlc-products where
+open import Relation.Binary.PropositionalEquality
 open import Product
 open import FinMap
 open import Unit
@@ -83,6 +84,9 @@ step1 s = step s (refl _)
 ⟶β*-trans : ∀ {T} {M1 M2 M3 : tm ⊡ T} -> M1 ⟶β* M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3 
 ⟶β*-trans (refl M2) s2 = s2
 ⟶β*-trans (step y y') s2 = step y (⟶β*-trans y' s2)
+
+⟶β*≡-trans : ∀ {T} {M1 M2 M3 : tm ⊡ T} -> M1 ≡ M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3 
+⟶β*≡-trans refl s2 = s2
 
 _·₁*_ : ∀ {T S} {M M' : tm ⊡ (T ⇝ S)} (s : M ⟶β* M') (N : tm ⊡ T)  -> (M · N) ⟶β* (M' · N)
 _·₁*_ (refl M') N = refl (M' · N)

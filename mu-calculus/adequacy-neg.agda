@@ -16,8 +16,12 @@ open import Data.Bool
 ⟦ bool ⟧t = Bool
 
 
-data E' (T : tp) (R : value T -> Set) (x : ⟦ T ⟧t) (t : tm ⊡ T)   : Set where
- ev : ∀ v -> (t⟶v : t ⟶β* (inj v)) -> (vv : R v) -> E' T R x t
+record E' (T : tp) (R : value T -> Set) (x : ⟦ T ⟧t) (t : tm ⊡ T)   : Set where
+ constructor ev
+ field
+  val : value T
+  t⟶v : t ⟶β* (inj val)
+  vv : R val
 
 mutual
  V : (T : tp) -> ⟦ T ⟧t -> value T -> Set
@@ -53,10 +57,9 @@ lemma (▹ x) σ ρ x' = {!!}
 lemma (M · N) σ ρ x with lemma M σ ρ x | lemma N σ ρ x
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v vv' with vv v' (⟦ N ⟧m ρ) vv'
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v' vv' | ev v0 t⟶v vv0 = ev v0 (⟶β*-trans (v⟶m ·* t⟶v') t⟶v) vv0
-lemma (ƛ {T} M) σ ρ x = ev (ƛ ([ tsub-ext (gmap inj σ) ]t M)) (refl _) f
- where f : (w : value T) (y : ⟦ T ⟧t) → V T y w → E _ (⟦ M ⟧m (ρ , y)) ((ƛ ([ tsub-ext (gmap inj σ) ]t M)) · inj w)
-       f w y vx with lemma M (σ , w) (ρ , y) (x , vx)
-       f w y vx | ev v t⟶v vv = ev v (step (β _ _) {!!}) vv
+lemma (ƛ {T} M) σ ρ x = ev (ƛ ([ tsub-ext (gmap inj σ) ]t M)) (refl _)
+ (λ w y x' → let q = lemma M (σ , w) (ρ , y) (x , x')
+             in ev (E'.val q) (step (β _ _) (⟶β*≡-trans {!!} (E'.t⟶v q))) (E'.vv q))
 lemma < M1 , M2 > σ ρ x with lemma M1 σ ρ x | lemma M2 σ ρ x
 lemma < M1 , M2 > σ ρ x | ev v t⟶v vv | ev v' t⟶v' vv' = ev < v , v' > {!!} (vv , vv')
 lemma (fst M) σ ρ x with lemma M σ ρ x
