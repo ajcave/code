@@ -52,6 +52,7 @@ Vc {Γ , T} (ρ₁ , x) (σ₁ , t) = Vc ρ₁ σ₁ × (V T x t)
 
 -- TODO: What happens in a deterministic call-by-value setting?
 -- TODO: Can we use this technique to do weak normalization with sums (where we don't care about unique normal forms)?
+-- TODO: Try disjunction
 lemma : ∀ {Γ T} (t : tm Γ T) (σ : gsubst Γ value) (ρ : gsubst Γ ⟦_⟧t) -> Vc ρ σ -> E T (⟦ t ⟧m ρ) ([ gmap inj σ ]t t)
 lemma (▹ x) σ ρ x' = {!!}
 lemma (M · N) σ ρ x with lemma M σ ρ x | lemma N σ ρ x
