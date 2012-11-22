@@ -50,7 +50,7 @@ lemma : ∀ {Γ T} (t : tm Γ T) (σ : gsubst Γ value) (ρ : gsubst Γ ⟦_⟧t
 lemma (▹ x) σ ρ x' = {!!}
 lemma (M · N) σ ρ x with lemma M σ ρ x | lemma N σ ρ x
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v vv' with vv v' (⟦ N ⟧m ρ) vv'
-lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v' vv' | ev v0 t⟶v vv0 = ev {!!} {!!} {!!}
+lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v' vv' | ev v0 t⟶v vv0 = ev v0 (⟶β*-trans (v⟶m ·* t⟶v') t⟶v) vv0
 lemma (ƛ M) σ ρ x = {!!}
 lemma < M1 , M2 > σ ρ x = {!!}
 lemma (fst M) σ ρ x = {!!}
