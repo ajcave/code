@@ -34,10 +34,13 @@ data tm (Γ : ctx tp) : (T : tp) -> Set where
 tsubst : ctx tp -> ctx tp -> Set
 tsubst Γ Δ = gsubst Γ (tm Δ)
 
+tsub-ext : ∀ {Γ Δ T} -> tsubst Γ Δ -> tsubst (Γ , T) (Δ , T)
+tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
+
 [_]t : ∀ {Γ Δ T} (σ : tsubst Γ Δ) -> (M : tm Γ T) -> tm Δ T
 [_]t σ (▹ x) = lookup σ x
 [_]t σ (M · N) = [ σ ]t M · [ σ ]t N
-[_]t σ (ƛ M) = ƛ ([ (gmap [ wkn-vsub ]r σ) , (▹ top) ]t M)
+[_]t σ (ƛ M) = ƛ ([ tsub-ext σ ]t M)
 [ σ ]t < M , N > = < ([ σ ]t M) , ([ σ ]t N) >
 [ σ ]t (fst M) = fst ([ σ ]t M)
 [ σ ]t (snd M) = snd ([ σ ]t M)
