@@ -83,10 +83,13 @@ lemma (inr M) σ ρ x | ev val t⟶v vv = ev (inr val) (inr t⟶v) vv
 lemma (case M N1 N2) σ ρ x with lemma M σ ρ x 
 lemma (case M N1 N2) σ ρ x | ev val t⟶v vv with ⟦ M ⟧m ρ
 lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x with lemma N1 (σ , M') (ρ , x) (x' , vv)
-lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x | ev val t⟶v' vv' = ev val (⟶β*-trans (case t⟶v _ _) (⟶β*-trans (β+₁ _ _ _) (⟶β*≡-trans {!!} t⟶v'))) vv'
+lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x | ev val t⟶v' vv' =
+   ev val (⟶β*-trans (case t⟶v _ _) (⟶β*-trans (β+₁ _ _ _) (⟶β*≡-trans {!!} t⟶v'))) vv'
 lemma (case M N1 N2) σ ρ x' | ev (inr M') t⟶v () | inj₁ x
 lemma (case M N1 N2) σ ρ x | ev (inl M') t⟶v () | inj₂ y
-lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v vv | inj₂ y = {!!}
+lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v vv | inj₂ y with lemma N2 (σ , M') (ρ , y) (x , vv)
+lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v' vv | inj₂ y | ev val t⟶v vv' =
+   ev val (⟶β*-trans (case t⟶v' _ _) (⟶β*-trans (β+₂ _ _ _) (⟶β*≡-trans {!!} t⟶v))) vv'
 
 --adequacy : ∀ (t : tm ⊡ bool) b -> ⟦ t ⟧m tt ≡ b -> t ⟶β* (bconst b)
 --adequacy t b x with lemma t tt tt tt
