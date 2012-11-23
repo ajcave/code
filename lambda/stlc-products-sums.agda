@@ -10,6 +10,7 @@ data tp : Set where
  _*_ : (T S : tp) -> tp
  _+_ : (T S : tp) -> tp
  unit : tp
+ empty : tp
 
 -- TODO: Try adding empty type?
 data tm (Γ : ctx tp) : (T : tp) -> Set where
@@ -23,6 +24,7 @@ data tm (Γ : ctx tp) : (T : tp) -> Set where
  inl : ∀ {S T} (M : tm Γ T) -> tm Γ (T + S)
  inr : ∀ {T S} (M : tm Γ S) -> tm Γ (T + S)
  case : ∀ {T S C} (M : tm Γ (T + S)) (N1 : tm (Γ , T) C) (N2 : tm (Γ , S) C) -> tm Γ C
+ abort : ∀ {C} (M : tm Γ empty) -> tm Γ C
 
 [_]r : ∀ {Γ Δ T} (σ : vsubst Γ Δ) -> (M : tm Γ T) -> tm Δ T
 [_]r σ (▹ x) = ▹ (lookup σ x)
@@ -35,6 +37,7 @@ data tm (Γ : ctx tp) : (T : tp) -> Set where
 [ σ ]r (inl M) = inl ([ σ ]r M)
 [ σ ]r (inr M) = inr ([ σ ]r M)
 [ σ ]r (case M N1 N2) = case ([ σ ]r M) ([ vsub-ext σ ]r N1) ([ vsub-ext σ ]r N2)
+[ σ ]r (abort M) = abort ([ σ ]r M)
 
 
 tsubst : ctx tp -> ctx tp -> Set
@@ -54,6 +57,7 @@ tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
 [ σ ]t (inl M) = inl ([ σ ]t M)
 [ σ ]t (inr M) = inr ([ σ ]t M)
 [ σ ]t (case M N1 N2) = case ([ σ ]t M) ([ tsub-ext σ ]t N1) ([ tsub-ext σ ]t N2)
+[ σ ]t (abort M) = abort ([ σ ]t M)
 
 id-tsubst : ∀ {Γ} -> tsubst Γ Γ
 id-tsubst {⊡} = tt

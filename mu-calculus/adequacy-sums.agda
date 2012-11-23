@@ -15,6 +15,7 @@ open import Data.Empty
 ⟦ T * S ⟧t = ⟦ T ⟧t × ⟦ S ⟧t
 ⟦ unit ⟧t = Unit
 ⟦ T + S ⟧t = ⟦ T ⟧t ⊎ ⟦ S ⟧t
+⟦ empty ⟧t = ⊥
 
 
 record E' (T : tp) (R : value T -> Set) (x : ⟦ T ⟧t) (t : tm ⊡ T)   : Set where
@@ -33,6 +34,7 @@ mutual
  V (T + S) (inj₁ x) (inr M) = ⊥
  V (T + S) (inj₂ y) (inl M) = ⊥
  V (T + S) (inj₂ y) (inr M) = V S y M
+ V empty () v
 
  E : ∀ (T : tp) (x : ⟦ T ⟧t) (t : tm ⊡ T) -> Set
  E T x t = E' T (V T x) x t
@@ -50,6 +52,7 @@ mutual
 ⟦ case M N1 N2 ⟧m σ with ⟦ M ⟧m σ
 ⟦_⟧m (case M N1 N2) σ | inj₁ x = ⟦ N1 ⟧m (σ , x)
 ⟦_⟧m (case M N1 N2) σ | inj₂ y = ⟦ N2 ⟧m (σ , y)
+⟦ abort M ⟧m σ = ⊥-elim (⟦ M ⟧m σ)
 
 --⟦_⟧c : ∀ {Γ} (σ : gsubst Γ value) -> gsubst Γ ⟦_⟧t
 --⟦ σ ⟧c = gmap (λ v → ⟦ inj v ⟧m tt) σ
@@ -95,6 +98,7 @@ lemma (case M N1 N2) σ ρ x | ev (inl M') t⟶v () | inj₂ y
 lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v vv | inj₂ y with lemma N2 (σ , M') (ρ , y) (x , vv)
 lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v' vv | inj₂ y | ev val t⟶v vv' =
    ev val (⟶β*-trans (case t⟶v' _ _) (⟶β*-trans (β+₂ _ _ _) (⟶β*≡-trans (lem2 N2) t⟶v))) vv'
+lemma (abort M) σ ρ x = ⊥-elim (⟦ M ⟧m ρ)
 
 binj : Unitz ⊎ Unitz -> tm ⊡ (unit + unit)
 binj (inj₁ x) = inl tt
