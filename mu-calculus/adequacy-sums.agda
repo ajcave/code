@@ -45,9 +45,11 @@ mutual
 ⟦_⟧m (fst M) σ = proj₁ (⟦ M ⟧m σ)
 ⟦_⟧m (snd M) σ = proj₂ (⟦ M ⟧m σ)
 ⟦_⟧m tt σ = tt
-⟦_⟧m (inl M) σ = {!!}
-⟦ inr M ⟧m σ = {!!}
-⟦ case M N1 N2 ⟧m σ = {!!}
+⟦_⟧m (inl M) σ = inj₁ (⟦ M ⟧m σ)
+⟦ inr M ⟧m σ = inj₂ (⟦ M ⟧m σ)
+⟦ case M N1 N2 ⟧m σ with ⟦ M ⟧m σ
+⟦_⟧m (case M N1 N2) σ | inj₁ x = ⟦ N1 ⟧m (σ , x)
+⟦_⟧m (case M N1 N2) σ | inj₂ y = ⟦ N2 ⟧m (σ , y)
 
 --⟦_⟧c : ∀ {Γ} (σ : gsubst Γ value) -> gsubst Γ ⟦_⟧t
 --⟦ σ ⟧c = gmap (λ v → ⟦ inj v ⟧m tt) σ
@@ -74,7 +76,17 @@ lemma (fst M) σ ρ x | ev < M1 , M2 > t⟶v (proj₁ , proj₂) = ev M1 (⟶β*
 lemma (snd M) σ ρ x with lemma M σ ρ x
 lemma (snd M) σ ρ x | ev < M1 , M2 > t⟶v (proj₁ , proj₂) = ev M2 (⟶β*-trans (snd t⟶v) (β*2 (inj M1) (inj M2))) proj₂
 lemma tt σ ρ x = ev tt (refl tt) tt
-lemma _ σ ρ x = {!!}
+lemma (inl M) σ ρ x with lemma M σ ρ x
+lemma (inl M) σ ρ x | ev val t⟶v vv = ev (inl val) (inl t⟶v) vv
+lemma (inr M) σ ρ x with lemma M σ ρ x
+lemma (inr M) σ ρ x | ev val t⟶v vv = ev (inr val) (inr t⟶v) vv
+lemma (case M N1 N2) σ ρ x with lemma M σ ρ x 
+lemma (case M N1 N2) σ ρ x | ev val t⟶v vv with ⟦ M ⟧m ρ
+lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x with lemma N1 (σ , M') (ρ , x) (x' , vv)
+lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x | ev val t⟶v' vv' = ev val (⟶β*-trans (case t⟶v _ _) (⟶β*-trans (β+₁ _ _ _) (⟶β*≡-trans {!!} t⟶v'))) vv'
+lemma (case M N1 N2) σ ρ x' | ev (inr M') t⟶v () | inj₁ x
+lemma (case M N1 N2) σ ρ x | ev (inl M') t⟶v () | inj₂ y
+lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v vv | inj₂ y = {!!}
 
 --adequacy : ∀ (t : tm ⊡ bool) b -> ⟦ t ⟧m tt ≡ b -> t ⟶β* (bconst b)
 --adequacy t b x with lemma t tt tt tt
