@@ -54,7 +54,7 @@ Vc {Γ , T} (ρ₁ , x) (σ₁ , t) = Vc ρ₁ σ₁ × (V T x t)
 -- TODO: Can we use this technique to do weak normalization with sums (where we don't care about unique normal forms)?
 -- TODO: Try disjunction
 lemma : ∀ {Γ T} (t : tm Γ T) (σ : gsubst Γ value) (ρ : gsubst Γ ⟦_⟧t) -> Vc ρ σ -> E T (⟦ t ⟧m ρ) ([ gmap inj σ ]t t)
-lemma (▹ x) σ ρ x' = {!!}
+lemma (▹ x) σ ρ x' = ev (lookup σ x) (⟶β*≡-trans (lookup-gmap inj σ x) (refl _)) {!!}
 lemma (M · N) σ ρ x with lemma M σ ρ x | lemma N σ ρ x
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v vv' with vv v' (⟦ N ⟧m ρ) vv'
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v' vv' | ev v0 t⟶v vv0 = ev v0 (⟶β*-trans (v⟶m ·* t⟶v') t⟶v) vv0
