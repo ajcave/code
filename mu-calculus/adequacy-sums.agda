@@ -70,7 +70,7 @@ lemma (ƛ {T} M) σ ρ x = ev (ƛ ([ tsub-ext (gmap inj σ) ]t M)) (refl _)
  (λ w y x' → let q = lemma M (σ , w) (ρ , y) (x , x')
              in ev (E'.val q) (⟶β*-trans (β _ _) (⟶β*≡-trans {!!} (E'.t⟶v q))) (E'.vv q))
 lemma < M1 , M2 > σ ρ x with lemma M1 σ ρ x | lemma M2 σ ρ x
-lemma < M1 , M2 > σ ρ x | ev v t⟶v vv | ev v' t⟶v' vv' = ev < v , v' > {!!} (vv , vv')
+lemma < M1 , M2 > σ ρ x | ev v t⟶v vv | ev v' t⟶v' vv' = ev < v , v' > < t⟶v , t⟶v' > (vv , vv')
 lemma (fst M) σ ρ x with lemma M σ ρ x
 lemma (fst M) σ ρ x | ev < M1 , M2 > t⟶v (proj₁ , proj₂) = ev M1 (⟶β*-trans (fst t⟶v) (β*1 (inj M1) (inj M2))) proj₁
 lemma (snd M) σ ρ x with lemma M σ ρ x
