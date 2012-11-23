@@ -73,4 +73,5 @@ lemma (bconst y) σ ρ x = ev (bconst y) (refl (bconst y)) refl
 adequacy : ∀ (t : tm ⊡ bool) b -> ⟦ t ⟧m tt ≡ b -> t ⟶β* (bconst b)
 adequacy t b x with lemma t tt tt tt
 adequacy t .(⟦ t ⟧m tt) refl | ev .(bconst (⟦ t ⟧m tt)) t⟶v refl = ⟶β*≡-trans {!!} t⟶v
+-- TODO: Seems this entails normalization! Is strengthening it to full abstraction going to get us under binders?
 
