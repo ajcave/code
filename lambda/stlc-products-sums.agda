@@ -59,6 +59,14 @@ id-tsubst : ∀ {Γ} -> tsubst Γ Γ
 id-tsubst {⊡} = tt
 id-tsubst {ψ , T} = tsub-ext id-tsubst
 
+-- TODO
+postulate
+ lem1 : ∀ {Γ Γ' Γ'' T S} {σ : tsubst Γ Γ'} {σ' : tsubst Γ' Γ''} {M : tm Γ'' T} (N : tm (Γ , T) S) -> [ σ' , M ]t ([ tsub-ext σ ]t N) ≡ [ gmap [ σ' ]t σ , M ]t N
+ lem1½ : ∀ {Γ T} (M : tm Γ T) -> [ id-tsubst ]t M ≡ M
+
+lem2 : ∀ {Γ Γ' T S} {σ : tsubst Γ Γ'} {M : tm Γ' T} (N : tm (Γ , T) S) -> [ id-tsubst , M ]t ([ tsub-ext σ ]t N) ≡ [ σ , M ]t N
+lem2 {σ = σ} N = trans (lem1 N) (cong (λ α → [ α , _ ]t N) (trans (gmap-cong lem1½) (gmap-id σ)))
+
 data value : tp -> Set where
  ƛ : ∀ {T S} -> (M : tm (⊡ , T) S) -> value (T ⇝ S)
  <_,_> : ∀ {T S} (M1 : value T) (M2 : value S) -> value (T * S)

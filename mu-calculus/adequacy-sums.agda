@@ -73,7 +73,7 @@ lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v vv' with vv v' (⟦ N 
 lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v' vv' | ev v0 t⟶v vv0 = ev v0 (⟶β*-trans (v⟶m · t⟶v') t⟶v) vv0
 lemma (ƛ {T} M) σ ρ x = ev (ƛ ([ tsub-ext (gmap inj σ) ]t M)) (refl _)
  (λ w y x' → let q = lemma M (σ , w) (ρ , y) (x , x')
-             in ev (E'.val q) (⟶β*-trans (β _ _) (⟶β*≡-trans {!!} (E'.t⟶v q))) (E'.vv q))
+             in ev (E'.val q) (⟶β*-trans (β _ _) (⟶β*≡-trans (lem2 M) (E'.t⟶v q))) (E'.vv q))
 lemma < M1 , M2 > σ ρ x with lemma M1 σ ρ x | lemma M2 σ ρ x
 lemma < M1 , M2 > σ ρ x | ev v t⟶v vv | ev v' t⟶v' vv' = ev < v , v' > < t⟶v , t⟶v' > (vv , vv')
 lemma (fst M) σ ρ x with lemma M σ ρ x
@@ -89,12 +89,12 @@ lemma (case M N1 N2) σ ρ x with lemma M σ ρ x
 lemma (case M N1 N2) σ ρ x | ev val t⟶v vv with ⟦ M ⟧m ρ
 lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x with lemma N1 (σ , M') (ρ , x) (x' , vv)
 lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x | ev val t⟶v' vv' =
-   ev val (⟶β*-trans (case t⟶v _ _) (⟶β*-trans (β+₁ _ _ _) (⟶β*≡-trans {!!} t⟶v'))) vv'
+   ev val (⟶β*-trans (case t⟶v _ _) (⟶β*-trans (β+₁ _ _ _) (⟶β*≡-trans (lem2 N1) t⟶v'))) vv'
 lemma (case M N1 N2) σ ρ x' | ev (inr M') t⟶v () | inj₁ x
 lemma (case M N1 N2) σ ρ x | ev (inl M') t⟶v () | inj₂ y
 lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v vv | inj₂ y with lemma N2 (σ , M') (ρ , y) (x , vv)
 lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v' vv | inj₂ y | ev val t⟶v vv' =
-   ev val (⟶β*-trans (case t⟶v' _ _) (⟶β*-trans (β+₂ _ _ _) (⟶β*≡-trans {!!} t⟶v))) vv'
+   ev val (⟶β*-trans (case t⟶v' _ _) (⟶β*-trans (β+₂ _ _ _) (⟶β*≡-trans (lem2 N2) t⟶v))) vv'
 
 binj : Unitz ⊎ Unitz -> tm ⊡ (unit + unit)
 binj (inj₁ x) = inl tt
@@ -103,9 +103,9 @@ binj (inj₂ y) = inr tt
 adequacy : ∀ (t : tm ⊡ (unit + unit)) b -> ⟦ t ⟧m tt ≡ b -> t ⟶β* binj b
 adequacy t b x with lemma t tt tt tt
 adequacy t .(⟦ t ⟧m tt) refl | ev val t⟶v vv with ⟦ t ⟧m tt
-adequacy t .(⟦ t ⟧m tt) refl | ev (inl tt) t⟶v vv | inj₁ x = ⟶β*≡-trans {!!} t⟶v
+adequacy t .(⟦ t ⟧m tt) refl | ev (inl tt) t⟶v vv | inj₁ x = ⟶β*≡-trans (sym (lem1½ t)) t⟶v
 adequacy t .(⟦ t ⟧m tt) refl | ev (inr M) t⟶v () | inj₁ x
 adequacy t .(⟦ t ⟧m tt) refl | ev (inl M) t⟶v () | inj₂ y
-adequacy t .(⟦ t ⟧m tt) refl | ev (inr tt) t⟶v vv | inj₂ y = ⟶β*≡-trans {!!} t⟶v
+adequacy t .(⟦ t ⟧m tt) refl | ev (inr tt) t⟶v vv | inj₂ y = ⟶β*≡-trans (sym (lem1½ t)) t⟶v
 -- TODO: Seems this entails normalization! Is strengthening it to full abstraction going to get us under binders?
 

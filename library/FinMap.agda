@@ -55,6 +55,9 @@ gmap : ∀ {a b c} {A : Set a} {ψ : ctx A} {F : A -> Set b} {G : A -> Set c} ->
 gmap {a} {b} {c} {A} {⊡} f σ = tt
 gmap {a} {b} {c} {A} {ψ , T} f σ = (gmap f (proj₁ σ)) , (f (proj₂ σ))
 
+gmap-id : ∀ {a b} {A : Set a} {F : A -> Set b} {ψ : ctx A} (σ : gsubst ψ F) -> gmap id σ ≡ σ
+gmap-id {a} {b} {A} {F} {⊡} σ = refl
+gmap-id {a} {b} {A} {F} {ψ , T} σ = cong₂ _,_ (gmap-id (proj₁ σ)) refl
 
 gmap-funct : ∀ {a} {b} {c} {d} {A : Set a} {ψ : ctx A} {F : A -> Set b} {G : A -> Set c} {H : A -> Set d} {f : ∀ {T} -> F T -> G T} {g : ∀ {T} -> G T -> H T} (σ : gsubst ψ F)
  -> gmap g (gmap f σ) ≡ gmap (g ∘ f) σ
