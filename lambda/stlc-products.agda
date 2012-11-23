@@ -51,6 +51,14 @@ tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
 id-tsubst : ∀ {Γ} -> tsubst Γ Γ
 id-tsubst = interp ▹
 
+-- TODO
+postulate
+ lem1 : ∀ {Γ Γ' Γ'' T S} {σ : tsubst Γ Γ'} {σ' : tsubst Γ' Γ''} {M : tm Γ'' T} (N : tm (Γ , T) S) -> [ σ' , M ]t ([ tsub-ext σ ]t N) ≡ [ gmap [ σ' ]t σ , M ]t N
+ lem1½ : ∀ {Γ T} (M : tm Γ T) -> [ id-tsubst ]t M ≡ M
+
+lem2 : ∀ {Γ Γ' T S} {σ : tsubst Γ Γ'} {M : tm Γ' T} (N : tm (Γ , T) S) -> [ id-tsubst , M ]t ([ tsub-ext σ ]t N) ≡ [ σ , M ]t N
+lem2 {σ = σ} N = trans (lem1 N) (cong (λ α → [ α , _ ]t N) (trans (gmap-cong lem1½) (gmap-id σ)))
+
 data value : tp -> Set where
  ƛ : ∀ {T S} -> (M : tm (⊡ , T) S) -> value (T ⇝ S)
  <_,_> : ∀ {T S} (M1 : value T) (M2 : value S) -> value (T * S)
@@ -98,6 +106,17 @@ M ·₂* step y y' = step (M ·₂ y) (M ·₂* y')
 
 _·*_ : ∀ {T S} {M M' : tm ⊡ (T ⇝ S)} (sm : M ⟶β* M') {N N' : tm ⊡ T} (sn : N ⟶β* N') -> (M · N) ⟶β* (M' · N')
 sm ·* sn = ⟶β*-trans (sm ·₁* _) (_ ·₂* sn)
+
+<_,_>₁* : ∀ {T S} {M M' : tm ⊡ T} (s : M ⟶β* M') (N : tm ⊡ S)  -> < M , N > ⟶β* < M' , N >
+<_,_>₁* (refl M') N = refl < M' , N >
+< step y y' , N >₁* = step (< y , N >₁) (< y' , N >₁*)
+
+<_,_>₂* : ∀ {T S} (N : tm ⊡ S) {M M' : tm ⊡ T} (s : M ⟶β* M')  -> < N , M > ⟶β* < N , M' >
+<_,_>₂* N (refl M') = refl _
+< N , step y y' >₂* = step (< N , y >₂) (< N , y' >₂*)
+
+<_,_>* : ∀ {T S} {M M' : tm ⊡ T} (s : M ⟶β* M') {N N' : tm ⊡ S} (s : N ⟶β* N')  -> < M , N > ⟶β* < M' , N' >
+< sm , sn >* = ⟶β*-trans < sm , _ >₁* < _ , sn >₂*
 
 fst* : ∀ {T S} {M M' : tm ⊡ (T * S)} (s : M ⟶β* M')   -> (fst M) ⟶β* (fst M')
 fst* (refl M') = refl (fst M')
