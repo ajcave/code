@@ -100,16 +100,11 @@ lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v' vv | inj₂ y | ev val t⟶v v
    ev val (⟶β*-trans (case t⟶v' _ _) (⟶β*-trans (β+₂ _ _ _) (⟶β*≡-trans (lem2 N2) t⟶v))) vv'
 lemma (abort M) σ ρ x = ⊥-elim (⟦ M ⟧m ρ)
 
-binj : Unitz ⊎ Unitz -> tm ⊡ (unit + unit)
-binj (inj₁ x) = inl tt
-binj (inj₂ y) = inr tt
-
-adequacy : ∀ (t : tm ⊡ (unit + unit)) b -> ⟦ t ⟧m tt ≡ b -> t ⟶β* binj b
-adequacy t b x with lemma t tt tt tt
-adequacy t .(⟦ t ⟧m tt) refl | ev val t⟶v vv with ⟦ t ⟧m tt
-adequacy t .(⟦ t ⟧m tt) refl | ev (inl tt) t⟶v vv | inj₁ x = ⟶β*≡-trans (sym (lem1½ t)) t⟶v
-adequacy t .(⟦ t ⟧m tt) refl | ev (inr M) t⟶v () | inj₁ x
-adequacy t .(⟦ t ⟧m tt) refl | ev (inl M) t⟶v () | inj₂ y
-adequacy t .(⟦ t ⟧m tt) refl | ev (inr tt) t⟶v vv | inj₂ y = ⟶β*≡-trans (sym (lem1½ t)) t⟶v
+adequacy : ∀ (t : tm ⊡ (unit + unit)) b -> ⟦ t ⟧m tt ≡ (⟦ inj b ⟧m tt) -> t ⟶β* (inj b)
+adequacy t b x with subst (λ α -> E _ α ([ tt ]t t)) x (lemma t tt tt tt)
+adequacy t (inl tt) x | ev (inl tt) t⟶v vv = ⟶β*≡-trans (sym (lem1½ _)) t⟶v
+adequacy t (inl tt) x | ev (inr M) t⟶v ()
+adequacy t (inr tt) x | ev (inl M) t⟶v ()
+adequacy t (inr tt) x | ev (inr tt) t⟶v vv = ⟶β*≡-trans (sym (lem1½ _)) t⟶v
 -- TODO: Seems this entails normalization! Is strengthening it to full abstraction going to get us under binders?
 
