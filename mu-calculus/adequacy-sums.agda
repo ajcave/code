@@ -91,8 +91,16 @@ lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v vv | inj₂ y with lemma N2 (σ
 lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v' vv | inj₂ y | ev val t⟶v vv' =
    ev val (⟶β*-trans (case t⟶v' _ _) (⟶β*-trans (β+₂ _ _ _) (⟶β*≡-trans {!!} t⟶v))) vv'
 
---adequacy : ∀ (t : tm ⊡ bool) b -> ⟦ t ⟧m tt ≡ b -> t ⟶β* (bconst b)
---adequacy t b x with lemma t tt tt tt
---adequacy t .(⟦ t ⟧m tt) refl | ev .(bconst (⟦ t ⟧m tt)) t⟶v refl = ⟶β*≡-trans {!!} t⟶v
+binj : Unitz ⊎ Unitz -> tm ⊡ (unit + unit)
+binj (inj₁ x) = inl tt
+binj (inj₂ y) = inr tt
+
+adequacy : ∀ (t : tm ⊡ (unit + unit)) b -> ⟦ t ⟧m tt ≡ b -> t ⟶β* binj b
+adequacy t b x with lemma t tt tt tt
+adequacy t .(⟦ t ⟧m tt) refl | ev val t⟶v vv with ⟦ t ⟧m tt
+adequacy t .(⟦ t ⟧m tt) refl | ev (inl tt) t⟶v vv | inj₁ x = ⟶β*≡-trans {!!} t⟶v
+adequacy t .(⟦ t ⟧m tt) refl | ev (inr M) t⟶v () | inj₁ x
+adequacy t .(⟦ t ⟧m tt) refl | ev (inl M) t⟶v () | inj₂ y
+adequacy t .(⟦ t ⟧m tt) refl | ev (inr tt) t⟶v vv | inj₂ y = ⟶β*≡-trans {!!} t⟶v
 -- TODO: Seems this entails normalization! Is strengthening it to full abstraction going to get us under binders?
 
