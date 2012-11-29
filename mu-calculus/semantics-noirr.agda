@@ -185,6 +185,9 @@ _∨⁺_ : obj -> obj -> obj
 postulate
  yay : ∀ {a} {A : Set a} -> A
 
+-- Note that this actually breaks the proper alternation of ν and μ,
+-- So this is actually not the right interpretation
+-- See "Termination Checking in the Presence of Nested Inductive and Coinductive Types"
 mutual
  data ν₁ (F : obj -> obj) (α : ω+1) : Set where
   ⟨_⟩ : ∞ (((F (ν⁺ F)) ₁) α) -> ν₁ F α
