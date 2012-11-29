@@ -51,47 +51,50 @@ lookup-pred {A = A} {ψ , T} θ top = proj₂ θ
 lookup-pred {A = A} {ψ , T} θ (pop y) = lookup-pred (proj₁ θ) y
 
 -- This is an example where using a direct definition of × gives better reconstruction
-gmap : ∀ {a b} {A : Set a} {ψ : ctx A} {F G : A -> Set b} -> (∀ {T} -> F T -> G T) -> gsubst ψ F -> gsubst ψ G
-gmap {a} {b} {A} {⊡} f σ = tt
-gmap {a} {b} {A} {ψ , T} f σ = (gmap f (proj₁ σ)) , (f (proj₂ σ))
+gmap : ∀ {a b c} {A : Set a} {ψ : ctx A} {F : A -> Set b} {G : A -> Set c} -> (∀ {T} -> F T -> G T) -> gsubst ψ F -> gsubst ψ G
+gmap {a} {b} {c} {A} {⊡} f σ = tt
+gmap {a} {b} {c} {A} {ψ , T} f σ = (gmap f (proj₁ σ)) , (f (proj₂ σ))
 
+gmap-id : ∀ {a b} {A : Set a} {F : A -> Set b} {ψ : ctx A} (σ : gsubst ψ F) -> gmap id σ ≡ σ
+gmap-id {a} {b} {A} {F} {⊡} σ = refl
+gmap-id {a} {b} {A} {F} {ψ , T} σ = cong₂ _,_ (gmap-id (proj₁ σ)) refl
 
-gmap-funct : ∀ {a} {b} {A : Set a} {ψ : ctx A} {F G H : A -> Set b} {f : ∀ {T} -> F T -> G T} {g : ∀ {T} -> G T -> H T} (σ : gsubst ψ F)
+gmap-funct : ∀ {a} {b} {c} {d} {A : Set a} {ψ : ctx A} {F : A -> Set b} {G : A -> Set c} {H : A -> Set d} {f : ∀ {T} -> F T -> G T} {g : ∀ {T} -> G T -> H T} (σ : gsubst ψ F)
  -> gmap g (gmap f σ) ≡ gmap (g ∘ f) σ
-gmap-funct {a} {b} {A} {⊡} σ = refl
-gmap-funct {a} {b} {A} {ψ , T} σ = cong₂ _,_ (gmap-funct (proj₁ σ)) refl
+gmap-funct {a} {b} {c} {d} {A} {⊡} σ = refl
+gmap-funct {a} {b} {c} {d} {A} {ψ , T} σ = cong₂ _,_ (gmap-funct (proj₁ σ)) refl
 
-gmap-cong : ∀ {a} {b} {A : Set a} {ψ : ctx A} {F G : A -> Set b} {f g : ∀ {T} -> F T -> G T} {σ : gsubst ψ F} (p : ∀ {T} (x : F T) -> f x ≡ g x)
+gmap-cong : ∀ {a} {b} {c} {A : Set a} {ψ : ctx A} {F : A -> Set b} {G : A -> Set c} {f g : ∀ {T} -> F T -> G T} {σ : gsubst ψ F} (p : ∀ {T} (x : F T) -> f x ≡ g x)
  -> gmap f σ ≡ gmap g σ
 gmap-cong {A = A} {⊡} p = refl
 gmap-cong {A = A} {ψ , T} p = cong₂ _,_ (gmap-cong p) (p _)
 
-lookup-gmap : ∀ {a b} {A : Set a} {ψ : ctx A} {F G : A -> Set b} (f : ∀ {T} -> F T -> G T) (σ : gsubst ψ F) {T} (x : var ψ T)
+lookup-gmap : ∀ {a b c} {A : Set a} {ψ : ctx A} {F : A -> Set b} {G : A -> Set c} (f : ∀ {T} -> F T -> G T) (σ : gsubst ψ F) {T} (x : var ψ T)
  -> lookup (gmap f σ) x ≡ f (lookup σ x)
 lookup-gmap {A = A} {⊡} f σ ()
 lookup-gmap {A = A} {ψ , T} f σ top = refl
 lookup-gmap {A = A} {ψ , T} f σ (pop y) = lookup-gmap f (proj₁ σ) y
 
-vsubst : ∀ {A} -> ctx A -> ctx A -> Set
+vsubst : ∀ {a} {A : Set a} -> ctx A -> ctx A -> Set a
 vsubst Γ Δ = gsubst Γ (var Δ)
 
 [_]v : ∀ {a b} {A : Set a} {F : A -> Set b} {Δ T} (σ : gsubst Δ F) -> var Δ T -> F T
 [ σ ]v x = lookup σ x
 
-wkn : ∀ {A} {Γ1 Γ2} {T : A} -> vsubst Γ1 Γ2 -> vsubst Γ1 (Γ2 , T)
+wkn : ∀ {a} {A : Set a} {Γ1 Γ2} {T : A} -> vsubst Γ1 Γ2 -> vsubst Γ1 (Γ2 , T)
 wkn σ = gmap pop σ
 
-id-vsub : ∀ {A} {Γ : ctx A} -> vsubst Γ Γ
-id-vsub {A} {⊡} = tt
-id-vsub {A} {Γ , T} = (wkn id-vsub) , top
+id-vsub : ∀ {a} {A : Set a} {Γ : ctx A} -> vsubst Γ Γ
+id-vsub {a} {A} {⊡} = tt
+id-vsub {a} {A} {Γ , T} = (wkn id-vsub) , top
 
-wkn-vsub : ∀ {A} {Γ : ctx A} {T} -> vsubst Γ (Γ , T)
-wkn-vsub {A} {Γ} {T} = wkn id-vsub
+wkn-vsub : ∀ {a} {A : Set a} {Γ : ctx A} {T} -> vsubst Γ (Γ , T)
+wkn-vsub {a} {A} {Γ} {T} = wkn id-vsub
 
-vsub-ext : ∀ {A T} {Γ1 Γ2 : ctx A} -> vsubst Γ1 Γ2 -> vsubst (Γ1 , T) (Γ2 , T)
+vsub-ext : ∀ {a} {A : Set a} {T} {Γ1 Γ2 : ctx A} -> vsubst Γ1 Γ2 -> vsubst (Γ1 , T) (Γ2 , T)
 vsub-ext σ = (gmap pop σ) , top
 
-_∘v_ : ∀ {A} {Δ Γ ψ : ctx A} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
+_∘v_ : ∀ {a} {A : Set a} {Δ Γ ψ : ctx A} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 (σ1 ∘v σ2) = gmap [ σ1 ]v σ2
 
 cmap : ∀ {a b} {A : Set a} {B : Set b} (f : A -> B) (Ψ : ctx A) -> ctx B
@@ -101,3 +104,5 @@ cmap f (ψ , T) = (cmap f ψ) , (f T)
 cmap-var : ∀ {a b} {A : Set a} {B : Set b} (f : A -> B) {Ψ : ctx A} {T} (x : var Ψ T) -> var (cmap f Ψ) (f T)
 cmap-var f top = top
 cmap-var f (pop y) = pop (cmap-var f y)
+
+-- id-v-right

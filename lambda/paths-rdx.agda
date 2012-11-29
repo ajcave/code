@@ -59,7 +59,7 @@ data reduce {Γ : dctx} : tm ≪ Γ ≫ -> tm ≪ Γ ≫ -> Set where
 
 path-preserved : ∀ {Γ : dctx} {M U : tm ≪ Γ ≫} {P} -> reduce M U -> is-path P M -> is-path P U
 path-preserved (▹ x) p = p
-path-preserved (▸ x M R) p = ▸ x _ (path-preserved R p)
+path-preserved (▸ x M R) p = {!!}  --▸ x _ {!!} --▸ x _ (path-preserved R p)
 path-preserved (ƛ r) (ƛ p) = ƛ (path-preserved r p)
 path-preserved (ƛ r) ⊡ = ⊡
 path-preserved (r1 · r2) (m· p) = m· path-preserved r1 p
@@ -68,6 +68,7 @@ path-preserved (r1 · r2) ⊡ = ⊡
 path-preserved (rdx p) (rdx p') with path-preserved p p'
 ... | q = {!!}
 path-preserved (rdx p) ⊡ = ⊡
+
 
 {-
 yay : ∀ {Γ} (M : tm Γ) N -> (∀ {P} -> is-path P M -> is-path P N) -> M ≡ N

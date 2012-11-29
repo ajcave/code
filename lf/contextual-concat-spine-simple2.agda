@@ -117,6 +117,12 @@ mutual
 ⟦_⟧tv Ψs {Φ , (cntx ,, φ)} (pop x) = <<gv (⟦ Ψs ⟧tv x) (lookup Ψs φ)
 ⟦_⟧tv Ψs {Φ , (type ,, A)} (pop x) = pop (⟦ Ψs ⟧tv x)
 
+
+⟦_⟧te : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (A : tctx-elt Ω₁) -> tctx Ω₂
+⟦_⟧te Ψs (type ,, A) = ⊡ , (A ∶ type)
+⟦_⟧te Ψs (cntx ,, φ) = lookup Ψs φ
+
+
 gvar-wkn : ∀ {Ω} (Ψ₁ Ψ₂ Ψ₃ : tctx Ω) {A} -> gvar (Ψ₁ << Ψ₃) A -> gvar (Ψ₁ << Ψ₂ << Ψ₃) A
 gvar-wkn Ψ₁ Ψ₂ ⊡ x = <<gv x Ψ₂
 gvar-wkn Ψ₁ Ψ₂ (Ψ , .A) {A} top = top
@@ -204,6 +210,111 @@ mutual
  n-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (n-wkn ⊡ Φ Ψ N)
  n-sim-sub Ψ N (σ , V) = sub-n Ψ (helper (⊡ , _) Ψ N σ) V
 
--- TODO: Hmm if instead of a mutual definition, we did a tagged-with-n,r,s,ns definition, then we could have one nice notation, and even infer the n,r,s,ns implicitly
--- Now I need all 3 kinds of meta-substitution...
+[_]n : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> nsub Δ Φ Ψ₁ -> ntm Δ Ψ₁ A -> ntm Δ Φ A
+[ σ ]n N = n-sim-sub ⊡ N σ
 
+mutual
+ helper-ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} -> nsub Δ (Ψ₁ << Ψ₂ << Ψ₃) A -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ << Ψ₂ << Ψ₃) A
+ helper-ns {Ω} {Δ} {Ψ₁} Ψ₂ Ψ₃ {Φ} {A} N σ = subst (λ α -> nsub Δ α A) (sym (<<-assoc Φ Ψ₂ Ψ₃)) (ns-sim-sub (Ψ₂ << Ψ₃) (subst (λ α -> nsub Δ α A) (<<-assoc Ψ₁ Ψ₂ Ψ₃) N) σ)
+
+ ns-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> nsub Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ << Ψ₂) A
+ ns-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → nsub Δ α A) (trans (<<-assoc ⊡ Φ Ψ) (<<-idl (Φ << Ψ))) (ns-wkn ⊡ Φ Ψ N)
+ ns-sim-sub Ψ N (σ , V) = sub-ns Ψ (helper-ns (⊡ , _) Ψ N σ) V
+
+[_]ns : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> nsub Δ Φ Ψ₁ -> nsub Δ Ψ₁ A -> nsub Δ Φ A
+[ σ ]ns N = ns-sim-sub ⊡ N σ
+
+[_]gv : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> nsub Δ Φ Ψ₁ -> gvar Ψ₁ A -> nval Δ Φ A
+[ ⊡ ]gv ()
+[_]gv (σ , K) top = K
+[_]gv (σ , K) (pop x) = [ σ ]gv x
+
+-- TODO: Hmm if instead of a mutual definition, we did a tagged-with-n,r,s,ns definition, then we could have one nice notation, and even infer the n,r,s,ns implicitly
+
+-- All 3 kinds of meta-substitution
+foo : ∀ {Ω} Δ -> mtp Ω -> Set
+foo Δ ($ Ψ [ Φ ]) = nsub Δ Φ Ψ
+foo Δ (♯ A [ Φ ]) = gvar Φ (A ∶ type)
+foo Δ (% A [ Φ ]) = ntm Δ Φ A
+
+mutual
+ ⟦_⟧mn : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A} -> gsubst Δ1 (foo Δ2) -> ntm Δ1 Ψ A -> ntm Δ2 Ψ A
+ ⟦_⟧mn θ (ƛ N) = ƛ (⟦ θ ⟧mn N)
+ ⟦_⟧mn θ (▹ x · S) = ▹ x · ⟦ θ ⟧mr S
+ ⟦_⟧mn θ ((u [ σ ]) · S) = ([ ⟦ θ ⟧mns σ ]n (lookup θ u)) ◆ (⟦ θ ⟧mr S)
+ ⟦_⟧mn θ ((p ♯[ σ ]) · S) with [ ⟦ θ ⟧mns σ ]gv (lookup θ p)
+ ⟦_⟧mn θ ((p ♯[ σ ]) · S) | ▸ N = N ◆ (⟦ θ ⟧mr S)
+ ⟦_⟧mn θ (π x [ s [ σ ]] · S) with [ [ ⟦ θ ⟧mns σ ]ns (lookup θ s) ]gv x
+ ⟦_⟧mn θ (π x [ s [ σ ]] · S) | ▸ N = N ◆ ⟦ θ ⟧mr S
+
+ ⟦_⟧mr : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A B} -> gsubst Δ1 (foo Δ2) -> spine Δ1 Ψ A B -> spine Δ2 Ψ A B
+ ⟦_⟧mr θ ε = ε
+ ⟦_⟧mr θ (N , S) = (⟦ θ ⟧mn N) , (⟦ θ ⟧mr S)
+
+ ⟦_⟧mns : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A} -> gsubst Δ1 (foo Δ2) -> nsub Δ1 Ψ A -> nsub Δ2 Ψ A
+ ⟦_⟧mns θ ⊡ = ⊡
+ ⟦_⟧mns θ (σ , K) = (⟦ θ ⟧mns σ) , ⟦ θ ⟧mnv K
+
+ ⟦_⟧mnv : ∀ {Ω} {Δ1 Δ2 : mctx Ω} {Ψ} {A} -> gsubst Δ1 (foo Δ2) -> nval Δ1 Ψ A -> nval Δ2 Ψ A
+ ⟦_⟧mnv θ (▸ N) = ▸ (⟦ θ ⟧mn N)
+ ⟦_⟧mnv θ (xs [ s [ σ ]]) = [ [ ⟦ θ ⟧mns σ ]ns (lookup θ s) ]gv xs
+ ⟦_⟧mnv θ (▹ xs) = ▹ xs
+
+-- Still need context substitution
+
+⟦_⟧cv : ∀ {Ω₁ Ω₂} {Δ : mctx Ω₁} {A} -> (Ψs : gksubst Ω₁ (tctx Ω₂)) -> var Δ A -> var (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧mt A)
+⟦_⟧cv Ψs top = top
+⟦_⟧cv Ψs (pop y) = pop (⟦ Ψs ⟧cv y)
+
+
+data blar {Ω} : ∀ (Ψ : tctx Ω) (φ : var Ω *) -> Set where
+ con2 : ∀ Ψ₁ φ Ψ₂ -> blar (Ψ₁ , (φ ∶ cntx) << Ψ₂) φ
+ 
+inv : ∀ {Ω} {Ψ : tctx Ω} {φ : var Ω *} -> gvar Ψ (φ ∶ cntx) -> blar Ψ φ
+inv top = con2 _ _ ⊡
+inv (pop x) with inv x
+inv (pop x) | con2 Ψ₁ φ Ψ₂ = con2 Ψ₁ φ (Ψ₂ , _)
+
+ns-id : ∀ {Ω} {Δ : mctx Ω} {Ψ} -> nsub Δ Ψ Ψ
+ns-id {Ω} {Δ} {⊡} = ⊡
+ns-id {Ω} {Δ} {Ψ , (type ,, A)} = ns-wkn Ψ (⊡ , con type A) ⊡ (ns-id {Ψ = Ψ}) , (▸ {!!})
+ns-id {Ω} {Δ} {Ψ , (cntx ,, φ)} = ns-wkn Ψ (⊡ , (φ ∶ cntx)) ⊡ (ns-id {Ψ = Ψ}) , ▹ top
+
+ns-id' : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ -> nsub Δ ((Ψ₁ << Ψ₂) << Ψ₃) Ψ₂
+ns-id' {Ω} {Δ} Ψ₁ Ψ₂ Ψ₃ = ns-wkn (Ψ₁ << Ψ₂) Ψ₃ ⊡ (subst (λ α → nsub Δ α Ψ₂) (trans (<<-assoc ⊡ Ψ₁ Ψ₂) (<<-idl (Ψ₁ << Ψ₂))) (ns-wkn ⊡ Ψ₁ Ψ₂ (subst (λ α → nsub Δ α Ψ₂) (sym (<<-idl Ψ₂)) ns-id))) 
+
+mutual
+ ⟦_⟧cn : ∀ {Ω₁ Ω₂} {Δ : mctx Ω₁} {Ψ} {A} -> (Ψs : gksubst Ω₁ (tctx Ω₂)) -> ntm Δ Ψ A -> ntm (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
+ ⟦_⟧cn Ψs (ƛ N) = ƛ (⟦ Ψs ⟧cn N)
+ ⟦_⟧cn Ψs (H · S) = (⟦ Ψs ⟧ch H) · (⟦ Ψs ⟧cs S)
+
+ ⟦_⟧ch : ∀ {Ω₁ Ω₂} {Δ : mctx Ω₁} {Ψ} {A} -> (Ψs : gksubst Ω₁ (tctx Ω₂)) -> head Δ Ψ A -> head (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A
+ ⟦_⟧ch Ψs (▹ x) = ▹ (⟦ Ψs ⟧tv x)
+ ⟦_⟧ch Ψs (u [ σ ]) = ⟦ Ψs ⟧cv u [ ⟦ Ψs ⟧cns σ ]
+ ⟦_⟧ch Ψs (p ♯[ σ ]) = ⟦ Ψs ⟧cv p ♯[ ⟦ Ψs ⟧cns σ ]
+ ⟦_⟧ch Ψs π x [ s [ σ ]] = π ⟦ Ψs ⟧tv x [ ⟦ Ψs ⟧cv s [ ⟦ Ψs ⟧cns σ ]]
+
+ ⟦_⟧cs : ∀ {Ω₁ Ω₂} {Δ : mctx Ω₁} {Ψ} {A B} -> (Ψs : gksubst Ω₁ (tctx Ω₂)) -> spine Δ Ψ A B -> spine (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) A B
+ ⟦_⟧cs Ψs ε = ε
+ ⟦_⟧cs Ψs (N , S) = (⟦ Ψs ⟧cn N) , (⟦ Ψs ⟧cs S)
+
+
+ ⟦_⟧cns : ∀ {Ω₁ Ω₂} {Δ : mctx Ω₁} {Ψ} {A} -> (Ψs : gksubst Ω₁ (tctx Ω₂)) -> nsub Δ Ψ A -> nsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧tc A)
+ ⟦_⟧cns Ψs ⊡ = ⊡
+ ⟦_⟧cns Ψs (σ , ▸ N) = (⟦ Ψs ⟧cns σ) , (▸ (⟦ Ψs ⟧cn N))
+ ⟦_⟧cns Ψs (σ , (xs [ s [ σ' ]])) with  ⟦ Ψs ⟧cv s | ⟦ Ψs ⟧cns σ'
+ ... | q1 | q2 = {!!}
+ ⟦_⟧cns Ψs (σ , ▹ xs) with inv xs
+ ⟦_⟧cns Ψs (σ , ▹ xs) | con2 Ψ₁ φ Ψ₂ = {!!}
+
+ 
+
+ ⟦_⟧cnv : ∀ {Ω₁ Ω₂} {Δ : mctx Ω₁} {Ψ} {A} -> (Ψs : gksubst Ω₁ (tctx Ω₂)) -> nval Δ Ψ A -> nsub (⟦ Ψs ⟧mc Δ) (⟦ Ψs ⟧tc Ψ) (⟦ Ψs ⟧te A)
+ ⟦_⟧cnv Ψs (▸ N) = {!!}
+ ⟦_⟧cnv Ψs (xs [ s [ σ ]]) = {!!}
+ ⟦_⟧cnv {Ω₁} {Ω₂} {Δ} {Ψ} {cntx ,, φ} Ψs (▹ xs) with inv xs
+ ⟦_⟧cnv {Ω₁} {Ω₂} {Δ} {.(Ψ₁ , (cntx ,, φ) << Ψ₂)} {cntx ,, φ} Ψs (▹ xs) | con2 Ψ₁ .φ Ψ₂ = 
+  subst (λ α → nsub (⟦ Ψs ⟧mc Δ) α (lookup Ψs φ)) (sym (⟦⟧tc-<< Ψs (Ψ₁ , (φ ∶ cntx)) Ψ₂))
+   (ns-id' (⟦ Ψs ⟧tc Ψ₁) (lookup Ψs φ) (⟦ Ψs ⟧tc Ψ₂))
+
+ 

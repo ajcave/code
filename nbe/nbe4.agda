@@ -1,4 +1,4 @@
-module nbe3 where
+module nbe4 where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
