@@ -148,9 +148,15 @@ data _⟶β*_ : ∀ {T} -> tm ⊡ ⊡ T -> tm ⊡ ⊡ T -> Set where
  β+₂ : ∀ {T S C} (M : tm _ ⊡ S) (N1 : tm _ (⊡ , T) C) (N2 : tm _ (⊡ , S) C) -> (case (inr M) N1 N2) ⟶β* [ tt , M ]t N2
  refl : ∀ {T} (M : tm _ ⊡ T) -> M ⟶β* M
  ⟶β*-trans : ∀ {T} {M1 M2 M3 : tm _ ⊡ T} -> M1 ⟶β* M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3
+ • : ∀ {T} {M M' : tm _ _ T} (s : M ⟶β* M') -> (• M) ⟶β* (• M')
+ let-• : ∀ {T C} {M M' : tm _ _ (○ T)} (s : M ⟶β* M') (N : tm (⊡ , T) ⊡ C) -> (let-• M N) ⟶β* (let-• M' N)
+ let-•β : ∀ {T C} (M : tm _ _ T) (N : tm (⊡ , T) ⊡ C) -> (let-• (• M) N) ⟶β* ([ tt , M ]va N)
 
 ⟶β*≡-trans : ∀ {T} {M1 M2 M3 : tm ⊡ ⊡ T} -> M1 ≡ M2 -> M2 ⟶β* M3 -> M1 ⟶β* M3 
 ⟶β*≡-trans refl s2 = s2
+
+⟶β*≡-trans₂ : ∀ {T} {M1 M2 M3 : tm ⊡ ⊡ T} -> M1 ⟶β* M2 -> M2 ≡ M3 -> M1 ⟶β* M3 
+⟶β*≡-trans₂ s2 refl = s2
 
 
 

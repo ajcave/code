@@ -84,29 +84,41 @@ forg (○ T) (s≤s m≤n) t = forg T m≤n t
 ⟦_⟧m (• M) zero σn σ = tt
 ⟦_⟧m (• M) (suc n) σn σ = ⟦ M ⟧m n tt σn
 
-{-
-⟦_⟧m : ∀ {θ Γ T} (t : tm Γ T) -> (σ : gsubst Γ ⟦_⟧t) -> ⟦ T ⟧t
-⟦_⟧m (▹ x) σ = lookup σ x
-⟦_⟧m (M · N) σ = ⟦ M ⟧m σ (⟦ N ⟧m σ)
-⟦_⟧m (ƛ M) σ = λ x → ⟦ M ⟧m (σ , x)
-⟦_⟧m < M1 , M2 > σ = (⟦ M1 ⟧m σ) , (⟦ M2 ⟧m σ)
-⟦_⟧m (fst M) σ = proj₁ (⟦ M ⟧m σ)
-⟦_⟧m (snd M) σ = proj₂ (⟦ M ⟧m σ)
-⟦_⟧m tt σ = tt
-⟦_⟧m (inl M) σ = inj₁ (⟦ M ⟧m σ)
-⟦ inr M ⟧m σ = inj₂ (⟦ M ⟧m σ)
-⟦ case M N1 N2 ⟧m σ with ⟦ M ⟧m σ
-⟦_⟧m (case M N1 N2) σ | inj₁ x = ⟦ N1 ⟧m (σ , x)
-⟦_⟧m (case M N1 N2) σ | inj₂ y = ⟦ N2 ⟧m (σ , y)
-⟦ abort M ⟧m σ = ⊥-elim (⟦ M ⟧m σ)
-
 
 --⟦_⟧c : ∀ {Γ} (σ : gsubst Γ value) -> gsubst Γ ⟦_⟧t
 --⟦ σ ⟧c = gmap (λ v → ⟦ inj v ⟧m tt) σ
 
-Vc : ∀ {Γ} (ρ : gsubst Γ ⟦_⟧t) (σ : gsubst Γ value)  -> Set
-Vc {⊡} tt tt = Unit
-Vc {Γ , T} (ρ₁ , x) (σ₁ , t) = Vc ρ₁ σ₁ × (V T x t)
+Vc : ∀ {Γ} n (ρ : gsubst Γ (λ T -> ⟦ T ⟧t n)) (σ : gsubst Γ value)  -> Set
+Vc {⊡} n tt tt = Unit
+Vc {Γ , T} n (ρ₁ , x) (σ₁ , t) = Vc n ρ₁ σ₁ × (V T n x t)
+
+Vcn : ∀ {Γ} n (ρ : gsubst Γ (λ T -> ⟦ ○ T ⟧t n)) (σ : gsubst Γ value)  -> Set
+Vcn {⊡} n tt tt = Unit
+Vcn {Γ , T} n (ρ₁ , x) (σ₁ , t) = Vcn n ρ₁ σ₁ × (V (○ T) n x (• t))
+
+lemma : ∀ {θ Γ T} (t : tm θ Γ T) (σn : gsubst θ value) (σ : gsubst Γ value) n (ρn : gsubst θ (λ T -> ⟦ ○ T ⟧t n)) (ρ : gsubst Γ (λ T -> ⟦ T ⟧t n))
+ -> Vcn n ρn σn -> Vc n ρ σ -> E T n (⟦ t ⟧m n ρn ρ) ([ gmap inj σ ]t ([ gmap inj σn ]va t))
+lemma (▹ x) σn σ n ρn ρ r1 r2 = {!!}
+lemma (M · N) σn σ n ρn ρ r1 r2 with lemma M σn σ n ρn ρ r1 r2 | lemma N σn σ n ρn ρ r1 r2
+lemma (M · N) σn σ n ρn ρ r1 r2 | ev (ƛ M') t⟶v vv | ev val' t⟶v' vv' with vv n ≤-refl val' (⟦ N ⟧m n ρn ρ) vv'
+lemma (M · N) σn σ n ρn ρ r1 r2 | ev (ƛ M') t⟶v' vv | ev val' t⟶v0 vv' | ev val t⟶v vv0 = ev val (⟶β*-trans (t⟶v' · t⟶v0) t⟶v) vv0
+lemma (ƛ M) σn σ n ρn ρ r1 r2 = {!!}
+lemma < M1 , M2 > σn σ n ρn ρ r1 r2 = {!!}
+lemma (fst M) σn σ n ρn ρ r1 r2 = {!!}
+lemma (snd M) σn σ n ρn ρ r1 r2 = {!!}
+lemma tt σn σ n ρn ρ r1 r2 = {!!}
+lemma (inl M) σn σ n ρn ρ r1 r2 = {!!}
+lemma (inr M) σn σ n ρn ρ r1 r2 = {!!}
+lemma (case M N1 N2) σn σ n ρn ρ r1 r2 = {!!}
+lemma (abort M) σn σ n ρn ρ r1 r2 = {!!}
+lemma (let-• M N) σn σ n ρn ρ r1 r2 with lemma M σn σ n ρn ρ r1 r2
+lemma (let-• M N) σn σ n ρn ρ r1 r2 | ev (• val) t⟶v vv with lemma N (σn , val) σ n (ρn , (⟦ M ⟧m n ρn ρ)) ρ (r1 , vv) r2
+lemma (let-• M N) σn σ n ρn ρ r1 r2 | ev (• val) t⟶v vv | ev val' t⟶v' vv' = ev val' (⟶β*-trans (⟶β*-trans (let-• t⟶v _) (⟶β*≡-trans₂ (let-•β _ _) {!!})) t⟶v') vv'
+lemma (• M) σn σ zero ρn ρ r1 r2 = ev (• {!!}) (• {!!}) tt -- Crap! Do I want to quantify over all n in the semantics? Is this an indication that we want a "tick semantics"?
+lemma (• M) σn σ (suc n) ρn ρ r1 r2 with lemma M tt σn n tt ρn tt {!r1!}
+lemma (• M) σn σ (suc n) ρn ρ r1 r2 | ev val t⟶v vv = ev (• val) (• (⟶β*≡-trans (cong [ gmap inj σ ]t {!!}) t⟶v)) vv
+
+{-
 
 Vc-lookup : ∀ {Γ T} {ρ : gsubst Γ ⟦_⟧t} {σ : gsubst Γ value} -> Vc ρ σ -> (x : var Γ T) -> V T (lookup ρ x) (lookup σ x)
 Vc-lookup {⊡} p ()
