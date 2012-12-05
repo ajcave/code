@@ -26,8 +26,8 @@ data tm (θ : ctx tp) (Γ : ctx tp) : (T : tp) -> Set where
  inr : ∀ {T S} (M : tm θ Γ S) -> tm θ Γ (T + S)
  case : ∀ {T S C} (M : tm θ Γ (T + S)) (N1 : tm θ (Γ , T) C) (N2 : tm θ (Γ , S) C) -> tm θ Γ C
  abort : ∀ {C} (M : tm θ Γ empty) -> tm θ Γ C
- let-• : ∀ {T C} (M : tm θ Γ T) (N : tm (θ , T) Γ C) -> tm θ Γ C
- • : ∀ {T} (M : tm ⊡ θ T) -> tm θ Γ T
+ let-• : ∀ {T C} (M : tm θ Γ (○ T)) (N : tm (θ , T) Γ C) -> tm θ Γ C
+ • : ∀ {T} (M : tm ⊡ θ T) -> tm θ Γ (○ T)
 
 [_]r : ∀ {θ Γ Δ T} (σ : vsubst Γ Δ) -> (M : tm θ Γ T) -> tm θ Δ T
 [_]r σ (▹ x) = ▹ (lookup σ x)
@@ -123,6 +123,7 @@ data value : tp -> Set where
  tt : value unit
  inl : ∀ {S T} -> (M : value T) -> value (T + S)
  inr : ∀ {T S} -> (M : value S) -> value (T + S)
+ • : ∀ {T} -> (M : value T) -> value (○ T)
 
 inj : ∀ {T} -> value T -> tm ⊡ ⊡ T
 inj (ƛ M) = ƛ M
@@ -130,6 +131,7 @@ inj < M1 , M2 > = < (inj M1) , (inj M2) >
 inj tt = tt
 inj (inl M) = inl (inj M)
 inj (inr M) = inr (inj M)
+inj (• M) = • (inj M)
 
 data _⟶β*_ : ∀ {T} -> tm ⊡ ⊡ T -> tm ⊡ ⊡ T -> Set where
  β : ∀ {T S} (M : tm ⊡ (⊡ , T) S) (N : tm ⊡ ⊡ T) -> ((ƛ M) · N) ⟶β* [ tt , N ]t M
