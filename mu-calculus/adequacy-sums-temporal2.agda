@@ -1,4 +1,4 @@
-module adequacy-sums-temporal where
+module adequacy-sums-temporal2 where
 open import Relation.Binary.PropositionalEquality
 open import stlc-products-sums-circ
 open import Product
@@ -32,8 +32,7 @@ obj = ℕ -> Set
 ⟦_⟧t (○ T) zero = Unit
 ⟦_⟧t (○ T) (suc n) = ⟦ T ⟧t n
 
-
-record E' (T : tp) (R : value T -> Set) n (x : ⟦ T ⟧t n) (t : tm ⊡ ⊡ T)   : Set where
+record E' (T : tp) (R : value T -> Set) (x : ∀ n -> ⟦ T ⟧t n) (t : tm ⊡ ⊡ T)   : Set where
  constructor ev
  field
   val : value T
@@ -41,21 +40,18 @@ record E' (T : tp) (R : value T -> Set) n (x : ⟦ T ⟧t n) (t : tm ⊡ ⊡ T) 
   vv : R val
 
 mutual
- V : (T : tp) (n : ℕ) -> ⟦ T ⟧t n -> value T -> Set
- V (T ⇝ S) n f v = ∀ m (p : m ≤ n) w y → V T m y w → E S m (f m p y) (inj v · inj w)
- V (T * S) n (x₁ , x₂)  < M1 , M2 > = (V T n x₁ M1) × (V S n x₂ M2)
- V unit n x v = Unit
- V (T + S) n (inj₁ x) (inl M) = V T n x M
- V (T + S) n (inj₁ x) (inr M) = ⊥
- V (T + S) n (inj₂ y) (inl M) = ⊥
- V (T + S) n (inj₂ y) (inr M) = V S n y M
- V empty n () v
- V (○ T) zero v (• M) = Unit
- V (○ T) (suc n) v (• M) = V T n v M
+ V : (T : tp) -> ((n : ℕ) -> ⟦ T ⟧t n) -> value T -> Set
+ V (T ⇝ S) f v = ∀ w y → V T y w → E S (λ n → f n n ≤-refl (y n)) (inj v · inj w)
+ V (T * S) x < M1 , M2 > = (V T (λ n -> proj₁ (x n)) M1) × (V S (λ n -> proj₂ (x n)) M2)
+ V unit x v = Unit
+ V (T + S) x (inl M) = {!!}
+ V (T + S) x (inr M) = {!!}
+ V empty x v = {!!}
+ V (○ T) v (• M) = V T (λ n → v (suc n)) M
 
- E : ∀ (T : tp) (n : ℕ) (x : ⟦ T ⟧t n) (t : tm ⊡ ⊡ T) -> Set
- E T n x t = E' T (V T n x) n x t
-
+ E : ∀ (T : tp) (x : ∀ n -> ⟦ T ⟧t n) (t : tm ⊡ ⊡ T) -> Set
+ E T x t = E' T (V T x) x t
+{-
 forg : ∀ T {n m} (p : m ≤ n) -> ⟦ T ⟧t n -> ⟦ T ⟧t m
 forg (T ⇝ S) p t = {!!}
 forg (T * S) p (proj₁ , proj₂) = (forg T p proj₁) , forg S p proj₂
@@ -115,9 +111,9 @@ lemma (let-• M N) σn σ n ρn ρ r1 r2 with lemma M σn σ n ρn ρ r1 r2
 lemma (let-• M N) σn σ n ρn ρ r1 r2 | ev (• val) t⟶v vv with lemma N (σn , val) σ n (ρn , (⟦ M ⟧m n ρn ρ)) ρ (r1 , vv) r2
 lemma (let-• M N) σn σ n ρn ρ r1 r2 | ev (• val) t⟶v vv | ev val' t⟶v' vv' = ev val' (⟶β*-trans (⟶β*-trans (let-• t⟶v _) (⟶β*≡-trans₂ (let-•β _ _) {!!})) t⟶v') vv'
 lemma (• M) σn σ zero ρn ρ r1 r2 = ev (• {!!}) (• {!!}) tt -- Crap! Do I want to quantify over all n in the semantics? Is this an indication that we want a "tick semantics"?
-lemma (• M) σn σ (suc n) ρn ρ r1 r2 with lemma M tt σn n tt ρn tt {!!}
+lemma (• M) σn σ (suc n) ρn ρ r1 r2 with lemma M tt σn n tt ρn tt {!r1!}
 lemma (• M) σn σ (suc n) ρn ρ r1 r2 | ev val t⟶v vv = ev (• val) (• (⟶β*≡-trans (cong [ gmap inj σ ]t {!!}) t⟶v)) vv
-
+-}
 {-
 
 Vc-lookup : ∀ {Γ T} {ρ : gsubst Γ ⟦_⟧t} {σ : gsubst Γ value} -> Vc ρ σ -> (x : var Γ T) -> V T (lookup ρ x) (lookup σ x)
