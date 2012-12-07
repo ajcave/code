@@ -1,4 +1,4 @@
-module weak-normalization where
+module weak-normalization-sums where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
 record _*_ (A B : Set) : Set where
@@ -50,6 +50,7 @@ postulate
 data tp : Set where
  atom : (A : atomic_tp) -> tp
  _⇝_ : (T : tp) -> (S : tp) -> tp
+ _+_ : (T S : tp) -> tp
 
 data ctx : Set where
  ⊡ : ctx
@@ -66,9 +67,12 @@ mutual
  data rtm (Γ : ctx) : (T : tp) -> Set where
   v : ∀ {T} -> var Γ T -> rtm Γ T
   _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
+  case : ∀ {T S C} -> rtm Γ (T + S) -> ntm (Γ , T) C -> ntm (Γ , S) C -> rtm Γ C
  data ntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
-  neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
+  neut : ∀ {A} -> rtm Γ A -> ntm Γ A
+  inl : ∀ {T S} -> ntm Γ T -> ntm Γ (T + S)
+  inr : ∀ {T S} -> ntm Γ S -> ntm Γ (T + S)
 
 
 {-sem : (Γ : ctx) -> (T : tp) -> Set
@@ -89,10 +93,12 @@ mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
  rappSubst σ (v y) = v (σ y)
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
+ rappSubst σ (case M N1 N2) = {!!}
  nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
  nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
  nappSubst σ (neut R) = neut (rappSubst σ R)
-
+ nappSubst σ (inl M) = {!!}
+ nappSubst σ (inr M) = inr {!!}
 
 var-dom-eq' : ∀ {A : tp -> Set} {Γ T} (f g : ∀ {U} (x : var (Γ , T) U) -> A U) -> (∀ {U} (x : var Γ U) -> f (s x) ≡ g (s x)) -> f z ≡ g z -> ∀ {U} (x : var (Γ , T) U) -> f x ≡ g x
 var-dom-eq' f g p q z = q
@@ -110,10 +116,13 @@ mutual
   -> rappSubst σ1 (rappSubst σ2 R) ≡ rappSubst (σ1 ∘ σ2) R
  rappSubst-funct σ1 σ2 (v y) = refl
  rappSubst-funct σ1 σ2 (R · N) = cong2 _·_ (rappSubst-funct σ1 σ2 R) (nappSubst-funct σ1 σ2 N)
+ rappSubst-funct σ1 σ2 (case M N1 N2) = {!!}
  nappSubst-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (N : ntm Γ1 S)
   -> nappSubst σ1 (nappSubst σ2 N) ≡ nappSubst (σ1 ∘ σ2) N
  nappSubst-funct σ1 σ2 (ƛ N) = cong ƛ (trans (nappSubst-funct (ext σ1) (ext σ2) N) (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x' → ext-funct σ1 σ2 x')))))
  nappSubst-funct σ1 σ2 (neut R) = cong neut (rappSubst-funct σ1 σ2 R)
+ nappSubst-funct σ1 σ2 (inl M) = {!!}
+ nappSubst-funct σ1 σ2 (inr M) = {!!}
 
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
@@ -126,9 +135,12 @@ mutual
  rappSubst-id : ∀ {Γ S} (R : rtm Γ S) -> rappSubst id R ≡ R
  rappSubst-id (v y) = refl
  rappSubst-id (R · N) = cong2 _·_ (rappSubst-id R) (nappSubst-id N)
+ rappSubst-id (case M N1 N2) = {!!}
  nappSubst-id : ∀ {Γ S} (N : ntm Γ S) -> nappSubst id N ≡ N
  nappSubst-id (ƛ N) = cong ƛ (trans (cong (λ (α : vsubst _ _) → nappSubst α N) (funext-imp (λ U → funext (λ x → ext-id x)))) (nappSubst-id N))
  nappSubst-id (neut R) = cong neut (rappSubst-id R)
+ nappSubst-id (inl M) = {!!}
+ nappSubst-id (inr M) = {!!}
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn = s
@@ -137,11 +149,17 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
+ inl : ∀ {T S} -> tm Γ T -> tm Γ (T + S)
+ inr : ∀ {T S} -> tm Γ S -> tm Γ (T + S)
+ case : ∀ {T S C} -> tm Γ (T + S) -> tm (Γ , T) C -> tm (Γ , S) C -> tm Γ C
 
 [_]v : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
 [_]v σ (v y) = v (σ y)
 [_]v σ (M · N) = [ σ ]v M · [ σ ]v N
 [_]v σ (ƛ M) = ƛ ([ ext σ ]v M)
+[ σ ]v (case M N1 N2) = case ([ σ ]v M) ([ ext σ ]v N1) ([ ext σ ]v N2)
+[ σ ]v (inl M) = inl ([ σ ]v M)
+[ σ ]v (inr M) = inr ([ σ ]v M)
 
 sub : (Γ1 Γ2 : ctx) -> Set
 sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
@@ -154,6 +172,9 @@ sub-ext σ (s y) = [ s ]v (σ y)
 [_] σ (v y) = σ y
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
+[ σ ] (case M N1 N2) = case ([ σ ] M) ([ sub-ext σ ] N1) ([ sub-ext σ ] N2)
+[ σ ] (inl M) = inl ([ σ ] M)
+[ σ ] (inr M) = inr ([ σ ] M)
 
 _,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
 (σ ,, M) z = M
@@ -164,24 +185,28 @@ _,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
 []v-funct σ1 σ2 (v y) = refl
 []v-funct σ1 σ2 (y · y') = cong2 _·_ ([]v-funct σ1 σ2 y) ([]v-funct σ1 σ2 y')
 []v-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]v-funct (ext σ1) (ext σ2) y) (cong (λ (α : vsubst _ _) → [ α ]v y) (var-dom-eq (λ x → refl) refl)))
+[]v-funct σ1 σ2 _ = {!!}
 
 []vn-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ] R) ≡ [ [ σ1 ]v ∘₁ σ2 ] R
 []vn-funct σ1 σ2 (v y) = refl
 []vn-funct σ1 σ2 (y · y') = cong2 _·_ ([]vn-funct σ1 σ2 y) ([]vn-funct σ1 σ2 y')
 []vn-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]vn-funct (ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]v-funct (ext σ1) s (σ2 x)) (sym ([]v-funct s σ1 (σ2 x)))) refl)))
+[]vn-funct σ1 σ2 _ = {!!}
 
 []nv-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ] ([ σ2 ]v R) ≡ [ σ1 ∘₁ σ2 ] R
 []nv-funct σ1 σ2 (v y) = refl
 []nv-funct σ1 σ2 (y · y') = cong2 _·_ ([]nv-funct σ1 σ2 y) ([]nv-funct σ1 σ2 y')
 []nv-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]nv-funct (sub-ext σ1) (ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl)))
+[]nv-funct σ1 σ2 _ = {!!}
 
 []-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ] ([ σ2 ] R) ≡ [ [ σ1 ] ∘₁ σ2 ] R
 []-funct σ1 σ2 (v y) = refl
 []-funct σ1 σ2 (y · y') = cong2 _·_ ([]-funct σ1 σ2 y) ([]-funct σ1 σ2 y')
 []-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]-funct (sub-ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]nv-funct (sub-ext σ1) s (σ2 x)) (sym ([]vn-funct s σ1 (σ2 x)))) refl)))
+[]-funct σ1 σ2 _ = {!!}
 
 sub-ext-idv : ∀ {Γ T U} (x : var (Γ , T) U) -> (ext id) x ≡ x
 sub-ext-idv z = refl
@@ -191,6 +216,7 @@ sub-ext-idv (s y) = refl
 []v-id {M = v y} = refl
 []v-id {M = M · N} = cong2 _·_ []v-id []v-id
 []v-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : vsubst _ _) → [ α ]v M) (funext-imp (λ x → funext (λ x' → sub-ext-idv x')))) []v-id)
+[]v-id {M = _} = {!!}
 
 sub-ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> (sub-ext v) x ≡ v x
 sub-ext-id z = refl
@@ -200,11 +226,13 @@ sub-ext-id (s y) = refl
 []-id {M = v y} = refl
 []-id {M = M · N} = cong2 _·_ []-id []-id
 []-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
+[]-id {M = M} = {!!}
 
 []v-eq-[] : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (t : tm Γ T) -> [ σ ]v t ≡ [ v ∘₁ σ ] t
 []v-eq-[] σ (v y) = refl
 []v-eq-[] σ (y · y') = cong2 _·_ ([]v-eq-[] σ y) ([]v-eq-[] σ y')
 []v-eq-[] σ (ƛ y) = cong ƛ (trans ([]v-eq-[] (ext σ) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl))) 
+[]v-eq-[] σ _ = {!!}
 
 
 data _→₁_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
@@ -221,11 +249,18 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) →* [ v ,, N ] M
  η : ∀ {T S} (M : tm Γ (T ⇝ S)) -> M →* (ƛ ([ s ]v M · (v z)))
  →*-trans : ∀ {T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
+ inl : ∀ {S T} {M M' : tm Γ T} (s : M →* M')         -> (inl {_} {T} {S} M) →* (inl M')
+ inr : ∀ {T S} {M M' : tm Γ S} (s : M →* M')         -> (inr {_} {T} M) →* (inr M')
+ case : ∀ {T S C} {M M' : tm Γ (T + S)} (S : M →* M') {N1 N1' : tm (Γ , T) C} (S1 : N1 →* N1') {N2 N2'} (S2 : N2 →* N2')
+   -> (case M N1 N2) →* (case M' N1' N2')
+ β+₁ : ∀ {T S C} (M : tm _ T) (N1 : tm (Γ , T) C) (N2 : tm (Γ , S) C) -> (case (inl M) N1 N2) →* [ v ,, M ] N1
+ β+₂ : ∀ {T S C} (M : tm _ S) (N1 : tm (Γ , T) C) (N2 : tm (Γ , S) C) -> (case (inr M) N1 N2) →* [ v ,, M ] N2
 
 →*-refl : ∀ {Γ T} {M : tm Γ T} -> M →* M
 →*-refl {M = v y} = v y
 →*-refl {M = M · N} = →*-refl · →*-refl
 →*-refl {M = ƛ M} = ƛ →*-refl
+→*-refl {M = M} = {!!}
 
 →*-refl' : ∀ {Γ T} {M1 M2 : tm Γ T} -> M1 ≡ M2 -> M1 →* M2
 →*-refl' refl = →*-refl
@@ -241,33 +276,48 @@ vsimp σ N (s y) = refl
 →*-subst σ (β M N) = →*-trans (β _ _) (→*-refl' (trans ([]nv-funct (v ,, [ σ ]v N) (ext σ) M) (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → vsimp σ N x')))) (sym ([]vn-funct σ (v ,, N) M)))))
 →*-subst σ {M1} (η .M1) = →*-trans (η _) (ƛ (→*-refl' (trans ([]v-funct s σ M1) (sym ([]v-funct (ext σ) s M1))) · (v z)))
 →*-subst σ (→*-trans y y') = →*-trans (→*-subst σ y) (→*-subst σ y')
+→*-subst σ q = {!!}
 
 mutual
  ninj : ∀ {Γ T} -> ntm Γ T -> tm Γ T
  ninj (ƛ M) = ƛ (ninj M)
  ninj (neut R) = rinj R
+ ninj (inl y) = inl (ninj y)
+ ninj (inr y) = inr (ninj y)
  rinj : ∀ {Γ T} -> rtm Γ T -> tm Γ T
  rinj (v x) = v x
  rinj (R · N) = (rinj R) · (ninj N)
+ rinj (case y y' y0) = case (rinj y) (ninj y') (ninj y0)
 
 mutual
  []v-comm-ninj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Γ T) -> [ σ ]v (ninj N) ≡ ninj (nappSubst σ N)
  []v-comm-ninj σ (ƛ M) = cong ƛ ([]v-comm-ninj (ext σ) M)
  []v-comm-ninj σ (neut R) = []v-comm-rinj σ R
+ []v-comm-ninj σ M = {!!}
  []v-comm-rinj : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Γ T) -> [ σ ]v (rinj R) ≡ rinj (rappSubst σ R)
  []v-comm-rinj σ (v y) = refl
  []v-comm-rinj σ (R · N) = cong2 _·_ ([]v-comm-rinj σ R) ([]v-comm-ninj σ N)
+ []v-comm-rinj σ M = {!!}
 
 halts : ∀ {Γ T} (t : tm Γ T) -> Set
 halts {Γ} {T} t = Σ (λ (n : ntm Γ T) → t →* ninj n)
 
+data closure {Γ T} (R : tm Γ T -> Set) : (t : tm Γ T) -> Set where
+ ▹ : ∀ t -> R t -> closure R t
+ step : ∀ t t' -> t →* t' -> closure R t' -> closure R t
+ neut : ∀ t r -> t ≡ rinj r -> closure R t
+
+open import Data.Sum
+
 reduce : ∀ Γ T -> tm Γ T -> Set
 reduce Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
 reduce Γ (T ⇝ S) t = ∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T x -> reduce Δ S (([ σ ]v t) · x)
+reduce Γ (T + S) t = closure (λ t' → (Σ (λ x → (t' ≡ inl x) * reduce Γ T x)) ⊎ Σ (λ x → (t' ≡ inr x) * reduce Γ S x)) t
 
 reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
 reduce-closed {atom A} p (N , q) = N , (→*-trans p q)
 reduce-closed {T ⇝ S} p x = λ Δ σ x' x0 → reduce-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
+reduce-closed {T + S} p r = step _ _ p r
 
 reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) {T} {t : tm Δ T} (w : reduce Δ T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce Δ U ((σ ,, t) x)
@@ -277,6 +327,7 @@ reduce-ext θ w (s y) = θ y
 reduce-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : reduce Γ T t) -> reduce Δ T ([ σ ]v t)
 reduce-funct {atom A} σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
 reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
+reduce-funct {T + S} σ w = {!!}
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
@@ -287,16 +338,32 @@ thm σ θ (ƛ M) = λ Δ σ' x x' → reduce-closed (β _ _) (eq-ind (reduce Δ 
     (sym ([]-funct   ((v ,, x) ∘₁ ext σ') (sub-ext σ) M)))
     (sym ([]nv-funct  (v ,, x) (ext σ') ([ sub-ext σ ] M))))
   (thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 → reduce-funct σ' (θ x0)) x') M))
+thm σ θ (inl y) = ▹ _ (inj₁ (_ , (refl , thm σ θ y)))
+thm σ θ (inr y) = ▹ _ (inj₂ (_ , (refl , (thm σ θ y))))
+thm σ θ (case y y' y0) with thm σ θ y
+thm {Γ} {Δ} {T} σ θ (case y y0 y1) | ▹ .([ σ ] y) (inj₁ (fst , (fst' , snd))) =
+ eq-ind  (λ α → reduce Δ T (case α ([ sub-ext σ ] y0) ([ sub-ext σ ] y1)))
+  (sym fst')
+  (reduce-closed (β+₁ fst _ _) (eq-ind (reduce Δ T) {!!} (thm (σ ,, fst) (reduce-ext θ snd) y0)))
+thm σ θ (case y y0 y1) | ▹ .([ σ ] y) (inj₂ y') = {!!}
+thm σ θ (case y y1 y2) | step .([ σ ] y) t' y' y0 = reduce-closed (case y' →*-refl →*-refl) {!thm σ θ!}
+thm σ θ (case y y0 y1) | neut .([ σ ] y) r y' = {!!}
 
 mutual
  reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
  reflect {atom A} r = (neut r) , →*-refl
  reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
+ reflect {T + S} r = neut (rinj r) r refl
 
  reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
  reify {atom A} t p = p
  reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
  reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
+ reify {T + S} .(inl fst) (▹ .(inl fst) (inj₁ (fst , (refl , snd)))) with reify fst snd
+ reify {T + S} {Γ} .(inl fst) (▹ .(inl fst) (inj₁ (fst , (refl , snd)))) | fst' , snd' = (inl fst') , inl snd'
+ reify {T + S} t (▹ .t (inj₂ y)) = {!!}
+ reify {T + S} t (step .t t' y y') = {!!}
+ reify {T + S} t (neut .t r y) = {!!}
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
