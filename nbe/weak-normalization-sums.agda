@@ -329,6 +329,24 @@ reduce-funct {atom A} σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _
 reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
 reduce-funct {T + S} σ w = {!!}
 
+mutual
+ reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
+ reflect {atom A} r = (neut r) , →*-refl
+ reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
+ reflect {T + S} r = neut (rinj r) r refl
+
+ reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
+ reify {atom A} t p = p
+ reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
+ reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
+ reify {T + S} .(inl fst) (▹ .(inl fst) (inj₁ (fst , (refl , snd)))) with reify fst snd
+ reify {T + S} {Γ} .(inl fst) (▹ .(inl fst) (inj₁ (fst , (refl , snd)))) | fst' , snd' = (inl fst') , inl snd'
+ reify {T + S} .(inr fst) (▹ .(inr fst) (inj₂ (fst , (refl , snd)))) with reify fst snd
+ ... | fst' , snd' = (inr fst') , inr snd'
+ reify {T + S} t (step .t t' y y') with reify t' y'
+ reify {T + S} t (step .t t' y y') | fst , snd = fst , (→*-trans y snd)
+ reify {T + S} .(rinj r) (neut .(rinj r) r refl) = (neut r) , →*-refl
+
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
@@ -346,24 +364,10 @@ thm {Γ} {Δ} {T} σ θ (case y y0 y1) | ▹ .([ σ ] y) (inj₁ (fst , (fst' , 
   (sym fst')
   (reduce-closed (β+₁ fst _ _) (eq-ind (reduce Δ T) {!!} (thm (σ ,, fst) (reduce-ext θ snd) y0)))
 thm σ θ (case y y0 y1) | ▹ .([ σ ] y) (inj₂ y') = {!!}
-thm σ θ (case y y1 y2) | step .([ σ ] y) t' y' y0 = reduce-closed (case y' →*-refl →*-refl) {!thm σ θ!}
-thm σ θ (case y y0 y1) | neut .([ σ ] y) r y' = {!!}
+thm σ θ (case y y1 y2) | step .([ σ ] y) t' y' y0 = reduce-closed (case y' →*-refl →*-refl) {!!}
+thm {Γ} {Δ} {T} σ θ (case y y0 y1) | neut .([ σ ] y) r y' with reify _ (thm (sub-ext σ) {!!} y0) | reify _ (thm (sub-ext σ) {!!} y1)
+... | q1 , q1' | q2 , q2' = reduce-closed (case →*-refl q1' q2') (eq-ind (λ α → reduce Δ T (case α (ninj q1) (ninj q2))) (sym y') (reflect (case r q1 q2)))
 
-mutual
- reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
- reflect {atom A} r = (neut r) , →*-refl
- reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
- reflect {T + S} r = neut (rinj r) r refl
-
- reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
- reify {atom A} t p = p
- reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
- reify {T ⇝ S} t p | N , q = (ƛ N) , (→*-trans (η t) (ƛ q))
- reify {T + S} .(inl fst) (▹ .(inl fst) (inj₁ (fst , (refl , snd)))) with reify fst snd
- reify {T + S} {Γ} .(inl fst) (▹ .(inl fst) (inj₁ (fst , (refl , snd)))) | fst' , snd' = (inl fst') , inl snd'
- reify {T + S} t (▹ .t (inj₂ y)) = {!!}
- reify {T + S} t (step .t t' y y') = {!!}
- reify {T + S} t (neut .t r y) = {!!}
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
