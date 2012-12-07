@@ -1,9 +1,12 @@
 module colimit where
 open import Relation.Binary.PropositionalEquality
 open import Level
+open import Data.Product
 import Function
 
 -- Based on copumpkin's category theory library
+postulate
+ funext : ∀ {A B : Set} {f g : A -> B} -> (∀ x -> f x ≡ g x) -> f ≡ g
 
 record Category a b : Set (suc (a ⊔ b)) where
  field
@@ -68,8 +71,8 @@ Cones {C = C} F = record {
    Obj = Cone F;
    hom = ConeMorphism;
    id = record { f = Category.id C; commute = sym (Category.idR C _) };
-   _∘_ = {!Category._∘_ C!};
-   idL = {!!};
+   _∘_ = _∘′_;
+   idL = λ f' → {!!};
    idR = {!!};
    assoc = {!!}
  }
@@ -85,7 +88,7 @@ Cones {C = C} F = record {
  Hom′ = ConeMorphism
  
  _∘′_ : ∀ {X Y Z} → Hom′ Y Z → Hom′ X Y → Hom′ X Z
- _∘′_ {X} {Y} {Z} F G = record { f = (f F) ∘ (f G); commute = {!!} }
+ _∘′_ {X} {Y} {Z} F G = record { f = (f F) ∘ (f G); commute = commute′ }
   where
   .commute′ : ∀ {W} → ψ X W ≡ ψ Z W ∘ (f F ∘ f G)
   commute′ {W} = begin
@@ -99,6 +102,42 @@ Cones {C = C} F = record {
    ∎)
    where
    open ≡-Reasoning
+
+record Terminal {o ℓ} (C : Category o ℓ) : Set (o ⊔ ℓ) where
+  open Category C
+  field
+    ⊤ : Obj
+    ! : ∀ {A} → (hom A ⊤)
+    .!-unique : ∀ {A} → (f : hom A ⊤) → ! ≡ f
+
+record Limit {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o′ ℓ′} (F : Functor J C): Set (o ⊔ ℓ ⊔ o′ ⊔ ℓ′) where
+  field
+   terminal : Terminal (Cones F)
+
+record Complete (o ℓ : Level) {o′ ℓ′} (C : Category o′ ℓ′) : Set (suc o ⊔ suc ℓ ⊔ o′ ⊔ ℓ′) where
+ field
+  limit : ∀ {J : Category o ℓ} (F : Functor J C) → Limit F
+
+ISet : Category (suc zero) zero
+ISet = record {
+  Obj = Set;
+  hom = λ X Y -> X → Y;
+  id = λ x → x;
+  _∘_ = λ f g -> Function._∘_ f g;
+  idL = λ f → refl;
+  idR = λ f → refl;
+  assoc = λ f g h → refl
+ }
+
+ISetComplete : Complete zero zero ISet
+ISetComplete = record { limit = λ {J} F → record { terminal = record {
+  ⊤ = record { N = Σ (∀ i → Functor.F₀ F i) (λ x → {i j : _} (f : Category.hom J i j) →
+                                                     Functor.F₁ F f (x i) ≡ x j);
+               ψ = λ i x → proj₁ x i;
+               commute = λ f → funext (λ x → proj₂ x f) };
+  ! = {!!};
+  !-unique = {!!}
+ } } }
 
 {-
 Cocones : ∀ {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o′ ℓ′} (F : Functor J C) → Category (o ⊔ ℓ ⊔ o′ ⊔ ℓ′) (ℓ ⊔ o′ ⊔ ℓ′)
