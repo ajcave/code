@@ -1,12 +1,13 @@
 module colimit where
 open import Relation.Binary.PropositionalEquality
 open import Level
-open import Data.Product
+--open import Data.Product
 import Function
 
 -- Based on copumpkin's category theory library
 postulate
- funext : ∀ {A B : Set} {f g : A -> B} -> (∀ x -> f x ≡ g x) -> f ≡ g
+ funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
+ magic : ∀ {A : Set} {x y : A} -> .(x ≡ y) -> x ≡ y
 
 record Category a b : Set (suc (a ⊔ b)) where
  field
@@ -47,6 +48,7 @@ record Cocone {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o′ ℓ�
    .commute : ∀ {X Y} (f : J.hom X Y) → ψ X ≡ ψ Y ∘ F₁ f
 
 record ConeMorphism {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o′ ℓ′} {F : Functor J C} (c₁ c₂ : Cone F) : Set (ℓ ⊔ o′ ⊔ ℓ′) where
+  constructor _,_
   module c₁ = Cone c₁
   module c₂ = Cone c₂
   module C = Category C
@@ -55,6 +57,10 @@ record ConeMorphism {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o�
   field
     f : C.hom (c₁.N) (c₂.N)
     .commute : ∀ {X} → c₁.ψ X ≡ c₂.ψ X ∘ f
+
+ConeMorphism-≡ : ∀ {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o′ ℓ′} {F : Functor J C} {c₁ c₂ : Cone F} {f g : ConeMorphism c₁ c₂}
+ -> ConeMorphism.f f ≡ ConeMorphism.f g -> f ≡ g
+ConeMorphism-≡ {o} {ℓ} {o′} {ℓ′} {C} {J} {F} {c₁} {c₂} {.f' , commute} {f' , commute'} refl = refl
 
 record CoconeMorphism {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o′ ℓ′} {F : Functor J C} (c₁ c₂ : Cocone F) : Set (ℓ ⊔ o′ ⊔ ℓ′) where
   module c₁ = Cocone c₁
@@ -129,24 +135,46 @@ ISet = record {
   assoc = λ f g h → refl
  }
 
+record ∃ {a b} (A : Set a) (B : A → Set b) : Set (a ⊔ b) where
+  constructor _,_
+  field
+    proj₁ : A
+    .proj₂ : B proj₁
+
+open ∃
+
+∃-≡ : ∀ {a b} {A : Set a} {B : A → Set b} {x y : ∃ A B} -> proj₁ x ≡ proj₁ y -> x ≡ y
+∃-≡ {x = x₁ , x₂} {y = .x₁ , y₂} refl = refl
+
 ISetComplete : Complete zero zero ISet
 ISetComplete = record { limit = λ {J} F → record { terminal = record {
-  ⊤ = record { N = Σ (∀ i → Functor.F₀ F i) (λ x → {i j : _} (f : Category.hom J i j) →
+  ⊤ = record { N = ∃ (∀ i → Functor.F₀ F i) (λ x → {i j : _} (f : Category.hom J i j) →
                                                      Functor.F₁ F f (x i) ≡ x j);
                ψ = λ i x → proj₁ x i;
                commute = λ f → funext (λ x → proj₂ x f) };
-  ! = {!!};
-  !-unique = {!!}
+  ! = λ {A} → record { f = λ x → (λ i → Cone.ψ A i x) , (λ f → cong (Function.flip Function._$_ x) (Cone.commute A f));
+                       commute = refl };
+  !-unique = {!!} --λ { (f , p) → ConeMorphism-≡ (funext (λ x → ∃-≡ (funext (λ x' → cong (Function.flip Function._$_ x) (magic p))))) }
  } } }
 
-{-
-Cocones : ∀ {o ℓ} {o′ ℓ′} {C : Category o ℓ} {J : Category o′ ℓ′} (F : Functor J C) → Category (o ⊔ ℓ ⊔ o′ ⊔ ℓ′) (ℓ ⊔ o′ ⊔ ℓ′)
-Cocones {C = C} F = record {
-   Obj = Cocone F;
-   hom = CoconeMorphism;
-   id = record { f = {!C.id!}; commute = {!!} };
-   _∘_ = {!!};
-   idL = {!!};
-   idR = {!!};
-   assoc = {!!} }
--}
+Endofunctor : ∀ {o ℓ} → Category o ℓ → Set _
+Endofunctor C = Functor C C
+
+record F-Coalgebra {o ℓ} {C : Category o ℓ} (F : Endofunctor C) : Set (o ⊔ ℓ) where
+  constructor _,_
+  open Category C
+  open Functor F
+  field
+    A : Obj
+    α : hom A (F₀ A)
+
+record F-Coalgebra-Morphism {o ℓ} {C : Category o ℓ} {F : Endofunctor C} (X Y : F-Coalgebra F) : Set ℓ where
+  constructor _,_
+  open Category C
+  module X = F-Coalgebra X
+  module Y = F-Coalgebra Y
+  open Functor F
+  field
+    f : hom (X.A) (Y.A)
+    .commutes : Y.α ∘ f ≡ F₁ f ∘ X.α
+
