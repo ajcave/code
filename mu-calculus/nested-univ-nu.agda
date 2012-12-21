@@ -21,6 +21,9 @@ mutual
  prop : Set
  prop = functor ⊡
 
+-- Note that this actually breaks the proper alternation of ν and μ,
+-- So this is actually not the right interpretation
+-- See "Termination Checking in the Presence of Nested Inductive and Coinductive Types"
 mutual
  data μ⁺ {Δ} (F : functor (Δ , #prop)) (ρ : gksubst Δ Set)  : Set where
   ⟨_⟩ : (⟦ F ⟧f (ρ , (μ⁺ F ρ))) -> μ⁺ F ρ
