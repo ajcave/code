@@ -251,8 +251,8 @@ match T as T return SemT T -> Tm nil T -> Set with
 | Prod U V => fun x t => Rel (fst x) (fst' t) * Rel (snd x) (snd' t)
 end.
 
-Fixpoint RelS (G : Ctx Tp) : Subst nil G -> Set :=
-match G as G return Subst nil G -> Set with
-| nil => fun s => unit
-| snoc G' T => fun s => (RedS G' (fst s)) * (Red (snd s))
+Fixpoint RelS (G : Ctx Tp) : SemC G -> Subst nil G -> Set :=
+match G as G return SemC G -> Subst nil G -> Set with
+| nil => fun x s => unit
+| snoc G' T => fun x s => (RelS G' (fst x) (fst s)) * (Rel (snd x) (snd s))
 end.
