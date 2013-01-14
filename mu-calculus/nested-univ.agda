@@ -28,7 +28,7 @@ mutual
  ⟦_⟧f (▹ A) ρ = [ ρ ]v A
  ⟦_⟧f (μ F) ρ = μ⁺ F ρ
  ⟦_⟧f (A ∧ B) ρ = (⟦ A ⟧f ρ) × (⟦ B ⟧f ρ)
-
+{-
 data arrow : ∀ {Δ} -> (ρ1 : gksubst Δ Set) -> (ρ2 : gksubst Δ Set) -> Set₁ where
  ⊡ : arrow tt tt
  _,_ : ∀ {Δ} {ρ1 ρ2 : gksubst Δ Set} (σ : arrow ρ1 ρ2) {A B} (N : A -> B) -> arrow {Δ , #prop} (ρ1 , A) (ρ2 , B)
@@ -45,7 +45,7 @@ mutual
  fmap : ∀ {Δ} (F : functor Δ) ρ1 ρ2 -> (σ : arrow ρ1 ρ2) -> (⟦ F ⟧f ρ1) -> (⟦ F ⟧f ρ2)
  fmap (▹ A) ρ1 ρ2 σ x = arrow-lookup σ A x
  fmap (μ F) ρ1 ρ2 σ x = μmap F ρ1 ρ2 σ x
- fmap (A ∧ B) ρ1 ρ2 σ (x₁ , x₂) = (fmap A ρ1 ρ2 σ x₁) , (fmap B ρ1 ρ2 σ x₂)
+ fmap (A ∧ B) ρ1 ρ2 σ (x₁ , x₂) = (fmap A ρ1 ρ2 σ x₁) , (fmap B ρ1 ρ2 σ x₂) -}
 
 -- Need to try a one-variable-at-a-time version
 

@@ -102,7 +102,10 @@ lemma (▹ x) σn σ n ρn ρ r1 r2 = {!!}
 lemma (M · N) σn σ n ρn ρ r1 r2 with lemma M σn σ n ρn ρ r1 r2 | lemma N σn σ n ρn ρ r1 r2
 lemma (M · N) σn σ n ρn ρ r1 r2 | ev (ƛ M') t⟶v vv | ev val' t⟶v' vv' with vv n ≤-refl val' (⟦ N ⟧m n ρn ρ) vv'
 lemma (M · N) σn σ n ρn ρ r1 r2 | ev (ƛ M') t⟶v' vv | ev val' t⟶v0 vv' | ev val t⟶v vv0 = ev val (⟶β*-trans (t⟶v' · t⟶v0) t⟶v) vv0
-lemma (ƛ M) σn σ n ρn ρ r1 r2 = {!!}
+lemma {T = T ⇝ S} (ƛ M) σn σ n ρn ρ r1 r2 = ev _ (refl _) f
+ where f : (m : ℕ) (p : m ≤ n) (w : value T) (y : ⟦ T ⟧t m) → V T m y w → E S m (⟦ ƛ M ⟧m n ρn ρ m p y) (inj (ƛ ([ tsub-ext (gmap inj σ) ]t ([ gmap inj σn ]va M))) · inj w)
+       f m p w y r with lemma M σn (σ , w) m (gmap (λ {T'} -> forg (○ T') p) ρn) (gmap (λ {T'} -> forg T' p) ρ , y) {!!} ({!!} , r)
+       ... | ev v' s vv = ev v' (⟶β*-trans (β _ _) (⟶β*≡-trans {!!} s)) vv
 lemma < M1 , M2 > σn σ n ρn ρ r1 r2 = {!!}
 lemma (fst M) σn σ n ρn ρ r1 r2 = {!!}
 lemma (snd M) σn σ n ρn ρ r1 r2 = {!!}
@@ -110,61 +113,11 @@ lemma tt σn σ n ρn ρ r1 r2 = {!!}
 lemma (inl M) σn σ n ρn ρ r1 r2 = {!!}
 lemma (inr M) σn σ n ρn ρ r1 r2 = {!!}
 lemma (case M N1 N2) σn σ n ρn ρ r1 r2 = {!!}
-lemma (abort M) σn σ n ρn ρ r1 r2 = {!!}
+lemma (abort M) σn σ n ρn ρ r1 r2 with lemma M σn σ n ρn ρ r1 r2
+lemma (abort M) σn σ n ρn ρ r1 r2 | ev () t⟶v vv
 lemma (let-• M N) σn σ n ρn ρ r1 r2 with lemma M σn σ n ρn ρ r1 r2
 lemma (let-• M N) σn σ n ρn ρ r1 r2 | ev (• val) t⟶v vv with lemma N (σn , val) σ n (ρn , (⟦ M ⟧m n ρn ρ)) ρ (r1 , vv) r2
 lemma (let-• M N) σn σ n ρn ρ r1 r2 | ev (• val) t⟶v vv | ev val' t⟶v' vv' = ev val' (⟶β*-trans (⟶β*-trans (let-• t⟶v _) (⟶β*≡-trans₂ (let-•β _ _) {!!})) t⟶v') vv'
 lemma (• M) σn σ zero ρn ρ r1 r2 = ev (• {!!}) (• {!!}) tt -- Crap! Do I want to quantify over all n in the semantics? Is this an indication that we want a "tick semantics"?
 lemma (• M) σn σ (suc n) ρn ρ r1 r2 with lemma M tt σn n tt ρn tt {!!}
 lemma (• M) σn σ (suc n) ρn ρ r1 r2 | ev val t⟶v vv = ev (• val) (• (⟶β*≡-trans (cong [ gmap inj σ ]t {!!}) t⟶v)) vv
-
-{-
-
-Vc-lookup : ∀ {Γ T} {ρ : gsubst Γ ⟦_⟧t} {σ : gsubst Γ value} -> Vc ρ σ -> (x : var Γ T) -> V T (lookup ρ x) (lookup σ x)
-Vc-lookup {⊡} p ()
-Vc-lookup {ψ , T} (proj₁ , proj₂) top = proj₂
-Vc-lookup {ψ , T} (proj₁ , proj₂) (pop y) = Vc-lookup proj₁ y
-
--- TODO: What happens in a deterministic call-by-value setting?
--- TODO: Can we use this technique to do weak normalization with sums (where we don't care about unique normal forms)?
--- TODO: Try disjunction
-lemma : ∀ {Γ T} (t : tm Γ T) (σ : gsubst Γ value) (ρ : gsubst Γ ⟦_⟧t) -> Vc ρ σ -> E T (⟦ t ⟧m ρ) ([ gmap inj σ ]t t)
-lemma (▹ x) σ ρ x' = ev (lookup σ x) (⟶β*≡-trans (lookup-gmap inj σ x) (refl _)) (Vc-lookup x' x)
-lemma (M · N) σ ρ x with lemma M σ ρ x | lemma N σ ρ x
-lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v vv' with vv v' (⟦ N ⟧m ρ) vv'
-lemma (M · N) σ ρ x | ev (ƛ v) v⟶m vv | ev v' t⟶v' vv' | ev v0 t⟶v vv0 = ev v0 (⟶β*-trans (v⟶m · t⟶v') t⟶v) vv0
-lemma (ƛ {T} M) σ ρ x = ev (ƛ ([ tsub-ext (gmap inj σ) ]t M)) (refl _)
- (λ w y x' → let q = lemma M (σ , w) (ρ , y) (x , x')
-             in ev (E'.val q) (⟶β*-trans (β _ _) (⟶β*≡-trans (lem2 M) (E'.t⟶v q))) (E'.vv q))
-lemma < M1 , M2 > σ ρ x with lemma M1 σ ρ x | lemma M2 σ ρ x
-lemma < M1 , M2 > σ ρ x | ev v t⟶v vv | ev v' t⟶v' vv' = ev < v , v' > < t⟶v , t⟶v' > (vv , vv')
-lemma (fst M) σ ρ x with lemma M σ ρ x
-lemma (fst M) σ ρ x | ev < M1 , M2 > t⟶v (proj₁ , proj₂) = ev M1 (⟶β*-trans (fst t⟶v) (β*1 (inj M1) (inj M2))) proj₁
-lemma (snd M) σ ρ x with lemma M σ ρ x
-lemma (snd M) σ ρ x | ev < M1 , M2 > t⟶v (proj₁ , proj₂) = ev M2 (⟶β*-trans (snd t⟶v) (β*2 (inj M1) (inj M2))) proj₂
-lemma tt σ ρ x = ev tt (refl tt) tt
-lemma (inl M) σ ρ x with lemma M σ ρ x
-lemma (inl M) σ ρ x | ev val t⟶v vv = ev (inl val) (inl t⟶v) vv
-lemma (inr M) σ ρ x with lemma M σ ρ x
-lemma (inr M) σ ρ x | ev val t⟶v vv = ev (inr val) (inr t⟶v) vv
-lemma (case M N1 N2) σ ρ x with lemma M σ ρ x 
-lemma (case M N1 N2) σ ρ x | ev val t⟶v vv with ⟦ M ⟧m ρ
-lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x with lemma N1 (σ , M') (ρ , x) (x' , vv)
-lemma (case M N1 N2) σ ρ x' | ev (inl M') t⟶v vv | inj₁ x | ev val t⟶v' vv' =
-   ev val (⟶β*-trans (case t⟶v _ _) (⟶β*-trans (β+₁ _ _ _) (⟶β*≡-trans (lem2 N1) t⟶v'))) vv'
-lemma (case M N1 N2) σ ρ x' | ev (inr M') t⟶v () | inj₁ x
-lemma (case M N1 N2) σ ρ x | ev (inl M') t⟶v () | inj₂ y
-lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v vv | inj₂ y with lemma N2 (σ , M') (ρ , y) (x , vv)
-lemma (case M N1 N2) σ ρ x | ev (inr M') t⟶v' vv | inj₂ y | ev val t⟶v vv' =
-   ev val (⟶β*-trans (case t⟶v' _ _) (⟶β*-trans (β+₂ _ _ _) (⟶β*≡-trans (lem2 N2) t⟶v))) vv'
-lemma (abort M) σ ρ x = ⊥-elim (⟦ M ⟧m ρ)
-
-adequacy : ∀ (t : tm ⊡ (unit + unit)) b -> ⟦ t ⟧m tt ≡ (⟦ inj b ⟧m tt) -> t ⟶β* (inj b)
-adequacy t b x with subst (λ α -> E _ α ([ tt ]t t)) x (lemma t tt tt tt)
-adequacy t (inl tt) x | ev (inl tt) t⟶v vv = ⟶β*≡-trans (sym (lem1½ _)) t⟶v
-adequacy t (inl tt) x | ev (inr M) t⟶v ()
-adequacy t (inr tt) x | ev (inl M) t⟶v ()
-adequacy t (inr tt) x | ev (inr tt) t⟶v vv = ⟶β*≡-trans (sym (lem1½ _)) t⟶v
--- TODO: Seems this entails normalization! Is strengthening it to full abstraction going to get us under binders?
-
--}
