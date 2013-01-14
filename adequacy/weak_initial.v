@@ -116,6 +116,7 @@ Inductive Mstep {G} : forall {T}, Tm G T -> Tm G T -> Set :=
  | beta_prod1 : forall {T S} {t : Tm G T} {u : Tm G S}, Mstep (fst' (pair' t u)) t
  | beta_prod2 : forall {T S} {t : Tm G T} {u : Tm G S}, Mstep (snd' (pair' t u)) u
  | beta_nat1 : forall {C} {t : Tm (snoc G C) C} (i : Tm G C), Mstep (iter t i zero) i
+ | beta_nat2 : forall {C} {t : Tm (snoc G C) C} (i : Tm G C) (n : Tm G Nat), Mstep (iter t i (succ n)) (topsubst t (iter t i n))
 .
 
 
@@ -154,6 +155,8 @@ match t in Tm _ T return SemT T with
  | lam _ _ t1 => fun x => Sem t1 (pair s x)
  | app _ _ t1 t2 => Sem t1 s (Sem t2 s)
 end.
+
+
 
 
 
