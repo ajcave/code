@@ -1,5 +1,11 @@
 Set Implicit Arguments.
 
+Lemma cong {A B : Set} (f : A -> B) x y : x = y -> f x = f y.
+intros. rewrite H. reflexivity.
+Qed.
+
+
+
 Open Scope type_scope.
 Inductive Ctx (A : Set) : Set :=
  | nil : Ctx A
@@ -101,6 +107,19 @@ end.
 Definition topsubst {G T S} (t : Tm (snoc G S) T) (u : Tm G S) : Tm G T :=
 subst t (pair (idsubst G) u).
 
+Definition scomp {G1 G2 G3} (s1 : Subst G2 G1) (s2 : Subst G3 G2) : Subst G3 G1 :=
+gmap (Tm G2) (Tm G3) (fun T t => subst t s2) s1.
+
+Lemma substlemma {G1 G2 G3} T (t : Tm G1 T) (s1 : Subst G2 G1) (s2 : Subst G3 G2) :
+ subst (subst t s1) s2 = subst t (scomp s1 s2).
+Admitted.
+Lemma substlemma2 {G1 G2 G3 T} (s1 : Subst G2 G1) (s2 : Subst G3 G2) (t : Tm G3 T) :
+ scomp (Sextend T s1) (pair s2 t) = pair (scomp s1 s2) t.
+Admitted.
+Lemma substcomm {G1 G2 T S} (t : Tm (snoc G1 S) T) (s : Subst G2 G1) (u : Tm G2 S) :
+ topsubst (subst t (Sextend S s)) u = subst t (pair s u).
+Admitted.
+
 Inductive Mstep {G} : forall {T}, Tm G T -> Tm G T -> Set :=
  | srefl : forall {T} {t : Tm G T}, Mstep t t
  | strans : forall {T} {t u v : Tm G T}, Mstep t u -> Mstep u v -> Mstep t v
@@ -157,7 +176,7 @@ match t in Tm _ T return SemT T with
  | app _ _ t1 t2 => Sem t1 s (Sem t2 s)
 end.
 
-Inductive Val : forall T, Tm nil T -> Set :=
+Inductive Val : Tm nil Nat -> Set :=
  | vzero : Val zero
  | vsucc : forall n, Val n -> Val (succ n)
 .
@@ -169,6 +188,55 @@ match T as T return Tm nil T -> Set with
 | Prod U V => fun t => Red (fst' t) * Red (snd' t)
 end.
 
+Fixpoint RedS (G : Ctx Tp) : Subst nil G -> Set :=
+match G as G return Subst nil G -> Set with
+| nil => fun s => unit
+| snoc G' T => fun s => (RedS G' (fst s)) * (Red (snd s))
+end.
 
+Hint Constructors Mstep.
+
+Lemma bwkclosed1 T (t t' : Tm nil T) : Mstep t t' -> Red t' -> Red t.
+induction T; simpl; intros.
+destruct H0. destruct p.
+exists x. eauto.
+destruct H0. split; eauto.
+eauto.
+Qed.
+
+Lemma lookup1 G T (x : Var G T) (s : Subst nil G) (sred : RedS G s) : Red (lookup x s).
+induction x; simpl; intros; destruct sred; auto.
+Qed.
+
+Hint Resolve bwkclosed1.
+Hint Constructors Val.
+
+Lemma main1 G T (t : Tm G T) (s : Subst nil G) (sred : RedS G s) : Red (subst t s).
+induction t; intros; simpl in *.
+eapply lookup1; auto.
+split; eauto.
+firstorder.
+firstorder.
+exists zero. eauto.
+specialize (IHt s sred).
+destruct IHt. destruct p. exists (succ x). firstorder.
+destruct (IHt3 s sred). destruct p.
+clear IHt3.
+eapply bwkclosed1.
+eapply siter. eapply srefl. eapply srefl. eexact m.
+clear m. clear t3.
+induction v.
+eapply bwkclosed1. eapply beta_nat1. auto.
+eapply bwkclosed1. eapply beta_nat2. unfold topsubst. simpl.
+specialize (IHt1 (pair s (iter (subst t1 (Sextend C s)) (subst t2 s) n))).
+simpl in IHt1.
+eapply eq_rec. Focus 2. symmetry. eapply (substcomm t1 s).
+eapply IHt1. eauto.
+intros.
+eapply bwkclosed1. eapply beta_arr.
+eapply eq_rec. Focus 2. symmetry. eapply substcomm.
+eauto.
+firstorder.
+Qed.
 
 
