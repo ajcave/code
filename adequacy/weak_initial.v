@@ -4,6 +4,7 @@ Open Scope type_scope.
 Inductive Ctx (A : Set) : Set :=
  | nil : Ctx A
  | snoc : Ctx A -> A -> Ctx A.
+Implicit Arguments nil [A].
 
 Inductive Var {A : Set} : Ctx A -> A -> Set :=
  | top : forall {G T}, Var (snoc G T) T
@@ -156,7 +157,17 @@ match t in Tm _ T return SemT T with
  | app _ _ t1 t2 => Sem t1 s (Sem t2 s)
 end.
 
+Inductive Val : forall T, Tm nil T -> Set :=
+ | vzero : Val zero
+ | vsucc : forall n, Val n -> Val (succ n)
+.
 
+Fixpoint Red (T : Tp) : Tm nil T -> Set :=
+match T as T return Tm nil T -> Set with
+| Nat => fun t => { v : Tm nil Nat & (Mstep t v * Val v) }
+| Arr U V => fun t => forall x, Red x -> Red (app t x)
+| Prod U V => fun t => Red (fst' t) * Red (snd' t)
+end.
 
 
 
