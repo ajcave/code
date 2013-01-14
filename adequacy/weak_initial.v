@@ -138,6 +138,74 @@ Inductive Mstep {G} : forall {T}, Tm G T -> Tm G T -> Set :=
  | beta_nat1 : forall {C} {t : Tm (snoc G C) C} (i : Tm G C), Mstep (iter t i zero) i
  | beta_nat2 : forall {C} {t : Tm (snoc G C) C} (i : Tm G C) (n : Tm G Nat), Mstep (iter t i (succ n)) (topsubst t (iter t i n))
 .
+Hint Constructors Mstep.
+
+
+Inductive Val : Tm nil Nat -> Set :=
+ | vzero : Val zero
+ | vsucc : forall n, Val n -> Val (succ n)
+.
+Hint Constructors Val.
+
+Fixpoint Red (T : Tp) : Tm nil T -> Set :=
+match T as T return Tm nil T -> Set with
+| Nat => fun t => { v : Tm nil Nat & (Mstep t v * Val v) }
+| Arr U V => fun t => forall x, Red x -> Red (app t x)
+| Prod U V => fun t => Red (fst' t) * Red (snd' t)
+end.
+
+Fixpoint RedS (G : Ctx Tp) : Subst nil G -> Set :=
+match G as G return Subst nil G -> Set with
+| nil => fun s => unit
+| snoc G' T => fun s => (RedS G' (fst s)) * (Red (snd s))
+end.
+
+
+Lemma bwkclosed1 T (t t' : Tm nil T) : Mstep t t' -> Red t' -> Red t.
+induction T; simpl; intros.
+destruct H0. destruct p.
+exists x. eauto.
+destruct H0. split; eauto.
+eauto.
+Qed.
+
+Lemma lookup1 G T (x : Var G T) (s : Subst nil G) (sred : RedS G s) : Red (lookup x s).
+induction x; simpl; intros; destruct sred; auto.
+Qed.
+
+Hint Resolve bwkclosed1.
+
+Lemma main1 G T (t : Tm G T) (s : Subst nil G) (sred : RedS G s) : Red (subst t s).
+induction t; intros; simpl in *.
+eapply lookup1; auto.
+split; eauto.
+firstorder.
+firstorder.
+exists zero. eauto.
+specialize (IHt s sred).
+destruct IHt. destruct p. exists (succ x). firstorder.
+destruct (IHt3 s sred). destruct p.
+clear IHt3.
+eapply bwkclosed1.
+eapply siter. eapply srefl. eapply srefl. eexact m.
+clear m. clear t3.
+induction v.
+eapply bwkclosed1. eapply beta_nat1. auto.
+eapply bwkclosed1. eapply beta_nat2. unfold topsubst. simpl.
+specialize (IHt1 (pair s (iter (subst t1 (Sextend C s)) (subst t2 s) n))).
+simpl in IHt1.
+eapply eq_rec. Focus 2. symmetry. eapply (substcomm t1 s).
+eapply IHt1. eauto.
+intros.
+eapply bwkclosed1. eapply beta_arr.
+eapply eq_rec. Focus 2. symmetry. eapply substcomm.
+eauto.
+firstorder.
+Qed.
+
+(* Weak norm. for terms at type nat, yay *)
+
+
 
 
 Definition inat : Set := forall (C : Set), (C -> C) -> C -> C.
@@ -176,67 +244,15 @@ match t in Tm _ T return SemT T with
  | app _ _ t1 t2 => Sem t1 s (Sem t2 s)
 end.
 
-Inductive Val : Tm nil Nat -> Set :=
- | vzero : Val zero
- | vsucc : forall n, Val n -> Val (succ n)
-.
-
-Fixpoint Red (T : Tp) : Tm nil T -> Set :=
-match T as T return Tm nil T -> Set with
-| Nat => fun t => { v : Tm nil Nat & (Mstep t v * Val v) }
-| Arr U V => fun t => forall x, Red x -> Red (app t x)
-| Prod U V => fun t => Red (fst' t) * Red (snd' t)
+Fixpoint Rel (T : Tp) : SemT T -> Tm nil T -> Set :=
+match T as T return SemT T -> Tm nil T -> Set with
+| Nat => fun x t => { v : Tm nil Nat & (Mstep t v * Val v * (Sem t tt = Sem v tt)) }
+| Arr U V => fun x t => forall y u, Rel y u -> Rel (x y) (app t u)
+| Prod U V => fun x t => Rel (fst x) (fst' t) * Rel (snd x) (snd' t)
 end.
 
-Fixpoint RedS (G : Ctx Tp) : Subst nil G -> Set :=
+Fixpoint RelS (G : Ctx Tp) : Subst nil G -> Set :=
 match G as G return Subst nil G -> Set with
 | nil => fun s => unit
 | snoc G' T => fun s => (RedS G' (fst s)) * (Red (snd s))
 end.
-
-Hint Constructors Mstep.
-
-Lemma bwkclosed1 T (t t' : Tm nil T) : Mstep t t' -> Red t' -> Red t.
-induction T; simpl; intros.
-destruct H0. destruct p.
-exists x. eauto.
-destruct H0. split; eauto.
-eauto.
-Qed.
-
-Lemma lookup1 G T (x : Var G T) (s : Subst nil G) (sred : RedS G s) : Red (lookup x s).
-induction x; simpl; intros; destruct sred; auto.
-Qed.
-
-Hint Resolve bwkclosed1.
-Hint Constructors Val.
-
-Lemma main1 G T (t : Tm G T) (s : Subst nil G) (sred : RedS G s) : Red (subst t s).
-induction t; intros; simpl in *.
-eapply lookup1; auto.
-split; eauto.
-firstorder.
-firstorder.
-exists zero. eauto.
-specialize (IHt s sred).
-destruct IHt. destruct p. exists (succ x). firstorder.
-destruct (IHt3 s sred). destruct p.
-clear IHt3.
-eapply bwkclosed1.
-eapply siter. eapply srefl. eapply srefl. eexact m.
-clear m. clear t3.
-induction v.
-eapply bwkclosed1. eapply beta_nat1. auto.
-eapply bwkclosed1. eapply beta_nat2. unfold topsubst. simpl.
-specialize (IHt1 (pair s (iter (subst t1 (Sextend C s)) (subst t2 s) n))).
-simpl in IHt1.
-eapply eq_rec. Focus 2. symmetry. eapply (substcomm t1 s).
-eapply IHt1. eauto.
-intros.
-eapply bwkclosed1. eapply beta_arr.
-eapply eq_rec. Focus 2. symmetry. eapply substcomm.
-eauto.
-firstorder.
-Qed.
-
-
