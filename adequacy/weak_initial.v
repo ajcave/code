@@ -220,10 +220,7 @@ Fixpoint SemT (T : Tp) : Set := match T with
  | Arr U V => SemT U -> SemT V
 end.
 
-Fixpoint SemC (G : Ctx Tp) : Set := match G with
- | nil => unit
- | snoc G' U => (SemC G') * (SemT U)
-end.
+Definition SemC (G : Ctx Tp) : Set := Gsubst SemT G.
 
 Fixpoint SemV {G T} (x : Var G T) : SemC G -> SemT T :=
 match x in Var G T return SemC G -> SemT T with
@@ -244,6 +241,73 @@ match t in Tm _ T return SemT T with
  | app _ _ t1 t2 => Sem t1 s (Sem t2 s)
 end.
 
+Require Import Coq.Logic.FunctionalExtensionality.
+
+
+Definition comp2 {G1 G2} (s : Subst G2 G1) e := gmap (Tm G2) SemT (fun T t => Sem t e) s.
+
+Lemma comp2_idl {G} (e : SemC G) : comp2 (idsubst G) e = e.
+Admitted.
+
+Lemma comp2_lemma {G1 G2} (s : Subst G2 G1) {C} e x : comp2 (Sextend C s) (e, x) = (comp2 s e , x).
+intros.
+unfold comp2.
+simpl.
+eapply (cong (fun y => (y, x))).
+Admitted.
+
+
+
+Lemma compositionality {G1 T} (t1 : Tm G1 T) {G2} (s : Subst G2 G1) e :
+  Sem (subst t1 s) e = Sem t1 (comp2 s e).
+induction t1; simpl; intros; try congruence.
+admit.
+erewrite (IHt1_3 G2 s e).
+erewrite (IHt1_2 G2 s e).
+eapply (cong (fun y => iiter y (Sem t1_2 (comp2 s e)) (Sem t1_3 (comp2 s e)))).
+eapply functional_extensionality. intros.
+rewrite (IHt1_1 _ (Sextend C s) (e, x)).
+eapply (cong (Sem t1_1)).
+eapply (comp2_lemma s e x).
+eapply functional_extensionality. intros.
+transitivity (Sem t1 (comp2 (Sextend T s) (e, x))).
+eapply IHt1.
+eapply (cong (Sem t1)).
+eapply comp2_lemma.
+Qed.
+
+
+Lemma soundness {G T} (t1 t2 : Tm G T) : Mstep t1 t2 -> Sem t1 = Sem t2.
+intros.
+eapply functional_extensionality. intros.
+induction H; simpl; try congruence.
+erewrite (IHMstep3 x). erewrite (IHMstep2 x).
+eapply (cong (fun y => iiter y (Sem i' x) (Sem n' x))).
+eapply functional_extensionality. intros.
+eapply IHMstep1.
+eapply functional_extensionality. intros.
+eapply IHMstep.
+pose proof (compositionality t (pair (idsubst G) u) x).
+unfold topsubst.
+erewrite H.
+simpl.
+eapply (cong (Sem t)).
+unfold comp2. simpl.
+eapply (cong (fun y => (y , Sem u x))).
+symmetry. eapply comp2_idl.
+unfold iiter.
+unfold izero. reflexivity.
+unfold iiter. unfold isucc.
+pose proof (compositionality t (pair (idsubst G) (iter t i n)) x).
+unfold topsubst.
+rewrite H.
+eapply (cong (Sem t)).
+unfold comp2. simpl. unfold iiter.
+pose proof (comp2_idl x).
+unfold comp2 in H0. erewrite H0. reflexivity.
+Qed.
+
+
 Fixpoint Rel (T : Tp) : SemT T -> Tm nil T -> Set :=
 match T as T return SemT T -> Tm nil T -> Set with
 | Nat => fun x t => { v : Tm nil Nat & (Mstep t v * Val v * (Sem t tt = Sem v tt)) }
@@ -256,3 +320,27 @@ match G as G return SemC G -> Subst nil G -> Set with
 | nil => fun x s => unit
 | snoc G' T => fun x s => (RelS G' (fst x) (fst s)) * (Rel (snd x) (snd s))
 end.
+
+Lemma bwkclosed2 T (t t' : Tm nil T) x : Mstep t t' -> Rel x t' -> Rel x t.
+induction T; simpl; intros.
+destruct H0. destruct p. destruct p.
+exists x0. split. split. eauto. auto. rewrite <- e.
+rewrite (soundness H). reflexivity.
+firstorder.
+eapply IHT2.
+eapply (sapp H srefl).
+auto.
+Qed.
+
+Hint Resolve bwkclosed2.
+
+Lemma main2 G T (t : Tm G T) (s : Subst nil G) x (sred : RelS G x s) : Rel (Sem t x) (subst t s).
+induction t; simpl; intros.
+admit.
+split.
+eapply bwkclosed2.
+eapply beta_prod1. auto.
+admit.
+admit.
+admit.
+ 
