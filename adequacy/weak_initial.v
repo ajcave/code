@@ -343,4 +343,39 @@ eapply beta_prod1. auto.
 admit.
 admit.
 admit.
- 
+exists zero.
+split. split. eapply srefl.
+eauto.
+simpl. reflexivity.
+destruct (IHt s x sred).
+destruct p. destruct p.
+exists (succ x0).
+split. split. eauto.
+eauto.
+rewrite e. reflexivity.
+destruct (IHt3 s x sred).
+destruct p. destruct p.
+
+induction v.
+
+eapply bwkclosed2.
+eapply strans.
+eapply siter. eexact (@srefl (snoc nil C) C (subst t1 (Sextend C s))).
+eapply (@srefl nil).
+eapply m.
+apply beta_nat1.
+admit. (* ??? *)
+admit.
+
+eapply bwkclosed2.
+eapply beta_arr.
+eapply eq_rec.
+Focus 2. symmetry. eapply substcomm.
+eapply IHt.
+split.
+eexact sred.
+eexact H.
+eapply IHt1. eexact sred.
+eapply IHt2.
+eexact sred.
+Qed.
