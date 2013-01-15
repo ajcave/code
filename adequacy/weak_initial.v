@@ -310,7 +310,7 @@ Qed.
 
 Fixpoint Rel (T : Tp) : SemT T -> Tm nil T -> Set :=
 match T as T return SemT T -> Tm nil T -> Set with
-| Nat => fun x t => { v : Tm nil Nat & (Mstep t v * Val v * (Sem t tt = Sem v tt)) }
+| Nat => fun x t => { v : Tm nil Nat & (Mstep t v * Val v * (x = Sem v tt)) }
 | Arr U V => fun x t => forall y u, Rel y u -> Rel (x y) (app t u)
 | Prod U V => fun x t => Rel (fst x) (fst' t) * Rel (snd x) (snd' t)
 end.
@@ -325,7 +325,7 @@ Lemma bwkclosed2 T (t t' : Tm nil T) x : Mstep t t' -> Rel x t' -> Rel x t.
 induction T; simpl; intros.
 destruct H0. destruct p. destruct p.
 exists x0. split. split. eauto. auto. rewrite <- e.
-rewrite (soundness H). reflexivity.
+reflexivity.
 firstorder.
 eapply IHT2.
 eapply (sapp H srefl).
@@ -334,15 +334,25 @@ Qed.
 
 Hint Resolve bwkclosed2.
 
+Lemma main2var G T (t : Var G T) (s : Subst nil G) x (sred : RelS G x s) : Rel (SemV t x) (lookup t s).
+induction t; simpl; intros. tauto.
+firstorder.
+Qed.
+
 Lemma main2 G T (t : Tm G T) (s : Subst nil G) x (sred : RelS G x s) : Rel (Sem t x) (subst t s).
 induction t; simpl; intros.
-admit.
+eapply main2var. auto.
+
 split.
 eapply bwkclosed2.
 eapply beta_prod1. auto.
-admit.
-admit.
-admit.
+
+eapply bwkclosed2.
+eapply beta_prod2. auto.
+
+firstorder.
+firstorder.
+
 exists zero.
 split. split. eapply srefl.
 eauto.
@@ -356,16 +366,27 @@ rewrite e. reflexivity.
 destruct (IHt3 s x sred).
 destruct p. destruct p.
 
-induction v.
+rewrite e.
 
 eapply bwkclosed2.
-eapply strans.
 eapply siter. eexact (@srefl (snoc nil C) C (subst t1 (Sextend C s))).
 eapply (@srefl nil).
 eapply m.
+clear e. clear IHt3. clear m. clear t3.
+
+induction v.
+
+eapply bwkclosed2.
 apply beta_nat1.
-admit. (* ??? *)
-admit.
+unfold iiter. simpl. unfold izero.
+eauto.
+
+eapply bwkclosed2.
+apply beta_nat2.
+unfold iiter. simpl. unfold isucc.
+erewrite substcomm.
+eapply IHt1. split; simpl. auto.
+eexact IHv.
 
 eapply bwkclosed2.
 eapply beta_arr.
@@ -379,3 +400,9 @@ eapply IHt1. eexact sred.
 eapply IHt2.
 eexact sred.
 Qed.
+
+(*
+*** Local Variables: ***
+*** coq-prog-args: ("-emacs-U" "-impredicative-set") ***
+*** End: ***
+*)
