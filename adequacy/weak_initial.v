@@ -47,6 +47,21 @@ match G as G return Gsubst R1 G -> Gsubst R2 G with
  | snoc G' T => fun s => pair (gmap _ _ f (fst s)) (f T (snd s))
 end.
 
+Lemma gmap_funct (R1 R2 R3 : Tp -> Set) (f : forall T, R1 T -> R2 T) (g : forall T, R2 T -> R3 T) {G : Ctx Tp} (s : Gsubst R1 G) :
+ gmap R2 R3 g (gmap R1 R2 f s) = gmap R1 R3 (fun T x => g T (f T x)) s.
+induction G; simpl; intros. reflexivity.
+erewrite IHG.
+reflexivity.
+Qed.
+
+Lemma gmap_cong (R1 R2 : Tp -> Set) (f1 f2 : forall T, R1 T -> R2 T) {G : Ctx Tp} (s : Gsubst R1 G) :
+ (forall T x, f1 T x = f2 T x) -> gmap R1 R2 f1 s = gmap R1 R2 f2 s.
+induction G; simpl; intros. reflexivity. erewrite IHG.
+erewrite H.
+reflexivity.
+exact H.
+Qed.
+
 Fixpoint lookup {G R T} (x : Var G T) : Gsubst R G -> R T :=
 match x in Var G T return Gsubst R G -> R T with
  | top G T  => fun s => snd s
@@ -118,6 +133,8 @@ Lemma substlemma2 {G1 G2 G3 T} (s1 : Subst G2 G1) (s2 : Subst G3 G2) (t : Tm G3 
 Admitted.
 Lemma substcomm {G1 G2 T S} (t : Tm (snoc G1 S) T) (s : Subst G2 G1) (u : Tm G2 S) :
  topsubst (subst t (Sextend S s)) u = subst t (pair s u).
+Admitted.
+Lemma substid {G T} (t : Tm G T) : subst t (idsubst G) = t.
 Admitted.
 
 Inductive Mstep {G} : forall {T}, Tm G T -> Tm G T -> Set :=
@@ -245,23 +262,101 @@ Require Import Coq.Logic.FunctionalExtensionality.
 
 
 Definition comp2 {G1 G2} (s : Subst G2 G1) e := gmap (Tm G2) SemT (fun T t => Sem t e) s.
+Definition comp2v {G1 G2} (s : VSubst G2 G1) e := gmap (Var G2) SemT (fun T t => SemV t e) s.
+
+Lemma comp2v_idl {G} (e : SemC G) : comp2v (idvsubst G) e = e.
+induction G; simpl; intros. unfold comp2v. simpl. destruct e. reflexivity.
+unfold comp2v. unfold SVextend.
+destruct e.
+simpl.
+erewrite gmap_funct.
+eapply (cong (fun y => (y, s))).
+eapply IHG.
+Qed.
+
+
+Lemma comp_var : forall (G : Ctx Tp) (T : Tp) 
+                              (v : Var G T) (G2 : Ctx Tp) 
+                              (s : Subst G2 G) (e : SemC G2),
+                            Sem (lookup v s) e = SemV v (comp2 s e).
+induction v; simpl; intros. reflexivity.
+erewrite IHv. reflexivity.
+Qed.
+
+Lemma compv_var : forall (G : Ctx Tp) (T : Tp) 
+                              (v : Var G T) (G2 : Ctx Tp) 
+                              (s : VSubst G2 G) (e : SemC G2),
+                            SemV (lookup v s) e = SemV v (comp2v s e).
+induction v; simpl; intros. reflexivity.
+erewrite IHv. reflexivity.
+Qed.
+
+Lemma comp2v_lemma {G1 G2} (s : VSubst G2 G1) {C} e x : comp2v (SVextend C s) (e, x) = (comp2v s e , x).
+intros.
+unfold comp2v. unfold SVextend. simpl.
+erewrite gmap_funct.
+reflexivity.
+Qed.
+
+Lemma compositionalityv {G1 T} (t1 : Tm G1 T) {G2} (s : VSubst G2 G1) e :
+  Sem (vsubst t1 s) e = Sem t1 (comp2v s e).
+induction t1; simpl; intros; try congruence.
+eapply compv_var.
+erewrite IHt1_3.
+erewrite IHt1_2.
+eapply (cong (fun y => iiter y (Sem t1_2 (comp2v s e)) (Sem t1_3 (comp2v s e)))).
+eapply functional_extensionality.
+intros.
+erewrite IHt1_1.
+eapply (cong (fun y => Sem t1_1 y)).
+eapply comp2v_lemma.
+
+eapply functional_extensionality.
+intros.
+erewrite IHt1.
+eapply (cong (Sem t1)).
+eapply comp2v_lemma.
+Qed.
 
 Lemma comp2_idl {G} (e : SemC G) : comp2 (idsubst G) e = e.
-Admitted.
+induction G; simpl; intros; unfold comp2. destruct e. reflexivity.
+destruct e. unfold Sextend.
+simpl.
+eapply (cong (fun y => (y, s))).
+erewrite gmap_funct.
+erewrite gmap_cong.
+eapply IHG. intros.
+simpl.
+erewrite compositionalityv.
+unfold comp2v.
+unfold wknvsubst.
+erewrite gmap_funct.
+simpl.
+eapply (cong (Sem x)).
+eapply comp2v_idl.
+Qed.
+
+
 
 Lemma comp2_lemma {G1 G2} (s : Subst G2 G1) {C} e x : comp2 (Sextend C s) (e, x) = (comp2 s e , x).
 intros.
 unfold comp2.
 simpl.
 eapply (cong (fun y => (y, x))).
-Admitted.
-
-
+erewrite gmap_funct.
+eapply gmap_cong. intros.
+erewrite compositionalityv.
+eapply (cong (Sem x0)).
+unfold comp2v. unfold wknvsubst.
+erewrite gmap_funct.
+simpl.
+eapply comp2v_idl.
+Qed.
 
 Lemma compositionality {G1 T} (t1 : Tm G1 T) {G2} (s : Subst G2 G1) e :
   Sem (subst t1 s) e = Sem t1 (comp2 s e).
 induction t1; simpl; intros; try congruence.
-admit.
+eapply comp_var. 
 erewrite (IHt1_3 G2 s e).
 erewrite (IHt1_2 G2 s e).
 eapply (cong (fun y => iiter y (Sem t1_2 (comp2 s e)) (Sem t1_3 (comp2 s e)))).
@@ -306,7 +401,7 @@ unfold comp2. simpl. unfold iiter.
 pose proof (comp2_idl x).
 unfold comp2 in H0. erewrite H0. reflexivity.
 Qed.
-
+Print Assumptions soundness.
 
 Fixpoint Rel (T : Tp) : SemT T -> Tm nil T -> Set :=
 match T as T return SemT T -> Tm nil T -> Set with
@@ -400,6 +495,40 @@ eapply IHt1. eexact sred.
 eapply IHt2.
 eexact sred.
 Qed.
+
+Print Assumptions main2.
+
+Lemma zeroNotSucc n : izero = isucc n -> False.
+intros.
+assert (iiter (fun _ => true) false izero = iiter (fun _ => true) false (isucc n)).
+erewrite H. reflexivity.
+inversion H0.
+Qed.
+
+Axiom funext_yay : forall (T : Set -> Set) (f g : forall X, T X), (forall C, f C = g C) -> f = g.
+
+(*Lemma succInv n n0 : isucc n = isucc n0 -> n = n0.
+intros.
+eapply funext_yay. intros.
+eapply functional_extensionality. intros.
+eapply functional_extensionality. intros.
+
+
+intros.
+rewrite H.
+unfold iiter. unfold isucc.
+reflexivity.
+unfold iiter in H0. unfold isucc in H0.
+Admitted. *)
+
+Theorem adequacy v (H : Val v) : forall t, Sem t = Sem v -> Mstep t v.
+(* Ugh too tired. I still think this should be possible though *)
+
+
+
+
+
+
 
 (*
 *** Local Variables: ***
