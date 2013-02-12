@@ -76,11 +76,12 @@ gmap G (fun _ => functor G') (fun _ => functor (snoc G' T)) (fun _ F => app_vsub
 
 Definition extfsub (G G' : ctx sort) T (s : fsub G G') : fsub (snoc G T) (snoc G' T) :=
 pair (wknfsub G G' T s) (fv (@top sort G' T)).
+Implicit Arguments extfsub [G G' T].
 
 Fixpoint idfsub (G : ctx sort) : fsub G G :=
 match G return fsub G G with
 | nil => tt
-| snoc G' T => extfsub G' G' T (idfsub G')
+| snoc G' T => extfsub (idfsub G')
 end.
 
 Fixpoint app_fsub D D' (F : functor D) (s : fsub D D') : functor D' :=
@@ -89,8 +90,8 @@ match F with
 | arrow A F' => arrow A (app_fsub D' F' s)
 | times F G => times (app_fsub D' F s) (app_fsub D' G s)
 | plus F G => plus (app_fsub D' F s) (app_fsub D' G s)
-| mu F => mu (app_fsub _ F (extfsub D D' type s))
-| nu F => nu (app_fsub _ F (extfsub D D' type s))
+| mu F => mu (app_fsub _ F (extfsub s))
+| nu F => nu (app_fsub _ F (extfsub s))
 end.
 
 Definition single_fsub D T F : fsub (snoc D T) D := pair (idfsub D) F.
@@ -241,8 +242,11 @@ with step_SN G : forall T, tm G T -> tm G T -> Prop :=
 
 Definition Rel T := forall (G : ctx tp), tm G T -> Prop.
 
-(* Definition lfp F (FR : forall X, Rel X -> Rel (app_fsub1 F X)) : Rel (mu F) :=
- fun G t => forall C f CR, (forall G' u, FR C CR G' u -> CR G' (f u)) *)
+Definition lfp C (FR : Rel C -> Rel C) : Rel C :=
+ fun G t => forall CR f, (forall G' u, FR CR G' u -> CR G' (f G' u)) -> CR G t.
+
+Definition gfp C (FR : Rel C -> Rel C) : Rel C :=
+ fun G t => exists CR : Rel C, exists f, (forall G' u, CR G' u -> FR CR G' (f G' u)) /\ CR G t.
 
 Fixpoint Rsub D : fsub D nil -> Type :=
 match D return fsub D nil -> Type with
@@ -257,17 +261,20 @@ match x in var D T return forall (s : fsub D nil), Rsub D s -> Rel (glookup _ x 
 end.
 
 
-Fixpoint RedF D (F : functor D) (s : fsub D nil) (r : Rsub D s) : Rel (app_fsub _ F s) :=
-match F return Rel (app_fsub _ F s) with
+Program Fixpoint RedF (D : ctx sort) (F : functor D) (s : fsub D nil) (r : Rsub D s) {struct F} : Rel (app_fsub _ F s) :=
+match F (* return Rel (app_fsub _ F s) *) with
 | fv D' X => fun G t => Rlookup X s r t
-| arrow A F' => fun G t => True (* forall G' (w : vsub G G') u, RedF A tt tt u -> RedF F' s r (tapp (app_vsub_tm _ t w) u) *)
+| arrow A F' => fun G t => forall G' (w : vsub G G') u, RedF A tt tt u -> RedF F' s r (tapp (app_vsub_tm _ t w) u)
 | times F1 F2 => fun G t => RedF F1 s r (tfst t) /\ RedF F2 s r (tsnd t)
 | plus F1 F2 => fun G t =>    (exists t', step_SN t (tinl _ t') /\ RedF F1 s r t')
                            \/ (exists t', step_SN t (tinr _ t') /\ RedF F2 s r t')
                            \/ (exists t', step_SN t t' /\ SNe t')
-| mu F => fun G t => True
-| nu F => fun G t => True
+| mu F => lfp (fun RR G t => exists t', step_SN t (tinj (app_fsub _ F (extfsub s)) t') /\ RedF F (s, (app_fsub _ (mu F) s)) (r, RR) t') 
+| nu F => gfp (fun RR G t => SN t /\ RedF F (s, (app_fsub _ (nu F) s)) (r, RR) (tout t))
 end.
+Obligations.
+
+
 
 Fixpoint Red_s D 
 
