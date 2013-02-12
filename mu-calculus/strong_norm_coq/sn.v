@@ -238,3 +238,33 @@ with step_SN G : forall T, tm G T -> tm G T -> Prop :=
 | step_SN_out : forall F (t t' : tm G (nu F)), step_SN t t' -> step_SN (tout t) (tout t')
 (* TODO: Cases for nu and mu: map *)
 .
+
+Definition Rel T := forall (G : ctx tp), tm G T -> Prop.
+
+(* Definition lfp F (FR : forall X, Rel X -> Rel (app_fsub1 F X)) : Rel (mu F) :=
+ fun G t => forall C f CR, (forall G' u, FR C CR G' u -> CR G' (f u)) *)
+
+Fixpoint Rsub D : fsub D nil -> Type :=
+match D return fsub D nil -> Type with
+| nil => fun s => unit
+| snoc D' _ => fun s => (Rsub D' (fst s)) * (Rel (snd s))
+end.
+
+Fixpoint Rlookup D T (x : var D T) : forall (s : fsub D nil), Rsub D s -> Rel (glookup _ x s) :=
+match x in var D T return forall (s : fsub D nil), Rsub D s -> Rel (glookup _ x s) with
+| top D' T' => fun s r => snd r
+| pop D' T' S' y => fun s r => Rlookup y (fst s) (fst r) 
+end.
+
+
+Fixpoint Red D (F : functor D) (s : fsub D nil) (r : Rsub D s) : Rel (app_fsub _ F s) :=
+match F return Rel (app_fsub _ F s) with
+| fv D' X => fun G t => Rlookup X s r t
+| arrow A F' => fun G t => True (* forall G' (w : vsub G G') u, Red A tt tt u -> Red F' s r (tapp (app_vsub_tm _ t w) u) *)
+| times F1 F2 => fun G t => Red F1 s r (tfst t) /\ Red F2 s r (tsnd t)
+| plus F1 F2 => fun G t =>    (exists t', step_SN t (tinl _ t') /\ Red F1 s r t')
+                           \/ (exists t', step_SN t (tinr _ t') /\ Red F2 s r t')
+                           \/ (exists t', step_SN t t' /\ SNe t')
+| mu F => fun G t => True
+| nu F => fun G t => True
+end.
