@@ -199,7 +199,7 @@ Inductive step (G : ctx tp) : forall (T : tp), tm G T -> tm G T -> Prop :=
 | step_times2 : forall T S (t1 : tm G T) (t2 : tm G S), step (tsnd (tpair t1 t2)) t2
 | step_plus1 : forall T S C (t1 : tm G T) (t2 : tm (snoc G T) C) (t3 : tm (snoc G S) C), step (tcase (tinl S t1) t2 t3) (app_tsub1 t2 t1)
 | step_plus2 : forall T S C (t1 : tm G S) (t2 : tm (snoc G T) C) (t3 : tm (snoc G S) C), step (tcase (tinr T t1) t2 t3) (app_tsub1 t3 t1)
-(* Blarg map *)
+(* TODO: cases for nu and mu: map *)
 .
 
 Inductive sn G T : tm G T -> Prop :=
@@ -236,4 +236,5 @@ with step_SN G : forall T, tm G T -> tm G T -> Prop :=
                   SN t1 -> @SN _ _ t2 -> step_SN (tcase (tinr T t1) t2 t3) (app_tsub1 t3 t1)
 | step_SN_rec1 : forall F C (t1 t1' : tm G (mu F)) (t2 : tm (snoc nil (app_fsub1 F C)) C), step_SN t1 t1' -> step_SN (trec t1 t2) (trec t1' t2)
 | step_SN_out : forall F (t t' : tm G (nu F)), step_SN t t' -> step_SN (tout t) (tout t')
+(* TODO: Cases for nu and mu: map *)
 .
