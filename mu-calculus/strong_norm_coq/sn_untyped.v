@@ -251,7 +251,7 @@ with SN G : tm G -> Prop :=
 | sn_inr : forall (t1 : tm G), SN t1 -> SN (tinr t1)
 | sn_inj : forall (t : tm G), SN t -> SN (tinj t)
 | sn_corec : forall (t1 : tm G) (t2 : tm (snoc nil tt)), SN t1 -> @SN _ t2 -> SN (tcorec t1 t2)
-| sn_closed : forall (t t' : tm G), step_SN t t' -> SN t' -> SN t'
+| sn_closed : forall (t t' : tm G), step_SN t t' -> SN t' -> SN t
 with step_SN G : tm G -> tm G -> Prop :=
 | step_SN_app : forall (t t' : tm G) (u : tm G), step_SN t t' -> step_SN (tapp t u) (tapp t' u)
 | step_SN_arrow : forall (t : tm (snoc G tt)) (u : tm G), SN u -> step_SN (tapp (tlam t) u) (app_tsub1 t u)
@@ -275,6 +275,17 @@ Lemma SNe_closed_vsub G G' (t : tm G) (w : vsub G G') : SNe t -> SNe (app_vsub_t
 Admitted.
 Lemma SN_closed_vsub G G' (t : tm G) (w : vsub G G') : SN t -> SN (app_vsub_tm _ t w).
 Admitted.
+
+Inductive step_SN_star G : tm G -> tm G -> Prop :=
+| step_SN_star_refl : forall t, step_SN_star t t
+| step_SN_star_step : forall t1 t2 t3, step_SN t1 t2 -> step_SN_star t2 t3 -> step_SN_star t1 t3.
+Hint Constructors step_SN_star.
+
+Lemma sn_closed_step_star G (t t' : tm G) : step_SN_star t t' -> SN t' -> SN t.
+intros.
+induction H; eauto.
+eapply sn_closed; eauto.
+Qed.
 
 Definition Rel := forall (G : ctx scope), tm G -> Prop.
 
@@ -301,11 +312,11 @@ match F (* return Rel (app_fsub _ F s) *) with
 | fv D' X => fun G t => Rlookup X s r t
 | arrow A F' => fun G t => forall G' (w : vsub G G') u, RedF A tt tt u -> RedF F' s r (tapp (app_vsub_tm _ t w) u)
 | times F1 F2 => fun G t => RedF F1 s r (tfst t) /\ RedF F2 s r (tsnd t)
-| plus F1 F2 => fun G t =>    (exists t', step_SN t (tinl t') /\ RedF F1 s r t')
-                           \/ (exists t', step_SN t (tinr t') /\ RedF F2 s r t')
-                           \/ (exists t', step_SN t t' /\ SNe t')
-| mu F => lfp (fun RR G t => (exists t', step_SN t (tinj t') /\ RedF F (s, (app_fsub _ (mu F) s)) (r, RR) t')
-                          \/ (exists t', step_SN t t' /\ SNe t'))
+| plus F1 F2 => fun G t =>    (exists t', step_SN_star t (tinl t') /\ RedF F1 s r t')
+                           \/ (exists t', step_SN_star t (tinr t') /\ RedF F2 s r t')
+                           \/ (exists t', step_SN_star t t' /\ SNe t')
+| mu F => lfp (fun RR G t => (exists t', step_SN_star t (tinj t') /\ RedF F (s, (app_fsub _ (mu F) s)) (r, RR) t')
+                          \/ (exists t', step_SN_star t t' /\ SNe t'))
 | nu F => gfp (fun RR G t => SN t /\ RedF F (s, (app_fsub _ (nu F) s)) (r, RR) (tout t))
 end.
 
@@ -324,6 +335,9 @@ match D return forall (s : fsub D nil) (r : Rsub D s), Prop with
 | snoc D' _ => fun s r => (Rsub_candidates D' (fst s) (fst r)) /\ (candidate (snd r))
 end.
 
+Hint Constructors SNe.
+Hint Constructors step_SN.
+Hint Constructors SN.
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (s : fsub D nil) (r : Rsub D s) (H : Rsub_candidates D s r)
   : candidate (RedF F s r).
 induction F; simpl.
@@ -349,10 +363,80 @@ pose proof (includes_neut1 (snoc G tt) (tv top) (sne_var top)) as H1.
 pose proof (H0 (snoc G tt) (weakening_vsub G tt) (tv top) H1).
 pose proof (contained_SN0 (snoc G tt) _ H2).
 (* TODO: SN closed under subterms *)
+inversion H3.
+inversion H4.
+subst.
 admit.
+subst.
+admit.
+
+(* Case: times *)
 pose proof (IHF1 s r H).
 pose proof (IHF2 s r H).
 destruct H0. destruct H1.
+split.
+intros G t t' H0 H1. 
+destruct H1.
+split; eauto.
+
+intros G t H0.
+split; eauto.
+
+intros G t H0.
+destruct H0.
+admit. (* TODO: Same *)
+
+(* Case: plus *)
+pose proof (IHF1 s r H). destruct H0.
+pose proof (IHF2 s r H). destruct H0.
+split.
+intros G t H0 H1 H2.
+destruct H2.
+destruct H2.
+destruct H2.
+left.
+eexists.
+split.
+eapply step_SN_star_step.
+eexact H1. eexact H2.
+eauto.
+destruct H2.
+destruct H2.
+destruct H2.
+right. left.
+eexists. split.
+eapply step_SN_star_step.
+eexact H1.
+eexact H2.
+eapply H3.
+right. right.
+destruct H2. destruct H2.
+eexists. split. eapply step_SN_star_step.
+eapply H1. eapply H2.
+eexact H3.
+
+intros G t H0.
+right. right. eexists. split. eapply step_SN_star_refl.
+eexact H0.
+
+intros G t H0.
+destruct H0. destruct H0. destruct H0.
+eapply sn_closed_step_star.
+eexact H0.
+eapply sn_inl.
+eauto.
+
+destruct H0. destruct H0. destruct H0.
+eapply sn_closed_step_star.
+eexact H0.
+eapply sn_inr.
+eauto.
+
+destruct H0. destruct H0.
+eapply sn_closed_step_star.
+eapply H0. eauto.
+
+(* Case: mu *)
 
 
 Program Definition Red (T : tp) : Rel := RedF T tt tt. 
