@@ -269,6 +269,8 @@ match F return Rel (app_fsub _ F s) with
 | nu F => fun G t => True
 end.
 
-Fixpoint Red_s D 
+
+
+Definition Red (T : tp) : Rel T := fun G t => RedF T tt tt t.
 
 Lemma main_lemma G T (t : tm G T)
