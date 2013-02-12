@@ -273,7 +273,36 @@ match F (* return Rel (app_fsub _ F s) *) with
                           \/ (exists t', step_SN t t' /\ SNe t'))
 | nu F => gfp (fun RR G t => SN t /\ RedF F (s, (app_fsub _ (nu F) s)) (r, RR) (tout t))
 end.
+Next Obligation.
+intros. clear H. clear RedF.
+admit.
+Defined.
+Next Obligation.
+intros.
+admit.
+Defined.
+Next Obligation.
+intros.
+admit.
+Defined.
 
 Program Definition Red (T : tp) : Rel T := RedF T tt tt. 
+Next Obligation.
+admit.
+Defined.
 
-Lemma main_lemma G T (t : tm G T)
+Fixpoint RedS (G : ctx tp) (G' : ctx tp) : tsub G G' -> Prop :=
+match G return tsub G G' -> Prop with
+| nil => fun s => True
+| snoc G1 T => fun s => (RedS G1 G' (fst s)) /\ (Red (snd s))
+end.
+
+Lemma main_lemma G G' T (t : tm G T) (s : tsub G G') (H : RedS G G' s) : Red (app_tsub _ t s).
+induction t; simpl.
+admit.
+admit.
+pose proof (IHt1 s H).
+unfold Red in H0. simpl in H0.
+admit.
+unfold Red.
+simpl.
