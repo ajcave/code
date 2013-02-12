@@ -287,31 +287,37 @@ induction H; eauto.
 eapply sn_closed; eauto.
 Qed.
 
+Lemma step_SN_star_trans G (t1 t2 : tm G) (H : step_SN_star t1 t2) : forall t3, step_SN_star t2 t3 -> step_SN_star t1 t3.
+induction H; intros; eauto.
+Qed.
+
 Definition Rel := forall (G : ctx scope), tm G -> Prop.
 
+Definition Rarrow (R1 R2 : Rel) : Prop := forall G (t : tm G), R1 G t -> R2 G t.
+
 Definition lfp (FR : Rel -> Rel) : Rel:=
- fun G t => forall CR, (forall G' u, FR CR G' u -> CR G' u) -> CR G t.
+ fun G t => forall CR, (Rarrow (FR CR) CR) -> CR G t.
 
 Definition monotone (FR : Rel -> Rel) : Prop :=
- forall (R1 R2 : Rel), (forall G (t : tm G), R1 G t -> R2 G t) -> (forall G (t : tm G), FR R1 G t -> FR R2 G t).
+ forall (R1 R2 : Rel), Rarrow R1 R2 -> Rarrow (FR R1) (FR R2).
 
-Lemma lfp_inj (FR : Rel -> Rel) (H : monotone FR) : forall G (t : tm G), FR (lfp FR) G t -> lfp FR t.
-intros.
+Lemma lfp_inj (FR : Rel -> Rel) (H : monotone FR) : Rarrow (FR (lfp FR)) (lfp FR).
+intros G t H0.
 intros R f.
 eapply f.
 eapply H.
 Focus 2.
 eexact H0.
-intros.
+intros G' t' H1.
 eapply H1. intros.
-eapply f. eexact H2.
+eapply f.
 Qed.
 
 Definition gfp (FR : Rel -> Rel) : Rel :=
- fun G t => exists CR : Rel, (forall G' u, CR G' u -> FR CR G' u) /\ CR G t.
+ fun G t => exists CR : Rel, (Rarrow CR (FR CR)) /\ CR G t.
 
-Lemma gfp_out (FR : Rel -> Rel) (H : monotone FR) : forall G (t : tm G), gfp FR t -> FR (gfp FR) G t.
-intros.
+Lemma gfp_out (FR : Rel -> Rel) (H : monotone FR) : Rarrow (gfp FR) (FR (gfp FR)).
+intros G t H0.
 destruct H0. destruct H0.
 pose proof (H0 _ _ H1).
 eapply H.
@@ -367,6 +373,52 @@ end.
 Hint Constructors SNe.
 Hint Constructors step_SN.
 Hint Constructors SN.
+
+Fixpoint Rarrows D : forall (r1 r2 : Rsub D), Prop :=
+match D return forall (r1 r2 : Rsub D), Prop with
+| nil => fun r1 r2 => True
+| snoc D' _ => fun r1 r2 => (Rarrows D' (fst r1) (fst r2)) /\ (Rarrow (snd r1) (snd r2))
+end.
+
+Definition Rarr_id (R : Rel) : Rarrow R R := fun G t p => p.
+
+Fixpoint Rarrs_id D : forall (r : Rsub D), Rarrows D r r :=
+match D return forall (r : Rsub D), Rarrows D r r with
+| nil => fun r => I
+| snoc D' _ => fun r => conj (Rarrs_id D' (fst r)) (Rarr_id (snd r))
+end.
+
+Lemma RedF_monotone (D : ctx sort) (F : functor D) (r1 r2 : Rsub D) (H : Rarrows D r1 r2) : Rarrow (RedF F r1) (RedF F r2).
+Admitted.
+
+Lemma RedF_mu_inj (D : ctx sort) (F : functor (snoc D type)) (r : Rsub D)
+ : Rarrow (fun G (t : tm G) =>    (exists t', step_SN_star t (tinj t') /\ RedF F (r, (RedF (mu F) r)) t')
+                               \/ (exists t', step_SN_star t t' /\ SNe t'))
+   (RedF (mu F) r).
+intros G t H.
+simpl.
+eapply lfp_inj.
+intros R1 R2 arr G' t' H0.
+destruct H0. destruct H0. destruct H0.
+left.
+eexists. split. eexact H0. apply (RedF_monotone F (r, R1) (r, R2)).
+simpl. split. eapply Rarrs_id.
+eexact arr.
+eexact H1.
+destruct H0. destruct H0.
+right.
+eexists. split. eexact H0. eexact H1.
+eexact H.
+Qed.
+
+Lemma SN_candidate : candidate SN.
+split;
+intros G t H. 
+intros. eapply sn_closed. eexact H0. eexact H.
+eauto.
+eauto.
+Qed.
+
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
   : candidate (RedF F r).
 induction F; simpl.
@@ -419,6 +471,7 @@ admit. (* TODO: Same *)
 (* Case: plus *)
 pose proof (IHF1 r H). destruct H0.
 pose proof (IHF2 r H). destruct H0.
+clear closed0.
 split.
 intros G t' H1 t H0.
 destruct H1.
@@ -474,9 +527,53 @@ set (P := fun G (u' : tm G) => forall u, step_SN_star u u' -> RedF (mu F) r u).
 specialize (H0 P).
 intros.
 eapply H0.
-intros.
+intros G' u H2.
 destruct H2. destruct H2. destruct H2.
 intros u0 st.
+eapply RedF_mu_inj.
+left.
+eexists. split.
+eapply step_SN_star_trans.
+eexact st. eexact H2.
+
+eapply RedF_monotone.
+Focus 2. eexact H3.
+simpl. split. eapply Rarrs_id.
+intros G'' t'' H4. 
+eapply H4.
+eapply step_SN_star_refl.
+
+destruct H2. destruct H2.
+intros G'' t''.
+eapply RedF_mu_inj. right.
+eexists. split.
+eapply step_SN_star_trans. eexact t''.
+eexact H2. eexact H3.
+eauto.
+
+intros G t H0.
+eapply RedF_mu_inj. right.
+eexists. split.
+eapply step_SN_star_refl.
+eauto.
+
+intros G t H0.
+eapply H0.
+intros G' t' H1.
+destruct H1. destruct H1. destruct H1.
+
+pose proof (IHF (r, SN) (conj H SN_candidate)).
+destruct H3.
+eapply sn_closed_step_star.
+eexact H1.
+eapply sn_inj.
+eapply contained_SN0.
+eexact H2.
+
+destruct H1. destruct H1.
+eapply sn_closed_step_star.
+eexact H1. eauto.
+
 
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
