@@ -269,6 +269,13 @@ with step_SN G : tm G -> tm G -> Prop :=
 (* TODO: Cases for nu and mu: map *)
 .
 
+Lemma step_SN_closed_vsub G G' (t t' : tm G) (w : vsub G G') : step_SN t t' -> step_SN (app_vsub_tm _ t w) (app_vsub_tm _ t' w).
+Admitted.
+Lemma SNe_closed_vsub G G' (t : tm G) (w : vsub G G') : SNe t -> SNe (app_vsub_tm _ t w).
+Admitted.
+Lemma SN_closed_vsub G G' (t : tm G) (w : vsub G G') : SN t -> SN (app_vsub_tm _ t w).
+Admitted.
+
 Definition Rel := forall (G : ctx scope), tm G -> Prop.
 
 Definition lfp (FR : Rel -> Rel) : Rel:=
@@ -302,6 +309,52 @@ match F (* return Rel (app_fsub _ F s) *) with
 | nu F => gfp (fun RR G t => SN t /\ RedF F (s, (app_fsub _ (nu F) s)) (r, RR) (tout t))
 end.
 
+Definition closed_under_step_SN (R : Rel) : Prop := forall G (t t' : tm G), step_SN t t' -> R G t' -> R G t.
+Definition includes_SNe (R : Rel) : Prop := forall G (t : tm G), SNe t -> R G t.
+Definition contained_in_SN (R : Rel) : Prop := forall G (t : tm G), R G t -> SN t.
+Record candidate (R : Rel) : Prop := {
+ closed : closed_under_step_SN R;
+ includes_neut : includes_SNe R;
+ contained_SN : contained_in_SN R
+}.
+
+Fixpoint Rsub_candidates D : forall (s : fsub D nil) (r : Rsub D s), Prop :=
+match D return forall (s : fsub D nil) (r : Rsub D s), Prop with
+| nil => fun s r => True
+| snoc D' _ => fun s r => (Rsub_candidates D' (fst s) (fst r)) /\ (candidate (snd r))
+end.
+
+Lemma RedF_candidate (D : ctx sort) (F : functor D) (s : fsub D nil) (r : Rsub D s) (H : Rsub_candidates D s r)
+  : candidate (RedF F s r).
+induction F; simpl.
+admit.
+pose proof (IHF2 s r H).
+pose proof (IHF1 tt tt I).
+destruct H0. destruct H1.
+split.
+intros G t t' st H0 G' w u H1.
+eapply closed0.
+eapply step_SN_app.
+eapply step_SN_closed_vsub.
+eexact st.
+eauto.
+intros G t H0 G' w u H1.
+eapply includes_neut0.
+eapply sne_app.
+eapply SNe_closed_vsub.
+eauto.
+eauto.
+intros G t H0.
+pose proof (includes_neut1 (snoc G tt) (tv top) (sne_var top)) as H1.
+pose proof (H0 (snoc G tt) (weakening_vsub G tt) (tv top) H1).
+pose proof (contained_SN0 (snoc G tt) _ H2).
+(* TODO: SN closed under subterms *)
+admit.
+pose proof (IHF1 s r H).
+pose proof (IHF2 s r H).
+destruct H0. destruct H1.
+
+
 Program Definition Red (T : tp) : Rel := RedF T tt tt. 
 
 Fixpoint RedS (G : ctx tp) (G' : ctx scope) : tsub (forget G) G' -> Prop :=
@@ -318,39 +371,5 @@ pose proof (IHd1 s H).
 unfold Red in H0. simpl in H0.
 admit.
 unfold Red. simpl.
-split. 
+split.
 
-
-(* Definition lfp F (FR : forall X, Rel X -> Rel (app_fsub1 F X)) : Rel (mu F) :=
- fun G t => forall C f CR, (forall G' u, FR C CR G' u -> CR G' (f u)) *)
-
-Fixpoint Rsub D : fsub D nil -> Type :=
-match D return fsub D nil -> Type with
-| nil => fun s => unit
-| snoc D' _ => fun s => (Rsub D' (fst s)) * (Rel (snd s))
-end.
-
-Fixpoint Rlookup D T (x : var D T) : forall (s : fsub D nil), Rsub D s -> Rel (glookup _ x s) :=
-match x in var D T return forall (s : fsub D nil), Rsub D s -> Rel (glookup _ x s) with
-| top D' T' => fun s r => snd r
-| pop D' T' S' y => fun s r => Rlookup y (fst s) (fst r) 
-end.
-
-
-Fixpoint RedF D (F : functor D) (s : fsub D nil) (r : Rsub D s) : Rel (app_fsub _ F s) :=
-match F return Rel (app_fsub _ F s) with
-| fv D' X => fun G t => Rlookup X s r t
-| arrow A F' => fun G t => True (* forall G' (w : vsub G G') u, RedF A tt tt u -> RedF F' s r (tapp (app_vsub_tm _ t w) u) *)
-| times F1 F2 => fun G t => RedF F1 s r (tfst t) /\ RedF F2 s r (tsnd t)
-| plus F1 F2 => fun G t =>    (exists t', step_SN t (tinl _ t') /\ RedF F1 s r t')
-                           \/ (exists t', step_SN t (tinr _ t') /\ RedF F2 s r t')
-                           \/ (exists t', step_SN t t' /\ SNe t')
-| mu F => fun G t => True
-| nu F => fun G t => True
-end.
-
-
-
-Definition Red (T : tp) : Rel T := fun G t => RedF T tt tt t.
-
-Lemma main_lemma G T (t : tm G T)
