@@ -668,6 +668,12 @@ Qed.
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
 
+Lemma Red_candidate (T : tp) : candidate (Red T).
+eapply RedF_candidate.
+simpl.
+eauto.
+Qed.
+
 Fixpoint RedS (G : ctx tp) (G' : ctx scope) : tsub (forget G) G' -> Prop :=
 match G return tsub (forget G) G' -> Prop with
 | nil => fun s => True
@@ -684,6 +690,22 @@ admit.
 unfold Red. simpl.
 
 split.
+destruct (Red_candidate T).
+destruct (Red_candidate S).
+eapply closed0.
+Focus 2.
+eapply step_SN_times1.
+eapply contained_SN1.
+eapply IHd2.
+eauto.
+eapply IHd1.
+eauto.
+
+
+
+
+
+
 
 
 
