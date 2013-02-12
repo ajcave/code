@@ -201,3 +201,6 @@ Inductive step (G : ctx tp) : forall (T : tp), tm G T -> tm G T -> Prop :=
 | step_plus2 : forall T S C (t1 : tm G S) (t2 : tm (snoc G T) C) (t3 : tm (snoc G S) C), step (tcase (tinr T t1) t2 t3) (app_tsub1 t3 t1)
 (* Blarg map *)
 .
+
+Inductive sn G T : tm G T -> Prop :=
+| con_sn : forall t, (forall t', step t t' -> sn t') -> sn t.
