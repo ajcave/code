@@ -292,8 +292,37 @@ Definition Rel := forall (G : ctx scope), tm G -> Prop.
 Definition lfp (FR : Rel -> Rel) : Rel:=
  fun G t => forall CR, (forall G' u, FR CR G' u -> CR G' u) -> CR G t.
 
+Definition monotone (FR : Rel -> Rel) : Prop :=
+ forall (R1 R2 : Rel), (forall G (t : tm G), R1 G t -> R2 G t) -> (forall G (t : tm G), FR R1 G t -> FR R2 G t).
+
+Lemma lfp_inj (FR : Rel -> Rel) (H : monotone FR) : forall G (t : tm G), FR (lfp FR) G t -> lfp FR t.
+intros.
+intros R f.
+eapply f.
+eapply H.
+Focus 2.
+eexact H0.
+intros.
+eapply H1. intros.
+eapply f. eexact H2.
+Qed.
+
 Definition gfp (FR : Rel -> Rel) : Rel :=
  fun G t => exists CR : Rel, (forall G' u, CR G' u -> FR CR G' u) /\ CR G t.
+
+Lemma gfp_out (FR : Rel -> Rel) (H : monotone FR) : forall G (t : tm G), gfp FR t -> FR (gfp FR) G t.
+intros.
+destruct H0. destruct H0.
+pose proof (H0 _ _ H1).
+eapply H.
+Focus 2.
+eexact H2.
+intros.
+eexists.
+split.
+eexact H0.
+eexact H3.
+Qed.
 
 Fixpoint Rsub (D : ctx sort) : Type :=
 match D with
@@ -448,6 +477,7 @@ eapply H0.
 intros.
 destruct H2. destruct H2. destruct H2.
 intros u0 st.
+
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
 
