@@ -221,4 +221,6 @@ with SN G : forall T, tm G T -> Prop :=
 | sn_inr : forall T S (t1 : tm G S), SN t1 -> SN (tinr T t1)
 | sn_inj : forall F (t : tm G (app_fsub1 F (mu F))), SN t -> SN (tinj F t)
 | sn_corec : forall F C (t1 : tm G C) (t2 : tm (snoc nil C) (app_fsub1 F C)), SN t1 -> @SN _ _ t2 -> SN (tcorec F t1 t2)
+| sn_closed : forall T (t t' : tm G T), step_SN t t' -> SN t' -> SN t'
+with step_SN G : forall T, tm G T -> tm G T -> Prop :=
 .
