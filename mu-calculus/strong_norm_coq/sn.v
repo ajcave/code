@@ -195,4 +195,9 @@ Inductive step (G : ctx tp) : forall (T : tp), tm G T -> tm G T -> Prop :=
 | step_corec2 : forall F C (t1 : tm G C) (t2 t2' : tm (snoc nil C) (app_fsub1 F C)), @step _ _ t2 t2' -> step (tcorec F t1 t2) (tcorec F t1 t2')
 
 | step_arrow : forall T S (t1 : tm (snoc G T) S) (t2 : tm G T), step (tapp (tlam t1) t2) (app_tsub1 t1 t2)
+| step_times1 : forall T S (t1 : tm G T) (t2 : tm G S), step (tfst (tpair t1 t2)) t1
+| step_times2 : forall T S (t1 : tm G T) (t2 : tm G S), step (tsnd (tpair t1 t2)) t2
+| step_plus1 : forall T S C (t1 : tm G T) (t2 : tm (snoc G T) C) (t3 : tm (snoc G S) C), step (tcase (tinl S t1) t2 t3) (app_tsub1 t2 t1)
+| step_plus2 : forall T S C (t1 : tm G S) (t2 : tm (snoc G T) C) (t3 : tm (snoc G S) C), step (tcase (tinr T t1) t2 t3) (app_tsub1 t3 t1)
+(* Blarg map *)
 .
