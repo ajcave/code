@@ -314,11 +314,12 @@ Lemma main_lemma G G' T (t : tm (forget G)) (d : oft G t T) (s : tsub (forget G)
 induction d; simpl.
 admit.
 admit.
-pose proof (IHt1 s H).
+pose proof (IHd1 s H).
 unfold Red in H0. simpl in H0.
 admit.
-unfold Red.
-simpl.
+unfold Red. simpl.
+split.
+
 
 (* Definition lfp F (FR : forall X, Rel X -> Rel (app_fsub1 F X)) : Rel (mu F) :=
  fun G t => forall C f CR, (forall G' u, FR C CR G' u -> CR G' (f u)) *)
