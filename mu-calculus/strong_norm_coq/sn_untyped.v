@@ -318,7 +318,7 @@ pose proof (IHd1 s H).
 unfold Red in H0. simpl in H0.
 admit.
 unfold Red. simpl.
-split.
+split. 
 
 
 (* Definition lfp F (FR : forall X, Rel X -> Rel (app_fsub1 F X)) : Rel (mu F) :=
