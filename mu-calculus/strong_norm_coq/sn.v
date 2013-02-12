@@ -113,3 +113,27 @@ Inductive tm (G : ctx tp) : tp -> Set :=
  | out : forall F, tm G (nu F) -> tm G (app_fsub1 F (nu F))
  | corec : forall F C, tm G C -> tm (snoc nil C) (app_fsub1 F C) -> tm G (nu F)
 .
+
+(* Gotta define map... *)
+
+Inductive step (G : ctx tp) : forall (T : tp), tm G T -> tm G T -> Prop :=
+| step_lam : forall T S (t1 t2 : tm (snoc G T) S), @step (snoc G T) S t1 t2 -> step (lam t1) (lam t2)
+| step_appl : forall T S (t1 t2 : tm G (arrow T S)) t3, step t1 t2 -> step (app t1 t3) (app t2 t3)
+| step_appr : forall T S (t1 : tm G (arrow T S)) (t2 t3 : tm G T), step t2 t3 -> step (app t1 t2) (app t1 t3)
+| step_pairl : forall T S (t1 t1' : tm G T) (t2 : tm G S), step t1 t1' -> step (pair t1 t2) (pair t1' t2)
+| step_pairr : forall T S (t1 : tm G T) (t2 t2' : tm G S), step t2 t2' -> step (pair t1 t2) (pair t1 t2')
+| step_fst : forall T S (t t' : tm G (times T S)), step t t' -> step (fst t) (fst t')
+| step_snd : forall T S (t t' : tm G (times T S)), step t t' -> step (snd t) (snd t')
+| step_inl : forall T S (t t' : tm G T), step t t' -> step (inl S t) (inl S t')
+| step_inr : forall T S (t t' : tm G S), step t t' -> step (inr T t) (inr T t')
+| step_case : forall T S C (t t' : tm G (plus T S)) (t1 : tm (snoc G T) C) t2, step t t' -> step (case t t1 t2) (case t' t1 t2)
+| step_case1 : forall T S C (t : tm G (plus T S)) (t1 t1' : tm (snoc G T) C) t2, @step _ _ t1 t1' -> step (case t t1 t2) (case t t1' t2)
+| step_case2 : forall T S C (t : tm G (plus T S)) (t1 : tm (snoc G T) C) t2 t2', @step _ _ t2 t2' -> step (case t t1 t2) (case t t1 t2')
+| step_inj : forall F (t t' : tm G (app_fsub1 F (mu F))), step t t' -> step (inj F t) (inj F t')
+| step_rec1 : forall F C (t1 t1' : tm G (mu F)) (t2 : tm (snoc nil (app_fsub1 F C)) C), step t1 t1' -> step (rec t1 t2) (rec t1' t2)
+| step_rec2 : forall F C (t1 : tm G (mu F)) (t2 t2' : tm (snoc nil (app_fsub1 F C)) C), @step _ _ t2 t2' -> step (rec t1 t2) (rec t1 t2')
+| step_out : forall F (t t' : tm G (nu F)), step t t' -> step (out t) (out t')
+| step_corec1 : forall F C (t1 t1' : tm G C) (t2 : tm (snoc nil C) (app_fsub1 F C)), step t1 t1' -> step (corec F t1 t2) (corec F t1' t2)
+| step_corec2 : forall F C (t1 : tm G C) (t2 t2' : tm (snoc nil C) (app_fsub1 F C)), @step _ _ t2 t2' -> step (corec F t1 t2) (corec F t1 t2')
+
+.
