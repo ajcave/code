@@ -594,3 +594,12 @@ admit.
 unfold Red. simpl.
 split.
 
+
+
+
+
+(* Interesting side notes:
+   - This syntactic characterization of SN would work in LF (Andreas observed this -- he did SN in Twelf)
+   - View it as an initial algebra in a presheaf category (just like LF definitions, duh)
+     and get the weakening in SN for free.
+*)
