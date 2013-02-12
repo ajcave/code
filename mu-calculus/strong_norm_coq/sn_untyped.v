@@ -447,6 +447,14 @@ eauto.
 eauto.
 Qed.
 
+Lemma SNe_candidate : candidate (fun G t => exists u, step_SN_star t u /\ SNe u).
+split; intros G t H.
+intros. destruct H. destruct H. eexists x. split; eauto.
+exists t. split; eauto.
+destruct H. destruct H. eapply sn_closed_step_star.
+eexact H. eauto.
+Qed.
+
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
   : candidate (RedF F r).
 induction F; simpl.
@@ -635,7 +643,28 @@ intros G'' u H7.
 exists u. split; eauto.
 
 
+intros G t H0.
+set (P := fun G (t : tm G) => exists u, step_SN_star t u /\ SNe u).
+exists P.
+pose proof SNe_candidate.
+destruct H1.
+pose proof (IHF (r, P) (conj H SNe_candidate)).
+destruct H1. 
+split.
+intros G' t' H1. split. eapply contained_SN0. eauto.
+destruct H1. destruct H1.
+pose proof (closed_to_star closed1).
+eapply H3. apply includes_neut1.
+eapply sne_out.
+ eexact H2.
+eapply closed_star_out.
+eexact H1.
+exists t. split; eauto.
 
+intros G t H0.
+pose proof (RedF_nu_out H0).
+destruct H1. auto.
+Qed.
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
 
