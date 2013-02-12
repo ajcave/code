@@ -440,9 +440,14 @@ eapply H0. eauto.
 (* Case: mu *)
 split.
 
-intros G t H0.
-
-
+intros G t' H0.
+set (P := fun G (u' : tm G) => forall u, step_SN_star u u' -> RedF (mu F) r u).
+specialize (H0 P).
+intros.
+eapply H0.
+intros.
+destruct H2. destruct H2. destruct H2.
+intros u0 st.
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
 
