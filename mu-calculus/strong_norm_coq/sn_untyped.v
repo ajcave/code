@@ -356,6 +356,17 @@ match F (* return Rel (app_fsub _ F s) *) with
 end.
 
 Definition closed_under_step_SN (R : Rel) : Prop := forall G (t' : tm G), R G t' -> forall t, step_SN t t' -> R G t.
+Definition closed_under_step_SN_star (R : Rel) : Prop := forall G (t' : tm G), R G t' -> forall t, step_SN_star t t' -> R G t.
+Lemma closed_to_star (R : Rel) : closed_under_step_SN R -> closed_under_step_SN_star R.
+intros H. intros G t H0 t0 H1. induction H1; eauto.
+Qed.
+Lemma closed_star_out G (t1 t2 : tm G) : step_SN_star t1 t2 -> step_SN_star (tout t1) (tout t2).
+induction 1; eauto.
+econstructor.
+econstructor. eauto.
+eauto.
+Qed.
+
 Definition includes_SNe (R : Rel) : Prop := forall G (t : tm G), SNe t -> R G t.
 Definition contained_in_SN (R : Rel) : Prop := forall G (t : tm G), R G t -> SN t.
 Record candidate (R : Rel) : Prop := {
@@ -409,6 +420,23 @@ destruct H0. destruct H0.
 right.
 eexists. split. eexact H0. eexact H1.
 eexact H.
+Qed.
+
+Lemma RedF_nu_out (D : ctx sort) (F : functor (snoc D type)) (r : Rsub D)
+ : Rarrow (RedF (nu F) r)
+          (fun G t => SN t /\ RedF F (r, (RedF (nu F) r)) (tout t)).
+intros G t H.
+pose proof (@gfp_out (fun RR G t => SN t /\ RedF F (r, RR) (tout t))).
+eapply H0.
+Focus 2.
+eexact H.
+intros R1 R2 arr G' u H1.
+destruct H1.
+split. auto.
+eapply (RedF_monotone F (r , R1) (r, R2)).
+split. eapply Rarrs_id.
+eexact arr.
+auto.
 Qed.
 
 Lemma SN_candidate : candidate SN.
@@ -574,6 +602,39 @@ destruct H1. destruct H1.
 eapply sn_closed_step_star.
 eexact H1. eauto.
 
+(* Case: nu *)
+split.
+intros G t H0 t0 st.
+set (P :=  (fun G (t0 : tm G) => exists t, step_SN_star t0 t /\ RedF (nu F) r t)).
+exists P.
+split.
+Focus 2. eexists t. split. eauto. eexact H0.
+intros G' t' H1. destruct H1. destruct H1. 
+pose proof (RedF_nu_out H2).
+destruct H3.
+split.
+eapply sn_closed_step_star; eauto.
+
+assert (candidate P).
+split. intros G'' u'' H5 t1 st'.
+destruct H5.  destruct H5.
+exists x0. split. eauto. eauto.
+admit. (* TODO: Redundant *)
+intros G'' u'' H5. destruct H5. destruct H5. pose proof (RedF_nu_out H6). destruct H7. eapply sn_closed_step_star; eauto. (* TODO: Redundant, but easy *)
+
+pose proof (IHF (r, P) (conj H H5)).
+destruct H6.
+pose proof (closed_to_star closed0).
+eapply H6.
+Focus 2.  eapply closed_star_out. eexact H1.
+eapply RedF_monotone.
+Focus 2. eexact H4.
+split. eapply Rarrs_id.
+unfold snd.
+intros G'' u H7.
+exists u. split; eauto.
+
+
 
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
@@ -592,6 +653,7 @@ pose proof (IHd1 s H).
 unfold Red in H0. simpl in H0.
 admit.
 unfold Red. simpl.
+
 split.
 
 
