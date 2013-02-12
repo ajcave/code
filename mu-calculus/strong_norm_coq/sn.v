@@ -243,10 +243,10 @@ with step_SN G : forall T, tm G T -> tm G T -> Prop :=
 Definition Rel T := forall (G : ctx tp), tm G T -> Prop.
 
 Definition lfp C (FR : Rel C -> Rel C) : Rel C :=
- fun G t => forall CR f, (forall G' u, FR CR G' u -> CR G' (f G' u)) -> CR G t.
+ fun G t => forall CR, (forall G' u, FR CR G' u -> CR G' u) -> CR G t.
 
 Definition gfp C (FR : Rel C -> Rel C) : Rel C :=
- fun G t => exists CR : Rel C, exists f, (forall G' u, CR G' u -> FR CR G' (f G' u)) /\ CR G t.
+ fun G t => exists CR : Rel C, (forall G' u, CR G' u -> FR CR G' u) /\ CR G t.
 
 Fixpoint Rsub D : fsub D nil -> Type :=
 match D return fsub D nil -> Type with
@@ -269,13 +269,11 @@ match F (* return Rel (app_fsub _ F s) *) with
 | plus F1 F2 => fun G t =>    (exists t', step_SN t (tinl _ t') /\ RedF F1 s r t')
                            \/ (exists t', step_SN t (tinr _ t') /\ RedF F2 s r t')
                            \/ (exists t', step_SN t t' /\ SNe t')
-| mu F => lfp (fun RR G t => exists t', step_SN t (tinj (app_fsub _ F (extfsub s)) t') /\ RedF F (s, (app_fsub _ (mu F) s)) (r, RR) t') 
+| mu F => lfp (fun RR G t => (exists t', step_SN t (tinj (app_fsub _ F (extfsub s)) t') /\ RedF F (s, (app_fsub _ (mu F) s)) (r, RR) t')
+                          \/ (exists t', step_SN t t' /\ SNe t'))
 | nu F => gfp (fun RR G t => SN t /\ RedF F (s, (app_fsub _ (nu F) s)) (r, RR) (tout t))
 end.
-Obligations.
 
-
-
-Fixpoint Red_s D 
+Program Definition Red (T : tp) : Rel T := RedF T tt tt. 
 
 Lemma main_lemma G T (t : tm G T)
