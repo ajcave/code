@@ -100,20 +100,40 @@ app_fsub D F (single_fsub T G).
 
 Definition tp := functor nil.
 
-Inductive tm (G : ctx tp) : tp -> Set :=
- | tv : forall T, var G T -> tm G T
- | tlam : forall T S, tm (snoc G T) S -> tm G (arrow T S)
- | tapp : forall T S, tm G (arrow T S) -> tm G T -> tm G S
- | tpair : forall T S, tm G T -> tm G S -> tm G (times T S)
- | tfst : forall T S, tm G (times T S) -> tm G T
- | tsnd : forall T S, tm G (times T S) -> tm G S
- | tinl : forall S T, tm G T -> tm G (plus T S)
- | tinr : forall T S, tm G S -> tm G (plus T S)
- | tcase : forall T S C, tm G (plus T S) -> tm (snoc G T) C -> tm (snoc G S) C -> tm G C
- | tinj : forall F, tm G (app_fsub1 F (mu F)) -> tm G (mu F)
- | trec : forall F C, tm G (mu F) -> tm (snoc nil (app_fsub1 F C)) C -> tm G C
- | tout : forall F, tm G (nu F) -> tm G (app_fsub1 F (nu F))
- | tcorec : forall F C, tm G C -> tm (snoc nil C) (app_fsub1 F C) -> tm G (nu F)
+Inductive tm :  Set :=
+ | tv : nat -> tm
+ | tlam : tm -> tm
+ | tapp : tm -> tm -> tm
+ | tpair : tm -> tm -> tm
+ | tfst : tm -> tm
+ | tsnd : tm -> tm
+ | tinl : tm -> tm
+ | tinr : tm -> tm
+ | tcase : tm -> tm -> tm -> tm
+ | tinj : tm -> tm
+ | trec : tm -> tm -> tm
+ | tout : tm -> tm
+ | tcorec : tm -> tm -> tm
+.
+
+Inductive mem : forall (G : ctx tp) (n : nat) (T : tp), Prop :=
+ | mtop : forall G T, mem (snoc G T) 0 T
+ | mpop : forall G T U n, mem G n T -> mem (snoc G U) (S n) T.
+
+Inductive oft (G : ctx tp) : tm -> tp -> Prop :=
+ | tpv : forall T n, mem G n T -> oft G (tv n) T
+ | tplam : forall T S t, oft (snoc G T) t S -> oft G (tlam t) (arrow T S)
+ | tpapp : forall T S t1 t2, oft G t1 (arrow T S) -> oft G t2 T -> oft G (tapp t1 t2) S
+ | tppair : forall T S t1 t2, oft G t1 T -> oft G t2 S -> oft G (tpair t1 t2) (times T S)
+ | tpfst : forall T S t, oft G t (times T S) -> oft G (tfst t) T
+ | tpsnd : forall T S t, oft G t (times T S) -> oft G (tsnd t) S
+ | tpinl : forall S T t, oft G t T -> oft G (tinl t) (plus T S)
+ | tpinr : forall T S t, oft G t S -> oft G (tinr t) (plus T S)
+ | tpcase : forall T S C t1 t2 t3, oft G t1 (plus T S) -> oft (snoc G T) t2 C -> oft (snoc G S) t3 C -> oft G (tcase t1 t2 t3) C
+ | tpinj : forall F t, oft G t (app_fsub1 F (mu F)) -> oft G (tinj t) (mu F)
+ | tprec : forall F C t1 t2, oft G t1 (mu F) -> oft (snoc nil (app_fsub1 F C)) t2 C -> oft G (trec t1 t2) C
+ | tpout : forall F t, oft G t (nu F) -> oft G (tout t) (app_fsub1 F (nu F))
+ | tpcorec : forall F C t1 t2, oft G t1 C -> oft (snoc nil C) t2 (app_fsub1 F C) -> oft G (tcorec t1 t2) (nu F)
 .
 
 Fixpoint app_vsub_tm G G' T (t : tm G T) (s : vsub G G') : tm G' T :=
