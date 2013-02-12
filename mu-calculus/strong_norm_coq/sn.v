@@ -223,4 +223,17 @@ with SN G : forall T, tm G T -> Prop :=
 | sn_corec : forall F C (t1 : tm G C) (t2 : tm (snoc nil C) (app_fsub1 F C)), SN t1 -> @SN _ _ t2 -> SN (tcorec F t1 t2)
 | sn_closed : forall T (t t' : tm G T), step_SN t t' -> SN t' -> SN t'
 with step_SN G : forall T, tm G T -> tm G T -> Prop :=
+| step_SN_app : forall T S (t t' : tm G (arrow T S)) (u : tm G T), step_SN t t' -> step_SN (tapp t u) (tapp t' u)
+| step_SN_arrow : forall T S (t : tm (snoc G T) S) (u : tm G T), SN u -> step_SN (tapp (tlam t) u) (app_tsub1 t u)
+| step_SN_fst : forall T S (t t' : tm G (times T S)), step_SN t t' -> step_SN (tfst t) (tfst t')
+| step_SN_snd : forall T S (t t' : tm G (times T S)), step_SN t t' -> step_SN (tsnd t) (tsnd t')
+| step_SN_times1 : forall T S (t1 : tm G T) (t2 : tm G S), SN t2 -> step_SN (tfst (tpair t1 t2)) t1
+| step_SN_times2 : forall T S (t1 : tm G T) (t2 : tm G S), SN t2 -> step_SN (tsnd (tpair t1 t2)) t2
+| step_SN_case : forall T S C (t t' : tm G (plus T S)) (t1 : tm (snoc G T) C) t2, step_SN t t' -> step_SN (tcase t t1 t2) (tcase t' t1 t2)
+| step_SN_plus1 : forall T S C (t1 : tm G T) (t2 : tm (snoc G T) C) (t3 : tm (snoc G S) C),
+                  SN t1 -> @SN _ _ t3 -> step_SN (tcase (tinl S t1) t2 t3) (app_tsub1 t2 t1)
+| step_SN_plus2 : forall T S C (t1 : tm G S) (t2 : tm (snoc G T) C) (t3 : tm (snoc G S) C),
+                  SN t1 -> @SN _ _ t2 -> step_SN (tcase (tinr T t1) t2 t3) (app_tsub1 t3 t1)
+| step_SN_rec1 : forall F C (t1 t1' : tm G (mu F)) (t2 : tm (snoc nil (app_fsub1 F C)) C), step_SN t1 t1' -> step_SN (trec t1 t2) (trec t1' t2)
+| step_SN_out : forall F (t t' : tm G (nu F)), step_SN t t' -> step_SN (tout t) (tout t')
 .
