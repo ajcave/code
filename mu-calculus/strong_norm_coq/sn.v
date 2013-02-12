@@ -204,3 +204,21 @@ Inductive step (G : ctx tp) : forall (T : tp), tm G T -> tm G T -> Prop :=
 
 Inductive sn G T : tm G T -> Prop :=
 | con_sn : forall t, (forall t', step t t' -> sn t') -> sn t.
+
+Inductive SNe G : forall T, tm G T -> Prop :=
+| sne_var : forall T (x : var G T), SNe (tv x)
+| sne_app : forall T S (t1 : tm G (arrow T S)) t2, SNe t1 -> SN t2 -> SNe (tapp t1 t2)
+| sne_fst : forall T S (t1 : tm G (times T S)), SNe t1 -> SNe (tfst t1)
+| sne_snd : forall T S (t1 : tm G (times T S)), SNe t1 -> SNe (tsnd t1)
+| sne_case : forall T S C (t1 : tm G (plus T S)) (t2 : tm (snoc G T) C) t3, SNe t1 -> @SN _ _ t2 -> @SN _ _ t3 -> SNe (tcase t1 t2 t3)
+| sne_rec : forall F C (t1 : tm G (mu F)) (t2 : tm (snoc nil (app_fsub1 F C)) C), SNe t1 -> @SN _ _ t2 -> SNe (trec t1 t2)
+| sne_out : forall F (t1 : tm G (nu F)), SNe t1 -> SNe (tout t1)
+with SN G : forall T, tm G T -> Prop :=
+| sn_sne : forall T (t : tm G T), SNe t -> SN t
+| sn_lam : forall T S (t : tm (snoc G T) S), @SN _ _ t -> SN (tlam t)
+| sn_pair : forall T S (t1 : tm G T) (t2 : tm G S), SN t1 -> SN t2 -> SN (tpair t1 t2)
+| sn_inl : forall T S (t1 : tm G T), SN t1 -> SN (tinl S t1)
+| sn_inr : forall T S (t1 : tm G S), SN t1 -> SN (tinr T t1)
+| sn_inj : forall F (t : tm G (app_fsub1 F (mu F))), SN t -> SN (tinj F t)
+| sn_corec : forall F C (t1 : tm G C) (t2 : tm (snoc nil C) (app_fsub1 F C)), SN t1 -> @SN _ _ t2 -> SN (tcorec F t1 t2)
+.
