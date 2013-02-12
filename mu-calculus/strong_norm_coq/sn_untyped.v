@@ -295,29 +295,29 @@ Definition lfp (FR : Rel -> Rel) : Rel:=
 Definition gfp (FR : Rel -> Rel) : Rel :=
  fun G t => exists CR : Rel, (forall G' u, CR G' u -> FR CR G' u) /\ CR G t.
 
-Fixpoint Rsub D : fsub D nil -> Type :=
-match D return fsub D nil -> Type with
-| nil => fun s => unit
-| snoc D' _ => fun s => (Rsub D' (fst s)) * Rel
+Fixpoint Rsub (D : ctx sort) : Type :=
+match D with
+| nil => unit
+| snoc D' _ => Rsub D' * Rel
 end.
 
-Fixpoint Rlookup D T (x : var D T) : forall (s : fsub D nil), Rsub D s -> Rel :=
-match x in var D T return forall (s : fsub D nil), Rsub D s -> Rel with
-| top D' T' => fun s r => snd r
-| pop D' T' S' y => fun s r => Rlookup y (fst s) (fst r) 
+Fixpoint Rlookup D T (x : var D T) : Rsub D -> Rel :=
+match x in var D T return Rsub D -> Rel with
+| top D' T' => fun r => snd r
+| pop D' T' S' y => fun r => Rlookup y (fst r) 
 end.
 
-Fixpoint RedF (D : ctx sort) (F : functor D) (s : fsub D nil) (r : Rsub D s) {struct F} : Rel :=
+Fixpoint RedF (D : ctx sort) (F : functor D) (r : Rsub D) {struct F} : Rel :=
 match F (* return Rel (app_fsub _ F s) *) with
-| fv D' X => fun G t => Rlookup X s r t
-| arrow A F' => fun G t => forall G' (w : vsub G G') u, RedF A tt tt u -> RedF F' s r (tapp (app_vsub_tm _ t w) u)
-| times F1 F2 => fun G t => RedF F1 s r (tfst t) /\ RedF F2 s r (tsnd t)
-| plus F1 F2 => fun G t =>    (exists t', step_SN_star t (tinl t') /\ RedF F1 s r t')
-                           \/ (exists t', step_SN_star t (tinr t') /\ RedF F2 s r t')
+| fv D' X => fun G t => Rlookup X r t
+| arrow A F' => fun G t => forall G' (w : vsub G G') u, RedF A tt u -> RedF F' r (tapp (app_vsub_tm _ t w) u)
+| times F1 F2 => fun G t => RedF F1 r (tfst t) /\ RedF F2 r (tsnd t)
+| plus F1 F2 => fun G t =>    (exists t', step_SN_star t (tinl t') /\ RedF F1 r t')
+                           \/ (exists t', step_SN_star t (tinr t') /\ RedF F2 r t')
                            \/ (exists t', step_SN_star t t' /\ SNe t')
-| mu F => lfp (fun RR G t => (exists t', step_SN_star t (tinj t') /\ RedF F (s, (app_fsub _ (mu F) s)) (r, RR) t')
+| mu F => lfp (fun RR G t => (exists t', step_SN_star t (tinj t') /\ RedF F (r, RR) t')
                           \/ (exists t', step_SN_star t t' /\ SNe t'))
-| nu F => gfp (fun RR G t => SN t /\ RedF F (s, (app_fsub _ (nu F) s)) (r, RR) (tout t))
+| nu F => gfp (fun RR G t => SN t /\ RedF F (r, RR) (tout t))
 end.
 
 Definition closed_under_step_SN (R : Rel) : Prop := forall G (t t' : tm G), step_SN t t' -> R G t' -> R G t.
@@ -329,21 +329,21 @@ Record candidate (R : Rel) : Prop := {
  contained_SN : contained_in_SN R
 }.
 
-Fixpoint Rsub_candidates D : forall (s : fsub D nil) (r : Rsub D s), Prop :=
-match D return forall (s : fsub D nil) (r : Rsub D s), Prop with
-| nil => fun s r => True
-| snoc D' _ => fun s r => (Rsub_candidates D' (fst s) (fst r)) /\ (candidate (snd r))
+Fixpoint Rsub_candidates D : forall (r : Rsub D), Prop :=
+match D return forall (r : Rsub D), Prop with
+| nil => fun r => True
+| snoc D' _ => fun r => (Rsub_candidates D' (fst r)) /\ (candidate (snd r))
 end.
 
 Hint Constructors SNe.
 Hint Constructors step_SN.
 Hint Constructors SN.
-Lemma RedF_candidate (D : ctx sort) (F : functor D) (s : fsub D nil) (r : Rsub D s) (H : Rsub_candidates D s r)
-  : candidate (RedF F s r).
+Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
+  : candidate (RedF F r).
 induction F; simpl.
 admit.
-pose proof (IHF2 s r H).
-pose proof (IHF1 tt tt I).
+pose proof (IHF2 r H).
+pose proof (IHF1 tt I).
 destruct H0. destruct H1.
 split.
 intros G t t' st H0 G' w u H1.
@@ -371,8 +371,8 @@ subst.
 admit.
 
 (* Case: times *)
-pose proof (IHF1 s r H).
-pose proof (IHF2 s r H).
+pose proof (IHF1 r H).
+pose proof (IHF2 r H).
 destruct H0. destruct H1.
 split.
 intros G t t' H0 H1. 
@@ -387,8 +387,8 @@ destruct H0.
 admit. (* TODO: Same *)
 
 (* Case: plus *)
-pose proof (IHF1 s r H). destruct H0.
-pose proof (IHF2 s r H). destruct H0.
+pose proof (IHF1 r H). destruct H0.
+pose proof (IHF2 r H). destruct H0.
 split.
 intros G t H0 H1 H2.
 destruct H2.
@@ -437,9 +437,13 @@ eapply sn_closed_step_star.
 eapply H0. eauto.
 
 (* Case: mu *)
+split.
+
+intros G t t' H1 H2 RR H3.
+unfold lfp in H2.
 
 
-Program Definition Red (T : tp) : Rel := RedF T tt tt. 
+Program Definition Red (T : tp) : Rel := RedF T tt. 
 
 Fixpoint RedS (G : ctx tp) (G' : ctx scope) : tsub (forget G) G' -> Prop :=
 match G return tsub (forget G) G' -> Prop with
