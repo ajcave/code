@@ -320,7 +320,7 @@ match F (* return Rel (app_fsub _ F s) *) with
 | nu F => gfp (fun RR G t => SN t /\ RedF F (r, RR) (tout t))
 end.
 
-Definition closed_under_step_SN (R : Rel) : Prop := forall G (t t' : tm G), step_SN t t' -> R G t' -> R G t.
+Definition closed_under_step_SN (R : Rel) : Prop := forall G (t' : tm G), R G t' -> forall t, step_SN t t' -> R G t.
 Definition includes_SNe (R : Rel) : Prop := forall G (t : tm G), SNe t -> R G t.
 Definition contained_in_SN (R : Rel) : Prop := forall G (t : tm G), R G t -> SN t.
 Record candidate (R : Rel) : Prop := {
@@ -346,8 +346,9 @@ pose proof (IHF2 r H).
 pose proof (IHF1 tt I).
 destruct H0. destruct H1.
 split.
-intros G t t' st H0 G' w u H1.
+intros G t' H0 t st G' w u H1.
 eapply closed0.
+Focus 2.
 eapply step_SN_app.
 eapply step_SN_closed_vsub.
 eexact st.
@@ -375,7 +376,7 @@ pose proof (IHF1 r H).
 pose proof (IHF2 r H).
 destruct H0. destruct H1.
 split.
-intros G t t' H0 H1. 
+intros G t' H1 t H0. 
 destruct H1.
 split; eauto.
 
@@ -390,30 +391,30 @@ admit. (* TODO: Same *)
 pose proof (IHF1 r H). destruct H0.
 pose proof (IHF2 r H). destruct H0.
 split.
-intros G t H0 H1 H2.
-destruct H2.
-destruct H2.
-destruct H2.
+intros G t' H1 t H0.
+destruct H1.
+destruct H1.
+destruct H1.
 left.
 eexists.
 split.
 eapply step_SN_star_step.
-eexact H1. eexact H2.
+eexact H0. eexact H1.
 eauto.
-destruct H2.
-destruct H2.
-destruct H2.
+destruct H1.
+destruct H1.
+destruct H1.
 right. left.
 eexists. split.
 eapply step_SN_star_step.
+eexact H0.
 eexact H1.
-eexact H2.
-eapply H3.
+eauto.
 right. right.
-destruct H2. destruct H2.
+destruct H1. destruct H1.
 eexists. split. eapply step_SN_star_step.
-eapply H1. eapply H2.
-eexact H3.
+eapply H0. eapply H1.
+eauto.
 
 intros G t H0.
 right. right. eexists. split. eapply step_SN_star_refl.
@@ -439,8 +440,8 @@ eapply H0. eauto.
 (* Case: mu *)
 split.
 
-intros G t t' H1 H2 RR H3.
-unfold lfp in H2.
+intros G t H0.
+
 
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
