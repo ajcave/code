@@ -734,10 +734,16 @@ Qed.
 Lemma Red_compositional (F : functor (snoc nil type)) T : forall G (t : tm G), Red (app_fsub1 F T) t <-> RedF F (tt , RedF T tt) t.
 Admitted.
 
+Lemma RedS_lookup G T (x : var (forget G) tt) (d : mem G x T)
+  : forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (glookup (fun _ : scope => tm G') x s).
+induction d; intros;
+simpl in *; destruct H; eauto.
+Qed.
+
 Lemma main_lemma G T (t : tm (forget G)) (d : oft G t T)
   : forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
 induction d; simpl; intros.
-admit. (* TODO: Case: var *)
+eapply RedS_lookup; auto.
 
 (* Case: lam *)
 unfold Red. simpl.
