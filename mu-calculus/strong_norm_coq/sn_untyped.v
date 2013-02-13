@@ -731,6 +731,9 @@ eapply Red_SNe.
 eauto.
 Qed.
 
+Lemma Red_compositional (F : functor (snoc nil type)) T : forall G (t : tm G), Red (app_fsub1 F T) t <-> RedF F (tt , RedF T tt) t.
+Admitted.
+
 Lemma main_lemma G T (t : tm (forget G)) (d : oft G t T)
   : forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
 induction d; simpl; intros.
@@ -844,6 +847,26 @@ eapply Red_SNe.
 econstructor. auto.
 eapply Red_SN. eapply IHd2. eapply RedS_closed_ext. auto.
 eapply Red_SN. eapply IHd3. eapply RedS_closed_ext. auto.
+
+(* Case: inj *)
+eapply RedF_mu_inj. left.
+eexists. split. eapply step_SN_star_refl.
+
+eapply Red_compositional.
+eapply IHd. auto.
+
+(* Case: rec *)
+admit. (* TODO: Hard case *)
+
+(* Case: out *)
+pose proof (IHd _ s H).
+apply RedF_nu_out in H0. destruct H0.
+eapply Red_compositional.
+eauto.
+
+(* Case: corec *)
+admit. (* TODO: Hard case *)
+Qed.
 
 (* Interesting side notes:
    - This syntactic characterization of SN would work in LF (Andreas observed this -- he did SN in Twelf)
