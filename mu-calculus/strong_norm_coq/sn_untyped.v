@@ -874,6 +874,21 @@ eauto.
 admit. (* TODO: Hard case *)
 Qed.
 
+Lemma RedS_id G : RedS G (forget G) idtsub.
+induction G. simpl. auto.
+eapply RedS_closed_ext.
+assumption.
+Qed.
+
+Corollary strong_norm G T (t : tm (forget G)) (d : oft G t T) : SN t.
+eapply (Red_SN T).
+eapply Red_closed_eq.
+eapply main_lemma.
+eexact d.
+eapply RedS_id.
+admit. (* TODO: Stupid equations *)
+Qed.
+
 (* Interesting side notes:
    - This syntactic characterization of SN would work in LF (Andreas observed this -- he did SN in Twelf)
    - View it as an initial algebra in a presheaf category (just like LF definitions, duh)
