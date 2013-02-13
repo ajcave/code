@@ -510,6 +510,7 @@ destruct H. destruct H. eapply sn_closed_step_star.
 eexact H. eauto.
 Qed.
 
+
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
   : candidate (RedF F r).
 induction F; simpl.
@@ -740,6 +741,11 @@ eapply closed_to_star.
 eauto.
 Qed.
 
+Corollary RedF_SN D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : contained_in_SN (RedF F r).
+destruct (RedF_candidate F r H).
+eauto.
+Qed.
+
 Corollary Red_SN (T : tp) : contained_in_SN (Red T).
 destruct (Red_candidate T).
 eauto.
@@ -780,6 +786,12 @@ Qed.
 
 Lemma Red_compositional (F : functor (snoc nil type)) T : forall G (t : tm G), Red (app_fsub1 F T) t <-> RedF F (tt , RedF T tt) t.
 Admitted.
+
+Lemma RedS_id G : RedS G (forget G) idtsub.
+induction G. simpl. auto.
+eapply RedS_closed_ext.
+assumption.
+Qed.
 
 Lemma RedS_lookup G T (x : var (forget G) tt) (d : mem G x T)
   : forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (glookup (fun _ : scope => tm G') x s).
@@ -909,7 +921,48 @@ eapply Red_compositional.
 eapply IHd. auto.
 
 (* Case: rec *)
+pose proof (IHd1 _ s H).
+unfold Red in H0. simpl in H0.
+specialize (H0 (fun G t => Red C (trec F C t t2))).
+eapply H0.
+intros G'' t' H1.
+destruct H1.
+(* Subcase: --> inj *)
+destruct H1. destruct H1.
+eapply Red_closed_star.
+Focus 2.
+eapply (closed_star_map (fun t => trec F C t t2)). intros. econstructor. auto.
+eexact H1.
+
+(* assert (RedF F (tt, Red (mu F)) x).
+eapply RedF_monotone. Focus 2. eexact H2.
+simpl. split. auto.
+intros G1 u. *)
+
+
+eapply Red_closed. Focus 2.
+eapply step_SN_mu.
+eapply (RedF_SN F). Focus 2. eexact H2. simpl.
+split. auto.
+admit. (* TODO: Annoying, should be doable *)
+
+eapply IHd2.
+simpl. split. auto. 
+eapply Red_compositional.
 admit. (* TODO: Hard case *)
+
+(* Subcase: neutral *)
+destruct H1. destruct H1.
+eapply Red_closed_star. Focus 2.
+eapply (closed_star_map (fun t => trec F C t t2)). intros. econstructor. auto.
+eexact H1.
+eapply Red_SNe. econstructor. auto.
+pose proof (IHd2 _ idtsub (RedS_id _)).
+simpl in H3.
+eapply Red_SN.
+eapply Red_closed_eq.
+eexact H3.
+admit. (* TODO: Stupid equations *)
 
 (* Case: out *)
 pose proof (IHd _ s H).
@@ -921,11 +974,6 @@ eauto.
 admit. (* TODO: Hard case *)
 Qed.
 
-Lemma RedS_id G : RedS G (forget G) idtsub.
-induction G. simpl. auto.
-eapply RedS_closed_ext.
-assumption.
-Qed.
 
 Corollary strong_norm G T (t : tm (forget G)) (d : oft G t T) : SN t.
 eapply (Red_SN T).
