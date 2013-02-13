@@ -114,9 +114,9 @@ Inductive tm (G : ctx scope) : Set :=
  | tinr : tm G -> tm G
  | tcase : tm G -> tm (snoc G tt) -> tm (snoc G tt) -> tm G
  | tinj : tm G -> tm G
- | trec : tm G -> tm (snoc nil tt) -> tm G
+ | trec : functor (snoc nil type) -> tp -> tm G -> tm (snoc nil tt) -> tm G
  | tout : tm G -> tm G
- | tcorec : tm G -> tm (snoc nil tt) -> tm G
+ | tcorec : functor (snoc nil type) -> tp -> tm G -> tm (snoc nil tt) -> tm G
 .
 
 Fixpoint forget (G : ctx tp) : ctx scope :=
@@ -140,9 +140,9 @@ Inductive oft (G : ctx tp) : tm (forget G) -> tp -> Prop :=
  | tpinr : forall T S t, oft G t S -> oft G (tinr t) (plus T S)
  | tpcase : forall T S C t1 t2 t3, oft G t1 (plus T S) -> oft (snoc G T) t2 C -> oft (snoc G S) t3 C -> oft G (tcase t1 t2 t3) C
  | tpinj : forall F t, oft G t (app_fsub1 F (mu F)) -> oft G (tinj t) (mu F)
- | tprec : forall F C t1 t2, oft G t1 (mu F) -> oft (snoc nil (app_fsub1 F C)) t2 C -> oft G (trec t1 t2) C
+ | tprec : forall F C t1 t2, oft G t1 (mu F) -> oft (snoc nil (app_fsub1 F C)) t2 C -> oft G (trec F C t1 t2) C
  | tpout : forall F t, oft G t (nu F) -> oft G (tout t) (app_fsub1 F (nu F))
- | tpcorec : forall F C t1 t2, oft G t1 C -> oft (snoc nil C) t2 (app_fsub1 F C) -> oft G (tcorec t1 t2) (nu F)
+ | tpcorec : forall F C t1 t2, oft G t1 C -> oft (snoc nil C) t2 (app_fsub1 F C) -> oft G (tcorec F C t1 t2) (nu F)
 .
 
 Fixpoint app_vsub_tm G G' (t : tm G) (s : vsub G G') : tm G' :=
@@ -157,15 +157,19 @@ match t with
 | tinr t1 => tinr (app_vsub_tm _ t1 s)
 | tcase t1 t2 t3 => tcase (app_vsub_tm _ t1 s) (app_vsub_tm _ t2 (extvsub s)) (app_vsub_tm _ t3 (extvsub s))
 | tinj t1 => tinj (app_vsub_tm _ t1 s)
-| trec t1 t2 => trec (app_vsub_tm _ t1 s) t2
+| trec F C t1 t2 => trec F C (app_vsub_tm _ t1 s) t2
 | tout t1 => tout (app_vsub_tm _ t1 s)
-| tcorec t1 t2 => tcorec (app_vsub_tm _ t1 s) t2
+| tcorec F C t1 t2 => tcorec F C (app_vsub_tm _ t1 s) t2
 end.
 
 Definition tsub (D D' : ctx scope) := gsub D (fun _ => tm D').
 
+Definition wkn_tm G T (t : tm G) : tm (snoc G T) :=
+app_vsub_tm _ t (weakening_vsub G T).
+Implicit Arguments wkn_tm [G T].
+
 Definition wkntsub (G G' : ctx scope) T (s : tsub G G') : tsub G (snoc G' T) :=
-gmap G (fun _ => tm G') (fun _ => tm (snoc G' T)) (fun _ t => app_vsub_tm _ t (weakening_vsub G' T)) s.
+gmap G (fun _ => tm G') (fun _ => tm (snoc G' T)) (fun _ t => wkn_tm t) s.
 
 Definition exttsub (G G' : ctx scope) T (s : tsub G G') : tsub (snoc G T) (snoc G' T) :=
 pair (wkntsub G G' T s) (tv (@top _ G' T)).
@@ -190,9 +194,9 @@ match t with
 | tinr t1 => tinr (app_tsub _ t1 s)
 | tcase t1 t2 t3 => tcase (app_tsub _ t1 s) (app_tsub _ t2 (exttsub s)) (app_tsub _ t3 (exttsub s))
 | tinj t1 => tinj (app_tsub _ t1 s)
-| trec t1 t2 => trec (app_tsub _ t1 s) t2
+| trec F C t1 t2 => trec F C (app_tsub _ t1 s) t2
 | tout t1 => tout (app_tsub _ t1 s)
-| tcorec t1 t2 => tcorec (app_tsub _ t1 s) t2
+| tcorec F C t1 t2 => tcorec F C (app_tsub _ t1 s) t2
 end.
 
 Definition single_tsub D T (t : tm D)  : tsub (snoc D T) D := pair idtsub t.
@@ -203,6 +207,24 @@ app_tsub _ t (single_tsub t2).
 Implicit Arguments app_tsub1 [ D T ].
 
 (* Gotta define map... *)
+
+Definition map_arrow (D : ctx sort) : Type :=
+gsub D (fun _ => tm (snoc nil tt)).
+
+Fixpoint tmap D (F : functor D) (s1 s2 : fsub D nil) (a : map_arrow D) G (t : tm G) : tm G :=
+match F with
+| fv _ X => app_tsub _ (glookup _ X a) (tt, t)
+| arrow T F2 => tlam (tmap F2 s1 s2 a (tapp (wkn_tm t) (tv top)))
+| times F1 F2 => tpair (tmap F1 s1 s2 a (tfst t)) (tmap F2 s1 s2 a (tsnd t))
+| plus F1 F2 => tcase t (tinl (tmap F1 s1 s2 a (tv top))) (tinr (tmap F2 s1 s2 a (tv top)))
+| mu F1 => trec (app_fsub _ F1 (extfsub s2)) (app_fsub _ (mu F1) s1) t (tinj (tmap F1 (s1, app_fsub _ (mu F1) s1) (s2, app_fsub _ (mu F1) s1) (a, (tv top)) (tv top)))
+| nu F1 => tcorec (app_fsub _ F1 (extfsub s1)) (app_fsub _ (nu F1) s2) t (tmap F1 (s1, app_fsub _ (nu F1) s2) (s2, app_fsub _ (nu F1) s2) (a, (tv top)) (tout (tv top)))
+end.
+
+(* TODO: DO the typing lemma for map and type preservation! Because I'm not sure I believe I got these definitions right *)
+
+Definition tmap1 (F : functor (snoc nil type)) T1 T2 G (f : tm (snoc nil tt)) (t : tm G) : tm G :=
+tmap F (tt, T1) (tt, T2) (tt, f) t.
 
 Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
 | step_lam : forall (t1 t2 : tm (snoc G tt)), @step (snoc G tt) t1 t2 -> step (tlam t1) (tlam t2)
@@ -218,17 +240,21 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
 | step_case1 : forall (t : tm G) (t1 t1' : tm (snoc G tt)) t2, @step _ t1 t1' -> step (tcase t t1 t2) (tcase t t1' t2)
 | step_case2 : forall (t : tm G) (t1 : tm (snoc G tt)) t2 t2', @step _ t2 t2' -> step (tcase t t1 t2) (tcase t t1 t2')
 | step_inj : forall (t t' : tm G), step t t' -> step (tinj t) (tinj t')
-| step_rec1 : forall (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (trec t1 t2) (trec t1' t2)
-| step_rec2 : forall (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (trec t1 t2) (trec t1 t2')
+| step_rec1 : forall F C (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (trec F C t1 t2) (trec F C t1' t2)
+| step_rec2 : forall F C (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (trec F C t1 t2) (trec F C t1 t2')
 | step_out : forall (t t' : tm G), step t t' -> step (tout t) (tout t')
-| step_corec1 : forall (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (tcorec t1 t2) (tcorec t1' t2)
-| step_corec2 : forall (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (tcorec t1 t2) (tcorec t1 t2')
+| step_corec1 : forall F C (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (tcorec F C t1 t2) (tcorec F C t1' t2)
+| step_corec2 : forall F C (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (tcorec F C t1 t2) (tcorec F C t1 t2')
 
 | step_arrow : forall (t1 : tm (snoc G tt)) (t2 : tm G), step (tapp (tlam t1) t2) (app_tsub1 t1 t2)
 | step_times1 : forall (t1 : tm G) (t2 : tm G), step (tfst (tpair t1 t2)) t1
 | step_times2 : forall (t1 : tm G) (t2 : tm G), step (tsnd (tpair t1 t2)) t2
 | step_plus1 : forall (t1 : tm G) (t2 : tm (snoc G tt)) (t3 : tm (snoc G tt)), step (tcase (tinl t1) t2 t3) (app_tsub1 t2 t1)
 | step_plus2 : forall (t1 : tm G) (t2 : tm (snoc G tt)) (t3 : tm (snoc G tt)), step (tcase (tinr t1) t2 t3) (app_tsub1 t3 t1)
+| step_mu : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)),
+   step (trec F C (tinj t1) t2) (app_tsub _ t2 (tt, tmap1 F C (mu F) (trec F C (tv top) t2) t1))
+| step_nu : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)),
+   step (tout (tcorec F C t1 t2)) (tmap1 F (nu F) C (tcorec F C (tv top) t2) (app_tsub _ t2 (tt, t1)))
 (* TODO: cases for nu and mu: map *)
 .
 
@@ -241,7 +267,7 @@ Inductive SNe G : tm G -> Prop :=
 | sne_fst : forall (t1 : tm G), SNe t1 -> SNe (tfst t1)
 | sne_snd : forall (t1 : tm G), SNe t1 -> SNe (tsnd t1)
 | sne_case : forall (t1 : tm G) (t2 : tm (snoc G tt)) t3, SNe t1 -> @SN _ t2 -> @SN _ t3 -> SNe (tcase t1 t2 t3)
-| sne_rec : forall (t1 : tm G) (t2 : tm (snoc nil tt)), SNe t1 -> @SN _ t2 -> SNe (trec t1 t2)
+| sne_rec : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)), SNe t1 -> @SN _ t2 -> SNe (trec F C t1 t2)
 | sne_out : forall (t1 : tm G), SNe t1 -> SNe (tout t1)
 with SN G : tm G -> Prop :=
 | sn_sne : forall (t : tm G), SNe t -> SN t
@@ -250,7 +276,7 @@ with SN G : tm G -> Prop :=
 | sn_inl : forall (t1 : tm G), SN t1 -> SN (tinl t1)
 | sn_inr : forall (t1 : tm G), SN t1 -> SN (tinr t1)
 | sn_inj : forall (t : tm G), SN t -> SN (tinj t)
-| sn_corec : forall (t1 : tm G) (t2 : tm (snoc nil tt)), SN t1 -> @SN _ t2 -> SN (tcorec t1 t2)
+| sn_corec : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)), SN t1 -> @SN _ t2 -> SN (tcorec F C t1 t2)
 | sn_closed : forall (t t' : tm G), step_SN t t' -> SN t' -> SN t
 with step_SN G : tm G -> tm G -> Prop :=
 | step_SN_app : forall (t t' : tm G) (u : tm G), step_SN t t' -> step_SN (tapp t u) (tapp t' u)
@@ -264,10 +290,23 @@ with step_SN G : tm G -> tm G -> Prop :=
                   SN t1 -> @SN _ t3 -> step_SN (tcase (tinl t1) t2 t3) (app_tsub1 t2 t1)
 | step_SN_plus2 : forall (t1 : tm G) (t2 : tm (snoc G tt)) (t3 : tm (snoc G tt)),
                   SN t1 -> @SN _ t2 -> step_SN (tcase (tinr t1) t2 t3) (app_tsub1 t3 t1)
-| step_SN_rec1 : forall (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step_SN t1 t1' -> step_SN (trec t1 t2) (trec t1' t2)
+| step_SN_rec1 : forall F C (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step_SN t1 t1' -> step_SN (trec F C t1 t2) (trec F C t1' t2)
+
 | step_SN_out : forall (t t' : tm G), step_SN t t' -> step_SN (tout t) (tout t')
-(* TODO: Cases for nu and mu: map *)
+| step_SN_mu : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)),
+   SN t1 -> 
+   step_SN (trec F C (tinj t1) t2) (app_tsub _ t2 (tt, tmap1 F C (mu F) (trec F C (tv top) t2) t1))
+| step_SN_nu : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)),
+   SN t1 -> @SN _ t2 ->
+   step_SN (tout (tcorec F C t1 t2)) (tmap1 F (nu F) C (tcorec F C (tv top) t2) (app_tsub _ t2 (tt, t1)))
 .
+(* We have to say SN t2 for nu because map might forget its last argument (in the type variable case).
+   Hmm. Perhaps for how we use it in corec specifically, it never forgets the t2.. Dunno.
+   Probably it's hard to reason about anyways *)
+(* Formerly: We don't need to put SN t2 in the nu case because map never forgets the N.
+   However, for the unit case as we currently have it in the paper, it forgets the N.
+   One solution is to give N as the result instead of unit.
+   Wait, this is a lie. the X (type variable) case might forget the N. *)
 
 Lemma step_SN_closed_vsub G G' (t t' : tm G) (w : vsub G G') : step_SN t t' -> step_SN (app_vsub_tm _ t w) (app_vsub_tm _ t' w).
 Admitted.
@@ -897,7 +936,7 @@ eapply RedS_id.
 admit. (* TODO: Stupid equations *)
 Qed.
 Print Assumptions strong_norm.
-
+(* TODO: Important! Show soundness of SN for sn *)
 
 
 
