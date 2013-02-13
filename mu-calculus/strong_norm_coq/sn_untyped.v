@@ -360,11 +360,19 @@ Definition closed_under_step_SN_star (R : Rel) : Prop := forall G (t' : tm G), R
 Lemma closed_to_star (R : Rel) : closed_under_step_SN R -> closed_under_step_SN_star R.
 intros H. intros G t H0 t0 H1. induction H1; eauto.
 Qed.
-Lemma closed_star_out G (t1 t2 : tm G) : step_SN_star t1 t2 -> step_SN_star (tout t1) (tout t2).
-induction 1; eauto.
+
+Lemma closed_star_map G (f : tm G -> tm G) : (forall (u1 u2 : tm G), step_SN u1 u2 -> step_SN (f u1) (f u2)) ->
+  forall (t1 t2 : tm G), step_SN_star t1 t2 -> step_SN_star (f t1) (f t2).
+intros.
+induction H0. econstructor.
 econstructor.
-econstructor. eauto.
+eapply H.
 eauto.
+eauto.
+Qed.
+
+Lemma closed_star_out G (t1 t2 : tm G) : step_SN_star t1 t2 -> step_SN_star (tout t1) (tout t2).
+eapply closed_star_map. intros. econstructor; eauto.
 Qed.
 
 Definition includes_SNe (R : Rel) : Prop := forall G (t : tm G), SNe t -> R G t.
@@ -674,42 +682,168 @@ simpl.
 eauto.
 Qed.
 
+Corollary Red_closed (T : tp) : closed_under_step_SN (Red T).
+destruct (Red_candidate T).
+eauto.
+Qed.
+
+Corollary Red_closed_star (T : tp) : closed_under_step_SN_star (Red T).
+destruct (Red_candidate T).
+eapply closed_to_star.
+eauto.
+Qed.
+
+Corollary Red_SN (T : tp) : contained_in_SN (Red T).
+destruct (Red_candidate T).
+eauto.
+Qed.
+
+Corollary Red_SNe (T : tp) : includes_SNe (Red T).
+destruct (Red_candidate T).
+eauto.
+Qed.
+
+Lemma Red_closed_eq (T : tp) : forall G (t t' : tm G), Red T t' -> t = t' -> Red T t.
+intros. subst.
+auto.
+Qed.
+
 Fixpoint RedS (G : ctx tp) (G' : ctx scope) : tsub (forget G) G' -> Prop :=
 match G return tsub (forget G) G' -> Prop with
 | nil => fun s => True
 | snoc G1 T => fun s => (RedS G1 G' (fst s)) /\ (Red T (snd s))
 end.
 
-Lemma main_lemma G G' T (t : tm (forget G)) (d : oft G t T) (s : tsub (forget G) G') (H : RedS G G' s) : Red T (app_tsub _ t s).
-induction d; simpl.
-admit.
-admit.
-pose proof (IHd1 s H).
+Definition compose_tsub_vsub G1 G2 G3 (w : vsub G2 G3) (s : tsub G1 G2) : tsub G1 G3
+ := gmap _ _ _ (fun _ t => app_vsub_tm _ t w) s.
+Implicit Arguments compose_tsub_vsub [G1 G2 G3].
+
+Lemma RedS_closed_vsub G1 G2 G3 s w : RedS G3 G1 s -> RedS G3 G2 (compose_tsub_vsub w s).
+Admitted.
+Lemma RedS_closed_ext G1 G2 T s : RedS G1 G2 s -> RedS (snoc G1 T) (snoc G2 tt) (exttsub s).
+intros.
+simpl.
+split.
+unfold wkntsub.
+eapply (RedS_closed_vsub _ (snoc G2 tt) _ s (weakening_vsub G2 tt)).
+eauto.
+eapply Red_SNe.
+eauto.
+Qed.
+
+Lemma main_lemma G T (t : tm (forget G)) (d : oft G t T)
+  : forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
+induction d; simpl; intros.
+admit. (* TODO: Case: var *)
+
+(* Case: lam *)
+unfold Red. simpl.
+intros G'' w u H0.
+eapply Red_closed.
+Focus 2.
+eapply step_SN_arrow.
+eapply Red_SN.
+eexact H0.
+eapply Red_closed_eq.
+eapply (IHd G'' (compose_tsub_vsub w s, u)).
+simpl. split.
+eapply RedS_closed_vsub. eauto.
+auto.
+admit. (* TODO: Stupid equations *)
+
+(* Case: app *)
+pose proof (IHd1 _ s H).
 unfold Red in H0. simpl in H0.
-admit.
+eapply Red_closed_eq.
+eapply (H0 _ idvsub).
+eapply IHd2.
+eexact H.
+admit. (* TODO: Stupid equations *)
+
+(* Case: pair *)
 unfold Red. simpl.
 
 split.
-destruct (Red_candidate T).
-destruct (Red_candidate S).
-eapply closed0.
+eapply Red_closed.
 Focus 2.
 eapply step_SN_times1.
-eapply contained_SN1.
+eapply Red_SN.
 eapply IHd2.
 eauto.
 eapply IHd1.
 eauto.
 
+eapply Red_closed.
+Focus 2.
+eapply step_SN_times2.
+eapply Red_SN.
+eapply IHd2.
+eauto.
+eauto.
 
+(* Case: fst *)
+destruct (IHd _ s H).
+eauto.
 
+(* Case: snd *)
+destruct (IHd _ s H).
+eauto.
 
+(* Case: inl *)
+left.
+eexists. split. eapply step_SN_star_refl. eapply IHd.
+eauto.
 
+(* Case: inr *) 
+right. left.
+eexists. split. eapply step_SN_star_refl. eapply IHd.
+eauto. 
 
+(* Case: case *)
+destruct (IHd1 _ s H).
 
+(* Subcase: --> inl *)
+destruct H0. destruct H0.
+eapply Red_closed_star.
+Focus 2.
+eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
+eexact H0.
+eapply Red_closed. Focus 2.
+eapply step_SN_plus1.
+eapply Red_SN; eauto.
+eapply Red_SN. eapply IHd3.
+eapply RedS_closed_ext. eauto.
+eapply Red_closed_eq.
+eapply (IHd2 _ (s, x)).
+simpl. split. eauto. eauto.
+admit. (* TODO: Stupid equations *)
 
+destruct H0.
+(* Subcase: --> inr *)
+destruct H0. destruct H0.
+eapply Red_closed_star.
+Focus 2.
+eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
+eexact H0.
+eapply Red_closed. Focus 2.
+eapply step_SN_plus2.
+eapply Red_SN; eauto.
+eapply Red_SN. eapply IHd2.
+eapply RedS_closed_ext. eauto.
+eapply Red_closed_eq.
+eapply (IHd3 _ (s, x)).
+simpl. split. eauto. eauto.
+admit. (* TODO: Stupid equations *)
 
-
+(* Subcase: --> neutral *)
+destruct H0. destruct H0.
+eapply Red_closed_star. Focus 2.
+eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
+eexact H0.
+eapply Red_SNe.
+econstructor. auto.
+eapply Red_SN. eapply IHd2. eapply RedS_closed_ext. auto.
+eapply Red_SN. eapply IHd3. eapply RedS_closed_ext. auto.
 
 (* Interesting side notes:
    - This syntactic characterization of SN would work in LF (Andreas observed this -- he did SN in Twelf)
