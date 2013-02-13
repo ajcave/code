@@ -276,6 +276,14 @@ Admitted.
 Lemma SN_closed_vsub G G' (t : tm G) (w : vsub G G') : SN t -> SN (app_vsub_tm _ t w).
 Admitted.
 
+Lemma SN_inversion_lam G (t : tm (snoc G tt)) : SN (tlam t) -> SN t.
+intro.
+inversion H; subst.
+inversion H0.
+auto.
+inversion H0.
+Qed.
+
 Inductive step_SN_star G : tm G -> tm G -> Prop :=
 | step_SN_star_refl : forall t, step_SN_star t t
 | step_SN_star_step : forall t1 t2 t3, step_SN t1 t2 -> step_SN_star t2 t3 -> step_SN_star t1 t3.
@@ -888,6 +896,10 @@ eexact d.
 eapply RedS_id.
 admit. (* TODO: Stupid equations *)
 Qed.
+Print Assumptions strong_norm.
+
+
+
 
 (* Interesting side notes:
    - This syntactic characterization of SN would work in LF (Andreas observed this -- he did SN in Twelf)
