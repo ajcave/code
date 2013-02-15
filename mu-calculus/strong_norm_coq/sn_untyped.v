@@ -323,6 +323,9 @@ auto.
 inversion H0.
 Qed.
 
+Lemma SN_inversion_rec G (t : tm G) (u : tm (snoc nil tt)) F C : SN (trec F C t u) -> SN t.
+Admitted.
+
 Inductive step_SN_star G : tm G -> tm G -> Prop :=
 | step_SN_star_refl : forall t, step_SN_star t t
 | step_SN_star_step : forall t1 t2 t3, step_SN t1 t2 -> step_SN_star t2 t3 -> step_SN_star t1 t3.
@@ -948,7 +951,24 @@ eapply Red_closed. Focus 2.
 eapply step_SN_mu.
 eapply (RedF_SN F). Focus 2. eexact H2. simpl.
 split. auto.
-admit. (* TODO: Annoying, should be doable *)
+
+(* annoying bit about showing this is a candidate *)
+split.
+intros G1 u1 Hy u2 Hy0.
+eapply Red_closed. eexact Hy.
+econstructor. auto.
+
+intros G1 u1 Hy. eapply Red_SNe. econstructor. auto.
+eapply Red_SN.
+eapply Red_closed_eq. eapply (IHd2 _ idtsub).
+simpl. split. auto. eapply Red_SNe. auto.
+admit. (* TODO: Stupid equations *)
+
+intros G1 u1 Hy.
+pose proof (Red_SN _ _ Hy).
+eapply SN_inversion_rec.
+eexact H3.
+(* end annoying bit *)
 
 eapply IHd2.
 simpl. split. auto. 
