@@ -1034,14 +1034,18 @@ split.
 
 intros G0 u1 Hy.
 destruct Hy. destruct H. destruct H. destruct H. destruct H0.
-split. eapply sn_closed_step_star. eassumption.
-eapply sn_corec.
-eapply Red_SN; eauto.
+
+assert (SN x0) as SN_x0.
 eapply Red_SN.
 eapply Red_closed_eq.
 eapply (H1 _ idtsub).
-admit. (* TODO: Move id lemma earlier *)
+eapply RedS_id.
 admit. (* TODO: Stupid equations *)
+
+split. eapply sn_closed_step_star. eassumption.
+eapply sn_corec.
+eapply Red_SN; eauto.
+auto.
 
 eapply RedF_closed_star.
 simpl. split. auto.
@@ -1055,10 +1059,7 @@ split; simpl; auto.
 Focus 2.
 eapply step_SN_nu.
 eapply Red_SN; eauto.
-eapply Red_SN.
-eapply Red_closed_eq. eapply (H1 _ idtsub).
-admit. (* TODO: Ditto. This is repetative *)
-admit. (* TODO: Stupid equations *)
+auto.
 
 eapply (Red_map _ F _ _ (Red C)).
 simpl.
