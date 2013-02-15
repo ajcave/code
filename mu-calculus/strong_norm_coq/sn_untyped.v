@@ -819,12 +819,17 @@ induction d; intros;
 simpl in *; destruct H; eauto.
 Qed.
 
+
+Definition IsMorphism G (t : tm (forget G)) T : Prop := 
+ forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
+
+(* Lemma RedF_map G (t : tm (forget G)) D (F : functor D) (s1 s2 : fsub D) (a : Rarrs D) : 
+  IsMorphism G t _ -> IsMorphism _ (tmap F s1 s2 a t) *)
+
 Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
  -> (forall G (t : tm G), RedF F (tt, R1) t -> RedF F (tt, R2) (tmap1 F T1 T2 f t)).
 Admitted.
 
-Definition IsMorphism G (t : tm (forget G)) T : Prop := 
- forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
 
 (* TODO: This is an important lemma! *)
 Lemma main_lemma G T (t : tm (forget G)) (d : oft G t T)
