@@ -799,6 +799,10 @@ induction d; intros;
 simpl in *; destruct H; eauto.
 Qed.
 
+Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
+ -> (forall G (t : tm G), RedF F (tt, R1) t -> RedF F (tt, R2) (tmap1 F T1 T2 f t)).
+Admitted.
+(* TODO: This is an important lemma! *)
 Lemma main_lemma G T (t : tm (forget G)) (d : oft G t T)
   : forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
 induction d; simpl; intros.
@@ -949,7 +953,8 @@ admit. (* TODO: Annoying, should be doable *)
 eapply IHd2.
 simpl. split. auto. 
 eapply Red_compositional.
-admit. (* TODO: Hard case *)
+eapply Red_map. Focus 2. eexact H2.
+simpl. auto.
 
 (* Subcase: neutral *)
 destruct H1. destruct H1.
