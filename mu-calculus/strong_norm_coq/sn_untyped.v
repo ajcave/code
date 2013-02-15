@@ -962,12 +962,6 @@ Focus 2.
 eapply (closed_star_map (fun t => trec F C t t2)). intros. econstructor. auto.
 eassumption.
 
-(* assert (RedF F (tt, Red (mu F)) x).
-eapply RedF_monotone. Focus 2. eexact H2.
-simpl. split. auto.
-intros G1 u. *)
-
-
 eapply Red_closed. Focus 2.
 eapply step_SN_mu.
 eapply (RedF_SN F). Focus 2. eassumption. simpl.
@@ -1023,11 +1017,30 @@ set (P := (fun G (t : tm G) => (exists u v, step_SN_star t (tcorec F C u v) /\ R
                               \/ (exists t', step_SN_star t t' /\ SNe t'))).
 assert (candidate P) as candP.
 split.
-intros G0 u Hy u'. 
-admit. admit. admit.
+intros G0 u Hy u' Hy0.
+destruct Hy. destruct H. destruct H. destruct H. destruct H0.
+left. eexists. eexists. split. eapply step_SN_star_step.
+eassumption. eassumption. auto.
+destruct H. destruct H. right. eexists. split.
+eapply step_SN_star_step. eassumption. eassumption. auto.
 
+intros G0 u Hy. right. eexists. split. econstructor. auto.
 
+intros G0 u Hy. destruct Hy.
+destruct H. destruct H. destruct H. destruct H0.
 
+assert (SN x0) as SN_x0.
+eapply Red_SN.
+eapply Red_closed_eq.
+eapply (H1 _ idtsub).
+eapply RedS_id.
+admit. (* TODO: Stupid equations *)
+
+eapply sn_closed_step_star. eassumption.
+eapply sn_corec. eapply Red_SN; eauto.
+auto.
+
+destruct H. destruct H. eapply sn_closed_step_star; eauto.
 
 exists P.
 split.
