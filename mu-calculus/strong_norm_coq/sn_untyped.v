@@ -749,6 +749,23 @@ destruct (RedF_candidate F r H).
 eauto.
 Qed.
 
+Corollary RedF_SNe D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : includes_SNe (RedF F r).
+destruct (RedF_candidate F r H).
+eauto.
+Qed.
+
+Corollary RedF_closed D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : closed_under_step_SN (RedF F r).
+destruct (RedF_candidate F r H).
+eauto.
+Qed.
+
+
+Corollary RedF_closed_star D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : closed_under_step_SN_star (RedF F r).
+destruct (RedF_candidate F r H).
+eapply closed_to_star.
+eauto.
+Qed.
+
 Corollary Red_SN (T : tp) : contained_in_SN (Red T).
 destruct (Red_candidate T).
 eauto.
@@ -996,7 +1013,58 @@ eapply Red_compositional.
 eauto.
 
 (* Case: corec *)
-admit. (* TODO: Hard case *)
+
+set (P := (fun G (t : tm G) => (exists u v, step_SN_star t (tcorec F C u v) /\ Red C u /\ Red (app_fsub1 F C) v)
+                            \/ (exists t', step_SN_star t t' /\ SNe t'))).
+exists P.
+split.
+
+intros G0 u1 Hy.
+destruct Hy. destruct H0. destruct H0. destruct H0. destruct H1.
+split. eapply sn_closed_step_star. eexact H0.
+eapply sn_corec.
+eapply Red_SN; eauto.
+eapply Red_SN; eauto.
+eapply RedF_closed_star.
+simpl. split. auto.
+admit. (* TODO: Not sure.. but not necessary for weak norm? *)
+Focus 2.
+eapply closed_star_out.
+eexact H0.
+eapply RedF_closed.
+admit. (* TODO: Repeat *)
+
+Focus 2.
+eapply step_SN_nu.
+eapply Red_SN; eauto.
+eapply Red_SN; eauto.
+eapply (Red_map _ F _ _ (Red C)).
+simpl.
+Focus 2.
+eapply Red_compositional in H2.
+admit. (* TODO: Crap *)
+intros.
+unfold P.
+left. eexists. eexists. split. econstructor. split. eauto. 
+auto.
+
+destruct H0. destruct H0.
+split.
+eapply sn_closed_step_star.
+eexact H0. eauto.
+eapply RedF_closed_star.
+admit. (* TODO: Repeat *)
+Focus 2. eapply closed_star_out.
+eexact H0.
+eapply RedF_SNe.
+admit. (* TODO: Repeat *)
+eauto.
+
+left. eexists. eexists. split.
+econstructor.
+split.
+eapply IHd1. eauto.
+
 Qed.
 
 
