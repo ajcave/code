@@ -822,10 +822,14 @@ Qed.
 Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
  -> (forall G (t : tm G), RedF F (tt, R1) t -> RedF F (tt, R2) (tmap1 F T1 T2 f t)).
 Admitted.
+
+Definition IsMorphism G (t : tm (forget G)) T : Prop := 
+ forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
+
 (* TODO: This is an important lemma! *)
 Lemma main_lemma G T (t : tm (forget G)) (d : oft G t T)
-  : forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
-induction d; simpl; intros.
+  : IsMorphism G t T.
+induction d; simpl; intros G' s reds.
 eapply RedS_lookup; auto.
 
 (* Case: lam *)
@@ -844,12 +848,12 @@ auto.
 admit. (* TODO: Stupid equations *)
 
 (* Case: app *)
-pose proof (IHd1 _ s H).
-unfold Red in H0. simpl in H0.
+pose proof (IHd1 _ s reds).
+unfold Red in H. simpl in H.
 eapply Red_closed_eq.
-eapply (H0 _ idvsub).
+eapply (H _ idvsub).
 eapply IHd2.
-eexact H.
+eassumption.
 admit. (* TODO: Stupid equations *)
 
 (* Case: pair *)
@@ -874,11 +878,11 @@ eauto.
 eauto.
 
 (* Case: fst *)
-destruct (IHd _ s H).
+destruct (IHd _ s reds).
 eauto.
 
 (* Case: snd *)
-destruct (IHd _ s H).
+destruct (IHd _ s reds).
 eauto.
 
 (* Case: inl *)
@@ -892,14 +896,14 @@ eexists. split. eapply step_SN_star_refl. eapply IHd.
 eauto. 
 
 (* Case: case *)
-destruct (IHd1 _ s H).
+destruct (IHd1 _ s reds).
 
 (* Subcase: --> inl *)
-destruct H0. destruct H0.
+destruct H. destruct H.
 eapply Red_closed_star.
 Focus 2.
 eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
-eexact H0.
+eassumption.
 eapply Red_closed. Focus 2.
 eapply step_SN_plus1.
 eapply Red_SN; eauto.
@@ -910,13 +914,13 @@ eapply (IHd2 _ (s, x)).
 simpl. split. eauto. eauto.
 admit. (* TODO: Stupid equations *)
 
-destruct H0.
+destruct H.
 (* Subcase: --> inr *)
-destruct H0. destruct H0.
+destruct H. destruct H.
 eapply Red_closed_star.
 Focus 2.
 eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
-eexact H0.
+eassumption.
 eapply Red_closed. Focus 2.
 eapply step_SN_plus2.
 eapply Red_SN; eauto.
@@ -928,10 +932,10 @@ simpl. split. eauto. eauto.
 admit. (* TODO: Stupid equations *)
 
 (* Subcase: --> neutral *)
-destruct H0. destruct H0.
+destruct H. destruct H.
 eapply Red_closed_star. Focus 2.
 eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
-eexact H0.
+eassumption.
 eapply Red_SNe.
 econstructor. auto.
 eapply Red_SN. eapply IHd2. eapply RedS_closed_ext. auto.
@@ -945,18 +949,18 @@ eapply Red_compositional.
 eapply IHd. auto.
 
 (* Case: rec *)
-pose proof (IHd1 _ s H).
-unfold Red in H0. simpl in H0.
-specialize (H0 (fun G t => Red C (trec F C t t2))).
-eapply H0.
+pose proof (IHd1 _ s reds).
+unfold Red in H. simpl in H.
+specialize (H (fun G t => Red C (trec F C t t2))).
+eapply H.
 intros G'' t' H1.
 destruct H1.
 (* Subcase: --> inj *)
-destruct H1. destruct H1.
+destruct H0. destruct H0.
 eapply Red_closed_star.
 Focus 2.
 eapply (closed_star_map (fun t => trec F C t t2)). intros. econstructor. auto.
-eexact H1.
+eassumption.
 
 (* assert (RedF F (tt, Red (mu F)) x).
 eapply RedF_monotone. Focus 2. eexact H2.
@@ -966,7 +970,7 @@ intros G1 u. *)
 
 eapply Red_closed. Focus 2.
 eapply step_SN_mu.
-eapply (RedF_SN F). Focus 2. eexact H2. simpl.
+eapply (RedF_SN F). Focus 2. eassumption. simpl.
 split. auto.
 
 (* annoying bit about showing this is a candidate *)
@@ -984,87 +988,107 @@ admit. (* TODO: Stupid equations *)
 intros G1 u1 Hy.
 pose proof (Red_SN _ _ Hy).
 eapply SN_inversion_rec.
-eexact H3.
+eassumption.
 (* end annoying bit *)
 
 eapply IHd2.
 simpl. split. auto. 
 eapply Red_compositional.
-eapply Red_map. Focus 2. eexact H2.
+eapply Red_map. Focus 2. eassumption.
 simpl. auto.
 
 (* Subcase: neutral *)
-destruct H1. destruct H1.
+destruct H0. destruct H0.
 eapply Red_closed_star. Focus 2.
 eapply (closed_star_map (fun t => trec F C t t2)). intros. econstructor. auto.
-eexact H1.
+eassumption.
 eapply Red_SNe. econstructor. auto.
 pose proof (IHd2 _ idtsub (RedS_id _)).
-simpl in H3.
+simpl in H2.
 eapply Red_SN.
 eapply Red_closed_eq.
-eexact H3.
+eassumption.
 admit. (* TODO: Stupid equations *)
 
 (* Case: out *)
-pose proof (IHd _ s H).
-apply RedF_nu_out in H0. destruct H0.
+pose proof (IHd _ s reds).
+apply RedF_nu_out in H. destruct H.
 eapply Red_compositional.
 eauto.
 
 (* Case: corec *)
 
-set (P := (fun G (t : tm G) => (exists u v, step_SN_star t (tcorec F C u v) /\ Red C u /\ Red (app_fsub1 F C) v)
-                            \/ (exists t', step_SN_star t t' /\ SNe t'))).
+set (P := (fun G (t : tm G) => (exists u v, step_SN_star t (tcorec F C u v) /\ Red C u
+                                /\ (IsMorphism (snoc nil C) v (app_fsub1 F C)))
+                              \/ (exists t', step_SN_star t t' /\ SNe t'))).
+assert (candidate P) as candP.
+split.
+intros G0 u Hy u'. 
+admit. admit. admit.
+
+
+
+
 exists P.
 split.
 
 intros G0 u1 Hy.
-destruct Hy. destruct H0. destruct H0. destruct H0. destruct H1.
-split. eapply sn_closed_step_star. eexact H0.
+destruct Hy. destruct H. destruct H. destruct H. destruct H0.
+split. eapply sn_closed_step_star. eassumption.
 eapply sn_corec.
 eapply Red_SN; eauto.
-eapply Red_SN; eauto.
+eapply Red_SN.
+eapply Red_closed_eq.
+eapply (H1 _ idtsub).
+admit. (* TODO: Move id lemma earlier *)
+admit. (* TODO: Stupid equations *)
+
 eapply RedF_closed_star.
 simpl. split. auto.
-admit. (* TODO: Not sure.. but not necessary for weak norm? *)
+auto.
 Focus 2.
 eapply closed_star_out.
-eexact H0.
+eassumption.
 eapply RedF_closed.
-admit. (* TODO: Repeat *)
+split; simpl; auto.
 
 Focus 2.
 eapply step_SN_nu.
 eapply Red_SN; eauto.
-eapply Red_SN; eauto.
+eapply Red_SN.
+eapply Red_closed_eq. eapply (H1 _ idtsub).
+admit. (* TODO: Ditto. This is repetative *)
+admit. (* TODO: Stupid equations *)
+
 eapply (Red_map _ F _ _ (Red C)).
 simpl.
 Focus 2.
-eapply Red_compositional in H2.
-admit. (* TODO: Crap *)
+eapply Red_compositional.
+eapply H1.
+split; simpl; auto.
+
 intros.
 unfold P.
 left. eexists. eexists. split. econstructor. split. eauto. 
 auto.
 
-destruct H0. destruct H0.
+destruct H. destruct H.
 split.
 eapply sn_closed_step_star.
-eexact H0. eauto.
+eassumption. eauto.
 eapply RedF_closed_star.
-admit. (* TODO: Repeat *)
+split; simpl; auto.
 Focus 2. eapply closed_star_out.
-eexact H0.
+eassumption.
 eapply RedF_SNe.
-admit. (* TODO: Repeat *)
+simpl; auto.
 eauto.
 
 left. eexists. eexists. split.
 econstructor.
 split.
 eapply IHd1. eauto.
-
+eapply IHd2.
 Qed.
 
 
