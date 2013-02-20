@@ -114,7 +114,7 @@ Inductive tm (G : ctx scope) : Set :=
  | tinr : tm G -> tm G
  | tcase : tm G -> tm (snoc G tt) -> tm (snoc G tt) -> tm G
  | tinj : tm G -> tm G
- | trec : functor (snoc nil type) -> tp -> tm G -> tm (snoc nil tt) -> tm G
+ | trec : forall (F : functor (snoc nil type)) (T : tp), tm G -> tm (snoc nil tt) -> tm G
  | tout : tm G -> tm G
  | tcorec : functor (snoc nil type) -> tp -> tm G -> tm (snoc nil tt) -> tm G
 .
@@ -937,7 +937,9 @@ eapply H0. eassumption.
 admit. (* TODO: Stupid equations *)
 Qed.
 
-Lemma Red_rec G F C t1 t2 : IsMorphism G t1 (mu F) -> IsMorphism (snoc nil (app_fsub1 F C)) t2 C
+Lemma Red_rec G F C t1 t2
+ (Hy : (forall G1 (t : tm G1), RedF F (tt, (fun G2 (y : tm G2) => Red C (trec F C y t2))) t -> RedF F (tt, Red C) (tmap1 F C (mu F) (trec F C (tv top) t2) t)))
+ : IsMorphism G t1 (mu F) -> IsMorphism (snoc nil (app_fsub1 F C)) t2 C
  -> IsMorphism G (trec F C t1 t2) C.
 repeat intro.
 set (P := (fun G (t : tm G) => Red C (trec F C t t2))).
@@ -981,7 +983,9 @@ split; simpl; auto.
 
 eapply H0.
 split; simpl. auto.
-admit. (* TODO: This is where we need to be parametric or something *) 
+eapply Red_compositional.
+unfold P in H3.
+eauto. (* This is where we use the fancy parameter *) 
 
 destruct H2. destruct H2.
 eapply Red_closed_star. Focus 2. eapply (closed_star_map (fun t => trec F C t t2)). eauto.
@@ -1046,10 +1050,51 @@ eapply Red_inl. eapply IHF1; eauto.
 eapply Red_inr. eapply IHF2; eauto.
 
 (* Case: mu *)
-eapply Red_rec.
+unfold IsMorphism in *. intros.
+set (C := mu (app_fsub (snoc nil type) F (extfsub s1))).
+
+set (t2 := (tinj (tmap F (s1, C) (s2, C) (a, tv top) (tv top)))).
+(*eapply Red_rec.
+intros.
+unfold t2 in *. simpl. *)
+
+set (P := (fun G (t : tm G) => Red C (trec (app_fsub (snoc nil type) F (extfsub s2)) C t t2))).
+assert (candidate P) as candP.
+
+(* Showing that it's a candidate *)
+admit.
+
+(* Resume *)
+unfold IsMorphism in H. unfold Red in H. simpl in H.
+specialize (H _ _ H0 P). simpl in H.
+eapply H.
+intros G0 t0 H1.
+unfold P.
+unfold IsMorphism in H0.
+destruct H1. destruct H1. destruct H1.
+eapply Red_closed_star. Focus 2. eapply (closed_star_map (fun t => trec _ C t t2)). eauto.
+eassumption.
+eapply Red_closed. Focus 2. eapply step_SN_mu.
+eapply (RedF_SN (app_fsub (snoc nil type) F (extfsub s2))). Focus 2. eapply H2.
+split; simpl; auto.
+
+simpl.
+(* diverging here *)
+unfold C. simpl.
+pose proof Red_inj.  unfold IsMorphism in H3. simpl in H3.
+eapply H3.
+Check Red_inj. eapply Red_inj.
+eapply H0.
+split; simpl. auto.
+eapply Red_compositional.
+unfold P in H3.
+
+(*intros.
+
+
 eassumption.
 simpl.
-eapply Red_inj.
+eapply Red_inj. *)
 Admitted.
 
 Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
