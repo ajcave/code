@@ -930,8 +930,63 @@ Qed.
 
 Lemma Red_rec G F C t1 t2 : IsMorphism G t1 (mu F) -> IsMorphism (snoc nil (app_fsub1 F C)) t2 C
  -> IsMorphism G (trec F C t1 t2) C.
-unfold IsMorphism in *. unfold Red. simpl. repeat intro.
-Admitted. (* TODO *)
+repeat intro.
+set (P := (fun G (t : tm G) => Red C (trec F C t t2))).
+assert (candidate P) as candP.
+
+(* Showing that it's a candidate *)
+split.
+
+(* closed under SN *)
+repeat intro.
+unfold P in *.
+eapply Red_closed. eexact H2.
+econstructor. eauto.
+
+(* neutral *)
+repeat intro. unfold P.
+eapply Red_SNe. econstructor. auto.
+eapply Red_SN. eapply Red_closed_eq. eapply (H0 _ idtsub).
+simpl; split; auto.
+eapply Red_SNe. eauto.
+admit. (* TODO: Stupid equations *)
+
+(* normal *)
+repeat intro. unfold P in *.
+eapply SN_inversion_rec. eapply Red_SN.
+eassumption.
+
+(* Resume *)
+unfold IsMorphism in H. unfold Red in H. simpl in H.
+specialize (H _ _ H1 P). simpl in H.
+eapply H.
+repeat intro.
+unfold P.
+unfold IsMorphism in H0.
+destruct H2. destruct H2. destruct H2.
+eapply Red_closed_star. Focus 2. eapply (closed_star_map (fun t => trec F C t t2)). eauto.
+eexact H2.
+eapply Red_closed. Focus 2. eapply step_SN_mu.
+eapply (RedF_SN F). Focus 2. eexact H3.
+split; simpl; auto.
+
+eapply H0.
+split; simpl. auto.
+admit. (* TODO: This is where we need to be parametric or something *) 
+
+destruct H2. destruct H2.
+eapply Red_closed_star. Focus 2. eapply (closed_star_map (fun t => trec F C t t2)). eauto.
+eassumption.
+eapply Red_SNe. 
+constructor. auto.
+eapply Red_SN.
+eapply Red_closed_eq.
+eapply (H0 _ idtsub).
+split; simpl; auto.
+eapply Red_SNe.
+eauto.
+admit. (* TODO: Stupid equations *)
+Qed.
 
 Lemma Red_inj G F t : IsMorphism G t (app_fsub1 F (mu F)) -> IsMorphism G (tinj t) (mu F).
 unfold IsMorphism in *. unfold Red. simpl.
