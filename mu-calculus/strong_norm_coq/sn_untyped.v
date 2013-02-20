@@ -823,8 +823,125 @@ Qed.
 Definition IsMorphism G (t : tm (forget G)) T : Prop := 
  forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
 
-(* Lemma RedF_map G (t : tm (forget G)) D (F : functor D) (s1 s2 : fsub D) (a : Rarrs D) : 
-  IsMorphism G t _ -> IsMorphism _ (tmap F s1 s2 a t) *)
+Definition map_arr_red D (a : map_arrow D) (s1 s2 : fsub D nil) : Prop.
+Admitted. (* TODO *)
+
+Lemma Red_pair G T S t1 t2 : IsMorphism G t1 T -> IsMorphism G t2 S -> IsMorphism G (tpair t1 t2) (times T S).
+repeat intro. unfold Red. unfold IsMorphism in *.
+split.
+eapply Red_closed. Focus 2. eapply step_SN_times1.
+eapply Red_SN; eauto. 
+eauto.
+
+eapply Red_closed. Focus 2. eapply step_SN_times2.
+eapply Red_SN; eauto.
+eauto.
+Qed.
+
+Lemma Red_fst G T S t1 : IsMorphism G t1 (times T S) -> IsMorphism G (tfst t1) T.
+repeat intro. unfold Red. unfold IsMorphism in *.
+destruct (H _ s H0). auto.
+Qed.
+
+Lemma Red_snd G T S t1 : IsMorphism G t1 (times T S) -> IsMorphism G (tsnd t1) S.
+repeat intro. unfold Red. unfold IsMorphism in *.
+destruct (H _ s H0). auto.
+Qed.
+
+Hint Resolve RedS_closed_ext Red_SN.
+
+Lemma Red_case G T S C t1 t2 t3 : IsMorphism G t1 (plus T S) -> IsMorphism (snoc G T) t2 C -> IsMorphism (snoc G S) t3 C
+ -> IsMorphism G (tcase t1 t2 t3) C.
+repeat intro. unfold Red. unfold IsMorphism in *.
+destruct (H _ _ H2).
+destruct H3. destruct H3.
+eapply Red_closed_star. Focus 2.
+simpl.
+eapply (closed_star_map (fun u => tcase u _ _)). eauto.
+eassumption.
+eapply Red_closed. Focus 2. eapply step_SN_plus1.
+eapply Red_SN; eauto.
+eapply Red_SN; eauto.
+simpl.
+eapply Red_closed_eq.
+eapply (H0 _ (s, x)). split; simpl; eauto.
+admit. (* TODO: Stupid equations *)
+destruct H3.
+destruct H3. destruct H3.
+simpl.
+eapply Red_closed_star. Focus 2. eapply (closed_star_map (fun u => tcase u _ _)). eauto.
+eassumption.
+eapply Red_closed. Focus 2. eapply step_SN_plus2; eauto.
+eapply Red_SN. eassumption.
+eapply Red_SN; eauto.
+eapply Red_closed_eq.
+eapply (H1 _ (s, x)).
+split; simpl; auto.
+admit. (* TODO: Stupid equations *)
+
+destruct H3. destruct H3. simpl.
+eapply Red_closed_star. Focus 2. eapply (closed_star_map (fun u => tcase u _ _)). eauto.
+eassumption.
+eapply Red_SNe.
+econstructor. eauto.
+eapply Red_SN.
+eauto.
+eapply Red_SN. eauto.
+Qed.
+
+Lemma Red_inl G T S t : IsMorphism G t T -> IsMorphism G (tinl t) (plus T S).
+repeat intro. unfold IsMorphism in *. unfold Red. simpl.
+left.
+eexists. split. econstructor.
+eapply H. auto.
+Qed.
+
+Lemma Red_inr G T S t : IsMorphism G t S -> IsMorphism G (tinr t) (plus T S).
+repeat intro. unfold IsMorphism in *. unfold Red. simpl.
+right. left.
+eexists. split. econstructor.
+eapply H. auto.
+Qed.
+
+Lemma Red_top G T : IsMorphism (snoc G T) (tv top) T.
+repeat intro. simpl in *. tauto.
+Qed.
+
+Lemma Red_lam G T S t : IsMorphism (snoc G T) t S -> IsMorphism G (tlam t) (arrow T S).
+unfold IsMorphism in *. unfold Red. simpl.
+repeat intro. 
+eapply Red_closed. Focus 2. eapply step_SN_arrow.
+eapply Red_SN. eauto.
+eapply Red_closed_eq.
+eapply (H _ (compose_tsub_vsub w s, u)).
+split; simpl.
+Admitted. (* TODO*) 
+
+Lemma Red_app G T S t1 t2 : IsMorphism G t1 (arrow T S) -> IsMorphism G t2 T -> IsMorphism G (tapp t1 t2) S.
+Admitted. (* TODO *)
+
+Hint Resolve Red_pair Red_fst Red_snd Red_case Red_inl Red_inr Red_top.
+
+Lemma RedF_map D (F : functor D) : forall G (t : tm (forget G))  (s1 s2 : fsub D nil) (a : map_arrow D) (a_wf : map_arr_red D a s1 s2),
+  IsMorphism G t (app_fsub _ F s1) -> IsMorphism G (tmap F s1 s2 a t) (app_fsub _ F s2).
+induction F; intros; simpl.
+admit. (* TODO *)
+
+(* Case: arrow *)
+eapply Red_lam.
+eapply IHF2. auto.
+eapply Red_app.
+Focus 2. eauto.
+admit. (* TODO: Weakening morphisms *)
+
+(* Case: times *)
+eapply Red_pair; eauto.
+
+(* Case: plus *)
+eapply Red_case; eauto.
+eapply Red_inl. eapply IHF1; eauto.
+eapply Red_inr. eapply IHF2; eauto.
+
 
 Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
  -> (forall G (t : tm G), RedF F (tt, R1) t -> RedF F (tt, R2) (tmap1 F T1 T2 f t)).
