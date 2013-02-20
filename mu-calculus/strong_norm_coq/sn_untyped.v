@@ -943,6 +943,16 @@ eapply Red_compositional.
 eapply H. auto.
 Qed.
 
+Lemma Red_out G F t : IsMorphism G t (nu F) -> IsMorphism G (tout t) (app_fsub1 F (nu F)).
+unfold IsMorphism. unfold Red. simpl.
+intros.
+pose proof (H _ _ H0).
+eapply RedF_nu_out in H1.
+destruct H1.
+eapply Red_compositional.
+auto.
+Qed.
+
 Lemma IsMorphism_closed_wkn G T t S : IsMorphism G t T -> IsMorphism (snoc G S) (wkn_tm t) T.
 unfold IsMorphism. unfold wkn_tm. repeat intro.
 destruct s.
@@ -993,120 +1003,31 @@ induction d; simpl; intros G' s reds.
 eapply RedS_lookup; auto.
 
 (* Case: lam *)
-unfold Red. simpl.
-intros G'' w u H0.
-eapply Red_closed.
-Focus 2.
-eapply step_SN_arrow.
-eapply Red_SN.
-eexact H0.
-eapply Red_closed_eq.
-eapply (IHd G'' (compose_tsub_vsub w s, u)).
-simpl. split.
-eapply RedS_closed_vsub. eauto.
-auto.
-admit. (* TODO: Stupid equations *)
+eapply Red_lam; eauto.
 
 (* Case: app *)
-pose proof (IHd1 _ s reds).
-unfold Red in H. simpl in H.
-eapply Red_closed_eq.
-eapply (H _ idvsub).
-eapply IHd2.
-eassumption.
-admit. (* TODO: Stupid equations *)
+eapply Red_app; eauto.
 
 (* Case: pair *)
-unfold Red. simpl.
-
-split.
-eapply Red_closed.
-Focus 2.
-eapply step_SN_times1.
-eapply Red_SN.
-eapply IHd2.
-eauto.
-eapply IHd1.
-eauto.
-
-eapply Red_closed.
-Focus 2.
-eapply step_SN_times2.
-eapply Red_SN.
-eapply IHd2.
-eauto.
-eauto.
+eapply Red_pair; eauto.
 
 (* Case: fst *)
-destruct (IHd _ s reds).
-eauto.
+eapply Red_fst; eauto.
 
 (* Case: snd *)
-destruct (IHd _ s reds).
-eauto.
+eapply Red_snd; eauto.
 
 (* Case: inl *)
-left.
-eexists. split. eapply step_SN_star_refl. eapply IHd.
-eauto.
+eapply Red_inl; eauto.
 
 (* Case: inr *) 
-right. left.
-eexists. split. eapply step_SN_star_refl. eapply IHd.
-eauto. 
+eapply Red_inr; eauto.
 
 (* Case: case *)
-destruct (IHd1 _ s reds).
-
-(* Subcase: --> inl *)
-destruct H. destruct H.
-eapply Red_closed_star.
-Focus 2.
-eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
-eassumption.
-eapply Red_closed. Focus 2.
-eapply step_SN_plus1.
-eapply Red_SN; eauto.
-eapply Red_SN. eapply IHd3.
-eapply RedS_closed_ext. eauto.
-eapply Red_closed_eq.
-eapply (IHd2 _ (s, x)).
-simpl. split. eauto. eauto.
-admit. (* TODO: Stupid equations *)
-
-destruct H.
-(* Subcase: --> inr *)
-destruct H. destruct H.
-eapply Red_closed_star.
-Focus 2.
-eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
-eassumption.
-eapply Red_closed. Focus 2.
-eapply step_SN_plus2.
-eapply Red_SN; eauto.
-eapply Red_SN. eapply IHd2.
-eapply RedS_closed_ext. eauto.
-eapply Red_closed_eq.
-eapply (IHd3 _ (s, x)).
-simpl. split. eauto. eauto.
-admit. (* TODO: Stupid equations *)
-
-(* Subcase: --> neutral *)
-destruct H. destruct H.
-eapply Red_closed_star. Focus 2.
-eapply (closed_star_map (fun t => tcase t _ _)). intros. econstructor. eauto.
-eassumption.
-eapply Red_SNe.
-econstructor. auto.
-eapply Red_SN. eapply IHd2. eapply RedS_closed_ext. auto.
-eapply Red_SN. eapply IHd3. eapply RedS_closed_ext. auto.
+eapply Red_case; eauto.
 
 (* Case: inj *)
-eapply RedF_mu_inj. left.
-eexists. split. eapply step_SN_star_refl.
-
-eapply Red_compositional.
-eapply IHd. auto.
+eapply Red_inj; eauto.
 
 (* Case: rec *)
 pose proof (IHd1 _ s reds).
@@ -1165,10 +1086,7 @@ eassumption.
 admit. (* TODO: Stupid equations *)
 
 (* Case: out *)
-pose proof (IHd _ s reds).
-apply RedF_nu_out in H. destruct H.
-eapply Red_compositional.
-eauto.
+eapply Red_out; eauto.
 
 (* Case: corec *)
 
