@@ -976,7 +976,7 @@ eapply Red_rec.
 eassumption.
 simpl.
 eapply Red_inj.
-eapply IHF.
+Admitted.
 
 Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
  -> (forall G (t : tm G), RedF F (tt, R1) t -> RedF F (tt, R2) (tmap1 F T1 T2 f t)).
