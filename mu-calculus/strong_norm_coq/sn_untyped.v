@@ -943,6 +943,11 @@ eapply Red_compositional.
 eapply H. auto.
 Qed.
 
+Lemma IsMorphism_closed_wkn G T t S : IsMorphism G t T -> IsMorphism (snoc G S) (wkn_tm t) T.
+unfold IsMorphism. unfold wkn_tm. repeat intro.
+destruct s.
+Admitted.
+
 Hint Resolve Red_pair Red_fst Red_snd Red_case Red_inl Red_inr Red_top.
 
 Lemma RedF_map D (F : functor D) : forall G (t : tm (forget G))  (s1 s2 : fsub D nil) (a : map_arrow D) (a_wf : map_arr_red D a s1 s2),
@@ -955,7 +960,8 @@ eapply Red_lam.
 eapply IHF2. auto.
 eapply Red_app.
 Focus 2. eauto.
-admit. (* TODO: Weakening morphisms *)
+eapply IsMorphism_closed_wkn.
+eassumption.
 
 (* Case: times *)
 eapply Red_pair; eauto.
