@@ -915,15 +915,38 @@ eapply Red_SN. eauto.
 eapply Red_closed_eq.
 eapply (H _ (compose_tsub_vsub w s, u)).
 split; simpl.
-Admitted. (* TODO*) 
+eapply RedS_closed_vsub; eauto.
+eauto.
+admit. (* TODO: Stupid equations *)
+Qed.
 
 Lemma Red_app G T S t1 t2 : IsMorphism G t1 (arrow T S) -> IsMorphism G t2 T -> IsMorphism G (tapp t1 t2) S.
+unfold IsMorphism in *. unfold Red. simpl. repeat intro.
+eapply Red_closed_eq.
+eapply (H _ _ H1 _ idvsub).
+eapply H0. eassumption.
+admit. (* TODO: Stupid equations *)
+Qed.
+
+Lemma Red_rec G F C t1 t2 : IsMorphism G t1 (mu F) -> IsMorphism (snoc nil (app_fsub1 F C)) t2 C
+ -> IsMorphism G (trec F C t1 t2) C.
+unfold IsMorphism in *. unfold Red. simpl. repeat intro.
 Admitted. (* TODO *)
+
+Lemma Red_inj G F t : IsMorphism G t (app_fsub1 F (mu F)) -> IsMorphism G (tinj t) (mu F).
+unfold IsMorphism in *. unfold Red. simpl.
+intros H G' s reds.
+eapply RedF_mu_inj.
+left.
+eexists. split. econstructor.
+eapply Red_compositional.
+eapply H. auto.
+Qed.
 
 Hint Resolve Red_pair Red_fst Red_snd Red_case Red_inl Red_inr Red_top.
 
 Lemma RedF_map D (F : functor D) : forall G (t : tm (forget G))  (s1 s2 : fsub D nil) (a : map_arrow D) (a_wf : map_arr_red D a s1 s2),
-  IsMorphism G t (app_fsub _ F s1) -> IsMorphism G (tmap F s1 s2 a t) (app_fsub _ F s2).
+  IsMorphism G t (app_fsub _ F s2) -> IsMorphism G (tmap F s1 s2 a t) (app_fsub _ F s1).
 induction F; intros; simpl.
 admit. (* TODO *)
 
@@ -942,6 +965,12 @@ eapply Red_case; eauto.
 eapply Red_inl. eapply IHF1; eauto.
 eapply Red_inr. eapply IHF2; eauto.
 
+(* Case: mu *)
+eapply Red_rec.
+eassumption.
+simpl.
+eapply Red_inj.
+eapply IHF.
 
 Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
  -> (forall G (t : tm G), RedF F (tt, R1) t -> RedF F (tt, R2) (tmap1 F T1 T2 f t)).
