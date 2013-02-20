@@ -324,7 +324,16 @@ inversion H0.
 Qed.
 
 Lemma SN_inversion_rec G (t : tm G) (u : tm (snoc nil tt)) F C : SN (trec F C t u) -> SN t.
-Admitted.
+intros. remember (trec F C t u).
+generalize t u F C Heqt0. clear t u F C Heqt0.
+induction H; intros; subst; try inversion Heqt0.
+inversion H; subst. econstructor. auto.
+inversion H; subst.
+eapply sn_closed. 
+eassumption.
+eapply IHSN. reflexivity.
+eapply sn_inj. auto.
+Qed.
 
 Inductive step_SN_star G : tm G -> tm G -> Prop :=
 | step_SN_star_refl : forall t, step_SN_star t t
