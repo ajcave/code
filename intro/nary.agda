@@ -21,6 +21,8 @@ zip4 : {a b c d : Type} -> List a -> List b -> List c -> List d -> List (a * b *
 zip4 (x ∷ xs) (y ∷ ys) (z ∷ zs) (w ∷ ws) = (x , y , z , w) ∷ zip4 xs ys zs ws
 zip4 _ _ _ _ = []
 
+-- ...
+
 
 
 
