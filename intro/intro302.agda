@@ -1,3 +1,4 @@
+{-# OPTIONS --type-in-type #-}
 module intro302 where
 open import helper
 {-
@@ -40,15 +41,37 @@ example1 = 1 ∷ 2 ∷ 3 ∷ []
 
 
 
+{- In SML, this would be:
+
+incList : int list -> int list
+   
+fun incList [] = []
+  | incList (x::xs) = (x + 1)::(incList xs)  
+
+-}
+
+incList : list number -> list number
+incList [] = []
+incList (x ∷ xs) = (x + 1) ∷ (incList xs)
 
 
 
 
--- In SML, this would be just
--- map : ('a -> 'b) -> 'a list -> 'b list
-map : {a' : Set} {b' : Set} -> (a' -> b') -> list a' -> list b'
+
+
+{-
+ In SML, this would be:
+
+map : ('a -> 'b) -> 'a list -> 'b list
+
+fun map f [] = []
+  | map f (x::xs) = (f x)::(map f xs)
+
+-}
+
+map : {a' : Type} {b' : Type} -> (a' -> b') -> list a' -> list b'
 map f [] = []
-map f (x ∷ xs) = f x ∷ map f xs
+map f (x ∷ xs) = (f x) ∷ map f xs
 
 
 
@@ -65,10 +88,7 @@ map f (x ∷ xs) = f x ∷ map f xs
 vector-add [1,2,3] [4,5,6] = [1+4, 2+5, 3+6]
 -}
 vector-add : list number -> list number -> list number
-vector-add [] [] = []
-vector-add [] (y ∷ y') = []
-vector-add (x ∷ xs) [] = {!!}
-vector-add (x ∷ xs) (y ∷ y') = (x + y) ∷ vector-add xs y'
+vector-add xs ys = {!!}
 
 
 
@@ -82,12 +102,8 @@ vector-add (x ∷ xs) (y ∷ y') = (x + y) ∷ vector-add xs y'
 
 -- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
 -- e.g. vector-add is just zipWith _+_
-zipWith : {a' b' c' : Set} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
-zipWith f [] [] = []
-zipWith f [] (y ∷ y') = {!!}
-zipWith f (y ∷ y') [] = {!!}
-zipWith f (y ∷ y') (y0 ∷ y1) = f y y0 ∷ zipWith f y' y1
-
+zipWith : {a' b' c' : Type} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
+zipWith f xs ys = {!!}
 
 
 
@@ -671,7 +687,10 @@ mult xss yss = mult-transpose xss (transpose yss)
    * Write a serialization library (convert values of arbitary datatypes into strings to save
        to a file)
    * Enforce datastructure invariants with the typechecker (e.g. heap invariant from HW1)
+ (See string.agda for a universe example)
 -}
+
+
 
 
 
