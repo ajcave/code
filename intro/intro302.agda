@@ -167,7 +167,7 @@ tl (x ∷ xs) = xs
 
 
 -- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
--- e.g. vector-add is just zipWith _+_
+-- e.g. zip is just zipWith _,_
 -- C-c C-a
 zipWith : {a b c : Set} -> {n : number}
           -> (a -> b -> c) -> vec a n -> vec b n -> vec c n

@@ -8,9 +8,6 @@ open import Data.Sum
 open import Data.Product
 open import Data.Unit
 
-t : String
-t = "abc"
-
 infixr 9 _⊗_
 
 data Datatype : Type  where
