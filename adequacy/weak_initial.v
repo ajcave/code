@@ -401,6 +401,29 @@ eapply IHt2.
 eexact sred.
 Qed.
 
+Lemma zeroNotSucc y : izero = isucc y -> False.
+intros.
+assert (iiter (fun _ => true) false izero = iiter (fun _ => true) false (isucc y)).
+rewrite H. reflexivity.
+inversion H0.
+Qed.
+
+Lemma uniq u : Val u -> forall v, Val v -> Sem u tt = Sem v tt -> u = v.
+intros u H. induction H; intros.
+destruct H. reflexivity.
+simpl in H0.
+edestruct (zeroNotSucc H0).
+destruct H0.
+simpl in H1.
+symmetry in H1.
+destruct (zeroNotSucc H1).
+eapply (cong (@succ nil)).
+eapply IHVal. eexact H0.
+(* Pretty sure this isn't possible without using a strong notion of initial algebra in the model.
+However, we only seem to need it for the types we prove adequay at. Nested least fixed points
+without any -> or nu *)
+
+
 (*
 *** Local Variables: ***
 *** coq-prog-args: ("-emacs-U" "-impredicative-set") ***
