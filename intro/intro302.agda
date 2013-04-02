@@ -25,9 +25,9 @@ In SML, this would be:
  datatype 'a list = Nil | Cons of 'a * 'a list
 -}
 
-data list a' : Set where
- [] : list a'
- _∷_ : a' -> list a' -> list a'
+data list a : Set where
+ [] : list a
+ _∷_ : a -> list a -> list a
 -- Unicode! Type \:: to get ∷
 -- Place the cursor over ∷ and hit C-u C-x = to find out how to write it
 
@@ -69,7 +69,7 @@ fun map f [] = []
 
 -}
 
-map : {a' : Type} {b' : Type} -> (a' -> b') -> list a' -> list b'
+map : {a : Type} {b : Type} -> (a -> b) -> list a -> list b
 map f [] = []
 map f (x ∷ xs) = (f x) ∷ map f xs
 
@@ -85,25 +85,17 @@ map f (x ∷ xs) = (f x) ∷ map f xs
 {- Place the cursor in the hole and use C-c C-, to see the goal type and context
    Use C-c C-c to do a case split
    Type in the hole and use C-c C-r to attempt to refine
-vector-add [1,2,3] [4,5,6] = [1+4, 2+5, 3+6]
+zip [1,2,3] [4,5,6] = [(1,4), (2,5), (3,6)]
 -}
-vector-add : list number -> list number -> list number
-vector-add xs ys = {!!}
+
+zip : {a b : Type} -> list a -> list b -> list (a * b)
+zip xs ys = {!!}
 
 
 
 
 
 
-
-
-
-
-
--- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
--- e.g. vector-add is just zipWith _+_
-zipWith : {a' b' c' : Type} -> (a' -> b' -> c') -> list a' -> list b' -> list c'
-zipWith f xs ys = {!!}
 
 
 
@@ -120,9 +112,9 @@ zipWith f xs ys = {!!}
 
 
 -- Solution: We _index_ lists by their length
-data vec a' : number -> Set where
- [] : vec a' 0
- _∷_ : {n : number} -> a' -> vec a' n -> vec a' (1 + n)
+data vec a : number -> Set where
+ [] : vec a 0
+ _∷_ : {n : number} -> a -> vec a n -> vec a (1 + n)
 
 example2 : vec number 2
 example2 = 7 ∷ 10 ∷ []
@@ -132,11 +124,36 @@ example2 = 7 ∷ 10 ∷ []
 --example3 = 7 ∷ 10 ∷ []
 
 
---The {}s mean that n is an implicit argument
-hd : {a' : Set} {n : number} -> vec a' (1 + n) -> a'
+
+
+-- Now it discards the impossible cases for us!
+-- Notice the extra information we get to help us find the right solution
+zip' : {a b : Set} -> (n : number) -> vec a n -> vec b n -> vec (a * b) n
+zip' n xs ys = {!!}
+
+
+exampleZ1 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
+
+--exampleZ2 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ [])
+
+
+
+
+-- We make n an "implicit" argument by putting it in {}s
+zip'' : {a b : Set} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
+zip'' xs ys = {!!}
+
+
+-- Now we leave the 3 off, and Agda figures it out for us
+exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
+
+
+
+
+hd : {a : Type} {n : number} -> vec a (1 + n) -> a
 hd (x ∷ xs) = x
 
-tl : {a' : Set} {n : number} -> vec a' (1 + n) -> vec a' n
+tl : {a : Type} {n : number} -> vec a (1 + n) -> vec a n
 tl (x ∷ xs) = xs
 
 
@@ -148,40 +165,13 @@ tl (x ∷ xs) = xs
 
 
 
--- Now it discards the impossible cases for us!
--- Notice the extra information we get to help us find the right solution
-zipWith' : {a' b' c' : Set} -> (n : number)
-          -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith' zero f [] [] = []
-zipWith' (suc n') f (y ∷ y') (y0 ∷ y1) = (f y y0) ∷ (zipWith' n' f y' y1)
 
--- Passing the n implicitly
-zipWith2 : {a' b' c' : Set} -> {n : number}
-          -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith2 f [] [] = {!!}
-zipWith2 f (y ∷ y') ys = {!!}
-
-
-
-
-
-
-
-
-
-
-
+-- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
+-- e.g. vector-add is just zipWith _+_
 -- C-c C-a
-zipWith3 : {a' b' c' : Set} -> {n : number}
-  -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith3 f [] [] = []
-zipWith3 f (y ∷ y') (y0 ∷ y1) = f y y0 ∷ zipWith3 f y' y1
-
-
-
-
-
-
+zipWith : {a b c : Set} -> {n : number}
+          -> (a -> b -> c) -> vec a n -> vec b n -> vec c n
+zipWith f xs ys = {!!}
 
 
 
@@ -194,11 +184,6 @@ zipWith-bad f [] [] = []
 zipWith-bad f (x ∷ xs) (y ∷ ys) = zipWith-bad f xs ys
 
 -}
-
-
-
-
-
 
 
 
@@ -259,9 +244,9 @@ inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
 {- Dot product:
  [1,2,3,4] • [5,6,7,8] = 1*5 + 2*6 + 3*7 + 4*8
 -}
-_•_ : ∀ {n} -> vec number n -> vec number n -> number
+{-_•_ : ∀ {n} -> vec number n -> vec number n -> number
 [] • [] = 0
-(x ∷ xs) • (y ∷ ys) = x * y + xs • ys
+(x ∷ xs) • (y ∷ ys) = x * y + xs • ys -}
 
 
 
@@ -286,8 +271,8 @@ vmap f (x ∷ xs) = f x ∷ vmap f xs
 
 
 
-matrix : (a' : Set) -> number -> number -> Set
-matrix a' m n = vec (vec a' n) m
+matrix : (a : Set) -> number -> number -> Set
+matrix a m n = vec (vec a n) m
 
 {- Transposing:    [[1,2],
                     [3,4],
@@ -296,8 +281,8 @@ gives:
                    [[1,3,5],
                     [2,4,6]]      -}
 
-transpose : {m : number} {a' : Set} {n : number}
-  -> matrix a' n m -> matrix a' m n
+transpose : {m : number} {a : Set} {n : number}
+  -> matrix a n m -> matrix a m n
 transpose {m = zero}   xss = []
 transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
@@ -370,8 +355,8 @@ data bounded-num : number -> Set where
    the ith element of xs
 -}
 lookup : {a' : Set} {n : number} -> bounded-num n -> vec a' n -> a'
-lookup zero (y ∷ y') = y
-lookup (succ y) (y' ∷ y0) = lookup y y0
+lookup zero (x ∷ xs) = x
+lookup (succ i) (x ∷ xs) = lookup i xs
 
 -- No such thing as "index out of bounds"!
 -- This is OK:
@@ -539,37 +524,28 @@ bad-test = {!!}
 {-======================================================================-}
 
 -- Append two lists
-_⋆_ : {a' : Set} -> list a' -> list a' -> list a'
+_⋆_ : {a : Type} -> list a -> list a -> list a
 [] ⋆ ys = ys
 (x ∷ xs) ⋆ ys = x ∷ (xs ⋆ ys)
 
-rev : {a' : Set} -> list a' -> list a'
+rev : {a : Type} -> list a -> list a
 rev [] = []
 rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
 
-rev-tl : {a' : Set} -> list a' -> list a' -> list a'
+rev-tl : {a : Type} -> list a -> list a -> list a
 rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 
 
 
-
-
-
-congruence' : {a' b' : Set} (f : a' -> b') (x y : a') -> x ≡ y -> f x ≡ f y
-congruence' f .y y refl = refl
-
-congruence : {a' b' : Set} (f : a' -> b') {x y : a'} -> x ≡ y -> f x ≡ f y
-congruence f refl = refl
-
-⋆-associativity : ∀ {a' : Set} (xs : list a') (ys : list a') (zs : list a')
+⋆-associativity : ∀ {a : Type} (xs : list a) (ys : list a) (zs : list a)
                   -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
 ⋆-associativity xs ys zs = {!!}
 
-⋆-unit-right : ∀ {a' : Set} (xs : list a') -> (xs ⋆ []) ≡ xs
+⋆-unit-right : ∀ {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
 ⋆-unit-right xs = {!!}
 
-lemma1 : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
+lemma1 : {a : Type} (xs : list a) (acc : list a) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1 [] acc =
   begin
    rev-tl [] acc
@@ -667,14 +643,14 @@ theorem1'' (x ∷ xs) =
 
 
 
-
+{-
 mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
 mult-transpose [] ys = []
 mult-transpose (xs ∷ xss) yss = (vmap (λ ys -> xs • ys) yss) ∷ (mult-transpose xss yss)
 
 mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
 mult xss yss = mult-transpose xss (transpose yss)
-
+-}
 
 
 
@@ -707,7 +683,7 @@ repeat {n = 0} x = []
 repeat {n = suc m} x = x ∷ repeat x
 
 addColumn : ∀ {a' n m} -> vec a' n -> matrix a' n m -> matrix a' n (1 + m)
-addColumn xs yss = zipWith2 (_∷_) xs yss
+addColumn xs yss = zipWith (_∷_) xs yss
 
 transpose' : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose' [] = repeat []

@@ -1,75 +1,53 @@
 {-# OPTIONS --type-in-type #-}
 module nary where
 open import helper
+open import Data.Bool
+open import Data.String
 
-addType : number -> Type
-addType 0 = number
-addType (suc n) = number -> addType n
+record Unit : Type where
+ constructor unit
 
-addHelper : (n : number) -> number -> addType n
-addHelper zero acc = acc
-addHelper (suc n) acc = λ x → addHelper n (x + acc)
 
-addMany : (n : number) -> addType n
-addMany n = addHelper n 0
 
-example0 : Type
-example0 = addType 2
+open import Data.List hiding (zip; product)
 
-example1 : Type
-example1 = addType 10
-
-example2 : number
-example2 = addMany 10 0 1 2 3 4 5 6 7 8 9
-
-open import Data.Unit
-
-record _*_ (a' b' : Type) : Type where
- constructor _,_
- field
-  fst : a'
-  snd : b'
-
-infixr 9 _,_
-infixr 9 _*_
-
-open import Data.List
-
-nTuple : (bs : List Type) -> Type
-nTuple [] = Unit
-nTuple (b ∷ []) = b
-nTuple (b ∷ (b2 ∷ bs)) = b * nTuple (b2 ∷ bs)
-
-{-
-zipType : (bs : List Type) -> Type
-zipType bs = nTuple (map List bs) → List (nTuple bs)
-
-zip2 : {a b : Type} -> List a -> List b -> List (a × b)
+zip2 : {a b : Type} -> List a -> List b -> List (a * b)
 zip2 (x ∷ xs) (y ∷ ys) = (x , y) ∷ zip2 xs ys
 zip2 _ _ = []
 
-nzip : (bs : List Type) -> zipType bs
-nzip [] = λ _ → []
-nzip (b ∷ []) = λ x → x
-nzip (b ∷ (b2 ∷ bs)) = λ { (xs , yss)  → zip2 xs (nzip (b2 ∷ bs) yss) }
+zip3 : {a b c : Type} -> List a -> List b -> List c -> List (a * b * c)
+zip3 (x ∷ xs) (y ∷ ys) (z ∷ zs) = (x , y , z) ∷ zip3 xs ys zs
+zip3 _ _ _ = []
 
-example3 : _
-example3 = nzip (number ∷ number ∷ number ∷ [])
-   ((1 ∷ 2 ∷ 3 ∷ []) , (4 ∷ 5 ∷ 6 ∷ []) , (7 ∷ 8 ∷ 9 ∷ [])) -}
+zip4 : {a b c d : Type} -> List a -> List b -> List c -> List d -> List (a * b * c * d)
+zip4 (x ∷ xs) (y ∷ ys) (z ∷ zs) (w ∷ ws) = (x , y , z , w) ∷ zip4 xs ys zs ws
+zip4 _ _ _ _ = []
+
+-----------
+vec : (A : Type) -> number -> Type
+vec A zero = Unit
+vec A (suc n) = A * (vec A n)
+
+vmap : {A B : Type} -> (A -> B) -> (n : number) -> vec A n -> vec B n
+vmap f zero as = unit
+vmap f (suc n) (x , xs) = (f x) , (vmap f n xs)
+
+product : (n : number) -> vec Type n -> Type
+product zero _ = Unit
+product (suc zero) (a , _) = a
+product (suc (suc n)) (a , as) = a * product (suc n) as
+
+zip : (n : number) -> {as : vec Type n} -> product n (vmap List n as) -> List (product n as)
+zip zero unit = []
+zip (suc zero) xs = xs
+zip (suc (suc n)) (xs , yss) = zip2 xs (zip (suc n) yss)
+
+example10 = zip 2 ((1 ∷ 2 ∷ 3 ∷ []) , (true ∷ false ∷ true ∷ []))
+
+example11 = zip 3 ((1 ∷ 2 ∷ 3 ∷ []) , (true ∷ false ∷ true ∷ []) , ("foo" ∷ "bar" ∷ "baz" ∷ []))
+
+------
 
 
-zipTypeHelper : number -> List Type -> Type
-zipTypeHelper zero bs = List (nTuple bs)
---zipType2 (suc zero) b = List b -> List b
-zipTypeHelper (suc n) bs = {a : Type} → List a → zipTypeHelper n (a ∷ bs)
-
-zipType : number -> Type
-zipType n = zipTypeHelper n []
-
-
-example4 : _
-example4 = zipType 2
-
-example5 = zipType 3
 
 
