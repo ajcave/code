@@ -1,9 +1,9 @@
 module helper where
 open import Relation.Binary.PropositionalEquality public
 open ≡-Reasoning public
-open import Data.Nat public hiding (_*_)
+open import Data.Nat public hiding (_*_; _≟_)
 open import Function public
-open import Data.String
+open import Data.String hiding (setoid; decSetoid)
 
 number = ℕ
 

@@ -112,7 +112,7 @@ zip xs ys = {!!}
 
 
 -- Solution: We _index_ lists by their length
-data vec a : number -> Set where
+data vec a : number -> Type where
  [] : vec a 0
  _∷_ : {n : number} -> a -> vec a n -> vec a (1 + n)
 
@@ -150,48 +150,20 @@ exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
 
 
-hd : {a : Type} {n : number} -> vec a (1 + n) -> a
-hd (x ∷ xs) = x
-
-tl : {a : Type} {n : number} -> vec a (1 + n) -> vec a n
-tl (x ∷ xs) = xs
-
-
-
-
-
-
-
-
-
-
-
--- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
--- e.g. zip is just zipWith _,_
--- C-c C-a
-zipWith : {a b c : Set} -> {n : number}
-          -> (a -> b -> c) -> vec a n -> vec b n -> vec c n
-zipWith f xs ys = {!!}
-
-
-
 
 -- This is a type error!
 {-
-zipWith-bad : {a' b' c' : Set} -> {n : number}
-  -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith-bad f [] [] = []
-zipWith-bad f (x ∷ xs) (y ∷ ys) = zipWith-bad f xs ys
+zip-bad : {a b : Type} -> list a -> list b -> list (a * b)
+zip-bad [] [] = []
+zip-bad (x ∷ xs) (y ∷ ys) = zip-bad xs ys
 
 -}
 
 
 
 -- Agda performs termination checking, and this fails!
-zipWith-bad2 : {a' b' c' : Set} -> {n : number}
-  -> (a' -> b' -> c') -> vec a' n -> vec b' n -> vec c' n
-zipWith-bad2 f [] [] = []
-zipWith-bad2 f (x ∷ xs) (y ∷ ys) = zipWith-bad2 f (x ∷ xs) (y ∷ ys)
+zip-bad2 : {a b : Type} ->  list a -> list b -> list (a * b)
+zip-bad2 xs ys = zip-bad2 xs ys
 
 
 
@@ -237,6 +209,33 @@ inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
 
 
 
+hd : {a : Type} {n : number} -> vec a (1 + n) -> a
+hd (x ∷ xs) = x
+
+tl : {a : Type} {n : number} -> vec a (1 + n) -> vec a n
+tl (x ∷ xs) = xs
+
+
+
+
+
+
+
+
+
+
+
+-- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
+-- e.g. zip is just zipWith _,_
+-- C-c C-a
+zipWith : {a b c : Set} -> {n : number}
+          -> (a -> b -> c) -> vec a n -> vec b n -> vec c n
+zipWith f xs ys = {!!}
+
+
+
+
+
 
 
 
@@ -256,8 +255,8 @@ inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
 
 
 -- vmap preserves the length!
-vmap : {a' b' : Set} {n : number}
-   -> (a' -> b') -> vec a' n -> vec b' n
+vmap : {a b : Set} {n : number}
+   -> (a -> b) -> vec a n -> vec b n
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
 
@@ -310,10 +309,6 @@ _++_ : {a : Set} {n m : number} -> vec a n -> vec a m -> vec a (n + m)
 [] ++ ys = ys
 (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
 
--- We'll see that this lets you prove properties of your functions!
-
-
-
 
 
 
@@ -354,35 +349,34 @@ data bounded-num : number -> Set where
 {- Given a number i < n and a vector xs of length n, looks up
    the ith element of xs
 -}
-lookup : {a' : Set} {n : number} -> bounded-num n -> vec a' n -> a'
-lookup zero (x ∷ xs) = x
-lookup (succ i) (x ∷ xs) = lookup i xs
+nth : {a : Type} {m : number} -> bounded-num m -> vec a m -> a
+nth zero (x ∷ xs) = x
+nth (succ n) (x ∷ xs) = nth n xs
 
 -- No such thing as "index out of bounds"!
 -- This is OK:
 
-good : number
-good = lookup (succ zero) (1 ∷ 2 ∷ [])
+good = nth (succ zero) ("foo" ∷ "bar" ∷ [])
 
 -- This is a type error at compile time:
 
 {-
 bad : number
-bad = lookup (succ zero) (1 ∷ [])
+bad = nth (succ zero) ("foo" ∷ [])
 -}
 
 -- So is this, even though it might be OK sometimes (for n > 0)
 
 {-
-first : {a' : Set} {n : number} -> vec a' n -> a'
-first xs = lookup zero xs
+first : {a : Type} {n : number} -> vec a n -> a
+first xs = nth zero xs
 -}
 
 
 -- This is OK:
-maybe-first : {n : number} {a' : Set} -> vec a' n -> option a'
+maybe-first : {n : number} {a : Type} -> vec a n -> option a
 maybe-first {zero} xs = NONE
-maybe-first {suc n} xs = SOME (lookup zero xs)
+maybe-first {suc n} xs = SOME (nth zero xs)
 
 
 
@@ -403,10 +397,10 @@ suc n <? suc n' with n <? n'
 suc n <? suc n' | NONE = NONE
 suc n <? suc n' | SOME x = SOME (succ x)
 
-lookup' : {a' : Set} (m : number) {n : number} -> vec a' n -> option a'
-lookup' m {n} xs with m <? n
-lookup' m xs | NONE = NONE
-lookup' m xs | SOME x = SOME (lookup x xs)
+nth' : {a : Type} (m : number) {n : number} -> vec a n -> option a
+nth' m {n} xs with m <? n
+nth' m xs | NONE = NONE
+nth' m xs | SOME x = SOME (nth x xs)
 
 
 
@@ -423,40 +417,53 @@ lookup' m xs | SOME x = SOME (lookup x xs)
 {-======================================================================================-}
 
 data type : Set where
- bool : type
- int : type
+ Bool : type
+ Int : type
+
+{- In SML, we would write something like:
+
+datatype expr =
+   Zero
+ | Succ of expr
+ | If of expr * expr * expr
+ | True | False
+ | Plus of expr * expr
+ | Eq of expr * expr
+-}
 
 data expr : type -> Set where
- zero : expr int
- succ : (n : expr int) -> expr int
- if_then_else_ : {t : type} (cond : expr bool) (t1 : expr t) (t2 : expr t) -> expr t
- true : expr bool
- false : expr bool
- _⊕_ : (n : expr int) (m : expr int) -> expr int
- _==_ : {t : type} (t1 : expr t) (t2 : expr t) -> expr bool 
+ zero : expr Int
+ succ : (n : expr Int) -> expr Int
+ if_then_else_ : {t : type} (cond : expr Bool) (t1 : expr t) (t2 : expr t) -> expr t
+ true : expr Bool
+ false : expr Bool
+ _⊕_ : (n : expr Int) (m : expr Int) -> expr Int
+ _==_ : {t : type} (t1 : expr t) (t2 : expr t) -> expr Bool 
 
-example4 : expr int
+example4 : expr Int
 example4 = if ((zero ⊕ succ zero) == (succ zero)) then zero else (succ zero)
 
 -- This is a type error:
---example5 : expr natural
+--example5 : expr int
 --example5 = if zero then true else false
 
+-- We can *only* represent well-typed expressions!
+-- We can't even represent ill-typed expressions!
 
 {- In SML, this would be something like:
 datatype value = Zero | Succ of value | True | False
 -}
 data value : type -> Set where
- zero : value int
- succ : value int -> value int
- true : value bool
- false : value bool
+ zero : value Int
+ succ : value Int -> value Int
+ true : value Bool
+ false : value Bool
 
-_+v_ : value int -> value int -> value int
+_+v_ : value Int -> value Int -> value Int
 zero +v m = m
 succ y +v m = succ (y +v m)
 
-_=v_ : {t : type} -> value t -> value t -> value bool
+_=v_ : {t : type} -> value t -> value t -> value Bool
 zero =v zero = true
 zero =v succ y = false
 succ y =v zero = false
@@ -480,7 +487,7 @@ eval (t1 == t2) = eval t1 =v eval t2
 -- Again the ill-typed cases are ruled out!
 
 
-example6 : value int
+example6 : value Int
 example6 = eval example4
 -- C-c C-n will let you evaluate a term
 -- it will show us that example6 is zero, as expected
