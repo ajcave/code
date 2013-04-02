@@ -306,9 +306,9 @@ transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 
 -- We can put computations in types, and they simplify
 -- Vector append:
-_++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
+_++_ : {a : Set} {n m : number} -> vec a n -> vec a m -> vec a (n + m)
 [] ++ ys = ys
-(y ∷ y') ++ ys = y ∷ y' ++ ys
+(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
 
 -- We'll see that this lets you prove properties of your functions!
 
@@ -325,7 +325,7 @@ _++_ : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
 
 
 -- But it can get hairy
-rev-acc : {a' : Set} {n m : number} -> vec a' n -> vec a' m -> vec a' (n + m)
+rev-acc : {a : Type} {n m : number} -> vec a n -> vec a m -> vec a (n + m)
 rev-acc [] acc = acc
 rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
