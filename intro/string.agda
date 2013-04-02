@@ -32,8 +32,8 @@ toString bool false = "false"
 toString nat n = show n
 toString string s = s
 toString (U1 ⊗ U2) (x1 , x2) = "(" ++ (toString U1 x1) ++ "," ++ (toString U2 x2) ++ ")"
-toString (l1 of U1 ∣ l2 of U2) (inj₁ x) = "(" ++ l1 ++ " " ++ toString U1 x ++ ")"
-toString (l1 of U1 ∣ l2 of U2) (inj₂ y) = "(" ++ l2 ++ " " ++ toString U2 y ++ ")"
+toString (l1 of U1 ∣ l2 of U2) (inj₁ x) = l1 ++ " " ++ toString U1 x
+toString (l1 of U1 ∣ l2 of U2) (inj₂ y) = l2 ++ " " ++ toString U2 y
 
 employee : Datatype
 employee = string ⊗ ("Manager" of string ∣ "NotManager" of unit) ⊗ nat
@@ -43,8 +43,10 @@ john : decode employee
 john = "John Smith" , (inj₁ "Cybernetics") , 04
 -- Not Y2K compliant...
 
+johnString = toString employee john
+
 joe : decode employee
-joe = "Joe Smith" , (inj₂ tt) , 04
+joe = "Joe Smith" , (inj₂ tt) , 03
 
 
 

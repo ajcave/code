@@ -82,7 +82,7 @@ example10 = zip 2 ((1 ∷ 2 ∷ 3 ∷ []) , (true ∷ false ∷ true ∷ []))
 example11 : {!!}
 example11 = zip 3 ((1 ∷ 2 ∷ 3 ∷ []) , (true ∷ false ∷ true ∷ []) , ("foo" ∷ "bar" ∷ "baz" ∷ []))
 
-example20 : ?
+example20 : {!!}
 example20 = zip 20 (
                    (1 ∷ 2 ∷ 3 ∷ []) ,
                    (true ∷ false ∷ true ∷ []) ,
