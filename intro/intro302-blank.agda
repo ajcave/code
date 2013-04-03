@@ -4,7 +4,7 @@ open import helper
 {-
 Introduction to Agda and dependent types
 
-You won't be asked to write any Agda code, and you won't really be tested on this.
+You won't be asked to write any Agda code, and you won't be tested on the specifics.
 You might, for example, see a conception question like "What are dependent types?"
 or "What is an example of a dependent type?" on the final.
 
@@ -126,7 +126,7 @@ Developed interactively:
    Type in the hole and use C-c C-r to attempt to refine
 -}
 
-zip : {a b : Type} -> list a -> list b -> list (a * b)
+zip : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
 zip xs ys = {!!}
 
 
@@ -155,7 +155,7 @@ Something of type "vec a n" is a list of exactly n things of type "a"
 
 [] is a list of length 0
 
-If x is an "a" and xs is a list of length n, then x ∷ xs is a list of
+If x is an "a" and xs is an "a list" of length n, then x ∷ xs is an "a list" of
  length (1 + n)
 -}
 data vec a : number -> Type where
@@ -190,7 +190,8 @@ exampleZ1 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
 -- We make n an "implicit" argument by putting it in {}s
 zip'' : {a b : Set} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
-zip'' xs ys = {!!}
+zip''    []       []    = []
+zip'' (x ∷ xs) (y ∷ ys) = (x , y) ∷ (zip'' xs ys)
 
 -- Now we leave the 3 off, and Agda figures it out for us
 exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
@@ -214,7 +215,7 @@ zip-bad (x ∷ xs) (y ∷ ys) = zip-bad xs ys
 
 -- Agda performs termination checking, and this fails!
 zip-bad2 : {a b : Type} ->  list a -> list b -> list (a * b)
-zip-bad2 xs ys = zip-bad2 xs ys
+zip-bad2 xs ys = {!!}
 
 -- The termination checking is not perfect:
 {-
@@ -228,7 +229,6 @@ zip-bad2 xs ys = zip-bad2 xs ys
 inc : list number -> list number
 inc [] = []
 inc (x ∷ xs) = x ∷ inc (map (λ y → y + 1) xs)
-
 
 -- But usually we can rewrite our functions to pass the termination
 -- checker:
@@ -252,8 +252,6 @@ hd (x ∷ xs) = x
 tl : {a : Type} {n : number} -> vec a (1 + n) -> vec a n
 tl (x ∷ xs) = xs
 
-
-
 hd-eg1 = hd (1 ∷ 2 ∷ 3 ∷ [])
 
 --hd-eg2 = hd []
@@ -267,7 +265,7 @@ vmap : {a b : Set} {n : number}
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
 
-{-
+{- Example: Matrices
 An m by n matrix can be described as an m length vector
 of n length vectors:
 -}
