@@ -354,7 +354,7 @@ Arrays are a common source of runtime crashes:
 
 arr[10] when arr is only an array of size 5 --> Crash
 
-Can we prevent this with dependent types?
+Dependent types to the rescue again!
 -}
 
 
@@ -528,6 +528,16 @@ example6 = eval example4
 
 
 
+
+
+
+{-===============================================================-}
+{- Unit tests and proofs -}
+
+
+
+
+
 -- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
 data _≡'_ {a : Type} : a -> a -> Set where
  refl : {x : a} -> x ≡' x
@@ -550,7 +560,9 @@ bad-test = {!!}
 -- These serve as unit tests!
 
 
-
+eqtest3 : (x : number) -> (y : number) -> x + y ≡ y + x
+eqtest3 x y = {!!}
+-- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
 
 
 
@@ -577,7 +589,9 @@ rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 
 
-
+{-
+Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
+-}
 ⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
                   -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
 ⋆-associativity xs ys zs = {!!}
@@ -618,11 +632,6 @@ lemma1 (x ∷ xs) acc =
 
 
 
-
-
-⋆-unit-right : {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
-⋆-unit-right xs = {!!}
-
 -- Actually all the "by program" steps are automatic
 lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1' [] acc = refl
@@ -634,6 +643,12 @@ lemma1' (x ∷ xs) acc =
                           ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
    ((rev xs) ⋆ (x ∷ [])) ⋆ acc
   ∎
+
+
+{- Let's prove the main theorem using the lemma -}
+
+⋆-unit-right : {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
+⋆-unit-right xs = {!!}
 
 theorem1' : {a' : Set} (xs : list a') -> rev-tl xs [] ≡ rev xs
 theorem1' xs =
@@ -695,11 +710,10 @@ theorem1'' (x ∷ xs) =
 
 {-
  Other things we can do with dependent types:
-   * Check if database (SQL) queries are well-formed during typechecking (before you ever run them)
    * Write a serialization library (convert values of arbitary datatypes into strings to save
        to a file)
-   * Enforce datastructure invariants with the typechecker (e.g. heap invariant from HW1)
- (See string.agda for a serialization example)
+   * Enforce datastructure invariants with the typechecker
+   * Check if database (SQL) queries are well-formed during typechecking (before you ever run them
 -}
 
 
