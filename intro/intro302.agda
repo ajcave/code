@@ -2,7 +2,16 @@
 module intro302 where
 open import helper
 {-
-Helpful references:
+Introduction to Agda and dependent types
+
+You won't be asked to write any Agda code, and you won't really be tested on this.
+You might, for example, see a conception question like "What are dependent types?"
+or "What is an example of a dependent type?" on the final.
+
+So don't bother taking notes, just try to follow along.
+
+
+Helpful references for Agda:
 http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.EmacsModeKeyCombinations
 http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.UnicodeInput
 -}
@@ -45,6 +54,7 @@ to represent the list [1,2,3]
 data list a : Type where
  [] : list a
  _∷_ : a -> list a -> list a
+
 -- Unicode! Type \:: to get ∷
 -- Place the cursor over ∷ and hit C-u C-x = to find out how to write it
 
