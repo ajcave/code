@@ -127,7 +127,7 @@ Developed interactively:
 -}
 
 zip : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
-zip xs ys = {!!}
+zip xs ys = ?
 
 
 {- Problem: What to do with the mismatched cases?
