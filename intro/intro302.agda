@@ -164,15 +164,6 @@ zip-bad (x ∷ xs) (y ∷ ys) = zip-bad xs ys
 zip-bad2 : {a b : Type} ->  list a -> list b -> list (a * b)
 zip-bad2 xs ys = zip-bad2 xs ys
 
-
-
-
-
-
-
-
-
-
 -- The termination checking is not perfect:
 {-
  inc takes a list and
@@ -187,15 +178,6 @@ inc [] = []
 inc (x ∷ xs) = x ∷ inc (map (λ y → y + 1) xs)
 
 
-
-
-
-
-
-
-
-
-
 -- But usually we can rewrite our functions to pass the termination
 -- checker:
 inc' : list number -> list number
@@ -207,6 +189,10 @@ inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
 
 
 
+{- ============================================= -}
+{- hd and tl caused problems in SML. Here we can express
+   precisely that they expect an input of length > 0
+-}
 
 
 hd : {a : Type} {n : number} -> vec a (1 + n) -> a
@@ -271,10 +257,10 @@ gives:
                    [[1,3,5],
                     [2,4,6]]      -}
 
-transpose : {a : Set} {n : number} (m : number)
-  -> matrix a n m -> matrix a m n
+transpose : {a : Set} {n : number} (p : number)
+  -> matrix a n p -> matrix a p n
 transpose zero xss = []
-transpose (suc m') xss = (vmap hd xss) ∷ (transpose m' (vmap tl xss))
+transpose (suc p') xss = (vmap hd xss) ∷ (transpose p' (vmap tl xss))
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
 
 -- We can't accidentally forget the base case:
@@ -305,6 +291,27 @@ We can express this with dependent types!
 mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
 mult xss yss = {!!}
 
+
+mult-eg1 = mult (   (1 ∷ 2 ∷ [])
+                  ∷ (3 ∷ 4 ∷ [])
+                  ∷ (5 ∷ 6 ∷ [])
+                  ∷ [])
+
+                (   (7 ∷ 8 ∷ 9 ∷ 0 ∷ [])
+                  ∷ (1 ∷ 2 ∷ 3 ∷ 4 ∷ [])
+                  ∷ [])
+
+{-
+mult-eg2 = mult (   (1 ∷ 2 ∷ [])
+                  ∷ (3 ∷ 4 ∷ [])
+                  ∷ (5 ∷ 6 ∷ [])
+                  ∷ [])
+
+                (   (7 ∷ 8 ∷ 9 ∷ 0 ∷ [])
+                  ∷ (1 ∷ 2 ∷ 3 ∷ 4 ∷ [])
+                  ∷ (5 ∷ 6 ∷ 7 ∷ 8 ∷ [])
+                  ∷ [])
+-}
 
 
 
@@ -671,6 +678,7 @@ theorem1' xs =
 
 
 -- Termination checking is even more important when proving theorems:
+-- Let's try to prove a false theorem:
 theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
 theorem1'' [] =
   begin
