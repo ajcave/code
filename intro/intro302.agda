@@ -120,7 +120,8 @@ zip : {a b : Type} -> list a -> list b -> list (a * b)
 zip xs ys = {!!}
 
 
-{- Problem: What to do with the mismatched cases? -}
+{- Problem: What to do with the mismatched cases?
+   Maybe these indicate an error we want to catch (as early as possible!) -}
 
 
 
@@ -161,10 +162,13 @@ example2 = 7 ∷ 10 ∷ []
 
 
 
--- Now it discards the impossible cases for us!
--- Notice the extra information we get to help us find the right solution
+-- Now let's write zip using vec instead of list:
 zip' : {a b : Type} -> (n : number) -> vec a n -> vec b n -> vec (a * b) n
 zip' n xs ys = {!!}
+
+-- Now it discards the impossible cases for us!
+-- Can we even write the mismatched case?
+-- Notice that we get extra information we get to help us find the right solution
 
 
 exampleZ1 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
@@ -178,15 +182,18 @@ exampleZ1 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 zip'' : {a b : Set} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
 zip'' xs ys = {!!}
 
-
 -- Now we leave the 3 off, and Agda figures it out for us
 exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
+{- How much choice do we have when writing this function?
+   What could we possibly do while still having the same type?
+   In fact Agda can find the right program automatically: C-c C-a
+-}
 
 
 
-
--- This is a type error!
+-- What happens if we make a mistake when writing zip?
+-- (e.g. we forget to use ∷ )
 {-
 zip-bad : {a b : Type} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
 zip-bad [] [] = []
@@ -223,7 +230,6 @@ inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
 
 
 
-
 {- ============================================= -}
 {- hd and tl caused problems in SML. Here we can express
    precisely that they expect an input of length > 0
@@ -243,67 +249,60 @@ hd-eg1 = hd (1 ∷ 2 ∷ 3 ∷ [])
 --hd-eg2 = hd []
 
 
-
--- zipWith f [1,2,3] [4,5,6] = [(f 1 4), (f 2 5), (f 3 6)]
--- e.g. zip is just zipWith _,_
--- C-c C-a
-zipWith : {a b c : Set} -> {n : number}
-          -> (a -> b -> c) -> vec a n -> vec b n -> vec c n
-zipWith f xs ys = {!!}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- vmap preserves the length!
+{- Example: map for vectors
+   vmap preserves the length!
+-}
 vmap : {a b : Set} {n : number}
    -> (a -> b) -> vec a n -> vec b n
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
 
-
-
-
-
-
-
-
-
-
-
+{-
+An m by n matrix can be described as an m length vector
+of n length vectors:
+-}
 matrix : (a : Set) -> number -> number -> Set
 matrix a m n = vec (vec a n) m
 
-{- Transposing:    [[1,2],
-                    [3,4],
-                    [5,6]]
+{- Example: Matrix transpose:
+
+Transposing    xss = [[1,2],
+                      [3,4],
+                      [5,6]]
 gives:
                    [[1,3,5],
-                    [2,4,6]]      -}
+                    [2,4,6]]      
 
-transpose : {a : Set} {n : number} (p : number)
+We are going to get the first column of the input with:
+
+  vmap hd xss
+
+e.g. This will get [1,3,5]
+
+And the rest of the columns with:
+
+  vmap tl xss
+
+e.g. This will get
+  [[2],
+   [4],
+   [6]]
+-}
+
+
+-- The number of columns of the first matrix = the number of rows of the output
+transpose : {a : Set} {n : number} (p : number) -- number of columns of input
   -> matrix a n p -> matrix a p n
 transpose zero xss = []
 transpose (suc p') xss = (vmap hd xss) ∷ (transpose p' (vmap tl xss))
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
 
 -- We can't accidentally forget the base case:
---transpose-bad : {m} {a'} {n} -> matrix a' n m -> matrix a' m n
+--transpose-bad : {a : Set} {n : number} {p : number} -> matrix a n p -> matrix a p n
 --transpose-bad xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 
 
-{-
+{- Example: Matrix multiplication:
 From linear algebra:
 
 You can multiply:
@@ -335,7 +334,9 @@ mult-eg1 = mult (   (1 ∷ 2 ∷ [])
                 (   (7 ∷ 8 ∷ 9 ∷ 0 ∷ [])
                   ∷ (1 ∷ 2 ∷ 3 ∷ 4 ∷ [])
                   ∷ [])
+-- This typechecks because the dimensions line up.
 
+-- But this won't, because the dimensions don't line up:
 {-
 mult-eg2 = mult (   (1 ∷ 2 ∷ [])
                   ∷ (3 ∷ 4 ∷ [])
@@ -359,11 +360,12 @@ mult-eg2 = mult (   (1 ∷ 2 ∷ [])
 
 
 
--- We can put computations in types, and they simplify
--- Vector append:
+{- Example: vector append -}
 _++_ : {a : Set} {n m : number} -> vec a n -> vec a m -> vec a (n + m)
 [] ++ ys = ys
 (x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+
+-- We put a computation in the type, and it simplified for us!
 
 
 
@@ -380,8 +382,9 @@ rev-acc : {a : Type} {n m : number} -> vec a n -> vec a m -> vec a (n + m)
 rev-acc [] acc = acc
 rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
--- We'd have to *prove* to Agda that 1 + (n + m) = n + (1 + m)
--- Other systems will solve this automatically (but have other downsides)
+-- Agda can't see that 1 + (n + m) = n + (1 + m)
+-- We'd have to *prove* this to Agda
+-- Other systems will see this automatically (but have other downsides)
 
 
 
@@ -391,10 +394,11 @@ rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 
 {-=====================================================================-}
-{-
+{- Example: Arrays
+
 Arrays are a common source of runtime crashes:
 
-arr[10] when arr is only an array of size 5 --> Crash
+e.g. arr[10] when arr is only an array of size 5 --> Crash
 
 Dependent types to the rescue again!
 -}
@@ -409,14 +413,14 @@ data bounded-num : number -> Set where
  zero : {n : number} -> bounded-num (1 + n)
  succ : {n : number} -> bounded-num n -> bounded-num (1 + n)
 
-{- Given a number i < n and a vector xs of length n, looks up
-   the ith element of xs
+{- Given a number n < m and a vector xs of length m, looks up
+   the nth element of xs
 -}
 nth : {a : Type} {m : number} -> bounded-num m -> vec a m -> a
 nth zero (x ∷ xs) = x
 nth (succ n) (x ∷ xs) = nth n xs
 
--- No such thing as "index out of bounds"!
+-- No such thing as "index out of bounds" at runtime!
 -- This is OK:
 
 good = nth (succ zero) ("foo" ∷ "bar" ∷ [])
@@ -768,7 +772,7 @@ theorem1'' (x ∷ xs) =
 {-======================================================================-}
 
 -- An alternate way to implement transpose
-repeat : ∀ {a' n} -> a' -> vec a' n
+{-repeat : ∀ {a' n} -> a' -> vec a' n
 repeat {n = 0} x = []
 repeat {n = suc m} x = x ∷ repeat x
 
@@ -777,7 +781,7 @@ addColumn xs yss = zipWith (_∷_) xs yss
 
 transpose' : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose' [] = repeat []
-transpose' (xs ∷ xss) = addColumn xs (transpose' xss)
+transpose' (xs ∷ xss) = addColumn xs (transpose' xss) -}
 
 {- Dot product:
  [1,2,3,4] • [5,6,7,8] = 1*5 + 2*6 + 3*7 + 4*8
