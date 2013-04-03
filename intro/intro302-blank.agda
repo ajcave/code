@@ -301,8 +301,7 @@ e.g. This will get
 -- The number of columns of the first matrix = the number of rows of the output
 transpose : {a : Set} {n : number} (p : number) -- number of columns of input
   -> matrix a n p -> matrix a p n
-transpose zero xss = []
-transpose (suc p') xss = (vmap hd xss) ∷ (transpose p' (vmap tl xss))
+transpose p xss = {!!}
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
 
 -- We can't accidentally forget the base case:
@@ -330,7 +329,7 @@ Because the dimensions don't line up.
 We can express this with dependent types!
 -}
 
-mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
+mult : {n m p : number} -> matrix number m n -> matrix number n p -> matrix number m p
 mult xss yss = {!!}
 
 
@@ -369,9 +368,8 @@ mult-eg2 = mult (   (1 ∷ 2 ∷ [])
 
 
 {- Example: vector append -}
-_++_ : {a : Set} {n m : number} -> vec a n -> vec a m -> vec a (n + m)
-[] ++ ys = ys
-(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+_++_ : {a : Type} {n : number} {m : number} -> vec a n -> vec a m -> {!!}
+xs ++ ys = {!!}
 
 -- We put a computation in the type, and it simplified for us!
 
@@ -425,8 +423,7 @@ data bounded-num : number -> Set where
    the nth element of xs
 -}
 nth : {a : Type} {m : number} -> bounded-num m -> vec a m -> a
-nth zero (x ∷ xs) = x
-nth (succ n) (x ∷ xs) = nth n xs
+nth n xs = {!!}
 
 -- No such thing as "index out of bounds" at runtime!
 -- This is OK:
@@ -466,17 +463,10 @@ maybe-first {suc n} xs = SOME (nth zero xs)
 -- Converts m into a bounded-num n (if possible)
 -- Also known as testing if m < n
 _<?_ : (m n : number) -> option (bounded-num n)
-zero <? zero = NONE
-zero <? suc n = SOME zero
-suc n <? zero = NONE
-suc n <? suc n' with n <? n'
-suc n <? suc n' | NONE = NONE
-suc n <? suc n' | SOME x = SOME (succ x)
+m <? n = {!!}
 
 nth' : {a : Type} (m : number) {n : number} -> vec a n -> option a
-nth' m {n} xs with m <? n
-nth' m xs | NONE = NONE
-nth' m xs | SOME x = SOME (nth x xs)
+nth' m {n} xs = {!!}
 
 
 
@@ -492,7 +482,12 @@ nth' m xs | SOME x = SOME (nth x xs)
 
 {-======================================================================================-}
 
-{- An interpreter for Nano-ML in Agda -}
+{- An interpreter for Nano-ML in Agda
+   In your eval (HW5), ill-typed programs crash: the interpreter can't handle them
+   e.g. if zero then true else false
+   With dependent types, we can make it impossible to even represent bad programs
+   like this!
+-}
 
 data type : Set where
  Bool : type
@@ -537,9 +532,11 @@ data value : type -> Set where
  true : value Bool
  false : value Bool
 
+-- Let's implement the primitive operations on values:
 _+v_ : value Int -> value Int -> value Int
-zero +v m = m
-succ y +v m = succ (y +v m)
+n +v m = {!!}
+
+-- Notice that the ill-typed cases are ruled out!
 
 _=v_ : {t : type} -> value t -> value t -> value Bool
 zero =v zero = true
@@ -550,20 +547,12 @@ true =v true = true
 true =v false = false
 false =v true = false
 false =v false = true
--- Notice that the ill-typed cases are ruled out!
 
 eval : {t : type} -> expr t -> value t
-eval zero = zero
-eval (succ n) = succ (eval n)
-eval (if cond then t1 else t2) with eval cond
-eval (if cond then t1 else t2) | true = eval t1
-eval (if cond then t1 else t2) | false = eval t2
-eval true = true
-eval false = false
-eval (n ⊕ m) = eval n +v eval m
-eval (t1 == t2) = eval t1 =v eval t2
+eval m = {!!}
 -- Again the ill-typed cases are ruled out!
-
+-- Agda certifies that our eval is *total*:
+-- it covers all cases and even termination checks!
 
 example6 : value Int
 example6 = eval example4
