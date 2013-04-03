@@ -178,15 +178,14 @@ zip' n xs ys = {!!}
 
 -- Now it discards the impossible cases for us!
 -- Can we even write the mismatched case?
+-- Agda is verifying that our function is *total*:
+--   every possible case is covered
 -- Notice that we get extra information we get to help us find the right solution
 
 
 exampleZ1 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
 --exampleZ2 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ [])
-
-
-
 
 -- We make n an "implicit" argument by putting it in {}s
 zip'' : {a b : Set} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
