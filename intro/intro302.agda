@@ -348,7 +348,14 @@ rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 
 
+{-=====================================================================-}
+{-
+Arrays are a common source of runtime crashes:
 
+arr[10] when arr is only an array of size 5 --> Crash
+
+Can we prevent this with dependent types?
+-}
 
 
 
@@ -552,6 +559,9 @@ bad-test = {!!}
 
 
 {-======================================================================-}
+{- We can even use Agda as a proof assistant!
+   Let's prove our standard example: rev xs = rev-tl xs []
+-}
 
 -- Append two lists
 _⋆_ : {a : Type} -> list a -> list a -> list a
