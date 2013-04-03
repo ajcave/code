@@ -153,10 +153,9 @@ exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
 -- This is a type error!
 {-
-zip-bad : {a b : Type} -> list a -> list b -> list (a * b)
+zip-bad : {a b : Type} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
 zip-bad [] [] = []
 zip-bad (x ∷ xs) (y ∷ ys) = zip-bad xs ys
-
 -}
 
 
@@ -174,13 +173,14 @@ zip-bad2 xs ys = zip-bad2 xs ys
 
 
 
--- It is not perfect:
+-- The termination checking is not perfect:
 {-
  inc takes a list and
  adds 0 to the first element
  adds 1 to the second
  adds 2 to the third
  ...
+ This terminates, but Agda can't see why!
 -}
 inc : list number -> list number
 inc [] = []
@@ -202,7 +202,7 @@ inc' : list number -> list number
 inc' [] = []
 inc' (x ∷ xs) = x ∷ (map (λ y → y + 1) (inc' xs))
 -- This is like (machine-checkable!) documentation!
--- It communicates *why* something terminates to your coworkers
+-- It communicates *why* something terminates to readers of your code
 
 
 
@@ -217,11 +217,9 @@ tl (x ∷ xs) = xs
 
 
 
+hd-eg1 = hd (1 ∷ 2 ∷ 3 ∷ [])
 
-
-
-
-
+--hd-eg2 = hd []
 
 
 
@@ -239,13 +237,6 @@ zipWith f xs ys = {!!}
 
 
 
-
-{- Dot product:
- [1,2,3,4] • [5,6,7,8] = 1*5 + 2*6 + 3*7 + 4*8
--}
-{-_•_ : ∀ {n} -> vec number n -> vec number n -> number
-[] • [] = 0
-(x ∷ xs) • (y ∷ ys) = x * y + xs • ys -}
 
 
 
@@ -280,16 +271,39 @@ gives:
                    [[1,3,5],
                     [2,4,6]]      -}
 
-transpose : {m : number} {a : Set} {n : number}
+transpose : {a : Set} {n : number} (m : number)
   -> matrix a n m -> matrix a m n
-transpose {m = zero}   xss = []
-transpose {m = suc m'} xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
+transpose zero xss = []
+transpose (suc m') xss = (vmap hd xss) ∷ (transpose m' (vmap tl xss))
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
 
 -- We can't accidentally forget the base case:
---transpose-bad :  ∀ {m} {a'} {n} -> matrix a' n m -> matrix a' m n
+--transpose-bad : {m} {a'} {n} -> matrix a' n m -> matrix a' m n
 --transpose-bad xss = (vmap hd xss) ∷ (transpose (vmap tl xss))
 
+
+{-
+From linear algebra:
+
+You can multiply:
+
+[[1,2],         [[7,8,9,0],
+ [3,4],   with   [1,2,3,4]]
+ [5,6]]
+
+But you *can't* multiply:
+
+[[1,2],         [[7,8,9,0],
+ [3,4],   with   [1,2,3,4],
+ [5,6]]          [5,6,7,8]]
+
+Because the dimensions don't line up.
+
+We can express this with dependent types!
+-}
+
+mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
+mult xss yss = {!!}
 
 
 
@@ -416,6 +430,8 @@ nth' m xs | SOME x = SOME (nth x xs)
 
 {-======================================================================================-}
 
+{- An interpreter for Nano-ML in Agda -}
+
 data type : Set where
  Bool : type
  Int : type
@@ -506,9 +522,16 @@ example6 = eval example4
 
 
 -- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
-data _≡'_ {a' : Set} : a' -> a' -> Set where
- refl : {x : a'} -> x ≡' x
+data _≡'_ {a : Type} : a -> a -> Set where
+ refl : {x : a} -> x ≡' x
 -- refl is short for "reflexivity"
+
+eqtest1 : 0 ≡' 0
+eqtest1 = refl
+
+eqtest2 : 0 ≡' 1
+eqtest2 = {!!}
+
 
 test1 : (eval example4) ≡' zero
 test1 = refl
@@ -545,12 +568,10 @@ rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 
 
 
-⋆-associativity : ∀ {a : Type} (xs : list a) (ys : list a) (zs : list a)
+⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
                   -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
 ⋆-associativity xs ys zs = {!!}
 
-⋆-unit-right : ∀ {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
-⋆-unit-right xs = {!!}
 
 lemma1 : {a : Type} (xs : list a) (acc : list a) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1 [] acc =
@@ -589,6 +610,8 @@ lemma1 (x ∷ xs) acc =
 
 
 
+⋆-unit-right : {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
+⋆-unit-right xs = {!!}
 
 -- Actually all the "by program" steps are automatic
 lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
@@ -650,14 +673,10 @@ theorem1'' (x ∷ xs) =
 
 
 
-{-
-mult-transpose : ∀ {n m p} -> matrix number m n -> matrix number p n -> matrix number m p
-mult-transpose [] ys = []
-mult-transpose (xs ∷ xss) yss = (vmap (λ ys -> xs • ys) yss) ∷ (mult-transpose xss yss)
 
-mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
-mult xss yss = mult-transpose xss (transpose yss)
--}
+
+
+
 
 
 
@@ -670,11 +689,8 @@ mult xss yss = mult-transpose xss (transpose yss)
    * Write a serialization library (convert values of arbitary datatypes into strings to save
        to a file)
    * Enforce datastructure invariants with the typechecker (e.g. heap invariant from HW1)
- (See string.agda for a universe example)
+ (See string.agda for a serialization example)
 -}
-
-
-
 
 
 
@@ -695,3 +711,10 @@ addColumn xs yss = zipWith (_∷_) xs yss
 transpose' : ∀ {a' n m} -> matrix a' n m -> matrix a' m n
 transpose' [] = repeat []
 transpose' (xs ∷ xss) = addColumn xs (transpose' xss)
+
+{- Dot product:
+ [1,2,3,4] • [5,6,7,8] = 1*5 + 2*6 + 3*7 + 4*8
+-}
+{- _•_ : ∀ {n} -> vec number n -> vec number n -> number
+[] • [] = 0
+(x ∷ xs) • (y ∷ ys) = x * y + xs • ys -}
