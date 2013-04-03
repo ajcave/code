@@ -451,7 +451,8 @@ maybe-first {suc n} xs = SOME (nth zero xs)
 
 
 
-
+{- If we first check if m < n, we should be able to lookup
+   How can we express this? -}
 
 
 -- Converts m into a bounded-num n (if possible)
@@ -638,6 +639,7 @@ rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 {-
 Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
 -}
+-- I need this property, which I'm not going to prove
 ⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
                   -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
 ⋆-associativity xs ys zs = {!!}
@@ -679,6 +681,7 @@ lemma1 (x ∷ xs) acc =
 
 
 -- Actually all the "by program" steps are automatic
+-- We could instead write a much shorter proof:
 lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1' [] acc = refl
 lemma1' (x ∷ xs) acc =
