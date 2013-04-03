@@ -21,11 +21,28 @@ http://wiki.portal.chalmers.se/agda/agda.php?n=Docs.UnicodeInput
 
 
 {-
-In SML, this would be:
- datatype 'a list = Nil | Cons of 'a * 'a list
+In SML, we could define our own type of lists like this:
+
+ datatype 'a mylist = Nil | Cons of 'a * 'a mylist
+
+In Agda, we write:
 -}
 
-data list a : Set where
+data mylist a : Type where
+ Nil : mylist a
+ Cons : a -> mylist a -> mylist a
+
+mylist-eg = Cons 1 (Cons 2 (Cons 3 Nil))
+
+{-  Compare with SML: 
+
+val mylist-eg = Cons (1, Cons (2, Cons (3, Nil)))
+
+to represent the list [1,2,3]
+-}
+
+-- But let's use fancier notation:
+data list a : Type where
  [] : list a
  _∷_ : a -> list a -> list a
 -- Unicode! Type \:: to get ∷
@@ -41,13 +58,16 @@ example1 = 1 ∷ 2 ∷ 3 ∷ []
 
 
 
-{- In SML, this would be:
+{- Example: Incrementing the numbers in a list
+
+In SML, this would be:
 
 incList : int list -> int list
    
 fun incList [] = []
   | incList (x::xs) = (x + 1)::(incList xs)  
 
+In Agda:
 -}
 
 incList : list number -> list number
@@ -59,20 +79,23 @@ incList (x ∷ xs) = (x + 1) ∷ (incList xs)
 
 
 
-{-
- In SML, this would be:
+{- Example higher order polymorphic function: map
+
+In SML, this would be:
 
 map : ('a -> 'b) -> 'a list -> 'b list
 
 fun map f [] = []
   | map f (x::xs) = (f x)::(map f xs)
 
+In Agda, we write
 -}
 
 map : {a : Type} {b : Type} -> (a -> b) -> list a -> list b
 map f [] = []
 map f (x ∷ xs) = (f x) ∷ map f xs
 
+-- We have to explicitly say we are polymorphic over types "a" and "b":
 
 
 
@@ -82,16 +105,22 @@ map f (x ∷ xs) = (f x) ∷ map f xs
 
 
 
-{- Place the cursor in the hole and use C-c C-, to see the goal type and context
+
+{- Example: zip
+
+zip [1,2,3] [4,5,6] = [(1,4), (2,5), (3,6)]
+
+Developed interactively: 
+ Place the cursor in the hole and use C-c C-, to see the goal type and context
    Use C-c C-c to do a case split
    Type in the hole and use C-c C-r to attempt to refine
-zip [1,2,3] [4,5,6] = [(1,4), (2,5), (3,6)]
 -}
 
 zip : {a b : Type} -> list a -> list b -> list (a * b)
 zip xs ys = {!!}
 
 
+{- Problem: What to do with the mismatched cases? -}
 
 
 
@@ -109,9 +138,15 @@ zip xs ys = {!!}
 
 
 
+{- Solution: We _index_ lists by their length
 
+Something of type "vec a n" is a list of exactly n things of type "a"
 
--- Solution: We _index_ lists by their length
+[] is a list of length 0
+
+If x is an "a" and xs is a list of length n, then x ∷ xs is a list of
+ length (1 + n)
+-}
 data vec a : number -> Type where
  [] : vec a 0
  _∷_ : {n : number} -> a -> vec a n -> vec a (1 + n)
@@ -128,7 +163,7 @@ example2 = 7 ∷ 10 ∷ []
 
 -- Now it discards the impossible cases for us!
 -- Notice the extra information we get to help us find the right solution
-zip' : {a b : Set} -> (n : number) -> vec a n -> vec b n -> vec (a * b) n
+zip' : {a b : Type} -> (n : number) -> vec a n -> vec b n -> vec (a * b) n
 zip' n xs ys = {!!}
 
 
