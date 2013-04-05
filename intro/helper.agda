@@ -40,8 +40,8 @@ record Unit : Type where
   constructor 〈〉
 
 
-data _∣_ (A B : Type) : Type where
- left : A -> A ∣ B
- right : B -> A ∣ B
+data _∣_ (a : Type) (b : Type) : Type where
+ left : a -> a ∣ b
+ right : b -> a ∣ b
 
 infixr 8 _∣_
