@@ -363,29 +363,12 @@ mult-eg2 = mult (   (1 ∷ 2 ∷ [])
 
 
 
-
-
-
-
-
-
-
-
 {- Example: vector append -}
 _++_ : {a : Type} {n : number} {m : number} -> vec a n -> vec a m -> vec a (n + m)
 [] ++ ys = ys
 (y ∷ y') ++ ys = y ∷ (y' ++ ys)
 
 -- We put a computation in the type, and it simplified for us!
-
-
-
-
-
-
-
-
-
 
 
 -- But it can get hairy
@@ -398,6 +381,7 @@ rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 -- Other systems will see this automatically (but often with tradeoffs)
 -- It's an open research problem how to best integrate automatic solvers
 --  for problems like this into dependently typed languages (some proposals)
+
 
 {-===============================================================-}
 {- Unit tests and proofs -}

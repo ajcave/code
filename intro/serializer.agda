@@ -6,19 +6,24 @@ open import Data.Nat.Show
 
 
 -- Serializing data (i.e. converting data to strings to write them to disk) is boring and repetitive
--- Here's how we would probably do it in SML:
+-- Here's how we would probably do it in SML (or Java or ...)
+
+-- SML: datatype IsManager = Nope | Yep of string
 data IsManager : Type where
  Nope : IsManager
  Yep : (dept : String) -> IsManager
 
+-- SML: datatype Employee = Empl of string * IsManager * int
 data Employee : Type where
  Empl : (name : String) -> (m : IsManager) -> (birthyear : number) -> Employee
 
+-- SML: datatype Province = Quebec | Alberta | ....
 data Province : Type where
  Quebec : Province
  Alberta : Province
  -- ...
 
+-- SML: datatype Department = Dept of string * Province
 data Department : Type where
  Dept : (name : String) -> (location : Province) -> Department
   
@@ -33,6 +38,10 @@ emplToString (Empl name m birthyear) =
 johnEg = Empl "John Smith" Nope 04
 
 johnStringEg = emplToString johnEg
+
+janeEg = Empl "Jane Smith" (Yep "Cybernetics") 03
+
+janeStringEg = emplToString janeEg
 
 parseEmpl : String -> option Employee
 parseEmpl s = {!... bleh ...!}
@@ -76,7 +85,6 @@ data Datatype : Type  where
  _⊗_ : (T1 : Datatype) -> (T2 : Datatype) -> Datatype
  -- Like SML's:   Empty of 'a | Node of ('a tree * 'a tree) datatypes
  _of_∣_of_ : (l1 : String) -> (T1 : Datatype) -> (l2 : String) -> (T2 : Datatype) -> Datatype
-
 
 isManager : Datatype
 isManager = ("Yep" of string ∣ "Nope" of unit)
