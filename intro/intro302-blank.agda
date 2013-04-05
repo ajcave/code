@@ -374,7 +374,7 @@ mult-eg2 = mult (   (1 ∷ 2 ∷ [])
 {- Example: vector append -}
 _++_ : {a : Type} {n : number} {m : number} -> vec a n -> vec a m -> vec a (n + m)
 [] ++ ys = ys
-(y ∷ y') ++ ys = y ∷ y' ++ ys
+(y ∷ y') ++ ys = y ∷ (y' ++ ys)
 
 -- We put a computation in the type, and it simplified for us!
 
@@ -526,7 +526,7 @@ eqtest1 : 0 ≡' 0
 eqtest1 = refl
 
 eqtest2 : 0 ≡' 1
-eqtest2 = {!!}
+eqtest2 = {!!} -- refl won't work!
 
 
 test1 : (eval example4) ≡' zero
@@ -537,20 +537,30 @@ bad-test : (eval example4) ≡' (succ zero)
 bad-test = {!!}
 
 -- These serve as unit tests!
+-- Unit testing is an accidental feature of dependently typed languages!
 
 
 eqtest3 : (x : number) -> (y : number) -> x + y ≡ y + x
 eqtest3 x y = {!!}
--- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
+{- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
 
+Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
+This is a deep idea in theoretical computer science:
+(sometimes called the Curry-Howard correspondence)
+programming languages = logics!
+types = propositions!
+programs = proofs!
+-}
 
-
+-- A simple example of a proof:
+transitivity : {a : Type} (x : a) (y : a) (z : a) -> x ≡ y -> y ≡ z -> x ≡ z
+transitivity x y z eq1 eq2 = {!!}
 
 
 
 
 {-======================================================================-}
-{- We can even use Agda as a proof assistant!
+{- We can even use Agda as a proof assistant! (proof checker)
    Let's prove our standard example: rev xs = rev-tl xs []
 -}
 
@@ -568,9 +578,8 @@ rev-tl [] acc = acc
 rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
 
 
-{-
-Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
--}
+
+
 -- I need this property, which I'm not going to prove
 ⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
                   -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
@@ -579,7 +588,7 @@ Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"
 
 lemma1 : {a : Type} (xs : list a) (acc : list a) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
 lemma1 [] acc =
-  begin
+  begin    -- This is just fancy notation for using transitivity
    rev-tl [] acc
                   ≡⟨ program ⟩
    acc
@@ -602,7 +611,7 @@ lemma1 (x ∷ xs) acc =
                           ≡⟨ program ⟩
    (rev (x ∷ xs)) ⋆ acc
   ∎
-
+-- This looks almost exactly like how we write proofs on paper!
 -- What happens if we skip a step?
 
 

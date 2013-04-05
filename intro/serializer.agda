@@ -4,11 +4,12 @@ open import Data.String
 open import Data.Bool
 open import Data.Nat.Show
 
+
+-- Serializing data (i.e. converting data to strings to write them to disk) is boring and repetitive
 data IsManager : Type where
  Nope : IsManager
  Yep : (dept : String) -> IsManager
 
--- Serializing data (i.e. converting data to strings to write them to disk) is boring
 data Employee : Type where
  Empl : (name : String) -> (m : IsManager) -> (birthyear : number) -> Employee
 
