@@ -35,3 +35,13 @@ congruence' f .y y refl = refl
 
 congruence : {a' b' : Set} (f : a' -> b') {x y : a'} -> x ≡ y -> f x ≡ f y
 congruence f refl = refl
+
+record Unit : Type where
+  constructor 〈〉
+
+
+data _∣_ (A B : Type) : Type where
+ left : A -> A ∣ B
+ right : B -> A ∣ B
+
+infixr 8 _∣_

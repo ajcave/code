@@ -2,54 +2,131 @@ module string where
 open import helper
 open import Data.String
 open import Data.Bool
-open import Data.Nat
 open import Data.Nat.Show
-open import Data.Sum
-open import Data.Product
-open import Data.Unit
+--open import Data.Unit
+
+data IsManager : Type where
+ Nope : IsManager
+ Yep : (dept : String) -> IsManager
+
+-- Serializing data (i.e. converting data to strings to write them to disk) is boring
+data Employee : Type where
+ Empl : (name : String) -> (m : IsManager) -> (birthyear : number) -> Employee
+
+data Province : Type where
+ Quebec : Province
+ Alberta : Province
+ -- ...
+
+data Department : Type where
+ Dept : (name : String) -> (location : Province) -> Department
+  
+isManagerToString : IsManager -> String
+isManagerToString Nope = "Nope"
+isManagerToString (Yep dept) = "Yep: " ++ dept
+
+emplToString : Employee -> String
+emplToString (Empl name m birthyear) =
+ "(" ++ name ++ "," ++ isManagerToString m ++ "," ++ show birthyear ++ ")"
+
+johnEg = Empl "John Smith" Nope 04
+
+johnStringEg = emplToString johnEg
+
+parseEmpl : String -> option Employee
+parseEmpl s = {!... bleh ...!}
+
+provinceToString : Province -> String
+provinceToString Quebec = "Quebec"
+provinceToString Alberta = "Alberta"
+
+deptToString : Department -> String
+deptToString (Dept name location) = "(" ++ name ++ "," ++ provinceToString location ++ ")"
+
+cybEg = Dept "Cybernetics" Quebec
+
+cybString = deptToString cybEg
+
+parseDept : String -> option Department
+parseDept s = {!... bleh ...!}
+
+-- This is really boring, and for every new datatype we want to serialize, we have
+-- to write the same kind of repetitive function.
+-- Even worse if we want to write the parser that reads data back in from strings!
+-- Couldn't we just say how to serialize datatypes to strings once and for all?
+-- There are some large, complicated libraries for (e.g.) Java which do this...
+
+-- Can we do better with dependent types?
+-- Yes! In ~30 lines! So we can understand how it works and extend it or customize
+-- it ourselves
 
 infixr 9 _⊗_
 
+-- Let's write down a datatype describing the kinds of types we want
+-- to be able to serialize to strings.
+-- This is like how we had a datatype describing datatypes in HW5
 data Datatype : Type  where
- bool int string unit : Datatype
- _⊗_ : (U1 : Datatype) -> (U2 : Datatype) -> Datatype
- _of_∣_of_ : (l1 : String) -> (U1 : Datatype) -> (l2 : String) -> (U2 : Datatype) -> Datatype
-
-decode : Datatype -> Type
-decode unit = ⊤
-decode bool = Bool
-decode int = number
-decode string = String
-decode (U1 ⊗ U2) = decode U1 × decode U2
-decode (l1 of U1 ∣ l2 of U2) = decode U1 ⊎ decode U2
+ -- base types
+ bool : Datatype
+ int : Datatype
+ string : Datatype
+ unit : Datatype
+ -- Fancy notation for Product
+ _⊗_ : (T1 : Datatype) -> (T2 : Datatype) -> Datatype
+ -- Like SML's:   Empty of 'a | Node of ('a tree * 'a tree) datatypes
+ _of_∣_of_ : (l1 : String) -> (T1 : Datatype) -> (l2 : String) -> (T2 : Datatype) -> Datatype
 
 
+isManager : Datatype
+isManager = ("Yep" of string ∣ "Nope" of unit)
+                   -- department
 
-toString : (U : Datatype) -> decode U -> String
+employee : Datatype
+employee = string ⊗ isManager ⊗ int
+           -- Name, Is Manager of department, Birth year
+
+-- Here's the magic part:
+-- We compute from a datatype description an honest, real Agda datatype!
+-- You can't do this in SML (Or any commercial language..)
+interpret : Datatype -> Type
+interpret unit = Unit
+interpret bool = Bool
+interpret int = number
+interpret string = String
+interpret (U1 ⊗ U2) = interpret U1 * interpret U2
+interpret (l1 of U1 ∣ l2 of U2) = interpret U1 ∣ interpret U2
+
+egInterpret1 = interpret isManager
+
+egInterpret2 = interpret employee
+
+john : interpret employee
+john = "John Smith" , (right 〈〉) , 04
+
+jane : interpret employee
+jane = "Jane Smith" , (left "Cybernetics") , 03
+
+-- Now we can write a toString once and for all
+-- for every datatype!
+-- We take in a description of the datatype, and then
+-- a *value* of that datatype, and return a string:
+toString : (T : Datatype) -> interpret T -> String
 toString unit x = "()"
 toString bool true = "true"
 toString bool false = "false"
 toString int n = show n
 toString string s = s
-toString (U1 ⊗ U2) (x1 , x2) = "(" ++ (toString U1 x1) ++ "," ++ (toString U2 x2) ++ ")"
-toString (l1 of U1 ∣ l2 of U2) (inj₁ x) = l1 ++ " " ++ toString U1 x
-toString (l1 of U1 ∣ l2 of U2) (inj₂ y) = l2 ++ " " ++ toString U2 y
-
-employee : Datatype
-employee = string ⊗ ("Manager" of string ∣ "NotManager" of unit) ⊗ int
-           -- Name, Is Manager of department, Birth year
-
-john : decode employee
-john = "John Smith" , (inj₂ tt) , 04
+toString (T1 ⊗ T2) (x1 , x2) = "(" ++ (toString T1 x1) ++ "," ++ (toString T2 x2) ++ ")"
+toString (l1 of T1 ∣ l2 of T2) (left x) = l1 ++ " " ++ toString T1 x
+toString (l1 of T1 ∣ l2 of T2) (right y) = l2 ++ " " ++ toString T2 y
 
 johnString = toString employee john
-
-jane : decode employee
-jane = "Jane Smith" , (inj₁ "Cybernetics") , 03
 
 janeString = toString employee jane
 
 -- Could implement a parser once and for all too!
+parse : (T : Datatype) -> String -> option (interpret T)
+parse T s = {! ... bleh ...!}
 
 
 

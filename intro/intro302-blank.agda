@@ -127,7 +127,10 @@ Developed interactively:
 -}
 
 zip : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
-zip xs ys = ?
+zip [] [] = []
+zip [] (y ∷ y') = []
+zip (y ∷ y') [] = {!!}
+zip (y ∷ y') (y0 ∷ y1) = (y , y0) ∷ (zip y' y1)
 
 
 {- Problem: What to do with the mismatched cases?
@@ -174,7 +177,8 @@ example2 = 7 ∷ 10 ∷ []
 
 -- Now let's write zip using vec instead of list:
 zip' : {a b : Type} -> (n : number) -> vec a n -> vec b n -> vec (a * b) n
-zip' n xs ys = {!!}
+zip' zero [] [] = []
+zip' (suc m) (y ∷ y') (y0 ∷ y1) = (y , y0) ∷ zip' m y' y1
 
 -- Now it discards the impossible cases for us!
 -- Can we even write the mismatched case?
@@ -204,8 +208,8 @@ exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
 -- What happens if we make a mistake when writing zip?
 -- (e.g. we forget to use ∷ )
-{-
-zip-bad : {a b : Type} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
+
+{-zip-bad : {a b : Type} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
 zip-bad [] [] = []
 zip-bad (x ∷ xs) (y ∷ ys) = zip-bad xs ys
 -}
@@ -214,7 +218,7 @@ zip-bad (x ∷ xs) (y ∷ ys) = zip-bad xs ys
 
 -- Agda performs termination checking, and this fails!
 zip-bad2 : {a b : Type} ->  list a -> list b -> list (a * b)
-zip-bad2 xs ys = {!!}
+zip-bad2 xs ys = zip-bad2 xs ys
 
 -- The termination checking is not perfect:
 {-
@@ -300,7 +304,8 @@ e.g. This will get
 -- The number of columns of the first matrix = the number of rows of the output
 transpose : {a : Set} {n : number} (p : number) -- number of columns of input
   -> matrix a n p -> matrix a p n
-transpose p xss = {!!}
+transpose zero xss = []
+transpose (suc n') xss = (vmap hd xss) ∷ transpose n' (vmap tl xss)
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
 
 -- We can't accidentally forget the base case:
@@ -367,8 +372,9 @@ mult-eg2 = mult (   (1 ∷ 2 ∷ [])
 
 
 {- Example: vector append -}
-_++_ : {a : Type} {n : number} {m : number} -> vec a n -> vec a m -> {!!}
-xs ++ ys = {!!}
+_++_ : {a : Type} {n : number} {m : number} -> vec a n -> vec a m -> vec a (n + m)
+[] ++ ys = ys
+(y ∷ y') ++ ys = y ∷ y' ++ ys
 
 -- We put a computation in the type, and it simplified for us!
 
@@ -398,76 +404,6 @@ rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 
 
-{-=====================================================================-}
-{- Example: Arrays
-
-Arrays are a common source of runtime crashes:
-
-e.g. arr[10] when arr is only an array of size 5 --> Crash
-
-Dependent types to the rescue again!
--}
-
-
-
-{- bounded n is the type of numbers strictly less than n
-   i.e. zero is a "bounded-num 1" and a "bounded-num 2" and a "bounded-num 3", ...
-        succ zero is a "bounded-num 2" and a "bounded-num 3", but *not* a "bounded-num 1"
--}
-data bounded-num : number -> Set where
- zero : {n : number} -> bounded-num (1 + n)
- succ : {n : number} -> bounded-num n -> bounded-num (1 + n)
-
-{- Given a number n < m and a vector xs of length m, looks up
-   the nth element of xs
--}
-nth : {a : Type} {m : number} -> bounded-num m -> vec a m -> a
-nth n xs = {!!}
-
--- No such thing as "index out of bounds" at runtime!
--- This is OK:
-
-good = nth (succ zero) ("foo" ∷ "bar" ∷ [])
-
--- This is a type error at compile time:
-
-{-
-bad : number
-bad = nth (succ zero) ("foo" ∷ [])
--}
-
--- So is this, even though it might be OK sometimes (for n > 0)
-
-{-
-first : {a : Type} {n : number} -> vec a n -> a
-first xs = nth zero xs
--}
-
-
--- This is OK:
-maybe-first : {n : number} {a : Type} -> vec a n -> option a
-maybe-first {zero} xs = NONE
-maybe-first {suc n} xs = SOME (nth zero xs)
-
-
-
-
-
-
-
-{- If we first check if m < n, we should be able to lookup
-   How can we express this? -}
-
-
--- Converts m into a bounded-num n (if possible)
--- Also known as testing if m < n
-_<?_ : (m n : number) -> option (bounded-num n)
-m <? n = {!!}
-
-nth' : {a : Type} (m : number) {n : number} -> vec a n -> option a
-nth' m {n} xs = {!!}
-
-
 
 
 
@@ -485,7 +421,7 @@ nth' m {n} xs = {!!}
    In your eval (HW5), ill-typed programs crash: the interpreter can't handle them
    e.g. if zero then true else false
    With dependent types, we can make it impossible to even represent bad programs
-   like this!
+   like that one!
 -}
 
 data type : Set where
@@ -744,6 +680,76 @@ theorem1'' (x ∷ xs) =
 
 
 
+
+
+{-=====================================================================-}
+{- Example: Arrays
+
+Arrays are a common source of runtime crashes:
+
+e.g. arr[10] when arr is only an array of size 5 --> Crash
+
+Dependent types to the rescue again!
+-}
+
+
+
+{- bounded n is the type of numbers strictly less than n
+   i.e. zero is a "bounded-num 1" and a "bounded-num 2" and a "bounded-num 3", ...
+        succ zero is a "bounded-num 2" and a "bounded-num 3", but *not* a "bounded-num 1"
+-}
+data bounded-num : number -> Set where
+ zero : {n : number} -> bounded-num (1 + n)
+ succ : {n : number} -> bounded-num n -> bounded-num (1 + n)
+
+{- Given a number n < m and a vector xs of length m, looks up
+   the nth element of xs
+-}
+nth : {a : Type} {m : number} -> bounded-num m -> vec a m -> a
+nth n xs = {!!}
+
+-- No such thing as "index out of bounds" at runtime!
+-- This is OK:
+
+good = nth (succ zero) ("foo" ∷ "bar" ∷ [])
+
+-- This is a type error at compile time:
+
+{-
+bad : number
+bad = nth (succ zero) ("foo" ∷ [])
+-}
+
+-- So is this, even though it might be OK sometimes (for n > 0)
+
+{-
+first : {a : Type} {n : number} -> vec a n -> a
+first xs = nth zero xs
+-}
+
+
+-- This is OK:
+maybe-first : {n : number} {a : Type} -> vec a n -> option a
+maybe-first {zero} xs = NONE
+maybe-first {suc n} xs = SOME (nth zero xs)
+
+
+
+
+
+
+
+{- If we first check if m < n, we should be able to lookup
+   How can we express this? -}
+
+
+-- Converts m into a bounded-num n (if possible)
+-- Also known as testing if m < n
+_<?_ : (m n : number) -> option (bounded-num n)
+m <? n = {!!}
+
+nth' : {a : Type} (m : number) {n : number} -> vec a n -> option a
+nth' m {n} xs = {!!}
 
 
 
