@@ -415,6 +415,185 @@ rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+{-===============================================================-}
+{- Unit tests and proofs -}
+
+
+
+
+
+-- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
+data _≡'_ {a : Type} : a -> a -> Set where
+ refl : {x : a} -> x ≡' x
+-- refl is short for "reflexivity"
+
+eqtest1 : 0 ≡' 0
+eqtest1 = refl
+
+eqtest2 : 0 ≡' 1
+eqtest2 = {!!} -- refl won't work!
+
+
+test1 : (zip (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
+test1 = {!!}
+-- The type simplified!
+
+-- What if we made a mistake when writing zip?
+zip-mistake : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
+zip-mistake (x ∷ xs) (y ∷ ys) = zip-mistake xs ys -- Forgot the (x,y)!
+zip-mistake _ _ = []
+
+test2 : (zip-mistake (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
+test2 = {!!}
+-- These serve as unit tests!
+-- Unit testing is an accidental feature of dependently typed languages!
+
+
+-- What about this?
+eqtest3 : (x : number) -> (y : number) -> x + y ≡ y + x
+eqtest3 x y = {!!}
+{- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
+
+Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
+This is a deep idea in theoretical computer science:
+(sometimes called the Curry-Howard correspondence)
+programming languages = logics!
+types = propositions!
+"->" means "implies"
+programs = proofs!
+-}
+
+-- A simple example of a proof:
+transitivity : {a : Type} (x : a) (y : a) (z : a) -> x ≡ y -> y ≡ z -> x ≡ z
+transitivity x y z eq1 eq2 = {!!}
+
+
+
+
+{-======================================================================-}
+{- We can even use Agda as a proof assistant! (proof checker)
+   Let's prove our standard example: rev xs = rev-tl xs []
+-}
+
+-- Append two lists
+_⋆_ : {a : Type} -> list a -> list a -> list a
+[] ⋆ ys = ys
+(x ∷ xs) ⋆ ys = x ∷ (xs ⋆ ys)
+
+rev : {a : Type} -> list a -> list a
+rev [] = []
+rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
+
+rev-tl : {a : Type} -> list a -> list a -> list a
+rev-tl [] acc = acc
+rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
+
+-- I need this property, which I'm not going to prove
+⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
+                  -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
+⋆-associativity xs ys zs = {!!}
+
+lemma1 : {a : Type} (xs : list a) (acc : list a) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
+lemma1 [] acc =
+  begin    -- This is just fancy notation for using transitivity
+   rev-tl [] acc
+                  ≡⟨ program ⟩
+   acc
+                  ≡⟨ program ⟩
+   [] ⋆ acc       
+                  ≡⟨ program ⟩
+   (rev []) ⋆ acc
+  ∎
+lemma1 (x ∷ xs) acc =
+  begin
+   rev-tl (x ∷ xs) acc
+                          ≡⟨ program ⟩
+   rev-tl xs (x ∷ acc)
+                          ≡⟨ lemma1 xs (x ∷ acc) ⟩ -- I.H. (Induction is just recursion!)
+   (rev xs) ⋆ (x ∷ acc)
+                          ≡⟨ program ⟩
+   (rev xs) ⋆ ((x ∷ []) ⋆ acc)
+                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
+   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
+                          ≡⟨ program ⟩
+   (rev (x ∷ xs)) ⋆ acc
+  ∎
+-- This looks almost exactly like how we write proofs on paper!
+-- What happens if we skip a step?
+
+
+
+
+
+
+
+
+-- Actually all the "by program" steps are automatic
+-- We could instead write a much shorter proof:
+lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
+lemma1' [] acc = refl
+lemma1' (x ∷ xs) acc =
+  begin
+   rev-tl xs (x ∷ acc)
+                          ≡⟨ lemma1' xs (x ∷ acc) ⟩
+   (rev xs) ⋆ (x ∷ acc)
+                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
+   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
+  ∎
+
+
+{- Let's prove the main theorem using the lemma -}
+
+-- We need this property (not going to prove)
+⋆-unit-right : {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
+⋆-unit-right xs = {!!}
+
+-- Main theorem (using lemma):
+theorem1' : {a' : Set} (xs : list a') -> rev-tl xs [] ≡ rev xs
+theorem1' xs =
+  begin
+   rev-tl xs []
+                  ≡⟨ lemma1' xs [] ⟩
+   (rev xs) ⋆ []
+                  ≡⟨ ⋆-unit-right (rev xs) ⟩
+   rev xs
+  ∎
+
+-- Termination checking is even more important when proving theorems:
+-- Let's try to prove a false theorem:
+theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
+theorem1'' [] =
+  begin
+    rev []      ≡⟨ program ⟩
+    []
+  ∎
+theorem1'' (x ∷ xs) =
+  begin
+    rev (x ∷ xs)     ≡⟨ theorem1'' (x ∷ xs) ⟩ -- By "induction"
+    (x ∷ xs)
+  ∎
+
+{-======================================================================-}
+{- Go to serializer.agda now, Andrew -}
+
+
+
+
+
+
+
+
 {-======================================================================================-}
 
 {- An interpreter for Nano-ML in Agda
@@ -496,190 +675,6 @@ example6 = eval example4
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{-===============================================================-}
-{- Unit tests and proofs -}
-
-
-
-
-
--- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
-data _≡'_ {a : Type} : a -> a -> Set where
- refl : {x : a} -> x ≡' x
--- refl is short for "reflexivity"
-
-eqtest1 : 0 ≡' 0
-eqtest1 = refl
-
-eqtest2 : 0 ≡' 1
-eqtest2 = {!!} -- refl won't work!
-
-
-test1 : (zip (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
-test1 = {!!}
--- The type simplified!
-
--- What if we made a mistake when writing zip?
-zip-mistake : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
-zip-mistake (x ∷ xs) (y ∷ ys) = zip-mistake xs ys -- Forgot the (x,y)!
-zip-mistake _ _ = []
-
-test2 : (zip-mistake (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
-test2 = {!!}
--- These serve as unit tests!
--- Unit testing is an accidental feature of dependently typed languages!
-
-
--- What about this?
-eqtest3 : (x : number) -> (y : number) -> x + y ≡ y + x
-eqtest3 x y = {!!}
-{- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
-
-Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
-This is a deep idea in theoretical computer science:
-(sometimes called the Curry-Howard correspondence)
-programming languages = logics!
-types = propositions!
-programs = proofs!
--}
-
--- A simple example of a proof:
-transitivity : {a : Type} (x : a) (y : a) (z : a) -> x ≡ y -> y ≡ z -> x ≡ z
-transitivity x y z eq1 eq2 = {!!}
-
-
-
-
-{-======================================================================-}
-{- We can even use Agda as a proof assistant! (proof checker)
-   Let's prove our standard example: rev xs = rev-tl xs []
--}
-
--- Append two lists
-_⋆_ : {a : Type} -> list a -> list a -> list a
-[] ⋆ ys = ys
-(x ∷ xs) ⋆ ys = x ∷ (xs ⋆ ys)
-
-rev : {a : Type} -> list a -> list a
-rev [] = []
-rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
-
-rev-tl : {a : Type} -> list a -> list a -> list a
-rev-tl [] acc = acc
-rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
-
-
-
-
--- I need this property, which I'm not going to prove
-⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
-                  -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
-⋆-associativity xs ys zs = {!!}
-
-
-lemma1 : {a : Type} (xs : list a) (acc : list a) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
-lemma1 [] acc =
-  begin    -- This is just fancy notation for using transitivity
-   rev-tl [] acc
-                  ≡⟨ program ⟩
-   acc
-                  ≡⟨ program ⟩
-   [] ⋆ acc       
-                  ≡⟨ program ⟩
-   (rev []) ⋆ acc
-  ∎
-lemma1 (x ∷ xs) acc =
-  begin
-   rev-tl (x ∷ xs) acc
-                          ≡⟨ program ⟩
-   rev-tl xs (x ∷ acc)
-                          ≡⟨ lemma1 xs (x ∷ acc) ⟩ -- Induction is just recursion!
-   (rev xs) ⋆ (x ∷ acc)
-                          ≡⟨ program ⟩
-   (rev xs) ⋆ ((x ∷ []) ⋆ acc)
-                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
-   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
-                          ≡⟨ program ⟩
-   (rev (x ∷ xs)) ⋆ acc
-  ∎
--- This looks almost exactly like how we write proofs on paper!
--- What happens if we skip a step?
-
-
-
-
-
-
-
-
--- Actually all the "by program" steps are automatic
--- We could instead write a much shorter proof:
-lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
-lemma1' [] acc = refl
-lemma1' (x ∷ xs) acc =
-  begin
-   rev-tl xs (x ∷ acc)
-                          ≡⟨ lemma1' xs (x ∷ acc) ⟩
-   (rev xs) ⋆ (x ∷ acc)
-                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
-   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
-  ∎
-
-
-{- Let's prove the main theorem using the lemma -}
-
-⋆-unit-right : {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
-⋆-unit-right xs = {!!}
-
-theorem1' : {a' : Set} (xs : list a') -> rev-tl xs [] ≡ rev xs
-theorem1' xs =
-  begin
-   rev-tl xs []
-                  ≡⟨ lemma1' xs [] ⟩
-   (rev xs) ⋆ []
-                  ≡⟨ ⋆-unit-right (rev xs) ⟩
-   rev xs
-  ∎
-
-
-
-
-
-
-
-
-
-
-
--- Termination checking is even more important when proving theorems:
--- Let's try to prove a false theorem:
-theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
-theorem1'' [] =
-  begin
-    rev []      ≡⟨ program ⟩
-    []
-  ∎
-theorem1'' (x ∷ xs) =
-  begin
-    rev (x ∷ xs)     ≡⟨ theorem1'' (x ∷ xs) ⟩ -- By "induction"
-    (x ∷ xs)
-  ∎
-
-{-======================================================================-}
 
 
 
