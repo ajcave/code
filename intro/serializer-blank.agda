@@ -87,6 +87,7 @@ data Datatype : Type  where
  -- Like SML's:   Empty of 'a | Node of ('a tree * 'a tree) datatypes
  _of_∣_of_ : (l1 : String) -> (T1 : Datatype) -> (l2 : String) -> (T2 : Datatype) -> Datatype
 
+-- Now we write down "encodings" or *descriptions* of our datatypes:
 isManager : Datatype
 isManager = ("Yep" of string ∣ "Nope" of unit)
                    -- department
@@ -105,6 +106,7 @@ department = string ⊗ province   -- name, location
 -- You can't do this in SML (Or any commercial language..)
 interpret : Datatype -> Type
 interpret T = {!!}
+-- Hopefully you have questions...
 
 egInterpret1 = interpret isManager
 
