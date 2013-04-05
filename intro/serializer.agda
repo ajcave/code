@@ -6,6 +6,7 @@ open import Data.Nat.Show
 
 
 -- Serializing data (i.e. converting data to strings to write them to disk) is boring and repetitive
+-- Here's how we would probably do it in SML:
 data IsManager : Type where
  Nope : IsManager
  Yep : (dept : String) -> IsManager
