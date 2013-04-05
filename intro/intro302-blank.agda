@@ -529,17 +529,22 @@ eqtest2 : 0 ≡' 1
 eqtest2 = {!!} -- refl won't work!
 
 
-test1 : (eval example4) ≡' zero
-test1 = refl
+test1 : (zip (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
+test1 = {!!}
 -- The type simplified!
 
-bad-test : (eval example4) ≡' (succ zero)
-bad-test = {!!}
+-- What if we made a mistake when writing zip?
+zip-mistake : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
+zip-mistake (x ∷ xs) (y ∷ ys) = zip-mistake xs ys -- Forgot the (x,y)!
+zip-mistake _ _ = []
 
+test2 : (zip-mistake (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
+test2 = {!!}
 -- These serve as unit tests!
 -- Unit testing is an accidental feature of dependently typed languages!
 
 
+-- What about this?
 eqtest3 : (x : number) -> (y : number) -> x + y ≡ y + x
 eqtest3 x y = {!!}
 {- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
