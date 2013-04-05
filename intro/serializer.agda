@@ -35,6 +35,7 @@ emplToString : Employee -> String
 emplToString (Empl name m birthyear) =
  "(" ++ name ++ "," ++ isManagerToString m ++ "," ++ show birthyear ++ ")"
 
+-- SML : val johnEg = Empl ("John Smith", Nope, 04)
 johnEg = Empl "John Smith" Nope 04
 
 johnStringEg = emplToString johnEg
@@ -142,6 +143,8 @@ johnString = toString employee john
 janeString = toString employee jane
 
 cyberString = toString department cybernetics
+
+-- toString will work automatically for every new Datatype we write!
 
 -- Could even implement a parser once and for all too!
 parse : (T : Datatype) -> String -> option (interpret T)
