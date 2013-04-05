@@ -476,7 +476,7 @@ programs = proofs!
 
 -- A simple example of a proof:
 transitivity : {a : Type} (x : a) (y : a) (z : a) -> x ≡ y -> y ≡ z -> x ≡ z
-transitivity x y z eq1 eq2 = {!!}
+transitivity x y z pf1 pf2 = ?
 
 
 
