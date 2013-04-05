@@ -1,9 +1,8 @@
-module string where
+module serializer where
 open import helper
 open import Data.String
 open import Data.Bool
 open import Data.Nat.Show
---open import Data.Unit
 
 data IsManager : Type where
  Nope : IsManager
@@ -71,7 +70,7 @@ data Datatype : Type  where
  int : Datatype
  string : Datatype
  unit : Datatype
- -- Fancy notation for Product
+ -- Fancy symbol for Product i.e. *
  _⊗_ : (T1 : Datatype) -> (T2 : Datatype) -> Datatype
  -- Like SML's:   Empty of 'a | Node of ('a tree * 'a tree) datatypes
  _of_∣_of_ : (l1 : String) -> (T1 : Datatype) -> (l2 : String) -> (T2 : Datatype) -> Datatype
@@ -80,10 +79,15 @@ data Datatype : Type  where
 isManager : Datatype
 isManager = ("Yep" of string ∣ "Nope" of unit)
                    -- department
-
 employee : Datatype
 employee = string ⊗ isManager ⊗ int
-           -- Name, Is Manager of department, Birth year
+        -- Name, Is Manager of department, Birth year
+
+province : Datatype
+province = "Quebec" of unit ∣ "Alberta" of unit
+
+department : Datatype
+department = string ⊗ province   -- name, location
 
 -- Here's the magic part:
 -- We compute from a datatype description an honest, real Agda datatype!
@@ -93,8 +97,8 @@ interpret unit = Unit
 interpret bool = Bool
 interpret int = number
 interpret string = String
-interpret (U1 ⊗ U2) = interpret U1 * interpret U2
-interpret (l1 of U1 ∣ l2 of U2) = interpret U1 ∣ interpret U2
+interpret (T1 ⊗ T2) = interpret T1 * interpret T2
+interpret (l1 of T1 ∣ l2 of T2) = interpret T1 ∣ interpret T2
 
 egInterpret1 = interpret isManager
 
@@ -105,6 +109,9 @@ john = "John Smith" , (right 〈〉) , 04
 
 jane : interpret employee
 jane = "Jane Smith" , (left "Cybernetics") , 03
+
+cybernetics : interpret department
+cybernetics = "Cybernetics", (left 〈〉) -- Quebec
 
 -- Now we can write a toString once and for all
 -- for every datatype!
@@ -124,7 +131,9 @@ johnString = toString employee john
 
 janeString = toString employee jane
 
--- Could implement a parser once and for all too!
+cyberString = toString department cybernetics
+
+-- Could even implement a parser once and for all too!
 parse : (T : Datatype) -> String -> option (interpret T)
 parse T s = {! ... bleh ...!}
 
