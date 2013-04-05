@@ -395,43 +395,12 @@ rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 -- Agda can't see that 1 + (n + m) = n + (1 + m)
 -- We'd have to *prove* this to Agda
--- Other systems will see this automatically (but have other downsides)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+-- Other systems will see this automatically (but often with tradeoffs)
+-- It's an open research problem how to best integrate automatic solvers
+--  for problems like this into dependently typed languages (some proposals)
 
 {-===============================================================-}
 {- Unit tests and proofs -}
-
-
-
-
 
 -- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
 data _≡'_ {a : Type} : a -> a -> Set where
@@ -476,7 +445,7 @@ programs = proofs!
 
 -- A simple example of a proof:
 transitivity : {a : Type} (x : a) (y : a) (z : a) -> x ≡ y -> y ≡ z -> x ≡ z
-transitivity x y z pf1 pf2 = ?
+transitivity x y z pf1 pf2 = {!!}
 
 
 
