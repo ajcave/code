@@ -140,6 +140,9 @@ cyberString = toString department cybernetics
 parse : (T : Datatype) -> String -> option (interpret T)
 parse T s = {! ... bleh ...!}
 
+-- The same technique works for writing database code
+-- You can write once and for all a generic (SQL) query which
+-- reads any kind of datatype from the database
 
 
 
