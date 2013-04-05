@@ -143,6 +143,6 @@ parse T s = {! ... bleh ...!}
 -- The same technique works for writing database code
 -- You can write once and for all a generic (SQL) query which
 -- reads (writes) any kind of datatype from the database
-
+-- Or serializing to XML, etc...
 
 
