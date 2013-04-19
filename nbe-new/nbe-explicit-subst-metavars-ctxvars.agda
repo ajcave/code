@@ -56,11 +56,8 @@ mutual
   ⊡ : ∀ {Ψ} -> nsub Ω Δ Ψ ⊡
   id : ∀ φ Ψ -> nsub Ω Δ ((cv φ) << Ψ) (cv φ)
   r : ∀ {φ Ψ} -> rsub Ω Δ Ψ (cv φ) -> nsub Ω Δ Ψ (cv φ)
- --nsub : (Ω : ctx Unit) (Δ : ctx (mtp Ω)) (Ψ : sctx Ω) (Φ : sctx Ω) -> Set
- --nsub Ω Δ Ψ Φ = sgsubst (ntm Ω Δ) Ψ Φ
  data rsub (Ω : ctx Unit) (Δ : ctx (mtp Ω)) : (Ψ : sctx Ω) (Φ : sctx Ω) -> Set where
   _[_] : ∀ {Ψ Φ Φ'} -> var Δ ($ Φ [ Ψ ]) -> nsub Ω Δ Φ' Ψ -> rsub Ω Δ Φ' Φ
---  id : ∀ {Ψ} -> rsub Ω Δ Ψ Ψ
   ↑ : ∀ {Ψ Φ A} -> rsub Ω Δ Ψ (Φ , A) -> rsub Ω Δ Ψ Φ
 
 svsubst : {Ω : ctx Unit} (Γ Γ' : sctx Ω) -> Set
