@@ -36,7 +36,7 @@ mutual
  data sub {Ω} (Δ : mctx Ω) : (Ψ : tctx Ω) (Φ : tctx Ω) -> Set where
   sv : ∀ {Ψ Φ} -> var Δ ($ Φ [ Ψ ]) -> sub Δ Ψ Φ
   _[_] : ∀ {Ψ Φ Φ'} -> sub Δ Ψ Φ -> sub Δ Φ' Ψ -> sub Δ Φ' Φ
-  _,_ : ∀ {Ψ Φ A} -> sub Δ Ψ Φ -> tm Δ Ψ A -> sub Δ Ψ (Φ , (▸ A))
+  _,_ : ∀ {Ψ Φ Φ₂} -> sub Δ Ψ Φ -> sub Δ Ψ Φ₂ -> sub Δ Ψ (Φ << Φ₂)
   id : ∀ {Ψ} -> sub Δ Ψ Ψ
   · : ∀ {Ψ} -> sub Δ Ψ ⊡
   ↑ : ∀ {Ψ A} -> sub Δ (Ψ , A) Ψ
@@ -46,8 +46,13 @@ nsub-lookup top (σ , N) = N
 nsub-lookup (pop x) (σ , N) = nsub-lookup x σ
 nsub-lookup (pop x) (σ ,[ xs ] ρ) = nsub-lookup x σ
 
-nsub-ext :  ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ , (▸ A)) (Ψ₁ , (▸ A))
+nsub-ext : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ , (▸ A)) (Ψ₁ , (▸ A))
 nsub-ext σ = (ns-wkn _ (⊡ , ▸ _) ⊡ σ) , η-expand2 (▹ top)
+
+nsub-concat : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ₁ Φ₂} -> nsub Δ Ψ Φ₁ -> nsub Δ Ψ Φ₂ -> nsub Δ Ψ (Φ₁ << Φ₂)
+nsub-concat σ₁ ⊡ = σ₁
+nsub-concat σ₁ (σ , N) = (nsub-concat σ₁ σ) , N
+nsub-concat σ₁ (σ ,[ xs ] ρ) = (nsub-concat σ₁ σ) ,[ xs ] ρ
 
 mutual
  eval : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> tm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
@@ -61,7 +66,7 @@ mutual
  evals : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> sub Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> nsub Δ Φ A
  evals (sv s) σ' = ηs-expand (s [ σ' ])
  evals (y [ y' ]) σ' = evals y (evals y' σ')
- evals (y , y') σ' = (evals y σ') , (eval y' σ')
+ evals (σ₁ , σ₂) σ' = nsub-concat (evals σ₁ σ') (evals σ₂ σ')
  evals id σ' = σ'
  evals · σ' = ⊡
  evals ↑ (σ , N) = σ
