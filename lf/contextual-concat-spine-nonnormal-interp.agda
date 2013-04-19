@@ -36,6 +36,7 @@ mutual
  data sub {Ω} (Δ : mctx Ω) : (Ψ : tctx Ω) (Φ : tctx Ω) -> Set where
   sv : ∀ {Ψ Φ} -> var Δ ($ Φ [ Ψ ]) -> sub Δ Ψ Φ
   _[_] : ∀ {Ψ Φ Φ'} -> sub Δ Ψ Φ -> sub Δ Φ' Ψ -> sub Δ Φ' Φ
+  _,₁_ : ∀ {Ψ Φ T} -> sub Δ Ψ Φ -> tm Δ Ψ T -> sub Δ Ψ (Φ , ▸ T)
   _,_ : ∀ {Ψ Φ Φ₂} -> sub Δ Ψ Φ -> sub Δ Ψ Φ₂ -> sub Δ Ψ (Φ << Φ₂)
   id : ∀ {Ψ} -> sub Δ Ψ Ψ
   · : ∀ {Ψ} -> sub Δ Ψ ⊡
@@ -66,6 +67,7 @@ mutual
  evals : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> sub Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> nsub Δ Φ A
  evals (sv s) σ' = ηs-expand (s [ σ' ])
  evals (y [ y' ]) σ' = evals y (evals y' σ')
+ evals (σ₁ ,₁ t) σ' = (evals σ₁ σ') , (eval t σ')
  evals (σ₁ , σ₂) σ' = nsub-concat (evals σ₁ σ') (evals σ₂ σ')
  evals id σ' = σ'
  evals · σ' = ⊡
