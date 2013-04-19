@@ -137,11 +137,6 @@ appSubst (T ⊗ S) σ (M , N) = (appSubst T σ M) , (appSubst S σ N)
 appSubst unit σ tt = tt
 
 
-data subst {Ω} (Δ : ctx (mtp Ω)) : (Ψ : sctx Ω) (Φ : sctx Ω) -> Set where
- _,_ : ∀ {Ψ Φ A} -> subst Δ Ψ Φ -> sem Δ Ψ A -> subst Δ Ψ (Φ , A)
- ⊡ : ∀ {Ψ} -> subst Δ Ψ ⊡
- id : ∀ φ Ψ -> subst Δ ((cv φ) << Ψ) (cv φ)
- r : ∀ {φ Ψ} -> rsub Ω Δ Ψ (cv φ) -> subst Δ Ψ (cv φ)
 
 --subst : ∀ {Ω} -> ctx (mtp Ω) -> sctx Ω -> sctx Ω -> Set
 --subst Δ Γ Γ' = sgsubst (sem Δ) Γ Γ'
@@ -159,7 +154,27 @@ mutual
  reify {T ⊗ S} M = < reify (_×_.proj₁ M) , reify (_×_.proj₂ M) >
  reify {unit} tt = tt
 
+data subst {Ω} (Δ : ctx (mtp Ω)) : (Ψ : sctx Ω) (Φ : sctx Ω) -> Set where
+ _,_ : ∀ {Ψ Φ A} -> subst Δ Ψ Φ -> sem Δ Ψ A -> subst Δ Ψ (Φ , A)
+ ⊡ : ∀ {Ψ} -> subst Δ Ψ ⊡
+ id : ∀ φ Ψ -> subst Δ ((cv φ) << Ψ) (cv φ)
+ r : ∀ {φ Ψ} -> rsub Ω Δ Ψ (cv φ) -> subst Δ Ψ (cv φ)
 
+semlookup : ∀ {Ω} {Δ Γ Γ' T} -> subst Δ Γ Γ' -> svar Ω Γ' T -> sem Δ Γ T
+semlookup (θ , y) top = y
+semlookup (θ , y) (pop y') = semlookup θ y'
+semlookup ⊡ ()
+semlookup (id φ Ψ) ()
+semlookup (r ρ) ()
+
+semcomp : ∀ {Ω} {Δ} {Γ Γ' Γ'' : sctx Ω} -> subst Δ Γ Γ' -> svsubst Γ'' Γ -> subst Δ Γ'' Γ'
+semcomp (θ , s) σ = (semcomp θ σ) , (appSubst _ σ s)
+semcomp ⊡ σ = ⊡
+semcomp (id φ Ψ) σ with invert-id Ψ σ
+... | Φ , refl = id φ Φ
+semcomp (r y) σ = r (rsappSubst σ y)
+
+mutual
  reflects : ∀ {Ω T Δ Γ} -> rsub Ω Δ Γ T -> subst Δ Γ T
  reflects {Ω} {⊡} ρ = ⊡
  reflects {Ω} {ψ , T} ρ = (reflects (↑ ρ)) , reflect (top ρ)
@@ -171,10 +186,10 @@ mutual
  reifys {Ω} {cv φ} (r ρ) = r ρ
  reifys {Ω} {ψ , T} (θ , N) = reifys θ , reify N
 
-{-
+
 mutual
- data tm (Δ : ctx mtp) : (Γ : ctx tp) (T : tp) -> Set where
-  v : ∀ {Γ T} -> var Γ T -> tm Δ Γ T
+ data tm {Ω} (Δ : ctx (mtp Ω)) : (Γ : sctx Ω) (T : tp) -> Set where
+  v : ∀ {Γ T} -> svar Ω Γ T -> tm Δ Γ T
   _·_ : ∀ {Γ T S} -> tm Δ Γ (T ⇝ S) -> tm Δ Γ T -> tm Δ Γ S
   ƛ : ∀ {Γ T S} -> tm Δ (Γ , T) S -> tm Δ Γ (T ⇝ S)
   π₁ : ∀ {Γ T S} -> tm Δ Γ (T ⊗ S) -> tm Δ Γ T
@@ -183,7 +198,7 @@ mutual
   tt : ∀ {Γ} -> tm Δ Γ unit
   mv : ∀ {A Ψ} -> var Δ (A [ Ψ ]) -> tm Δ Ψ A
   _[_] : ∀ {Ψ Φ A} -> tm Δ Φ A -> sub Δ Ψ Φ -> tm Δ Ψ A
- data sub (Δ : ctx mtp) : (Ψ : ctx tp) (Φ : ctx tp) -> Set where
+ data sub {Ω} (Δ : ctx (mtp Ω)) : (Ψ : sctx Ω) (Φ : sctx Ω) -> Set where
   sv : ∀ {Ψ Φ} -> var Δ ($ Φ [ Ψ ]) -> sub Δ Ψ Φ
   _[_] : ∀ {Ψ Φ Φ'} -> sub Δ Ψ Φ -> sub Δ Φ' Ψ -> sub Δ Φ' Φ
   _,_ : ∀ {Ψ Φ A} -> sub Δ Ψ Φ -> tm Δ Ψ A -> sub Δ Ψ (Φ , A)
@@ -191,13 +206,14 @@ mutual
   · : ∀ {Ψ} -> sub Δ Ψ ⊡
   ↑ : ∀ {Ψ A} -> sub Δ (Ψ , A) Ψ
 
+
 -- Traditional nbe
 
 mutual
- eval : ∀ {Γ Γ' Δ T} -> subst Δ Γ Γ' -> tm Δ Γ T -> sem Δ Γ' T
- eval θ (v y) = lookup θ y
- eval θ (M · N) = eval θ M _ id-vsub (eval θ N)
- eval θ (ƛ M) = λ _ σ s -> eval (gmap (appSubst _ σ) θ , s) M
+ eval : ∀ {Ω Γ Γ' Δ T} -> subst {Ω} Δ Γ' Γ -> tm Δ Γ T -> sem Δ Γ' T
+ eval θ (v y) = semlookup θ y
+ eval θ (M · N) = eval θ M _ sid (eval θ N)
+ eval θ (ƛ M) = λ Γ'' σ s -> eval (semcomp θ σ , s) M
  eval θ (π₁ M) = _×_.proj₁ (eval θ M)
  eval θ (π₂ N) = _×_.proj₂ (eval θ N)
  eval θ < M , N > = eval θ M , eval θ N
@@ -205,19 +221,21 @@ mutual
  eval θ (mv u) = reflect (u [ reifys θ ])
  eval θ (N [ σ ]) = eval (evals θ σ) N
 
- evals : ∀ {Γ Γ' Δ Γ''} -> subst Δ Γ Γ' -> sub Δ Γ Γ'' -> subst Δ Γ'' Γ'
+ evals : ∀ {Ω Γ Γ' Δ Γ''} -> subst {Ω} Δ Γ' Γ -> sub Δ Γ Γ'' -> subst Δ Γ' Γ''
  evals θ (sv y) = reflects (y [ reifys θ ])
  evals θ (σ1 [ σ2 ]) = evals (evals θ σ2) σ1
  evals θ (σ , N) = evals θ σ , eval θ N
  evals θ id = θ
- evals θ · = tt
- evals (θ , r) ↑ = θ
+ evals θ · = ⊡
+ evals (θ , s) ↑ = θ
 
-ids : ∀ {Γ Δ} -> subst Δ Γ Γ
-ids {⊡} = tt
-ids {ψ , T} = (gmap (appSubst _ wkn-vsub) ids) , reflect (v top)
 
-nbe : ∀ {Γ Δ T} -> tm Δ Γ T -> ntm Δ Γ T
+ids : ∀ {Ω Γ Δ} -> subst {Ω} Δ Γ Γ
+ids {Ω} {⊡} = ⊡
+ids {Ω} {ψ , T} = (semcomp ids wkn-svsub) , (reflect (v top))
+ids {Ω} {cv φ} = id φ ⊡
+
+nbe : ∀ {Ω Γ Δ T} -> tm Δ Γ T -> ntm Ω Δ Γ T
 nbe M = reify (eval ids M) 
--}
+
 
