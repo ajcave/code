@@ -69,7 +69,7 @@ mutual
 
 id-nsub : ∀ {Ω} {Γ} {Δ : mctx Ω} -> nsub Δ Γ Γ
 id-nsub {Ω} {⊡} = ⊡
-id-nsub {Ω} {Ψ , ▹ φ} = (ns-wkn _ (⊡ , ▹ φ) ⊡ (id-nsub {Ω} {Ψ})) ,[ top ] id top
+id-nsub {Ω} {Ψ , ▹ φ} = (ns-wkn _ (⊡ , ▹ φ) ⊡ (id-nsub {Ω} {Ψ})) ,[ top ] (id top)
 id-nsub {Ω} {Ψ , ▸ A} = (ns-wkn _ (⊡ , ▸ A) ⊡ (id-nsub {Ω} {Ψ})) , (η-expand2 (▹ top))
 
 norm : ∀ {Ω} {Δ : mctx Ω} {Γ T} -> tm Δ Γ T -> ntm Δ Γ T
