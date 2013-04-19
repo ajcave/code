@@ -119,6 +119,7 @@ mutual
   _,_ : ∀ {Ψ Φ A} -> sub Δ Ψ Φ -> tm Δ Ψ A -> sub Δ Ψ (Φ , A)
   id : ∀ {Ψ} -> sub Δ Ψ Ψ
   · : ∀ {Ψ} -> sub Δ Ψ ⊡
+  ↑ : ∀ {Ψ A} -> sub Δ (Ψ , A) Ψ
 
 -- Traditional nbe
 
@@ -140,6 +141,7 @@ mutual
  evals θ (σ , N) = evals θ σ , eval θ N
  evals θ id = θ
  evals θ · = tt
+ evals (θ , r) ↑ = θ
 
 ids : ∀ {Γ Δ} -> subst Δ Γ Γ
 ids {⊡} = tt
