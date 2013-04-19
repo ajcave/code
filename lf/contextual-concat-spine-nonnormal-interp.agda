@@ -86,4 +86,6 @@ norm t = eval t id-nsub
  Interesting: It seems we could allow abstractions over entire contexts:
  This is like binders which bind an arbitrary number of things (e.g. patterns)
  Hmm this would be a cool use case for linearity!
+ Can we make sense of applying an entire simultaneous substitution in the logical framework?
+ "Application" of  Pi (φ : ctx). exp   to a   φ (ctx)...
 -}
