@@ -47,8 +47,9 @@ nsub-lookup top (σ , N) = N
 nsub-lookup (pop x) (σ , N) = nsub-lookup x σ
 nsub-lookup (pop x) (σ ,[ xs ] ρ) = nsub-lookup x σ
 
-nsub-ext : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ , (▸ A)) (Ψ₁ , (▸ A))
-nsub-ext σ = (ns-wkn _ (⊡ , ▸ _) ⊡ σ) , η-expand2 (▹ top)
+nsub-ext : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ , A) (Ψ₁ , A)
+nsub-ext {A = ▸ A} σ = (ns-wkn _ (⊡ , ▸ _) ⊡ σ) , η-expand2 (▹ top)
+nsub-ext {A = ▹ φ} σ = (ns-wkn _ (⊡ , ▹ φ) ⊡ σ) ,[ top ] (id top)
 
 nsub-concat : ∀ {Ω} {Δ : mctx Ω} {Ψ Φ₁ Φ₂} -> nsub Δ Ψ Φ₁ -> nsub Δ Ψ Φ₂ -> nsub Δ Ψ (Φ₁ << Φ₂)
 nsub-concat σ₁ ⊡ = σ₁
@@ -76,8 +77,7 @@ mutual
 
 id-nsub : ∀ {Ω} {Γ} {Δ : mctx Ω} -> nsub Δ Γ Γ
 id-nsub {Ω} {⊡} = ⊡
-id-nsub {Ω} {Ψ , ▹ φ} = (ns-wkn _ (⊡ , ▹ φ) ⊡ (id-nsub {Ω} {Ψ})) ,[ top ] (id top)
-id-nsub {Ω} {Ψ , ▸ A} = (ns-wkn _ (⊡ , ▸ A) ⊡ (id-nsub {Ω} {Ψ})) , (η-expand2 (▹ top))
+id-nsub {Ω} {Ψ , A} = nsub-ext id-nsub
 
 norm : ∀ {Ω} {Δ : mctx Ω} {Γ T} -> tm Δ Γ T -> ntm Δ Γ T
 norm t = eval t id-nsub
