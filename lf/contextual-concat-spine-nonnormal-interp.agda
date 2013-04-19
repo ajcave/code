@@ -81,3 +81,9 @@ id-nsub {Ω} {Ψ , A} = nsub-ext id-nsub
 
 norm : ∀ {Ω} {Δ : mctx Ω} {Γ T} -> tm Δ Γ T -> ntm Δ Γ T
 norm t = eval t id-nsub
+
+{-
+ Interesting: It seems we could allow abstractions over entire contexts:
+ This is like binders which bind an arbitrary number of things (e.g. patterns)
+ Hmm this would be a cool use case for linearity!
+-}
