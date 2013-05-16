@@ -89,3 +89,7 @@ norm t = eval t id-nsub
  Can we make sense of applying an entire simultaneous substitution in the logical framework?
  "Application" of  Pi (φ : ctx). exp   to a   φ (ctx)...
 -}
+
+{- Can probably simplify this (and Beluga's parser, etc) by putting substitutions and terms in one grammar
+   They are typed by either a context or a regular type -- disjoint sum, like tctx-elt
+   Standard trick for defining mutually recursive families by tagging -}
