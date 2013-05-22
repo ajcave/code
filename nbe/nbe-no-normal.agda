@@ -46,8 +46,6 @@ data tm (Γ : ctx) : (T : tp) -> Set where
   _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
   π₁ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ T
   π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S -}
-ntm : (Γ : ctx) (T : tp) -> Set
-ntm Γ T = tm Γ T
 
 
 sem : (Γ : ctx) -> (T : tp) -> Set
@@ -63,7 +61,7 @@ ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
 
-nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
+nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> tm Δ S -> tm Γ S 
 nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
 nappSubst σ < M , N > = < nappSubst σ M , nappSubst σ N >
 nappSubst σ tt = tt
@@ -91,7 +89,7 @@ mutual
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
 
- reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
+ reify : ∀ {T Γ} -> sem Γ T -> tm Γ T
  reify {atom A} M = M
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
@@ -114,5 +112,5 @@ eval θ (π₂ N) = _*_.snd (eval θ N)
 eval θ < M , N > = eval θ M , eval θ N
 eval θ tt = tt
 
-nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
+nbe : ∀ {Γ T} -> tm Γ T -> tm Γ T
 nbe M = reify (eval (λ x → reflect (v x)) M) 
