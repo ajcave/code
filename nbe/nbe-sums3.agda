@@ -153,14 +153,13 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  inr : ∀ {T S} (M : tm Γ S) -> tm Γ (T + S)
  case_of_-_ : ∀ {T S C} (M : tm Γ (T + S)) (N1 : tm (Γ , T) C) (N2 : tm (Γ , S) C) -> tm Γ C
 
-
 arr : ∀ Γ T -> Set
 arr Γ T = ∀ {Δ} -> subst Γ Δ -> sem T Δ
-                                                                  --- This is unrolling arr (Γ , (A + B)) T (and applying some isomorphisms)
-case3 : ∀ {Γ} {T} {A B} (f0 : arr (Γ , A) T) (f1 : arr (Γ , B) T) -> ∀ {Δ} -> subst Γ Δ -> sem (A + B) Δ -> sem T Δ
-case3 f0 f1 θ (inl x) = f0 (extend θ x)
-case3 f0 f1 θ (inr x) = f1 (extend θ x)
-case3 f0 f1 θ (case s' r r₁) = isSheaf _ s' (case3 f0 f1 (λ x → appSubst _ wkn (θ x)) r) (case3 f0 f1 (λ x → appSubst _ wkn (θ x)) r₁)
+                                                                   --- This is unrolling arr (Γ , (A + B)) T (and applying some isomorphisms)
+case' : ∀ {Γ} {T} {A B} (f0 : arr (Γ , A) T) (f1 : arr (Γ , B) T) -> ∀ {Δ} -> subst Γ Δ -> sem (A + B) Δ -> sem T Δ
+case' f0 f1 θ (inl x) = f0 (extend θ x)
+case' f0 f1 θ (inr x) = f1 (extend θ x)
+case' f0 f1 θ (case s' r r₁) = isSheaf _ s' (case' f0 f1 (λ x → appSubst _ wkn (θ x)) r) (case' f0 f1 (λ x → appSubst _ wkn (θ x)) r₁)
 
 -- Traditional nbe
 eval : ∀ {Γ T} -> tm Γ T -> arr Γ T
@@ -173,8 +172,19 @@ eval < M , N > θ = eval M θ , eval N θ
 eval tt θ = tt
 eval (inl M) θ = inl (eval M θ)
 eval (inr M) θ = inr (eval M θ)
-eval (case M of N1 - N2) θ = case3 (eval N1) (eval N2) θ (eval M θ)
+eval (case M of N1 - N2) θ = case' (eval N1) (eval N2) θ (eval M θ)
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe M = reify (eval M (λ x → reflect (v x))) 
+nbe M = reify (eval M (λ x → reflect (v x)))
+
+bool = unit + unit
+
+t1 : tm ⊡ ((bool ⇝ bool) ⇝ (bool ⇝ bool))
+t1 = ƛ (ƛ ((v (s z)) · ((v (s z)) · ((v (s z)) · (v z)))))
+
+t2 : tm ⊡ ((bool ⇝ bool) ⇝ (bool ⇝ bool))
+t2 = ƛ (v z)
+
+nt1 = nbe t1
+nt2 = nbe t2
 
