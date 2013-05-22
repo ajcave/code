@@ -22,11 +22,8 @@ data False : Set where
 record Unit : Set where
  constructor tt
 
-postulate
- atomic_tp : Set
-
 data tp : Set where
- atom : (A : atomic_tp) -> tp
+ atom : tp
  _⇝_ : (T : tp) -> (S : tp) -> tp
  _×_ : (T S : tp) -> tp
  _+_ : (T S : tp) -> tp
@@ -51,7 +48,7 @@ mutual
   π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S
  data pntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> pntm Γ (T ⇝ S)
-  neut : ∀ {A} -> rtm Γ (atom A) -> pntm Γ (atom A)
+  neut : rtm Γ atom -> pntm Γ atom
   <_,_> : ∀ {T S} -> (M : pntm Γ T) -> (N : pntm Γ S) -> pntm Γ (T × S)
   tt : pntm Γ unit
   inl : ∀ {T S} (M : pntm Γ T) -> pntm Γ (T + S)
@@ -94,7 +91,7 @@ data sum Γ (F G : ctx -> Set) : Set where
  case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) F G -> sum (Γ , B) F G -> sum Γ F G
                                       -- Is this different than the presentation in the paper?
 sem : (T : tp) -> (Γ : ctx) -> Set
-sem (atom A) Γ = ntm Γ (atom A)
+sem atom Γ = ntm Γ atom
 sem (T ⇝ S) Γ = ∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
 sem (T × S) Γ = sem T Γ * sem S Γ
 sem unit Γ = Unit
@@ -102,7 +99,7 @@ sem (T + S) Γ = sum Γ (sem T) (sem S)
 
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem S Δ -> sem S Γ
-appSubst (atom A) σ M = nappSubst σ M
+appSubst atom σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ M = (appSubst T σ (_*_.fst M)) , (appSubst S σ (_*_.snd M))
 appSubst unit σ M = tt
@@ -111,7 +108,7 @@ appSubst (T + S) σ (inr x) = inr (appSubst S σ x)
 appSubst (T + S) σ (case s' M M₁) = case (rappSubst σ s') (appSubst (T + S) (ext σ) M) (appSubst (T + S) (ext σ) M₁)
 
 isSheaf : ∀ {Γ} T {A B} (s : rtm Γ (A + B)) (f0 : sem T (Γ , A)) (f1 : sem T (Γ , B)) -> sem T Γ
-isSheaf (atom A) s' f0 f1 = case s' of f0 - f1
+isSheaf atom s' f0 f1 = case s' of f0 - f1
 isSheaf (T ⇝ T₁) s' f0 f1 = λ Δ w x → isSheaf T₁ (rappSubst w s') (f0 _ (ext w) (appSubst T wkn x)) (f1 _ (ext w) (appSubst T wkn x))
 isSheaf (T × T₁) s' (f0a , f0b) (f1a , f1b) = isSheaf T s' f0a f1a , isSheaf T₁ s' f0b f1b
 isSheaf (T + T₁) s' f0 f1 = case s' f0 f1
@@ -140,7 +137,7 @@ pinr (pure x) = pure (inr x)
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem T Γ
- reflect {atom A} N = pure (neut N)
+ reflect {atom} N = pure (neut N)
  reflect {T ⇝ S} {Γ} N = λ Δ w s → f Δ w (reify s)
    where f : (Δ : ctx) → vsubst Γ Δ → ntm Δ T → sem S Δ
          f Δ w (case M of s' - s'') = isSheaf _ M (f _ (wkn ∘ w) s') (f _ (wkn ∘ w) s'')
@@ -151,7 +148,7 @@ mutual
  reflect {T + S} N = case N (inl (reflect (v z))) (inr (reflect (v z)))
 
  reify : ∀ {T Γ} -> sem T Γ -> ntm Γ T
- reify {atom A} M = M
+ reify {atom} M = M
  reify {T ⇝ S} M = pure (ƛ (reify (M _ wkn (reflect (v z)))))
  reify {T × S} M = pair (reify (_*_.fst M)) (reify (_*_.snd M))
  reify {unit} _ = pure tt
@@ -213,3 +210,68 @@ t2 = ƛ (v z)
 nt1 = nbe t1
 nt2 = nbe t2
 
+open import Data.Maybe
+open import Relation.Binary.PropositionalEquality
+
+data IsEq {A : Set} (x : A) : (y : A) -> Set where
+ yep : IsEq x x
+ nope : ∀ {y} -> IsEq x y
+
+tpEq : ∀ (T S : tp) -> IsEq T S
+tpEq atom atom = yep
+tpEq (T ⇝ T₁) (S ⇝ S₁) with tpEq T S | tpEq T₁ S₁
+tpEq (.S ⇝ .S₁) (S ⇝ S₁) | yep | yep = yep
+tpEq (T ⇝ T₁) (S ⇝ S₁) | _ | _ = nope
+tpEq (T × T₁) (S × S₁) with tpEq T S | tpEq T₁ S₁
+tpEq (.S × .S₁) (S × S₁) | yep | yep = yep
+tpEq (T × T₁) (S × S₁) | _ | _ = nope
+tpEq (T + T₁) (S + S₁) with tpEq T S | tpEq T₁ S₁
+tpEq (.S + .S₁) (S + S₁) | yep | yep = yep
+tpEq (T + T₁) (S + S₁) | _ | _ = nope
+tpEq unit unit = yep
+tpEq _ _ = nope
+
+varEq : ∀ {Γ T} (x y : var Γ T) -> IsEq x y
+varEq z z = yep
+varEq (s x) (s y) with varEq x y
+varEq (s x) (s .x) | yep = yep
+varEq (s x) (s y) | nope = nope
+varEq _ _ = nope
+
+_<$>_ : ∀ {A B} -> (A -> B) -> Maybe A -> Maybe B
+f <$> nothing = nothing
+f <$> (just x) = just (f x)
+infixl 9 _<$>_
+
+_<*>_ : ∀ {A B} -> Maybe (A -> B) -> Maybe A -> Maybe B
+(just f) <*> (just x) = just (f x)
+_ <*> _ = nothing
+infixl 9 _<*>_
+
+varInImage : ∀ Γ {T} {Δ} -> vsubst Γ Δ -> var Δ T -> Maybe (var Γ T)
+varInImage ⊡ σ x = nothing
+varInImage (Γ , T) {S} σ x with tpEq T S
+varInImage (Γ , .T) {T} σ x | yep with varEq x (σ z)
+varInImage (Γ , .T) {T} σ .(σ z) | yep | yep = just z
+varInImage (Γ , .T) {T} σ x | yep | nope = s <$> (varInImage Γ (σ ∘ s) x)
+varInImage (Γ , T) σ x | nope = s <$> (varInImage Γ (σ ∘ s) x)
+
+
+mutual
+ ntmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> ntm Δ T -> Maybe (ntm Γ T)
+ ntmInImage σ (case M of N - N₁) = case_of_-_ <$> (rtmInImage σ M) <*> (ntmInImage (ext σ) N) <*> (ntmInImage (ext σ) N₁)
+ ntmInImage σ (pure x) = pure <$> (pntmInImage σ x)
+
+ rtmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> rtm Δ T -> Maybe (rtm Γ T)
+ rtmInImage σ (v x) = v <$> varInImage _ σ x
+ rtmInImage σ (R · x) = _·_ <$> rtmInImage σ R <*> pntmInImage σ x
+ rtmInImage σ (π₁ R) = π₁ <$> rtmInImage σ R
+ rtmInImage σ (π₂ R) = π₂ <$> rtmInImage σ R
+
+ pntmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> pntm Δ T -> Maybe (pntm Γ T)
+ pntmInImage σ (ƛ x) = ƛ <$> ntmInImage (ext σ) x
+ pntmInImage σ (neut x) = neut <$> rtmInImage σ x
+ pntmInImage σ < P , P₁ > = <_,_> <$> pntmInImage σ P <*> pntmInImage σ P₁
+ pntmInImage σ tt = just tt
+ pntmInImage σ (inl P) = inl <$> pntmInImage σ P
+ pntmInImage σ (inr P) = inr <$> pntmInImage σ P
