@@ -30,7 +30,6 @@ data tp : Set where
  _⇝_ : (T : tp) -> (S : tp) -> tp
  _×_ : (T S : tp) -> tp
  _+_ : (T S : tp) -> tp
- ⊥ : tp
  unit : tp
 
 data ctx : Set where
@@ -58,8 +57,6 @@ mutual
   inl : ∀ {T S} (M : ntm Γ T) -> ntm Γ (T + S)
   inr : ∀ {T S} (M : ntm Γ S) -> ntm Γ (T + S)
   case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
-  abort : ∀ {T} (M : rtm Γ ⊥) -> ntm Γ T
-
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -85,87 +82,62 @@ mutual
  nappSubst σ (inl M) = inl (nappSubst σ M)
  nappSubst σ (inr M) = inr (nappSubst σ M)
  nappSubst σ (case M of N1 - N2) = case (rappSubst σ M) of (nappSubst (ext σ) N1) - (nappSubst (ext σ) N2)
- nappSubst σ (abort R) = abort (rappSubst σ R)
 
--- BAD: Currently using Set : Set here...
--- How to fix this? Impredicative set? Lift this definition to Set₁?
--- Probably we can give a "code" for it
+data sum Γ (F G : ctx -> Set) : Set where
+ inl : F Γ -> sum Γ F G
+ inr : G Γ -> sum Γ F G
+ case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) F G -> sum (Γ , B) F G -> sum Γ F G
+                                      -- Is this different than the presentation in the paper?
+sem : (T : tp) -> (Γ : ctx) -> Set
+sem (atom A) Γ = ntm Γ (atom A)
+sem (T ⇝ S) Γ = ∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
+sem (T × S) Γ = sem T Γ * sem S Γ
+sem unit Γ = Unit
+sem (T + S) Γ = sum Γ (sem T) (sem S)
 
--- Γ ◃ P means P is a set of contexts, such that no matter which path we take, we must eventually hit one of the Ps
-data _◃_ (Γ : ctx) : (P : ctx -> Set) -> Set where
- base : Γ ◃ (vsubst Γ)
- step : ∀ {A B P Q} -> rtm Γ (A + B) -> (Γ , A) ◃ P -> (Γ , B) ◃ Q -> Γ ◃ (λ Δ -> P Δ ⊎ Q Δ)
- step2 : ∀ {P} -> rtm Γ ⊥ -> Γ ◃ P
- monotone : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ P
--- monotone2 : ∀ {Γ' P} -> Γ' ◃ P -> vsubst Γ' Γ -> Γ ◃ (λ Δ' -> P Δ' * vsubst Γ Δ') -- This is bad and false!
- union : ∀ {P} {Q : ∀ {Δ} -> P Δ -> ctx -> Set} -> Γ ◃ P -> (∀ {Δ} (x : P Δ) -> Δ ◃ (Q x)) -> Γ ◃ (λ Δ -> Σ (λ Δ' -> Σ (λ x -> Q {Δ'} x Δ)))
- extensional : ∀ {P Q} -> Γ ◃ P -> (∀ Δ -> P Δ -> Q Δ) -> Γ ◃ Q -- We don't seem to need the full generality of this.. We only seem to use it to exchange two different representations of the False predicate
 
-sem : (Γ : ctx) -> (T : tp) -> Set
-sem Γ (atom A) = ntm Γ (atom A)
-sem Γ (T ⇝ S) = ∀ Δ -> vsubst Γ Δ -> sem Δ T → sem Δ S 
-sem Γ (T × S) = sem Γ T * sem Γ S
-sem Γ unit = Unit
-sem Γ (T + S) = Σ (λ P -> (Γ ◃ P) * (∀ Δ -> P Δ -> sem Δ T ⊎ sem Δ S))
-sem Γ ⊥ = Γ ◃ (λ _ -> False)
-
-paste : ∀ {Γ P T} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> ntm Δ T) -> ntm Γ T
-paste base f = f (λ x → x)
-paste (step y y' y0) f = case y of (paste y' (λ x → f (inl x))) - paste y0 (λ x → f (inr x))
-paste (step2 r) f = abort r
-paste (monotone t σ) f = nappSubst σ (paste t f)
-paste (union p q) f = paste p (λ x → paste (q x) (λ x' → f (_ , (x , x'))))
-paste (extensional p q) f = paste p (λ x → f (q _ x))
-
-appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem Δ S -> sem Γ S
+appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem S Δ -> sem S Γ
 appSubst (atom A) σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ M = (appSubst T σ (_*_.fst M)) , (appSubst S σ (_*_.snd M))
 appSubst unit σ M = tt
-appSubst (T + S) σ M = (Σ.fst M) , (monotone (_*_.fst (Σ.snd M)) σ , (_*_.snd (Σ.snd M)))
-appSubst ⊥ σ M = monotone M σ
+appSubst (T + S) σ (inl x) = inl (appSubst T σ x)
+appSubst (T + S) σ (inr x) = inr (appSubst S σ x)
+appSubst (T + S) σ (case s' M M₁) = case (rappSubst σ s') (appSubst (T + S) (ext σ) M) (appSubst (T + S) (ext σ) M₁)
 
+isSheaf : ∀ {Γ} T {A B} (s : rtm Γ (A + B)) (f0 : sem T (Γ , A)) (f1 : sem T (Γ , B)) -> sem T Γ
+isSheaf (atom A) s' f0 f1 = case s' of f0 - f1
+isSheaf (T ⇝ T₁) s' f0 f1 = λ Δ w x → isSheaf T₁ (rappSubst w s') (f0 _ (ext w) (appSubst T wkn x)) (f1 _ (ext w) (appSubst T wkn x))
+isSheaf (T × T₁) s' (f0a , f0b) (f1a , f1b) = isSheaf T s' f0a f1a , isSheaf T₁ s' f0b f1b
+isSheaf (T + T₁) s' f0 f1 = case s' f0 f1
+isSheaf unit s' f0 f1 = tt
 
-mutual
- paste2 : ∀ {T Γ P} -> Γ ◃ P -> (∀ {Δ} -> P Δ -> sem Δ T) -> sem Γ T
- paste2 {atom A} t p = paste t p
- paste2 {T ⇝ S} t p = λ Δ x x' → {!!}
- paste2 {T × S} t p = (paste2 t (λ x → _*_.fst (p x))) , (paste2 t (λ x → _*_.snd (p x)))
- paste2 {T + S} {Γ} {P} t p = (λ Δ → Σ (λ Δ' → Σ (λ (x : P Δ') → Σ.fst (p x) Δ))) , (union t (λ x → _*_.fst (Σ.snd (p x))) , λ Δ x →  _*_.snd (Σ.snd (p (Σ.fst (Σ.snd x)))) Δ (Σ.snd (Σ.snd x)))
- paste2 {⊥} t p = extensional (union t p) (λ Δ x → Σ.snd (Σ.snd x))
- paste2 {unit} t p = tt
 
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
 
 mutual
- reflect : ∀ {T Γ} -> rtm Γ T -> sem Γ T
+ reflect : ∀ {T Γ} -> rtm Γ T -> sem T Γ
  reflect {atom A} N = neut N
  reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
- reflect {T + S} {Γ} N = (λ Δ → vsubst (Γ , T) Δ ⊎ vsubst (Γ , S) Δ) , ((step N base base) , f)
-  where f : ∀ Δ -> (x : vsubst (Γ , T) Δ ⊎ vsubst (Γ , S) Δ) -> sem Δ T ⊎ sem Δ S
-        f Δ (inl y) = inl (reflect (v (y z)))
-        f Δ (inr y) = inr (reflect (v (y z)))
- reflect {⊥} M = step2 M
+ reflect {T + S} {Γ} N = case N (inl (reflect (v z))) (inr (reflect (v z)))
 
- reify : ∀ {T Γ} -> sem Γ T -> ntm Γ T
+ reify : ∀ {T Γ} -> sem T Γ -> ntm Γ T
  reify {atom A} M = M
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
  reify {unit} _ = tt
- reify {T + S} M = paste (_*_.fst (Σ.snd M)) (λ x -> f x (_*_.snd (Σ.snd M) _ x))
-  where f : ∀ {Δ} -> Σ.fst M Δ -> sem Δ T ⊎ sem Δ S -> ntm Δ (T + S)
-        f x (inl y) = inl (reify y)
-        f x (inr y) = inr (reify y)
- reify {⊥} M = paste M (λ ())
+ reify {T + S} (inl x) = inl (reify x)
+ reify {T + S} (inr x) = inr (reify x)
+ reify {T + S} (case s' M M₁) = case s' of reify M - reify M₁
 
 subst : ctx -> ctx -> Set
-subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
+subst Γ Δ = ∀ {T} -> var Γ T -> sem T Δ
 
-extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
+extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem T Δ -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
 
@@ -179,56 +151,30 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  tt : tm Γ unit
  inl : ∀ {T S} (M : tm Γ T) -> tm Γ (T + S)
  inr : ∀ {T S} (M : tm Γ S) -> tm Γ (T + S)
- case_of_-_ : ∀ {T S C} (M : tm Γ (T + S)) (N1 : tm (⊡ , T) C) (N2 : tm (⊡ , S) C) -> tm Γ C
- abort : ∀ {T} (M : tm Γ ⊥) -> tm Γ T
+ case_of_-_ : ∀ {T S C} (M : tm Γ (T + S)) (N1 : tm (Γ , T) C) (N2 : tm (Γ , S) C) -> tm Γ C
+
+
+arr : ∀ Γ T -> Set
+arr Γ T = ∀ {Δ} -> subst Γ Δ -> sem T Δ
+                                                                  --- This is unrolling arr (Γ , (A + B)) T (and applying some isomorphisms)
+case3 : ∀ {Γ} {T} {A B} (f0 : arr (Γ , A) T) (f1 : arr (Γ , B) T) -> ∀ {Δ} -> subst Γ Δ -> sem (A + B) Δ -> sem T Δ
+case3 f0 f1 θ (inl x) = f0 (extend θ x)
+case3 f0 f1 θ (inr x) = f1 (extend θ x)
+case3 f0 f1 θ (case s' r r₁) = isSheaf _ s' (case3 f0 f1 (λ x → appSubst _ wkn (θ x)) r) (case3 f0 f1 (λ x → appSubst _ wkn (θ x)) r₁)
 
 -- Traditional nbe
-eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
-eval θ (v y) = θ y
-eval θ (M · N) = eval θ M _ id (eval θ N)
-eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
-eval θ (π₁ M) = _*_.fst (eval θ M)
-eval θ (π₂ N) = _*_.snd (eval θ N)
-eval θ < M , N > = eval θ M , eval θ N
-eval θ tt = tt
-eval θ (inl M) = _ , (base , λ Δ σ → inl (eval (λ x → appSubst _ σ (θ x)) M))
-eval θ (inr M) = _ , (base , λ Δ σ → inr (eval (λ x → appSubst _ σ (θ x)) M))
-eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) with eval θ M
-eval {Γ} {Δ} θ (case_of_-_ {T} {S} {C} M N1 N2) | R = paste2 (_*_.fst (Σ.snd R)) (λ x → f x (_*_.snd (Σ.snd R) _ x))
- where f : ∀ {Δ'} -> Σ.fst R Δ' -> sem Δ' T ⊎ sem Δ' S -> sem Δ' C
-       f x (inl y) = eval (extend (λ ()) y) N1
-       f x (inr y) = eval (extend (λ ()) y) N2
-eval θ (abort R) with eval θ R
-eval _ (abort R) | M = paste2 M (λ ())
+eval : ∀ {Γ T} -> tm Γ T -> arr Γ T
+eval (v y) θ = θ y
+eval (M · N) θ = eval M θ _ id (eval N θ)
+eval (ƛ M) θ = λ _ σ s -> eval M (extend (λ x → appSubst _ σ (θ x)) s)
+eval (π₁ M) θ = _*_.fst (eval M θ)
+eval (π₂ N) θ = _*_.snd (eval N θ)
+eval < M , N > θ = eval M θ , eval N θ
+eval tt θ = tt
+eval (inl M) θ = inl (eval M θ)
+eval (inr M) θ = inr (eval M θ)
+eval (case M of N1 - N2) θ = case3 (eval N1) (eval N2) θ (eval M θ)
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe M = reify (eval (λ x → reflect (v x)) M) 
+nbe M = reify (eval M (λ x → reflect (v x))) 
 
-{-
-data tm' (Γ : ctx) : (T : tp) -> Set where
- v : ∀ {T} -> var Γ T -> tm' Γ T
- _·_ : ∀ {T S} -> tm' Γ (T ⇝ S) -> tm' Γ T -> tm' Γ S
- ƛ : ∀ {T S} -> tm' (Γ , T) S -> tm' Γ (T ⇝ S)
- π₁ : ∀ {T S} -> tm' Γ (T × S) -> tm' Γ T
- π₂ : ∀ {T S} -> tm' Γ (T × S) -> tm' Γ S
- <_,_> : ∀ {T S} -> tm' Γ T -> tm' Γ S -> tm' Γ (T × S)
- tt : tm' Γ unit
- inl : ∀ {T S} (M : tm' Γ T) -> tm' Γ (T + S)
- inr : ∀ {T S} (M : tm' Γ S) -> tm' Γ (T + S)
- case_of_-_ : ∀ {T S C} (M : tm' Γ (T + S)) (N1 : tm' (Γ , T) C) (N2 : tm' (Γ , S) C) -> tm' Γ C
- abort : ∀ {T} (M : tm' Γ ⊥) -> tm' Γ T
-
-translate : ∀ {Γ T} -> tm' Γ T -> tm Γ T
-translate (v y) = v y
-translate (y · y') = translate y · translate y'
-translate (ƛ y) = ƛ (translate y)
-translate (π₁ y) = π₁ (translate y)
-translate (π₂ y) = π₂ (translate y)
-translate < y , y' > = < (translate y) , (translate y') >
-translate tt = tt
-translate (inl M) = inl (translate M)
-translate (inr M) = inr (translate M)
-translate (case M of N1 - N2) with translate M | translate N1 | translate N2
-... | m | n1 | n2 = {!produce Γ -> C by case analysis, then apply!}
-translate (abort M) = abort (translate M) -}
--- Actually, it's *definitely* possible to directly implement the analog of "case" directly on the semantic interpretation that will effectively do the same thing... Since the derivation of the derived form works in any BiCCC. Don't bother doing it at syntax, do it at semantics
