@@ -1,10 +1,10 @@
 {-# OPTIONS --type-in-type #-}
-module intro302 where
+module intro302-blank where
 open import helper
 {-
 Introduction to Agda and dependent types
 
-You won't be asked to write any Agda code, and you won't really be tested on this.
+You won't be asked to write any Agda code, and you won't be tested on the specifics.
 You might, for example, see a conception question like "What are dependent types?"
 or "What is an example of a dependent type?" on the final.
 
@@ -126,8 +126,11 @@ Developed interactively:
    Type in the hole and use C-c C-r to attempt to refine
 -}
 
-zip : {a b : Type} -> list a -> list b -> list (a * b)
-zip xs ys = {!!}
+zip : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
+zip [] [] = []
+zip [] (y ∷ y') = []
+zip (y ∷ y') [] = {!!}
+zip (y ∷ y') (y0 ∷ y1) = (y , y0) ∷ (zip y' y1)
 
 
 {- Problem: What to do with the mismatched cases?
@@ -155,7 +158,7 @@ Something of type "vec a n" is a list of exactly n things of type "a"
 
 [] is a list of length 0
 
-If x is an "a" and xs is a list of length n, then x ∷ xs is a list of
+If x is an "a" and xs is an "a list" of length n, then x ∷ xs is an "a list" of
  length (1 + n)
 -}
 data vec a : number -> Type where
@@ -174,10 +177,13 @@ example2 = 7 ∷ 10 ∷ []
 
 -- Now let's write zip using vec instead of list:
 zip' : {a b : Type} -> (n : number) -> vec a n -> vec b n -> vec (a * b) n
-zip' n xs ys = {!!}
+zip' zero [] [] = []
+zip' (suc m) (y ∷ y') (y0 ∷ y1) = (y , y0) ∷ zip' m y' y1
 
 -- Now it discards the impossible cases for us!
 -- Can we even write the mismatched case?
+-- Agda is verifying that our function is *total*:
+--   every possible case is covered
 -- Notice that we get extra information we get to help us find the right solution
 
 
@@ -185,12 +191,10 @@ exampleZ1 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
 --exampleZ2 = zip' 3 (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ [])
 
-
-
-
 -- We make n an "implicit" argument by putting it in {}s
 zip'' : {a b : Set} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
-zip'' xs ys = {!!}
+zip''    []       []    = []
+zip'' (x ∷ xs) (y ∷ ys) = (x , y) ∷ (zip'' xs ys)
 
 -- Now we leave the 3 off, and Agda figures it out for us
 exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
@@ -204,8 +208,8 @@ exampleZ'' = zip'' (1 ∷ 2 ∷ 3 ∷ []) ("foo" ∷ "bar" ∷ "baz" ∷ [])
 
 -- What happens if we make a mistake when writing zip?
 -- (e.g. we forget to use ∷ )
-{-
-zip-bad : {a b : Type} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
+
+{-zip-bad : {a b : Type} -> {n : number} -> vec a n -> vec b n -> vec (a * b) n
 zip-bad [] [] = []
 zip-bad (x ∷ xs) (y ∷ ys) = zip-bad xs ys
 -}
@@ -229,7 +233,6 @@ inc : list number -> list number
 inc [] = []
 inc (x ∷ xs) = x ∷ inc (map (λ y → y + 1) xs)
 
-
 -- But usually we can rewrite our functions to pass the termination
 -- checker:
 inc' : list number -> list number
@@ -252,8 +255,6 @@ hd (x ∷ xs) = x
 tl : {a : Type} {n : number} -> vec a (1 + n) -> vec a n
 tl (x ∷ xs) = xs
 
-
-
 hd-eg1 = hd (1 ∷ 2 ∷ 3 ∷ [])
 
 --hd-eg2 = hd []
@@ -267,7 +268,7 @@ vmap : {a b : Set} {n : number}
 vmap f [] = []
 vmap f (x ∷ xs) = f x ∷ vmap f xs
 
-{-
+{- Example: Matrices
 An m by n matrix can be described as an m length vector
 of n length vectors:
 -}
@@ -304,7 +305,7 @@ e.g. This will get
 transpose : {a : Set} {n : number} (p : number) -- number of columns of input
   -> matrix a n p -> matrix a p n
 transpose zero xss = []
-transpose (suc p') xss = (vmap hd xss) ∷ (transpose p' (vmap tl xss))
+transpose (suc n') xss = (vmap hd xss) ∷ transpose n' (vmap tl xss)
 -- Here we know for sure that hd is safe (and the typechecker can check it!)
 
 -- We can't accidentally forget the base case:
@@ -332,7 +333,7 @@ Because the dimensions don't line up.
 We can express this with dependent types!
 -}
 
-mult : ∀ {n m p} -> matrix number m n -> matrix number n p -> matrix number m p
+mult : {n m p : number} -> matrix number m n -> matrix number n p -> matrix number m p
 mult xss yss = {!!}
 
 
@@ -362,29 +363,12 @@ mult-eg2 = mult (   (1 ∷ 2 ∷ [])
 
 
 
-
-
-
-
-
-
-
-
 {- Example: vector append -}
-_++_ : {a : Set} {n m : number} -> vec a n -> vec a m -> vec a (n + m)
+_++_ : {a : Type} {n : number} {m : number} -> vec a n -> vec a m -> vec a (n + m)
 [] ++ ys = ys
-(x ∷ xs) ++ ys = x ∷ (xs ++ ys)
+(y ∷ y') ++ ys = y ∷ (y' ++ ys)
 
 -- We put a computation in the type, and it simplified for us!
-
-
-
-
-
-
-
-
-
 
 
 -- But it can get hairy
@@ -394,96 +378,167 @@ rev-acc (x ∷ xs) acc = {!!} --rev-acc xs (x ∷ acc)
 
 -- Agda can't see that 1 + (n + m) = n + (1 + m)
 -- We'd have to *prove* this to Agda
--- Other systems will see this automatically (but have other downsides)
+-- Other systems will see this automatically (but often with tradeoffs)
+-- It's an open research problem how to best integrate automatic solvers
+--  for problems like this into dependently typed languages (some proposals)
 
 
+{-===============================================================-}
+{- Unit tests and proofs -}
+
+-- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
+data _≡'_ {a : Type} : a -> a -> Set where
+ refl : {x : a} -> x ≡' x
+-- refl is short for "reflexivity"
+
+eqtest1 : 0 ≡' 0
+eqtest1 = refl
+
+eqtest2 : 0 ≡' 1
+eqtest2 = {!!} -- refl won't work!
 
 
+test1 : (zip (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
+test1 = {!!}
+-- The type simplified!
+
+-- What if we made a mistake when writing zip?
+zip-mistake : {a : Type} {b : Type} -> list a -> list b -> list (a * b)
+zip-mistake (x ∷ xs) (y ∷ ys) = zip-mistake xs ys -- Forgot the (x,y)!
+zip-mistake _ _ = []
+
+test2 : (zip-mistake (1 ∷ 2 ∷ []) (3 ∷ 4 ∷ [])) ≡' ((1 , 3) ∷ (2 , 4) ∷ [])
+test2 = {!!}
+-- These serve as unit tests!
+-- Unit testing is an accidental feature of dependently typed languages!
 
 
+-- What about this?
+eqtest3 : (x : number) -> (y : number) -> x + y ≡ y + x
+eqtest3 x y = {!!}
+{- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
 
-
-{-=====================================================================-}
-{- Example: Arrays
-
-Arrays are a common source of runtime crashes:
-
-e.g. arr[10] when arr is only an array of size 5 --> Crash
-
-Dependent types to the rescue again!
+Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
+This is a deep idea in theoretical computer science:
+(sometimes called the Curry-Howard correspondence)
+programming languages = logics!
+types = propositions!
+"->" means "implies"
+programs = proofs!
 -}
 
+-- A simple example of a proof:
+transitivity : {a : Type} (x : a) (y : a) (z : a) -> x ≡ y -> y ≡ z -> x ≡ z
+transitivity x y z pf1 pf2 = {!!}
 
 
-{- bounded n is the type of numbers strictly less than n
-   i.e. zero is a "bounded-num 1" and a "bounded-num 2" and a "bounded-num 3", ...
-        succ zero is a "bounded-num 2" and a "bounded-num 3", but *not* a "bounded-num 1"
--}
-data bounded-num : number -> Set where
- zero : {n : number} -> bounded-num (1 + n)
- succ : {n : number} -> bounded-num n -> bounded-num (1 + n)
 
-{- Given a number n < m and a vector xs of length m, looks up
-   the nth element of xs
--}
-nth : {a : Type} {m : number} -> bounded-num m -> vec a m -> a
-nth zero (x ∷ xs) = x
-nth (succ n) (x ∷ xs) = nth n xs
 
--- No such thing as "index out of bounds" at runtime!
--- This is OK:
-
-good = nth (succ zero) ("foo" ∷ "bar" ∷ [])
-
--- This is a type error at compile time:
-
-{-
-bad : number
-bad = nth (succ zero) ("foo" ∷ [])
+{-======================================================================-}
+{- We can even use Agda as a proof assistant! (proof checker)
+   Let's prove our standard example: rev xs = rev-tl xs []
 -}
 
--- So is this, even though it might be OK sometimes (for n > 0)
+-- Append two lists
+_⋆_ : {a : Type} -> list a -> list a -> list a
+[] ⋆ ys = ys
+(x ∷ xs) ⋆ ys = x ∷ (xs ⋆ ys)
 
-{-
-first : {a : Type} {n : number} -> vec a n -> a
-first xs = nth zero xs
--}
+rev : {a : Type} -> list a -> list a
+rev [] = []
+rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
+
+rev-tl : {a : Type} -> list a -> list a -> list a
+rev-tl [] acc = acc
+rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
+
+-- I need this property, which I'm not going to prove
+⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
+                  -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
+⋆-associativity xs ys zs = {!!}
+
+lemma1 : {a : Type} (xs : list a) (acc : list a) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
+lemma1 [] acc =
+  begin    -- This is just fancy notation for using transitivity
+   rev-tl [] acc
+                  ≡⟨ program ⟩
+   acc
+                  ≡⟨ program ⟩
+   [] ⋆ acc       
+                  ≡⟨ program ⟩
+   (rev []) ⋆ acc
+  ∎
+lemma1 (x ∷ xs) acc =
+  begin
+   rev-tl (x ∷ xs) acc
+                          ≡⟨ program ⟩
+   rev-tl xs (x ∷ acc)
+                          ≡⟨ lemma1 xs (x ∷ acc) ⟩ -- I.H. (Induction is just recursion!)
+   (rev xs) ⋆ (x ∷ acc)
+                          ≡⟨ program ⟩
+   (rev xs) ⋆ ((x ∷ []) ⋆ acc)
+                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
+   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
+                          ≡⟨ program ⟩
+   (rev (x ∷ xs)) ⋆ acc
+  ∎
+-- This looks almost exactly like how we write proofs on paper!
+-- What happens if we skip a step?
 
 
--- This is OK:
-maybe-first : {n : number} {a : Type} -> vec a n -> option a
-maybe-first {zero} xs = NONE
-maybe-first {suc n} xs = SOME (nth zero xs)
 
 
 
 
 
 
-
-{- If we first check if m < n, we should be able to lookup
-   How can we express this? -}
-
-
--- Converts m into a bounded-num n (if possible)
--- Also known as testing if m < n
-_<?_ : (m n : number) -> option (bounded-num n)
-zero <? zero = NONE
-zero <? suc n = SOME zero
-suc n <? zero = NONE
-suc n <? suc n' with n <? n'
-suc n <? suc n' | NONE = NONE
-suc n <? suc n' | SOME x = SOME (succ x)
-
-nth' : {a : Type} (m : number) {n : number} -> vec a n -> option a
-nth' m {n} xs with m <? n
-nth' m xs | NONE = NONE
-nth' m xs | SOME x = SOME (nth x xs)
+-- Actually all the "by program" steps are automatic
+-- We could instead write a much shorter proof:
+lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
+lemma1' [] acc = refl
+lemma1' (x ∷ xs) acc =
+  begin
+   rev-tl xs (x ∷ acc)
+                          ≡⟨ lemma1' xs (x ∷ acc) ⟩
+   (rev xs) ⋆ (x ∷ acc)
+                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
+   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
+  ∎
 
 
+{- Let's prove the main theorem using the lemma -}
 
+-- We need this property (not going to prove)
+⋆-unit-right : {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
+⋆-unit-right xs = {!!}
 
+-- Main theorem (using lemma):
+theorem1' : {a' : Set} (xs : list a') -> rev-tl xs [] ≡ rev xs
+theorem1' xs =
+  begin
+   rev-tl xs []
+                  ≡⟨ lemma1' xs [] ⟩
+   (rev xs) ⋆ []
+                  ≡⟨ ⋆-unit-right (rev xs) ⟩
+   rev xs
+  ∎
 
+-- Termination checking is even more important when proving theorems:
+-- Let's try to prove a false theorem:
+theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
+theorem1'' [] =
+  begin
+    rev []      ≡⟨ program ⟩
+    []
+  ∎
+theorem1'' (x ∷ xs) =
+  begin
+    rev (x ∷ xs)     ≡⟨ theorem1'' (x ∷ xs) ⟩ -- By "induction"
+    (x ∷ xs)
+  ∎
+
+{-======================================================================-}
+{- Go to serializer.agda now, Andrew -}
 
 
 
@@ -494,7 +549,12 @@ nth' m xs | SOME x = SOME (nth x xs)
 
 {-======================================================================================-}
 
-{- An interpreter for Nano-ML in Agda -}
+{- An interpreter for Nano-ML in Agda
+   In your eval (HW5), ill-typed programs crash: the interpreter can't handle them
+   e.g. if zero then true else false
+   With dependent types, we can make it impossible to even represent bad programs
+   like that one!
+-}
 
 data type : Set where
  Bool : type
@@ -539,9 +599,11 @@ data value : type -> Set where
  true : value Bool
  false : value Bool
 
+-- Let's implement the primitive operations on values:
 _+v_ : value Int -> value Int -> value Int
-zero +v m = m
-succ y +v m = succ (y +v m)
+n +v m = {!!}
+
+-- Notice that the ill-typed cases are ruled out!
 
 _=v_ : {t : type} -> value t -> value t -> value Bool
 zero =v zero = true
@@ -552,20 +614,12 @@ true =v true = true
 true =v false = false
 false =v true = false
 false =v false = true
--- Notice that the ill-typed cases are ruled out!
 
 eval : {t : type} -> expr t -> value t
-eval zero = zero
-eval (succ n) = succ (eval n)
-eval (if cond then t1 else t2) with eval cond
-eval (if cond then t1 else t2) | true = eval t1
-eval (if cond then t1 else t2) | false = eval t2
-eval true = true
-eval false = false
-eval (n ⊕ m) = eval n +v eval m
-eval (t1 == t2) = eval t1 =v eval t2
+eval m = {!!}
 -- Again the ill-typed cases are ruled out!
-
+-- Agda certifies that our eval is *total*:
+-- it covers all cases and even termination checks!
 
 example6 : value Int
 example6 = eval example4
@@ -588,100 +642,58 @@ example6 = eval example4
 
 
 
-{-===============================================================-}
-{- Unit tests and proofs -}
 
 
+{-=====================================================================-}
+{- Example: Arrays
 
+Arrays are a common source of runtime crashes:
 
+e.g. arr[10] when arr is only an array of size 5 --> Crash
 
--- x ≡' y is inhabited if x and y are actually the same, and uninhabited otherwise
-data _≡'_ {a : Type} : a -> a -> Set where
- refl : {x : a} -> x ≡' x
--- refl is short for "reflexivity"
-
-eqtest1 : 0 ≡' 0
-eqtest1 = refl
-
-eqtest2 : 0 ≡' 1
-eqtest2 = {!!}
-
-
-test1 : (eval example4) ≡' zero
-test1 = refl
--- The type simplified!
-
-bad-test : (eval example4) ≡' (succ zero)
-bad-test = {!!}
-
--- These serve as unit tests!
-
-
-eqtest3 : (x : number) -> (y : number) -> x + y ≡ y + x
-eqtest3 x y = {!!}
--- refl isn't smart enough to see that x + y = y + x! We have to *prove* it to Agda
-
-
-
-
-
-
-
-{-======================================================================-}
-{- We can even use Agda as a proof assistant!
-   Let's prove our standard example: rev xs = rev-tl xs []
+Dependent types to the rescue again!
 -}
 
--- Append two lists
-_⋆_ : {a : Type} -> list a -> list a -> list a
-[] ⋆ ys = ys
-(x ∷ xs) ⋆ ys = x ∷ (xs ⋆ ys)
 
-rev : {a : Type} -> list a -> list a
-rev [] = []
-rev (x ∷ xs) = (rev xs) ⋆ (x ∷ [])
 
-rev-tl : {a : Type} -> list a -> list a -> list a
-rev-tl [] acc = acc
-rev-tl (x ∷ xs) acc = rev-tl xs (x ∷ acc)
+{- bounded n is the type of numbers strictly less than n
+   i.e. zero is a "bounded-num 1" and a "bounded-num 2" and a "bounded-num 3", ...
+        succ zero is a "bounded-num 2" and a "bounded-num 3", but *not* a "bounded-num 1"
+-}
+data bounded-num : number -> Set where
+ zero : {n : number} -> bounded-num (1 + n)
+ succ : {n : number} -> bounded-num n -> bounded-num (1 + n)
 
+{- Given a number n < m and a vector xs of length m, looks up
+   the nth element of xs
+-}
+nth : {a : Type} {m : number} -> bounded-num m -> vec a m -> a
+nth n xs = {!!}
+
+-- No such thing as "index out of bounds" at runtime!
+-- This is OK:
+
+good = nth (succ zero) ("foo" ∷ "bar" ∷ [])
+
+-- This is a type error at compile time:
 
 {-
-Writing (x : A) -> B x is like saying "For any x : A, it is true that B x holds"!
+bad : number
+bad = nth (succ zero) ("foo" ∷ [])
 -}
--- I need this property, which I'm not going to prove
-⋆-associativity : {a : Type} (xs : list a) (ys : list a) (zs : list a)
-                  -> xs ⋆ (ys ⋆ zs) ≡ (xs ⋆ ys) ⋆ zs
-⋆-associativity xs ys zs = {!!}
+
+-- So is this, even though it might be OK sometimes (for n > 0)
+
+{-
+first : {a : Type} {n : number} -> vec a n -> a
+first xs = nth zero xs
+-}
 
 
-lemma1 : {a : Type} (xs : list a) (acc : list a) -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
-lemma1 [] acc =
-  begin
-   rev-tl [] acc
-                  ≡⟨ program ⟩
-   acc
-                  ≡⟨ program ⟩
-   [] ⋆ acc       
-                  ≡⟨ program ⟩
-   (rev []) ⋆ acc
-  ∎
-lemma1 (x ∷ xs) acc =
-  begin
-   rev-tl (x ∷ xs) acc
-                          ≡⟨ program ⟩
-   rev-tl xs (x ∷ acc)
-                          ≡⟨ lemma1 xs (x ∷ acc) ⟩ -- Induction is just recursion!
-   (rev xs) ⋆ (x ∷ acc)
-                          ≡⟨ program ⟩
-   (rev xs) ⋆ ((x ∷ []) ⋆ acc)
-                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
-   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
-                          ≡⟨ program ⟩
-   (rev (x ∷ xs)) ⋆ acc
-  ∎
-
--- What happens if we skip a step?
+-- This is OK:
+maybe-first : {n : number} {a : Type} -> vec a n -> option a
+maybe-first {zero} xs = NONE
+maybe-first {suc n} xs = SOME (nth zero xs)
 
 
 
@@ -689,75 +701,17 @@ lemma1 (x ∷ xs) acc =
 
 
 
-
--- Actually all the "by program" steps are automatic
--- We could instead write a much shorter proof:
-lemma1' : {a' : Set} (xs : list a') (acc : list a') -> (rev-tl xs acc) ≡ ((rev xs) ⋆ acc)
-lemma1' [] acc = refl
-lemma1' (x ∷ xs) acc =
-  begin
-   rev-tl xs (x ∷ acc)
-                          ≡⟨ lemma1' xs (x ∷ acc) ⟩
-   (rev xs) ⋆ (x ∷ acc)
-                          ≡⟨ ⋆-associativity (rev xs) (x ∷ []) acc ⟩
-   ((rev xs) ⋆ (x ∷ [])) ⋆ acc
-  ∎
+{- If we first check if m < n, we should be able to lookup
+   How can we express this? -}
 
 
-{- Let's prove the main theorem using the lemma -}
+-- Converts m into a bounded-num n (if possible)
+-- Also known as testing if m < n
+_<?_ : (m n : number) -> option (bounded-num n)
+m <? n = {!!}
 
-⋆-unit-right : {a : Type} (xs : list a) -> (xs ⋆ []) ≡ xs
-⋆-unit-right xs = {!!}
-
-theorem1' : {a' : Set} (xs : list a') -> rev-tl xs [] ≡ rev xs
-theorem1' xs =
-  begin
-   rev-tl xs []
-                  ≡⟨ lemma1' xs [] ⟩
-   (rev xs) ⋆ []
-                  ≡⟨ ⋆-unit-right (rev xs) ⟩
-   rev xs
-  ∎
-
-
-
-
-
-
-
-
-
-
-
--- Termination checking is even more important when proving theorems:
--- Let's try to prove a false theorem:
-theorem1'' : {a' : Set} (xs : list a') -> rev xs ≡ xs
-theorem1'' [] =
-  begin
-    rev []      ≡⟨ program ⟩
-    []
-  ∎
-theorem1'' (x ∷ xs) =
-  begin
-    rev (x ∷ xs)     ≡⟨ theorem1'' (x ∷ xs) ⟩ -- By "induction"
-    (x ∷ xs)
-  ∎
-
-{-======================================================================-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+nth' : {a : Type} (m : number) {n : number} -> vec a n -> option a
+nth' m {n} xs = {!!}
 
 
 

@@ -1,8 +1,9 @@
 module helper where
 open import Relation.Binary.PropositionalEquality public
 open ≡-Reasoning public
-open import Data.Nat public
+open import Data.Nat public hiding (_*_; _≟_)
 open import Function public
+open import Data.String hiding (setoid; decSetoid)
 
 number = ℕ
 
@@ -15,3 +16,32 @@ program = refl
 data option a' : Set where
  NONE : option a'
  SOME : (x : a') -> option a'
+
+Type : Set₁
+Type = Set
+
+record _*_ (a' b' : Type) : Type where
+ constructor _,_
+ field
+  fst : a'
+  snd : b'
+
+infixr 9 _,_
+infixr 9 _*_
+
+
+congruence' : {a' b' : Set} (f : a' -> b') (x y : a') -> x ≡ y -> f x ≡ f y
+congruence' f .y y refl = refl
+
+congruence : {a' b' : Set} (f : a' -> b') {x y : a'} -> x ≡ y -> f x ≡ f y
+congruence f refl = refl
+
+record Unit : Type where
+  constructor 〈〉
+
+
+data _∣_ (a : Type) (b : Type) : Type where
+ left : a -> a ∣ b
+ right : b -> a ∣ b
+
+infixr 8 _∣_
