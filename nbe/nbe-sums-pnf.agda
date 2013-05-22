@@ -1,5 +1,5 @@
 {-# OPTIONS --type-in-type #-}
-module nbe-sums3 where
+module nbe-sums-pnf where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -46,17 +46,19 @@ vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
 mutual 
  data rtm (Γ : ctx) : (T : tp) -> Set where
   v : ∀ {T} -> var Γ T -> rtm Γ T
-  _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
+  _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> pntm Γ T -> rtm Γ S
   π₁ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ T
   π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S
+ data pntm (Γ : ctx) : (T : tp) -> Set where
+  ƛ : ∀ {T S} -> ntm (Γ , T) S -> pntm Γ (T ⇝ S)
+  neut : ∀ {A} -> rtm Γ (atom A) -> pntm Γ (atom A)
+  <_,_> : ∀ {T S} -> (M : pntm Γ T) -> (N : pntm Γ S) -> pntm Γ (T × S)
+  tt : pntm Γ unit
+  inl : ∀ {T S} (M : pntm Γ T) -> pntm Γ (T + S)
+  inr : ∀ {T S} (M : pntm Γ S) -> pntm Γ (T + S)
  data ntm (Γ : ctx) : (T : tp) -> Set where
-  ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
-  neut : ∀ {A} -> rtm Γ (atom A) -> ntm Γ (atom A)
-  <_,_> : ∀ {T S} -> (M : ntm Γ T) -> (N : ntm Γ S) -> ntm Γ (T × S)
-  tt : ntm Γ unit
-  inl : ∀ {T S} (M : ntm Γ T) -> ntm Γ (T + S)
-  inr : ∀ {T S} (M : ntm Γ S) -> ntm Γ (T + S)
   case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
+  pure : ∀ {T} -> pntm Γ T -> ntm Γ T
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -71,17 +73,20 @@ ext σ (s y) = s (σ y)
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
  rappSubst σ (v y) = v (σ y)
- rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
+ rappSubst σ (R · N) = rappSubst σ R · pnappSubst σ N
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
  rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
+ pnappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> pntm Δ S -> pntm Γ S 
+ pnappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
+ pnappSubst σ (neut R) = neut (rappSubst σ R)
+ pnappSubst σ < M , N > = < pnappSubst σ M , pnappSubst σ N >
+ pnappSubst σ tt = tt
+ pnappSubst σ (inl M) = inl (pnappSubst σ M)
+ pnappSubst σ (inr M) = inr (pnappSubst σ M)
+
  nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
- nappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
- nappSubst σ (neut R) = neut (rappSubst σ R)
- nappSubst σ < M , N > = < nappSubst σ M , nappSubst σ N >
- nappSubst σ tt = tt
- nappSubst σ (inl M) = inl (nappSubst σ M)
- nappSubst σ (inr M) = inr (nappSubst σ M)
  nappSubst σ (case M of N1 - N2) = case (rappSubst σ M) of (nappSubst (ext σ) N1) - (nappSubst (ext σ) N2)
+ nappSubst σ (pure M) = pure (pnappSubst σ M)
 
 data sum Γ (F G : ctx -> Set) : Set where
  inl : F Γ -> sum Γ F G
@@ -116,22 +121,42 @@ isSheaf unit s' f0 f1 = tt
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
+pair1 : ∀ {Γ T S} -> ntm Γ T -> pntm Γ S -> ntm Γ (T × S)
+pair1 (case M of N - N₁) P = case M of pair1 N (pnappSubst wkn P) - pair1 N₁ (pnappSubst wkn P)
+pair1 (pure x) P = pure < x , P >
+
+pair : ∀ {Γ T S} -> ntm Γ T -> ntm Γ S -> ntm Γ (T × S)
+pair P (case M of N - N₁) = case M of pair (nappSubst wkn P) N - pair (nappSubst wkn P) N₁
+pair P (pure x) = pair1 P x 
+-- This is a source of commuting problems right here! We arbitrarily picked an order!
+
+pinl : ∀ {Γ T S} -> ntm Γ T -> ntm Γ (T + S)
+pinl (case M of N - N₁) = case M of pinl N - pinl N₁
+pinl (pure x) = pure (inl x)
+
+pinr : ∀ {Γ T S} -> ntm Γ T -> ntm Γ (S + T)
+pinr (case M of N - N₁) = case M of pinr N - pinr N₁
+pinr (pure x) = pure (inr x)
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem T Γ
- reflect {atom A} N = neut N
- reflect {T ⇝ S} N = λ _ σ s → reflect (rappSubst σ N · reify s)
+ reflect {atom A} N = pure (neut N)
+ reflect {T ⇝ S} {Γ} N = λ Δ w s → f Δ w (reify s)
+   where f : (Δ : ctx) → vsubst Γ Δ → ntm Δ T → sem S Δ
+         f Δ w (case M of s' - s'') = isSheaf _ M (f _ (wkn ∘ w) s') (f _ (wkn ∘ w) s'')
+         f Δ w (pure x) = reflect (rappSubst w N · x)
+         -- This seems to diverge from the Altenkirch LICS 2001 paper... What's going on?
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
- reflect {T + S} {Γ} N = case N (inl (reflect (v z))) (inr (reflect (v z)))
+ reflect {T + S} N = case N (inl (reflect (v z))) (inr (reflect (v z)))
 
  reify : ∀ {T Γ} -> sem T Γ -> ntm Γ T
  reify {atom A} M = M
- reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
- reify {T × S} M = < reify (_*_.fst M) , reify (_*_.snd M) >
- reify {unit} _ = tt
- reify {T + S} (inl x) = inl (reify x)
- reify {T + S} (inr x) = inr (reify x)
+ reify {T ⇝ S} M = pure (ƛ (reify (M _ wkn (reflect (v z)))))
+ reify {T × S} M = pair (reify (_*_.fst M)) (reify (_*_.snd M))
+ reify {unit} _ = pure tt
+ reify {T + S} (inl x) = pinl (reify x)
+ reify {T + S} (inr x) = pinr (reify x)
  reify {T + S} (case s' M M₁) = case s' of reify M - reify M₁
 
 subst : ctx -> ctx -> Set
