@@ -1,6 +1,6 @@
 {-# OPTIONS --type-in-type #-}
-module nbe-sums-pnf where
-
+module nbe-sums-sheaf where
+open import Data.List hiding (sum)
 record _*_ (A B : Set) : Set where
  constructor _,_
  field
@@ -57,6 +57,13 @@ mutual
   case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
   pure : ∀ {T} -> pntm Γ T -> ntm Γ T
 
+data Constraint (Γ : ctx) : Set where
+ _=inl_ : ∀ {T S} -> rtm Γ (T + S) -> var Γ T -> Constraint Γ
+ _=inr_ : ∀ {T S} -> rtm Γ (T + S) -> var Γ S -> Constraint Γ
+
+Constraints : ctx -> Set
+Constraints Γ = List (Constraint Γ)
+
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
 
@@ -66,6 +73,9 @@ _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
 ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
 ext σ z = z
 ext σ (s y) = s (σ y)
+
+_∣_⇒_∣_ : ∀ Γ (Ξ : Constraints Γ) Δ (Ξ' : Constraints Δ) -> Set
+Γ ∣ Ξ ⇒ Δ ∣ Ξ' = {!!}
 
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S
@@ -90,14 +100,14 @@ data sum Γ (F G : ctx -> Set) : Set where
  inr : G Γ -> sum Γ F G
  case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) F G -> sum (Γ , B) F G -> sum Γ F G
                                       -- Is this different than the presentation in the paper?
-sem : (T : tp) -> (Γ : ctx) -> Set
-sem atom Γ = ntm Γ atom
-sem (T ⇝ S) Γ = ∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
-sem (T × S) Γ = sem T Γ * sem S Γ
-sem unit Γ = Unit
-sem (T + S) Γ = sum Γ (sem T) (sem S)
+sem : (T : tp) -> (Γ : ctx) -> (Ξ : Constraints Γ) -> Set
+sem atom Γ Ξ = ntm Γ atom
+sem (T ⇝ S) Γ Ξ = {!!} --∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
+sem (T × S) Γ Ξ = sem T Γ Ξ * sem S Γ Ξ
+sem unit Γ Ξ = Unit
+sem (T + S) Γ Ξ = {!!} --sum Γ (sem T Ξ) (sem S Ξ)
 
-
+{-
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem S Δ -> sem S Γ
 appSubst atom σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
@@ -326,3 +336,4 @@ t2 = ƛ (v z)
 
 nt1 = nbe t1
 nt2 = nbe t2
+-}
