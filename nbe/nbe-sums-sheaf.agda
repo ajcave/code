@@ -75,7 +75,7 @@ ext σ z = z
 ext σ (s y) = s (σ y)
 
 _∣_⇒_∣_ : ∀ Γ (Ξ : Constraints Γ) Δ (Ξ' : Constraints Δ) -> Set
-Γ ∣ Ξ ⇒ Δ ∣ Ξ' = {!!}
+Γ ∣ Ξ ⇒ Δ ∣ Ξ' = {!Σ (vsubst Γ Δ) (λ σ -> ∀ {T} (x : var Γ T) -> !}
 
 mutual
  rappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> rtm Δ S -> rtm Γ S

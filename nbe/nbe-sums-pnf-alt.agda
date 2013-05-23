@@ -329,3 +329,5 @@ nt1 = nbe t1
 nt2 = nbe t2
 
 -- Now the problem is to implement a conversion test on these normal forms...
+-- Or what about trying to follow the path of the LICS 2001 paper to make these normal forms unique?
+-- Just add redundancy freeness and the variable condition?
