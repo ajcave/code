@@ -1,5 +1,5 @@
 {-# OPTIONS --type-in-type #-}
-module nbe-sums-pnf where
+module nbe-sums-pnf-alt where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -23,7 +23,6 @@ record Unit : Set where
  constructor tt
 
 data tp : Set where
- atom : tp
  _⇝_ : (T : tp) -> (S : tp) -> tp
  _×_ : (T S : tp) -> tp
  _+_ : (T S : tp) -> tp
@@ -40,6 +39,8 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
 vsubst : ctx -> ctx -> Set 
 vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
 
+
+
 mutual 
  data rtm (Γ : ctx) : (T : tp) -> Set where
   v : ∀ {T} -> var Γ T -> rtm Γ T
@@ -47,15 +48,20 @@ mutual
   π₁ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ T
   π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S
  data pntm (Γ : ctx) : (T : tp) -> Set where
-  ƛ : ∀ {T S} -> ntm (Γ , T) S -> pntm Γ (T ⇝ S)
-  neut : rtm Γ atom -> pntm Γ atom
+  ƛ : ∀ {T S} -> pntm (Γ , T) S -> pntm Γ (T ⇝ S)
   <_,_> : ∀ {T S} -> (M : pntm Γ T) -> (N : pntm Γ S) -> pntm Γ (T × S)
   tt : pntm Γ unit
-  inl : ∀ {T S} (M : pntm Γ T) -> pntm Γ (T + S)
-  inr : ∀ {T S} (M : pntm Γ S) -> pntm Γ (T + S)
- data ntm (Γ : ctx) : (T : tp) -> Set where
-  case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
-  pure : ∀ {T} -> pntm Γ T -> ntm Γ T
+  embed : ∀ {T S} -> sum Γ (λ Γ' -> pntm Γ' T) (λ Γ' -> pntm Γ' S) -> pntm Γ (T + S)
+
+ data sum Γ (F G : ctx -> Set) : Set where
+  inl : F Γ -> sum Γ F G
+  inr : G Γ -> sum Γ F G
+  case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) F G -> sum (Γ , B) F G -> sum Γ F G
+
+sum-map : ∀ {Γ} {F G} {F' G'} -> (∀ {Δ} -> F Δ -> F' Δ) -> (∀ {Δ} -> G Δ -> G' Δ) -> sum Γ F G -> sum Γ F' G'
+sum-map f g (inl x) = inl (f x)
+sum-map f g (inr x) = inr (g x)
+sum-map f g (case s' x x₁) = case s' (sum-map f g x) (sum-map f g x₁)
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -74,24 +80,25 @@ mutual
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
  rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
  pnappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> pntm Δ S -> pntm Γ S 
- pnappSubst σ (ƛ M) = ƛ (nappSubst (ext σ) M)
- pnappSubst σ (neut R) = neut (rappSubst σ R)
+ pnappSubst σ (ƛ M) = ƛ (pnappSubst (ext σ) M)
  pnappSubst σ < M , N > = < pnappSubst σ M , pnappSubst σ N >
  pnappSubst σ tt = tt
+ pnappSubst σ (embed M) = embed (sumSubst σ M)
+
+ sumSubst : ∀ {Γ Δ T S} -> vsubst Δ Γ -> sum Δ (λ Γ' → pntm Γ' T) (λ Γ' → pntm Γ' S) -> sum Γ (λ Γ' → pntm Γ' T) (λ Γ' → pntm Γ' S)
+ sumSubst σ (inl x) = inl (pnappSubst σ x)
+ sumSubst σ (inr x) = inr (pnappSubst σ x)
+ sumSubst σ (case s' x x₁) = case (rappSubst σ s') (sumSubst (ext σ) x) (sumSubst (ext σ) x₁)
+
+{-
  pnappSubst σ (inl M) = inl (pnappSubst σ M)
- pnappSubst σ (inr M) = inr (pnappSubst σ M)
+ pnappSubst σ (inr M) = inr (pnappSubst σ M)-}
 
- nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
- nappSubst σ (case M of N1 - N2) = case (rappSubst σ M) of (nappSubst (ext σ) N1) - (nappSubst (ext σ) N2)
- nappSubst σ (pure M) = pure (pnappSubst σ M)
+-- nappSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> ntm Δ S -> ntm Γ S 
+-- nappSubst σ (case M of N1 - N2) = case (rappSubst σ M) of (nappSubst (ext σ) N1) - (nappSubst (ext σ) N2)
+-- nappSubst σ (pure M) = pure (pnappSubst σ M)
 
-data sum Γ (F G : ctx -> Set) : Set where
- inl : F Γ -> sum Γ F G
- inr : G Γ -> sum Γ F G
- case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) F G -> sum (Γ , B) F G -> sum Γ F G
-                                      -- Is this different than the presentation in the paper?
 sem : (T : tp) -> (Γ : ctx) -> Set
-sem atom Γ = ntm Γ atom
 sem (T ⇝ S) Γ = ∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
 sem (T × S) Γ = sem T Γ * sem S Γ
 sem unit Γ = Unit
@@ -99,7 +106,6 @@ sem (T + S) Γ = sum Γ (sem T) (sem S)
 
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem S Δ -> sem S Γ
-appSubst atom σ M = nappSubst σ M
 appSubst (T ⇝ S) σ M = λ _ σ' s → M _ (σ' ∘ σ) s
 appSubst (T × S) σ M = (appSubst T σ (_*_.fst M)) , (appSubst S σ (_*_.snd M))
 appSubst unit σ M = tt
@@ -109,7 +115,6 @@ appSubst (T + S) σ (case s' M M₁) = case (rappSubst σ s') (appSubst (T + S) 
 
 -- Case analysis is pasting
 isSheaf : ∀ {Γ} T {A B} (s : rtm Γ (A + B)) (f0 : sem T (Γ , A)) (f1 : sem T (Γ , B)) -> sem T Γ
-isSheaf atom s' f0 f1 = case s' of f0 - f1
 isSheaf (T ⇝ T₁) s' f0 f1 = λ Δ w x → isSheaf T₁ (rappSubst w s') (f0 _ (ext w) (appSubst T wkn x)) (f1 _ (ext w) (appSubst T wkn x))
 isSheaf (T × T₁) s' f0 f1 = isSheaf T s' (_*_.fst f0) (_*_.fst f1) , isSheaf T₁ s' (_*_.snd f0) (_*_.snd f1)
 isSheaf (T + T₁) s' f0 f1 = case s' f0 f1
@@ -129,7 +134,6 @@ data IsEq {A : Set} (x : A) : (y : A) -> Set where
  nope : ∀ {y} -> IsEq x y
 
 tpEq : ∀ (T S : tp) -> IsEq T S
-tpEq atom atom = yep
 tpEq (T ⇝ T₁) (S ⇝ S₁) with tpEq T S | tpEq T₁ S₁
 tpEq (.S ⇝ .S₁) (S ⇝ S₁) | yep | yep = yep
 tpEq (T ⇝ T₁) (S ⇝ S₁) | _ | _ = nope
@@ -171,10 +175,11 @@ varInImage (Γ , .T) {T} σ .(σ z) | yep | yep = just z
 varInImage (Γ , .T) {T} σ x | yep | nope = s <$> (varInImage Γ (σ ∘ s) x)
 varInImage (Γ , T) σ x | nope = s <$> (varInImage Γ (σ ∘ s) x)
 
+{-
 mutual
- ntmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> ntm Δ T -> Maybe (ntm Γ T)
- ntmInImage σ (case M of N - N₁) = case_of_-_ <$> (rtmInImage σ M) <*> (ntmInImage (ext σ) N) <*> (ntmInImage (ext σ) N₁)
- ntmInImage σ (pure x) = pure <$> (pntmInImage σ x)
+-- ntmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> ntm Δ T -> Maybe (ntm Γ T)
+-- ntmInImage σ (case M of N - N₁) = case_of_-_ <$> (rtmInImage σ M) <*> (ntmInImage (ext σ) N) <*> (ntmInImage (ext σ) N₁)
+-- ntmInImage σ (pure x) = pure <$> (pntmInImage σ x)
 
  rtmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> rtm Δ T -> Maybe (rtm Γ T)
  rtmInImage σ (v x) = v <$> varInImage _ σ x
@@ -183,14 +188,14 @@ mutual
  rtmInImage σ (π₂ R) = π₂ <$> rtmInImage σ R
 
  pntmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> pntm Δ T -> Maybe (pntm Γ T)
- pntmInImage σ (ƛ x) = ƛ <$> ntmInImage (ext σ) x
- pntmInImage σ (neut x) = neut <$> rtmInImage σ x
+ pntmInImage σ (ƛ x) = ƛ <$> pntmInImage (ext σ) x
  pntmInImage σ < P , P₁ > = <_,_> <$> pntmInImage σ P <*> pntmInImage σ P₁
  pntmInImage σ tt = just tt
- pntmInImage σ (inl P) = inl <$> pntmInImage σ P
- pntmInImage σ (inr P) = inr <$> pntmInImage σ P
+ pntmInImage σ (embed M) = embed <$> {!!} -}
+{- pntmInImage σ (inl P) = inl <$> pntmInImage σ P
+ pntmInImage σ (inr P) = inr <$> pntmInImage σ P -}
 
-mutual
+{- mutual
  ntmEq : ∀ {T Γ} (N M : ntm Γ T) -> IsEq N M
  ntmEq (case_of_-_ {C} {T} {S} M N N₁) (case_of_-_ {.C} {T'} {S'} M₁ N' N₁') with tpEq T T' | tpEq S S'
  ntmEq (case M of N - N₁) (case M₁ of N' - N₁') | yep | yep with rtmEq M M₁ | ntmEq N N' | ntmEq N₁ N₁'
@@ -200,8 +205,8 @@ mutual
  ntmEq (pure N) (pure M) with pntmEq N M
  ntmEq (pure .M) (pure M) | yep = yep
  ntmEq (pure N) (pure M) | nope = nope
- ntmEq _ _ = nope
-
+ ntmEq _ _ = nope -}
+{-
  rtmEq : ∀ {Γ T} (N M : rtm Γ T) -> IsEq N M
  rtmEq (v x) (v x') = v <$>' varEq x x'
  rtmEq (_·_ {T} {S} N M) (_·_ {T'} {.S} N' M') with tpEq T T'
@@ -218,17 +223,17 @@ mutual
  rtmEq _ _ = nope
 
  pntmEq : ∀ {Γ T} (N M : pntm Γ T) -> IsEq N M
- pntmEq (ƛ N) (ƛ M) = ƛ <$>' ntmEq N M
- pntmEq (neut N) (neut M) = neut <$>' rtmEq N M
+ pntmEq (ƛ N) (ƛ M) = ƛ <$>' pntmEq N M
  pntmEq < N , N₁ > < M , M₁ > with pntmEq N M | pntmEq N₁ M₁
  pntmEq < .M , .M₁ > < M , M₁ > | yep | yep = yep
  pntmEq < N , N₁ > < M , M₁ > | _ | _ = nope 
  pntmEq tt tt = yep
  pntmEq (inl N) (inl M) = inl <$>' pntmEq N M
  pntmEq (inr N) (inr M) = inr <$>' pntmEq N M
- pntmEq _ _ = nope
+ pntmEq _ _ = nope -}
 
 
+{-
 pair1 : ∀ {Γ T S} -> ntm Γ T -> pntm Γ S -> ntm Γ (T × S)
 pair1 (case M of N - N₁) P = case M of pair1 N (pnappSubst wkn P) - pair1 N₁ (pnappSubst wkn P)
 pair1 (pure x) P = pure < x , P >
@@ -244,7 +249,7 @@ pinl (pure x) = pure (inl x)
 
 pinr : ∀ {Γ T S} -> ntm Γ T -> ntm Γ (S + T)
 pinr (case M of N - N₁) = case M of pinr N - pinr N₁
-pinr (pure x) = pure (inr x)
+pinr (pure x) = pure (inr x) 
 
 -- This ugly part can be left out and you still have something pretty cool
 -- This removes redundant case splits
@@ -254,27 +259,20 @@ ncase R N1 N2 | just x | just x₁ with ntmEq x x₁
 ncase R N1 N2 | just .x | just x | yep = x
 ncase R N1 N2 | just x | just x₁ | nope = case R of N1 - N2
 ncase R N1 N2 | _ | _ = case R of N1 - N2
+-}
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem T Γ
- reflect {atom} N = pure (neut N)
- reflect {T ⇝ S} {Γ} N = λ Δ w s → f Δ w (reify s)
-   where f : (Δ : ctx) → vsubst Γ Δ → ntm Δ T → sem S Δ
-         f Δ w (case M of s' - s'') = isSheaf _ M (f _ (wkn ∘ w) s') (f _ (wkn ∘ w) s'')
-         f Δ w (pure x) = reflect (rappSubst w N · x)
-         -- This seems to diverge from the Altenkirch LICS 2001 paper... What's going on?
+ reflect {T ⇝ S} {Γ} N = λ Δ w s → reflect (rappSubst w N · (reify s))
  reflect {T × S} N = reflect (π₁ N) , reflect (π₂ N)
  reflect {unit} N = tt
  reflect {T + S} N = case N (inl (reflect (v z))) (inr (reflect (v z)))
 
- reify : ∀ {T Γ} -> sem T Γ -> ntm Γ T
- reify {atom} M = M
- reify {T ⇝ S} M = pure (ƛ (reify (M _ wkn (reflect (v z)))))
- reify {T × S} M = pair (reify (_*_.fst M)) (reify (_*_.snd M))
- reify {unit} _ = pure tt
- reify {T + S} (inl x) = pinl (reify x)
- reify {T + S} (inr x) = pinr (reify x)
- reify {T + S} (case s' M M₁) = ncase s' (reify M) (reify M₁)
+ reify : ∀ {T Γ} -> sem T Γ -> pntm Γ T
+ reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
+ reify {T × S} M = < (reify (_*_.fst M)) , (reify (_*_.snd M)) >
+ reify {unit} _ = tt
+ reify {T + S} M = embed (sum-map reify reify M)
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem T Δ
@@ -316,7 +314,7 @@ eval (inl M) θ = inl (eval M θ)
 eval (inr M) θ = inr (eval M θ)
 eval (case M of N1 - N2) θ = case' (eval N1) (eval N2) θ (eval M θ)
 
-nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
+nbe : ∀ {Γ T} -> tm Γ T -> pntm Γ T
 nbe M = reify (eval M (λ x → reflect (v x)))
 
 bool = unit + unit
@@ -329,3 +327,5 @@ t2 = ƛ (v z)
 
 nt1 = nbe t1
 nt2 = nbe t2
+
+-- Now the problem is to implement a conversion test on these normal forms...
