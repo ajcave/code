@@ -319,4 +319,4 @@ t2 = ƛ (v z)
 nt1 = nbe t1
 nt2 = nbe t2
 
--- Can I define a simple algorithm for deciding equality on these normal forms now?
+-- Can I define a simple algorithm for deciding equality on these normal forms 

@@ -320,3 +320,7 @@ nt1 = nbe t1
 nt2 = nbe t2
 
 -- Can I define a simple algorithm for deciding equality on these normal forms now?
+-- Hmm crap we still have the variable condition to deal with
+-- e.g. λ z. case (f (λ x. case z of ... ...)) ... ... = case z of (case f (λ x. ...) ... ...) (case f (λ x. ...) ... ...)
+-- Crap I think because of the "up to ordering" and "same in both branches" we have trouble detecting when it really is
+-- safe to pull something out? (under lambdas like that...)
