@@ -33,3 +33,6 @@ sub-identity σ N M = trustMe
 
 sub-identity2 : ∀ {Γ Δ} (σ : tsubst Γ Δ) (N : tm Γ) M -> [ [ σ ]t N /x] ([ tsub-ext σ ]t M) ≡ [ σ ]t ([ N /x] M)
 sub-identity2 σ N M = trustMe
+
+vsub-identity2 : ∀ {Γ Δ} (σ : vsubst Γ Δ) (N : tm Γ) M -> [ [ σ ]r N /x] ([ vsub-ext σ ]r M) ≡ [ σ ]r ([ N /x] M)
+vsub-identity2 σ N M = trustMe

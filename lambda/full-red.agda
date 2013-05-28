@@ -39,6 +39,24 @@ step1 x r1 ·₃ r2 = step1 (x ·₁ _) (r1 ·₃ r2)
 ƛ' refl = refl
 ƛ' (step1 x r) = step1 (ƛ x) (ƛ' r)
 
+⟶*s-refl : ∀ {Γ Δ} (σ : tsubst Γ Δ) -> σ ⟶*s σ
+⟶*s-refl {⊡} σ = ⊡
+⟶*s-refl {Γ , T} σ = (⟶*s-refl _) , refl
+
+red-vsub : ∀ {Γ Δ} {M1 M2 : tm Γ} (σ : vsubst Γ Δ) -> M1 ⟶ M2 -> ([ σ ]r M1) ⟶ ([ σ ]r M2)
+red-vsub σ (β {M} {N}) = subst (λ α → [ σ ]r (ƛ M · N) ⟶ α) (vsub-identity2 σ N M) β
+red-vsub σ (r ·₁ N) = (red-vsub σ r) ·₁ _
+red-vsub σ (M ·₂ r) = _ ·₂ (red-vsub σ r)
+red-vsub σ (ƛ r) = ƛ (red-vsub (vsub-ext σ) r)
+
+red-vsub* : ∀ {Γ Δ} {M1 M2 : tm Γ} (σ : vsubst Γ Δ) -> M1 ⟶* M2 -> ([ σ ]r M1) ⟶* ([ σ ]r M2)
+red-vsub* σ refl = refl
+red-vsub* σ (step1 x r) = step1 (red-vsub σ x) (red-vsub* σ r)
+
+red*vs : ∀ {Γ Δ Δ'} {σ1 σ2 : tsubst Γ Δ} (w : vsubst Δ Δ') -> σ1 ⟶*s σ2 -> (gmap [ w ]r σ1) ⟶*s (gmap [ w ]r σ2)
+red*vs w ⊡ = ⊡
+red*vs w (r , x) = red*vs w r , red-vsub* w x
+
 red-sub-var : ∀ {Γ Δ} (x : var Γ *) {σ1 σ2 : tsubst Γ Δ} -> σ1 ⟶*s σ2 -> lookup σ1 x ⟶* lookup σ2 x
 red-sub-var {⊡} () {tt} {tt} r
 red-sub-var {Γ , .tt} top {proj₁ , proj₂} {proj₃ , proj₄} (r , x) = x
@@ -46,5 +64,5 @@ red-sub-var {Γ , .tt} (pop x) {proj₁ , proj₂} {proj₃ , proj₄} (r , x₁
 
 red-sub2 : ∀ {Γ Δ} (M : tm Γ) {σ1 σ2 : tsubst Γ Δ} -> σ1 ⟶*s σ2 -> ([ σ1 ]t M) ⟶* ([ σ2 ]t M)
 red-sub2 (▹ x) r = red-sub-var x r
-red-sub2 (ƛ M) r = ƛ' (red-sub2 M ({!!} , refl))
+red-sub2 (ƛ M) r = ƛ' (red-sub2 M (red*vs _ r , refl))
 red-sub2 (M · M₁) r = (red-sub2 M r) ·₃ (red-sub2 M₁ r)
