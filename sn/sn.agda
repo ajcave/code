@@ -30,3 +30,6 @@ mutual
  
  lem6 : ∀ {Γ} {u : tm Γ} {t} -> sn u -> sn t -> sn ([ u /x] t) -> sn (ƛ t · u)
  lem6 su st sr = intro (lem5 su st sr)
+
+-- This paper says a bit about how this kind of stuff can be handled: http://hal.inria.fr/docs/00/20/47/10/PDF/orth.pdf Weak standardization.
+-- Also http://www.lfcs.inf.ed.ac.uk/reports/98/ECS-LFCS-98-381/ECS-LFCS-98-381.pdf

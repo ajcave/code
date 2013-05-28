@@ -281,7 +281,7 @@ with SN G : tm G -> Prop :=
 with step_SN G : tm G -> tm G -> Prop :=
 | step_SN_app : forall (t t' : tm G) (u : tm G), step_SN t t' -> step_SN (tapp t u) (tapp t' u)
 | step_SN_arrow : forall (t : tm (snoc G tt)) (u : tm G), SN u -> step_SN (tapp (tlam t) u) (app_tsub1 t u)
-| step_SN_fst : forall (t t' : tm G), step_SN t t' -> step_SN (tfst t) (tfst t')
+(* | step_SN_fst : forall (t t' : tm G), step_SN t t' -> step_SN (tfst t) (tfst t') *)
 | step_SN_snd : forall (t t' : tm G), step_SN t t' -> step_SN (tsnd t) (tsnd t')
 | step_SN_times1 : forall (t1 : tm G) (t2 : tm G), SN t2 -> step_SN (tfst (tpair t1 t2)) t1
 | step_SN_times2 : forall (t1 : tm G) (t2 : tm G), SN t2 -> step_SN (tsnd (tpair t1 t2)) t2
@@ -1079,22 +1079,6 @@ eapply (RedF_SN (app_fsub (snoc nil type) F (extfsub s2))). Focus 2. eapply H2.
 split; simpl; auto.
 
 simpl.
-(* diverging here *)
-unfold C. simpl.
-pose proof Red_inj.  unfold IsMorphism in H3. simpl in H3.
-eapply H3.
-Check Red_inj. eapply Red_inj.
-eapply H0.
-split; simpl. auto.
-eapply Red_compositional.
-unfold P in H3.
-
-(*intros.
-
-
-eassumption.
-simpl.
-eapply Red_inj. *)
 Admitted.
 
 Lemma Red_map (f : tm (snoc nil tt)) (F : functor (snoc nil type)) T1 T2 (R1 R2 : Rel) : (forall G (t : tm G), R1 G t -> R2 G (app_tsub _ f (tt, t)))
