@@ -1,4 +1,4 @@
-module contextual-substvars-spine where
+module contextual-substvars-spine2 where
 open import Level
 open import Unit
 open import FinMap
@@ -59,11 +59,6 @@ infixl 10 _<<_
 <<-assoc {Ω} Ψ₁ Ψ₂ ⊡ = refl
 <<-assoc {Ω} Ψ₁ Ψ₂ (Ψ , A) = cong (λ α → α , ▸ A) (<<-assoc Ψ₁ Ψ₂ Ψ)
 
-{-<<-idl : ∀ {Ω} (Ψ : tctx Ω) -> ⊡ << Ψ ≡ Ψ
-<<-idl ⊡ = refl
-<<-idl (Ψ , A) = cong (λ α → α , A) (<<-idl Ψ) -}
-
--- TODO: Give also a non-normal calculus, which is convenient
 mutual
  data head {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
   ▹ : ∀ {A} (x : tvar Ψ A) -> head Δ Ψ A
@@ -79,8 +74,8 @@ mutual
  data nsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   ⊡ : ∀ {Ψ} -> nsub Δ Ψ ⊡
   _,_ : ∀ {Ψ Φ A} (σ : nsub Δ Ψ Φ) (N : ntm Δ Ψ A) -> nsub Δ Ψ (Φ , ▸ A)
-  [_]_ : ∀ {Ψ Φ₂ φ} (xs : cvar Φ₂ φ) (ρ : rsub Δ Ψ Φ₂) -> nsub Δ Ψ (▹ φ)
-  id : ∀ {Ψ φ} (xs : cvar Ψ φ) -> nsub Δ Ψ (▹ φ)
+  [_]_ : ∀ {Ψ φ} Φ₂ (ρ : rsub Δ Ψ ((▹ φ) << Φ₂)) -> nsub Δ Ψ (▹ φ)
+  id : ∀ {φ} Ψ -> nsub Δ ((▹ φ) << Ψ) (▹ φ)
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
 
@@ -92,7 +87,6 @@ mutual
 ⟦⟧tc-<< : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) Φ₁ Φ₂
  -> ⟦ Ψs ⟧tc (Φ₁ << Φ₂) ≡ ((⟦ Ψs ⟧tc Φ₁) << Φ₂)
 ⟦⟧tc-<< Ψs Φ₁ ⊡ = refl
---⟦⟧tc-<< Ψs Φ₁ (▹ φ) = ? --trans (cong (λ α → α << lookup Ψs φ) (⟦⟧tc-<< Ψs Φ₁ ψ)) (<<-assoc (⟦ Ψs ⟧tc Φ₁) (⟦ Ψs ⟧tc ψ) (lookup Ψs φ))
 ⟦⟧tc-<< Ψs Φ₁ (ψ , A) = cong (λ α → α , ▸ A) (⟦⟧tc-<< Ψs Φ₁ ψ)
 
 
@@ -138,9 +132,6 @@ cvar-wkn' : ∀ {Ω} (Ψ₂ : tctx Ω) Ψ₃ {φ} -> cvar (⊡ << Ψ₃) φ -> c
 cvar-wkn' Ψ₂ ⊡ ()
 cvar-wkn' Ψ₂ (Ψ , A) (pop xs) = pop (cvar-wkn' Ψ₂ Ψ xs)
 
-{-cvar-wkn1 : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₃ {A} -> cvar (Ψ₁ << Ψ₃) A -> cvar (Ψ₁ , B << Ψ₃) A
-cvar-wkn1 {Ω} {Ψ₁} {B} Ψ₃ x = cvar-wkn Ψ₁ (⊡ , ▸ B) Ψ₃ x -}
-
 mutual
  h-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> head Δ (Ψ₁ << Ψ₃) A -> head Δ (Ψ₁ << Ψ₂ << Ψ₃) A
  h-wkn Ψ₁ Ψ₂ Ψ₃ (▹ x) = ▹ (tvar-wkn Ψ₁ Ψ₂ Ψ₃ x)
@@ -157,10 +148,10 @@ mutual
  n-wkn Ψ₁ Ψ₂ Ψ₃ (H · S) = (h-wkn Ψ₁ Ψ₂ Ψ₃ H) · (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
 
  ns-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> nsub Δ (Ψ₁ << Ψ₃) Φ -> nsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
- ns-wkn Ψ₁ Ψ₂ Ψ₃ ⊡ = ⊡
+ {- ns-wkn Ψ₁ Ψ₂ Ψ₃ ⊡ = ⊡
  ns-wkn Ψ₁ Ψ₂ Ψ₃ (σ , N) = (ns-wkn Ψ₁ Ψ₂ Ψ₃ σ) , (n-wkn Ψ₁ Ψ₂ Ψ₃ N)
- ns-wkn Ψ₁ Ψ₂ Ψ₃ ([ xs ] ρ) = [ xs ] (rs-wkn Ψ₁ Ψ₂ Ψ₃ ρ)
- ns-wkn Ψ₁ Ψ₂ Ψ₃ (id φ) = id (cvar-wkn Ψ₁ Ψ₂ Ψ₃ φ)
+ ns-wkn Ψ₁ Ψ₂ Ψ₃ ([ xs ] ρ) = [ xs ] (rs-wkn Ψ₁ Ψ₂ Ψ₃ ρ) -}
+ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ = {!σ!} --id (cvar-wkn Ψ₁ Ψ₂ Ψ₃ φ)
 
  rs-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> rsub Δ (Ψ₁ << Ψ₃) Φ -> rsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
  rs-wkn Ψ₁ Ψ₂ Ψ₃ (s [ σ ]) = s [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ ]
@@ -181,10 +172,10 @@ mutual
  n-wkn' Ψ₂ Ψ₃ (H · S) = (h-wkn' Ψ₂ Ψ₃ H) · (s-wkn' Ψ₂ Ψ₃ S)
 
  ns-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {Φ} -> nsub Δ (⊡ << Ψ₃) Φ -> nsub Δ (Ψ₂ << Ψ₃) Φ
- ns-wkn' Ψ₂ Ψ₃ ⊡ = ⊡
+ {-ns-wkn' Ψ₂ Ψ₃ ⊡ = ⊡
  ns-wkn' Ψ₂ Ψ₃ (σ , N) = (ns-wkn' Ψ₂ Ψ₃ σ) , (n-wkn' Ψ₂ Ψ₃ N)
- ns-wkn' Ψ₂ Ψ₃ ([ xs ] ρ) = [ xs ] (rs-wkn' Ψ₂ Ψ₃ ρ)
- ns-wkn' Ψ₂ Ψ₃ (id φ) = id (cvar-wkn' Ψ₂ Ψ₃ φ)
+ ns-wkn' Ψ₂ Ψ₃ ([ xs ] ρ) = [ xs ] (rs-wkn' Ψ₂ Ψ₃ ρ) -}
+ ns-wkn' Ψ₂ Ψ₃ σ = {!!} --id (cvar-wkn' Ψ₂ Ψ₃ φ)
 
  rs-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {Φ} -> rsub Δ (⊡ << Ψ₃) Φ -> rsub Δ (Ψ₂ << Ψ₃) Φ
  rs-wkn' Ψ₂ Ψ₃ (s [ σ ]) = s [ ns-wkn' Ψ₂ Ψ₃ σ ]
@@ -224,10 +215,10 @@ mutual
  s-sub Ψ (N , S) N' = (n-sub Ψ N N') , (s-sub Ψ S N')
 
  ns-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> nsub Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> nsub Δ (Ψ₁ << Ψ₂) Φ
- ns-sub Ψ ⊡ M = ⊡
+ {- ns-sub Ψ ⊡ M = ⊡
  ns-sub Ψ (σ , N) M = (ns-sub Ψ σ M) , (n-sub Ψ N M)
- ns-sub Ψ ([ xs ] ρ) M = [ xs ] (rs-sub Ψ ρ M)
- ns-sub Ψ (id φ) M = id (cvar-str Ψ φ)
+ ns-sub Ψ ([ xs ] ρ) M = [ xs ] (rs-sub Ψ ρ M) -}
+ ns-sub Ψ σ M = {!!} --id (cvar-str Ψ φ)
 
  rs-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> rsub Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> rsub Δ (Ψ₁ << Ψ₂) Φ
  rs-sub Ψ (s [ σ ]) M = s [ ns-sub Ψ σ M ]
@@ -260,35 +251,23 @@ mutual
  sc-sub' Ψ (N , S) ρ = (nc-sub' Ψ N ρ) , sc-sub' Ψ S ρ
 
  nsc-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {χ} -> nsub Δ (▹ φ << Ψ₂) χ -> nsub Δ Ψ₁ (▹ φ) -> nsub Δ (Ψ₁ << Ψ₂) χ
- nsc-sub' Ψ ⊡ ρ = ⊡
+ nsc-sub' Ψ σ ρ = {!!}
+ {-nsc-sub' Ψ ⊡ ρ = ⊡
  nsc-sub' Ψ (σ , N) ρ = (nsc-sub' Ψ σ ρ) , (nc-sub' Ψ N    ρ)
- nsc-sub' Ψ ([ xs' ] (s [ σ' ])) ρ = [ xs' ] (s [ nsc-sub' Ψ σ' ρ ])
+ nsc-sub' Ψ ([ xs' ] (s [ σ' ])) ρ = [ xs' ] (s [ nsc-sub' Ψ σ'    ρ ])
  nsc-sub' Ψ (id φ) ρ with ceq Ψ φ
- ... | refl = ns-wkn _ Ψ ⊡ ρ
+ ... | refl = ns-wkn _ Ψ ⊡ ρ -}
 
 mutual
- n-sim-sub : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Φ {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
- n-sim-sub .⊡ Ψ₂ Φ N ⊡ = n-wkn' Φ Ψ₂ N
- n-sim-sub {Ω} {Δ} .(Φ₁ , ▸ A₁) Ψ₂ Φ {A} N (_,_ {.Φ} {Φ₁} {A₁} σ N₁) with subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ (⊡ , A₁) Ψ₂)) (n-sim-sub Φ₁ ((⊡ , A₁) <<' Ψ₂) Φ (subst (λ α → ntm Δ α A) (<<-assoc Φ₁ (⊡ , A₁) Ψ₂) N) σ)
+ n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Φ {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
+ n-sim-sub' Ψ₁ Ψ₂ Φ N σ = {!!}
+ {-n-sim-sub' .⊡ Ψ₂ Φ N ⊡ = n-wkn' Φ Ψ₂ N
+ n-sim-sub' {Ω} {Δ} .(Φ₁ , ▸ A₁) Ψ₂ Φ {A} N (_,_ {.Φ} {Φ₁} {A₁} σ N₁) with subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ (⊡ , A₁) Ψ₂)) (n-sim-sub' Φ₁ ((⊡ , A₁) <<' Ψ₂) Φ (subst (λ α → ntm Δ α A) (<<-assoc Φ₁ (⊡ , A₁) Ψ₂) N) σ)
  ... | q = n-sub Ψ₂ q N₁
- n-sim-sub .(▹ φ) Ψ₂ Φ N ([_]_ {.Φ} {Φ₂} {φ} xs ρ) = nc-sub' Ψ₂ N ([ xs ] ρ)
- n-sim-sub .(▹ φ) Ψ₂ Φ N (id {.Φ} {φ} xs) = nc-sub' Ψ₂ N (id xs)
+ n-sim-sub' ._ Ψ₂ Φ N ([ xs ] ρ) = nc-sub' Ψ₂ N ([ xs ] ρ)
+ n-sim-sub' ._ Ψ₂ Φ N (id xs) = nc-sub' Ψ₂ N (id xs) -}
 
- 
-
-n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
-n-sim-sub' N σ = n-sim-sub _ ⊡ _ N σ 
-
-{-
-mutual
- n-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} Ψ₂ {Φ} {A} -> ntm Δ (Ψ₁ << Ψ₂) A -> nsub Δ Φ Ψ₁ -> ntm Δ (Φ << Ψ₂) A
- n-sim-sub {Ω} {Δ} Ψ {Φ} {A} N ⊡ = subst (λ α → ntm Δ α A) (trans (<<-assoc ⊡ Φ Ψ) ({! <<-idl (Φ << Ψ) !})) (n-wkn ⊡ Φ Ψ N)
- n-sim-sub {Ω} {Δ} Ψ {.Φ'} {A} N (_,_ {Φ'} {Φ} {B} σ N') with subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ' (⊡ , ▸ B) Ψ)) (n-sim-sub (⊡ , ▸ B << Ψ) (subst (λ α → ntm Δ α A) (<<-assoc Φ (⊡ , ▸ B) Ψ) N) σ)
- ... | q = n-sub Ψ q N'
- n-sim-sub {Ω} {Δ} Ψ {.Φ'} {A} N (_,[_]_ {Φ'} {Φ} {Φ''} {φ} σ xs ρ) with subst (λ α -> ntm Δ α A) (sym (<<-assoc Φ' (⊡ , ▹ φ) Ψ)) (n-sim-sub (⊡ , ▹ φ << Ψ) (subst (λ α → ntm Δ α A) (<<-assoc Φ (⊡ , ▹ φ) Ψ) N) σ)
- ... | q = ? --nc-sub Ψ q xs ρ 
-
-n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
-n-sim-sub' N σ = n-sim-sub ⊡ N σ -}
+n-sim-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
+n-sim-sub N σ = n-sim-sub' _ ⊡ _ N σ 
 
 -- Now I need all 3 kinds of meta-substitution...

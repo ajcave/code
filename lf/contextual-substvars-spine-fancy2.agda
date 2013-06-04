@@ -1,4 +1,4 @@
-module contextual-substvars-spine where
+module contextual-substvars-spine-fancy2 where
 open import Level
 open import Unit
 open import FinMap
@@ -84,6 +84,52 @@ mutual
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
 
+data tag : Set where
+ many one : tag
+
+fam : tag -> Set
+fam many = ctx tp
+fam one = tp
+
+_<:_ : ∀ {Ω b} -> tctx Ω -> fam b -> tctx Ω
+_<:_ {Ω} {many} Ψ x = Ψ << x
+_<:_ {Ω} {one} Ψ x = Ψ , ▸ x
+
+mutual
+ comb : ∀ {b} {Ω} {Δ : mctx Ω} Ψ (Ψ₁ : fam b) Ψ₂ {A} -> tvar (Ψ <: Ψ₁ << Ψ₂) A -> spine Δ (Ψ << Ψ₂) A i -> nsub Δ Ψ (⊡ <: Ψ₁) -> ntm Δ (Ψ << Ψ₂) i
+ comb {many} Ψ' ⊡ ⊡ x S σ = ▹ x · S
+ comb {many} Ψ' (Ψ , A) ⊡ top S (σ , N) = N ◇ S
+ comb {many} Ψ' (Ψ , T) ⊡ (pop x) S (σ , N) = comb Ψ' Ψ ⊡ x S σ
+ comb {one} Ψ' A ⊡ top S (σ , N) = N ◇ S
+ comb {one} Ψ' A ⊡ (pop x) S (σ , N) = ▹ x · S
+ comb Ψ' Ψ (Ψ2 , A)  top S σ = ▹ top · S
+ comb Ψ' Ψ (Ψ2 , T) (pop x) S σ = {!comb Ψ' Ψ Ψ2 x S σ!}
+
+ _◇_ : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B} -> ntm Δ Ψ A -> spine Δ Ψ A B -> ntm Δ Ψ B
+ N ◇ ε = N
+ _◇_ {Ω} {Δ} {Ψ} (ƛ N) (N' , S) = n-sub {one} Ψ _ ⊡ N (⊡ , N') ◇ S
+
+ n-sub : ∀ {b} {Ω} {Δ : mctx Ω}  Ψ (Ψ₁ : fam b) Ψ₂ {A} -> ntm Δ (Ψ <: Ψ₁ << Ψ₂) A -> nsub Δ Ψ (⊡ <: Ψ₁) -> ntm Δ (Ψ << Ψ₂) A
+ n-sub Ψ' Ψ₁ Ψ (ƛ N) σ = ƛ (n-sub Ψ' Ψ₁ (Ψ , _) N σ)
+ n-sub Ψ' Ψ₁ Ψ (▹ x · S) σ = comb Ψ' Ψ₁ Ψ x (sp-sub Ψ' Ψ₁ Ψ S σ) σ
+ n-sub Ψ' Ψ₁ Ψ (u [ σ ] · S) σ' = (u [ ns-sub Ψ' Ψ₁ Ψ σ σ' ]) · sp-sub Ψ' Ψ₁ Ψ S σ'
+ n-sub Ψ' Ψ₁ Ψ (p ♯[ σ ] · S) σ' = (p ♯[ ns-sub Ψ' Ψ₁ Ψ σ σ' ]) · sp-sub Ψ' Ψ₁ Ψ S σ'
+ n-sub Ψ' Ψ₁ Ψ (π x ρ · S) σ = π x (rs-sub Ψ' Ψ₁ Ψ ρ σ) · sp-sub Ψ' Ψ₁ Ψ S σ
+
+ sp-sub : ∀ {Ω} {Δ : mctx Ω} {b} Ψ (Ψ₁ : fam b) Ψ₂ {A B} -> spine Δ (Ψ <: Ψ₁ << Ψ₂) A B -> nsub Δ Ψ (⊡ <: Ψ₁) -> spine Δ (Ψ << Ψ₂) A B
+ sp-sub Ψ' Ψ₁ Ψ ε σ = ε
+ sp-sub Ψ' Ψ₁ Ψ (N , S) σ = (n-sub Ψ' Ψ₁ Ψ N σ) , (sp-sub Ψ' Ψ₁ Ψ S σ) 
+
+ ns-sub : ∀ {Ω} {Δ : mctx Ω} {b} Ψ (Ψ₁ : fam b) Ψ₂ {A} -> nsub Δ (Ψ <: Ψ₁ << Ψ₂) A -> nsub Δ Ψ (⊡ <: Ψ₁) -> nsub Δ (Ψ << Ψ₂) A
+ ns-sub Ψ' Ψ₁ Ψ ⊡ σ = ⊡
+ ns-sub Ψ' Ψ₁ Ψ (σ , N) σ' = (ns-sub Ψ' Ψ₁ Ψ σ σ') , (n-sub Ψ' Ψ₁ Ψ N σ')
+ ns-sub Ψ' Ψ₁ Ψ ([ xs ] ρ) σ = [ xs ] rs-sub Ψ' Ψ₁ Ψ ρ σ
+ ns-sub Ψ' Ψ₁ Ψ (id xs) σ = id {!!}
+
+ rs-sub : ∀ {Ω} {Δ : mctx Ω} {b} Ψ (Ψ₁ : fam b) Ψ₂ {A} -> rsub Δ (Ψ <: Ψ₁ << Ψ₂) A -> nsub Δ Ψ (⊡ <: Ψ₁) -> rsub Δ (Ψ << Ψ₂) A
+ rs-sub Ψ' Ψ₁ Ψ (s [ σ ]) σ' = s [ ns-sub Ψ' Ψ₁ Ψ σ σ' ]
+
+{-
 ⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
 ⟦_⟧tc Ψs ⊡ = ⊡
 ⟦_⟧tc Ψs (▹ φ) = lookup Ψs φ
@@ -262,7 +308,7 @@ mutual
  nsc-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {φ} Ψ₂ {χ} -> nsub Δ (▹ φ << Ψ₂) χ -> nsub Δ Ψ₁ (▹ φ) -> nsub Δ (Ψ₁ << Ψ₂) χ
  nsc-sub' Ψ ⊡ ρ = ⊡
  nsc-sub' Ψ (σ , N) ρ = (nsc-sub' Ψ σ ρ) , (nc-sub' Ψ N    ρ)
- nsc-sub' Ψ ([ xs' ] (s [ σ' ])) ρ = [ xs' ] (s [ nsc-sub' Ψ σ' ρ ])
+ nsc-sub' Ψ ([ xs' ] (s [ σ' ])) ρ = [ xs' ] (s [ nsc-sub' Ψ σ'    ρ ])
  nsc-sub' Ψ (id φ) ρ with ceq Ψ φ
  ... | refl = ns-wkn _ Ψ ⊡ ρ
 
@@ -291,4 +337,5 @@ mutual
 n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub Δ Φ Ψ₁ -> ntm Δ Φ A
 n-sim-sub' N σ = n-sim-sub ⊡ N σ -}
 
+-}
 -- Now I need all 3 kinds of meta-substitution...
