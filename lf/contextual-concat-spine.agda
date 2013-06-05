@@ -279,3 +279,5 @@ n-sim-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {Φ} {A} -> ntm Δ Ψ₁ A -> nsub 
 n-sim-sub' N σ = n-sim-sub ⊡ N σ
 
 -- Now I need all 3 kinds of meta-substitution...
+
+
