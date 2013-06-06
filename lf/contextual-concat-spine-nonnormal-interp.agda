@@ -17,7 +17,7 @@ sp-comp (N , S) S2 = N , (sp-comp S S2)
 η-expand2 : ∀ {T} {Ω} {Δ : mctx Ω} {Ψ} -> head Δ Ψ T -> ntm Δ Ψ T
 η-expand2 x = η-expand x ε
 
-ηs-expand' : ∀ {Ω T} {Δ : mctx Ω} {Ψ} Φ -> rsub Δ Ψ (T << Φ) -> nsub Δ Ψ T
+ηs-expand' : ∀ {Ω Φ'} {Δ : mctx Ω} {Ψ} Φ -> rsub Δ Ψ (Φ' << Φ) -> nsub Δ Ψ Φ'
 ηs-expand' {Ω} {⊡} Φ σ = ⊡
 ηs-expand' {Ω} {Φ' , ▹ φ} {Δ} {Ψ} Φ σ = ηs-expand' {Ω} ((⊡ , ▹ φ) << Φ) (subst (rsub Δ Ψ) (<<-assoc Φ' (⊡ , ▹ φ) Φ) σ) ,[ cthatone Φ ] σ
 ηs-expand' {Ω} {Φ' , ▸ A} {Δ} {Ψ} Φ σ = ηs-expand' {Ω} ((⊡ , ▸ A) << Φ) (subst (rsub Δ Ψ) (<<-assoc Φ' (⊡ , ▸ A) Φ) σ) , η-expand2 (π (thatone Φ) σ)
