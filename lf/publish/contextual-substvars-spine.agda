@@ -115,10 +115,6 @@ cvar-wkn : ∀ {Ω} (Ψ₁ : tctx Ω) Ψ₂ Ψ₃ {φ} -> cvar (Ψ₁ << Ψ₃) 
 cvar-wkn Ψ₁ Ψ₂ ⊡ xs = <<cv xs Ψ₂
 cvar-wkn Ψ₁ Ψ₂ (Ψ , A) (pop xs) = pop (cvar-wkn Ψ₁ Ψ₂ Ψ xs)
 
-cvar-wkn' : ∀ {Ω} (Ψ₂ : tctx Ω) Ψ₃ {φ} -> cvar (⊡ << Ψ₃) φ -> cvar (Ψ₂ << Ψ₃) φ
-cvar-wkn' Ψ₂ ⊡ ()
-cvar-wkn' Ψ₂ (Ψ , A) (pop xs) = pop (cvar-wkn' Ψ₂ Ψ xs)
-
 mutual
  h-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> head Δ (Ψ₁ << Ψ₃) A -> head Δ (Ψ₁ << Ψ₂ << Ψ₃) A
  h-wkn Ψ₁ Ψ₂ Ψ₃ (▹ x) = ▹ (tvar-wkn Ψ₁ Ψ₂ Ψ₃ x)
@@ -142,30 +138,6 @@ mutual
 
  rs-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> rsub Δ (Ψ₁ << Ψ₃) Φ -> rsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
  rs-wkn Ψ₁ Ψ₂ Ψ₃ (s [ σ ]) = s [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ ]
-
-mutual
- h-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {A} -> head Δ (⊡ << Ψ₃) A -> head Δ (Ψ₂ << Ψ₃) A
- h-wkn' Ψ₂ Ψ₃ (▹ x) = ▹ (tvar-wkn' Ψ₂ Ψ₃ x)
- h-wkn' Ψ₂ Ψ₃ (u [ σ ]) = u [ ns-wkn' Ψ₂ Ψ₃ σ ]
- h-wkn' Ψ₂ Ψ₃ (p ♯[ σ ]) = p ♯[ ns-wkn' Ψ₂ Ψ₃ σ ]
- h-wkn' Ψ₂ Ψ₃ (π x ρ) = π x (rs-wkn' Ψ₂ Ψ₃ ρ)
-
- s-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {A B} -> spine Δ (⊡ << Ψ₃) A B -> spine Δ ( Ψ₂ << Ψ₃) A B
- s-wkn' Ψ₂ Ψ₃ ε = ε
- s-wkn' Ψ₂ Ψ₃ (N , S) = (n-wkn' Ψ₂ Ψ₃ N) , (s-wkn' Ψ₂ Ψ₃ S)
-
- n-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {A} -> ntm Δ (⊡ << Ψ₃) A -> ntm Δ (Ψ₂ << Ψ₃) A
- n-wkn' Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn' Ψ₂ (Ψ₃ , A) N)
- n-wkn' Ψ₂ Ψ₃ (H · S) = (h-wkn' Ψ₂ Ψ₃ H) · (s-wkn' Ψ₂ Ψ₃ S)
-
- ns-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {Φ} -> nsub Δ (⊡ << Ψ₃) Φ -> nsub Δ (Ψ₂ << Ψ₃) Φ
- ns-wkn' Ψ₂ Ψ₃ ⊡ = ⊡
- ns-wkn' Ψ₂ Ψ₃ (σ , N) = (ns-wkn' Ψ₂ Ψ₃ σ) , (n-wkn' Ψ₂ Ψ₃ N)
- ns-wkn' Ψ₂ Ψ₃ ([ xs ] ρ) = [ xs ] (rs-wkn' Ψ₂ Ψ₃ ρ)
- ns-wkn' Ψ₂ Ψ₃ (id φ) = id (cvar-wkn' Ψ₂ Ψ₃ φ)
-
- rs-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {Φ} -> rsub Δ (⊡ << Ψ₃) Φ -> rsub Δ (Ψ₂ << Ψ₃) Φ
- rs-wkn' Ψ₂ Ψ₃ (s [ σ ]) = s [ ns-wkn' Ψ₂ Ψ₃ σ ]
 
 cvar-str : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₂ {φ} -> cvar ((Ψ₁ , ▸ B) << Ψ₂) φ -> cvar (Ψ₁ << Ψ₂) φ
 cvar-str ⊡ (pop xs) = xs
