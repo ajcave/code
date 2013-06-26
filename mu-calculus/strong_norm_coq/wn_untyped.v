@@ -286,8 +286,11 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
    step (trec F C (tinj t1) t2) (app_tsub _ t2 (tt, tmap1 F (trec F C (tv top) t2) t1))
 | step_nu : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)),
    step (tout (tcorec F C t1 t2)) (tmap1 F (tcorec F C (tv top) t2) (app_tsub _ t2 (tt, t1)))
-(* | step_map_fv : forall Δ (X : var Δ type) M η,
-   step (tmap (fv X) M η) (app_tsub1 (glookup' X η) M) (* Ugh need to weaken here *) *)
+| step_map : forall Δ (F : functor Δ) M M' η,
+     step M M'
+  -> step (tmap F M η) (tmap F M' η)
+| step_map_fv : forall Δ (X : var Δ type) M η,
+   step (tmap (fv X) M η) (app_tsub _ (glookup' X η) (tt , M))
 | step_map_arrow : forall Δ T (F2 : functor Δ) M η,
     step (tmap (arrow T F2) M η) (tlam (tmap F2 (tapp (wkn_tm M) (tv top)) η))
 | step_map_times : forall Δ (F1 : functor Δ) F2 M η, 
