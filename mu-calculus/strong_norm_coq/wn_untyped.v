@@ -336,21 +336,25 @@ with isNormal G : tm G -> Prop :=
 
 Definition Rel := forall (G : ctx scope), tm G -> Prop.
 
-Definition includes_neutral (R : Rel) : Prop := forall G (t : tm G), isNeutral t -> R G t.
 Inductive normalizing G : tm G -> Prop :=
  | norm_intro : forall M N, step M N -> isNormal N -> normalizing M.
-Definition contained_in_normalizing (R : Rel) : Prop := forall G (t : tm G), R G t -> normalizing t.
+
+Definition Rarrow (R1 R2 : Rel) : Prop := forall G (t : tm G), R1 G t -> R2 G t.
+
+Definition contained_in_normalizing (R : Rel) : Prop := Rarrow R normalizing.
+
+Definition includes_neutral (R : Rel) : Prop := Rarrow isNeutral R.
 
 Definition closed_under_step (R : Rel) : Prop :=
   forall G (t' : tm G), R G t' -> forall t, step t t' -> R G t.
 
 Record candidate (R : Rel) : Prop := {
- CR1 : contained_in_normalizing R;
+ CR1 : Rarrow R normalizing;
  CR2 : closed_under_step R;
- CR3 : includes_neutral R
+ CR3 : Rarrow isNeutral R
 }.
+Hint Resolve CR1 CR2 CR3.
 
-Definition Rarrow (R1 R2 : Rel) : Prop := forall G (t : tm G), R1 G t -> R2 G t.
 
 Definition closure (C : Rel) : Rel := fun G t => exists t', step t t' /\ (C G t' \/ isNeutral t').
 
@@ -388,12 +392,19 @@ intros G t Hy0.
 eexists. split. Focus 2. right. eauto.
 eauto.
 Qed.
+Hint Resolve closure_cand.
 
-(*Definition lub (Pred : Rel -> Prop) : Rel := fun G t => (exists (C : Rel), candidate C /\ Pred C /\ C G t) \/ ( t).
-Need closure operator *)
-
+Lemma adjunction_closure C D (H : candidate D) (r : Rarrow C D) : Rarrow (closure C) D.
+intros G t Hy0.
+destruct Hy0. destruct H0. destruct H1.
+eapply CR2; eauto.
+eapply CR2; eauto.
+eapply CR3; eauto.
+Qed.
 
 Definition glb (Pred : Rel -> Prop) : Rel := fun G t => (forall C, Pred C -> C G t) /\ normalizing t. 
+
+Definition lub (Pred : Rel -> Prop) : Rel := closure (fun G t => exists C, Pred C /\ C G t).
 
 Lemma glb_cand (Pred : Rel -> Prop) (Hy : forall C, Pred C -> candidate C) : candidate (glb Pred).
 unfold glb.
@@ -414,6 +425,19 @@ intros.
 eapply CR3; eauto.
 eauto.
 Qed.
+
+Lemma lub_cand (Pred : Rel -> Prop) (Hy : forall C, Pred C -> candidate C) : candidate (lub Pred).
+unfold lub.
+split.
+(* CR1 *)
+eapply adjunction_closure; eauto. firstorder.
+(* CR2 *)
+intros G t' Hy0 t s.
+eapply CR2; eauto. eapply closure_cand. firstorder.
+(* CR3 *)
+firstorder.
+Qed.
+
 
 Definition lfp (F : Rel -> Rel) : Rel :=
  glb (fun C => candidate C /\ Rarrow (F C) C).
