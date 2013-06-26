@@ -518,47 +518,33 @@ match x in var D T return Rsub D -> Rel with
 end.
 
 Definition star (R : Rel) (f : forall G, tm G -> tm G) : Rel := fun G t => exists t', t = f _ t' /\ R G t'.
+Definition circ (R : Rel) (f : forall G, tm G -> tm G) : Rel := fun G t => R G (f G t).
+
+Definition Meet (C D : Rel) : Rel := fun G t => C G t /\ D G t.
+Definition Join (C D : Rel) : Rel := fun G t => C G t \/ D G t.
+
+Definition Arrow (C D : Rel) : Rel := 
+ fun G t => forall G' (w : vsub G G') u, C G' u -> D G' (tapp (app_vsub_tm _ t w) u).
+Definition Times (C D : Rel) : Rel := Meet (circ C tfst) (circ D tsnd).
+Definition Plus (C D : Rel) : Rel := closure (Join (star C tinl) (star D tinr)).
+Definition Mu (F : Rel -> Rel) := lfp (fun C => closure (star (F C) tinj)).
+Definition Nu (F : Rel -> Rel) := gfp (fun C => circ (F C) tout).
 
 Fixpoint RedF (D : ctx sort) (F : functor D) (r : Rsub D) {struct F} : Rel :=
 match F with
-| fv D' X => fun G t => Rlookup X r t
-| arrow A F' => fun G t => forall G' (w : vsub G G') u, RedF A tt u -> RedF F' r (tapp (app_vsub_tm _ t w) u)
-| times F1 F2 => fun G t => RedF F1 r (tfst t) /\ RedF F2 r (tsnd t)
-| plus F1 F2 => closure (fun G t => (star (RedF F1 r) tinl) G t \/ (star (RedF F2 r) tinr) G t)
-| mu F => lfp (fun RR => closure (fun G t => (star (RedF F (r, RR)) tinj) G t))
-| nu F => gfp (fun RR G t => RedF F (r, RR) (tout t))
+| fv D' X => Rlookup X r
+| arrow A F' => Arrow (RedF A tt) (RedF F' r)
+| times F1 F2 => Times (RedF F1 r) (RedF F2 r)
+| plus F1 F2 => Plus (RedF F1 r) (RedF F2 r)
+| mu F => Mu (fun R => RedF F (r , R))
+| nu F => Nu (fun R => RedF F (r , R))
 end.
-
-Definition closed_under_step_SN_star (R : Rel) : Prop := forall G (t' : tm G), R G t' -> forall t, step_SN_star t t' -> R G t.
-Lemma closed_to_star (R : Rel) : closed_under_step_SN R -> closed_under_step_SN_star R.
-intros H. intros G t H0 t0 H1. induction H1; eauto.
-Qed.
-
-Lemma closed_star_map G (f : tm G -> tm G) : (forall (u1 u2 : tm G), step_SN u1 u2 -> step_SN (f u1) (f u2)) ->
-  forall (t1 t2 : tm G), step_SN_star t1 t2 -> step_SN_star (f t1) (f t2).
-intros.
-induction H0. econstructor.
-econstructor.
-eapply H.
-eauto.
-eauto.
-Qed.
-
-Lemma closed_star_out G (t1 t2 : tm G) : step_SN_star t1 t2 -> step_SN_star (tout t1) (tout t2).
-eapply closed_star_map. intros. econstructor; eauto.
-Qed.
-
-
 
 Fixpoint Rsub_candidates D : forall (r : Rsub D), Prop :=
 match D return forall (r : Rsub D), Prop with
 | nil => fun r => True
 | snoc D' _ => fun r => (Rsub_candidates D' (fst r)) /\ (candidate (snd r))
 end.
-
-Hint Constructors SNe.
-Hint Constructors step_SN.
-Hint Constructors SN.
 
 Fixpoint Rarrows D : forall (r1 r2 : Rsub D), Prop :=
 match D return forall (r1 r2 : Rsub D), Prop with
@@ -575,8 +561,10 @@ match D return forall (r : Rsub D), Rarrows D r r with
 end.
 
 Lemma RedF_monotone (D : ctx sort) (F : functor D) (r1 r2 : Rsub D) (H : Rarrows D r1 r2) : Rarrow (RedF F r1) (RedF F r2).
+induction F.
 Admitted.
 
+(*
 Lemma RedF_mu_inj (D : ctx sort) (F : functor (snoc D type)) (r : Rsub D)
  : Rarrow (fun G (t : tm G) =>    (exists t', step_SN_star t (tinj t') /\ RedF F (r, (RedF (mu F) r)) t')
                                \/ (exists t', step_SN_star t t' /\ SNe t'))
@@ -595,7 +583,7 @@ destruct H0. destruct H0.
 right.
 eexists. split. eexact H0. eexact H1.
 eexact H.
-Qed.
+Qed. 
 
 Lemma RedF_nu_out (D : ctx sort) (F : functor (snoc D type)) (r : Rsub D)
  : Rarrow (RedF (nu F) r)
@@ -612,7 +600,7 @@ eapply (RedF_monotone F (r , R1) (r, R2)).
 split. eapply Rarrs_id.
 eexact arr.
 auto.
-Qed.
+Qed. 
 
 Lemma SN_candidate : candidate SN.
 split;
@@ -628,218 +616,14 @@ intros. destruct H. destruct H. eexists x. split; eauto.
 exists t. split; eauto.
 destruct H. destruct H. eapply sn_closed_step_star.
 eexact H. eauto.
-Qed.
+Qed. *)
 
 
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
   : candidate (RedF F r).
 induction F; simpl.
-admit.
-pose proof (IHF2 r H).
-pose proof (IHF1 tt I).
-destruct H0. destruct H1.
-split.
-intros G t' H0 t st G' w u H1.
-eapply closed0.
-Focus 2.
-eapply step_SN_app.
-eapply step_SN_closed_vsub.
-eexact st.
-eauto.
-intros G t H0 G' w u H1.
-eapply includes_neut0.
-eapply sne_app.
-eapply SNe_closed_vsub.
-eauto.
-eauto.
-intros G t H0.
-pose proof (includes_neut1 (snoc G tt) (tv top) (sne_var top)) as H1.
-pose proof (H0 (snoc G tt) (weakening_vsub G tt) (tv top) H1).
-pose proof (contained_SN0 (snoc G tt) _ H2).
-(* TODO: SN closed under subterms *)
-inversion H3.
-inversion H4.
-subst.
-admit.
-subst.
-admit.
+admit. (* Easy *)
 
-(* Case: times *)
-pose proof (IHF1 r H).
-pose proof (IHF2 r H).
-destruct H0. destruct H1.
-split.
-intros G t' H1 t H0. 
-destruct H1.
-split; eauto.
-
-intros G t H0.
-split; eauto.
-
-intros G t H0.
-destruct H0.
-admit. (* TODO: Same *)
-
-(* Case: plus *)
-pose proof (IHF1 r H). destruct H0.
-pose proof (IHF2 r H). destruct H0.
-clear closed0.
-split.
-intros G t' H1 t H0.
-destruct H1.
-destruct H1.
-destruct H1.
-left.
-eexists.
-split.
-eapply step_SN_star_step.
-eexact H0. eexact H1.
-eauto.
-destruct H1.
-destruct H1.
-destruct H1.
-right. left.
-eexists. split.
-eapply step_SN_star_step.
-eexact H0.
-eexact H1.
-eauto.
-right. right.
-destruct H1. destruct H1.
-eexists. split. eapply step_SN_star_step.
-eapply H0. eapply H1.
-eauto.
-
-intros G t H0.
-right. right. eexists. split. eapply step_SN_star_refl.
-eexact H0.
-
-intros G t H0.
-destruct H0. destruct H0. destruct H0.
-eapply sn_closed_step_star.
-eexact H0.
-eapply sn_inl.
-eauto.
-
-destruct H0. destruct H0. destruct H0.
-eapply sn_closed_step_star.
-eexact H0.
-eapply sn_inr.
-eauto.
-
-destruct H0. destruct H0.
-eapply sn_closed_step_star.
-eapply H0. eauto.
-
-(* Case: mu *)
-split.
-
-intros G t' H0.
-set (P := fun G (u' : tm G) => forall u, step_SN_star u u' -> RedF (mu F) r u).
-specialize (H0 P).
-intros.
-eapply H0.
-intros G' u H2.
-destruct H2. destruct H2. destruct H2.
-intros u0 st.
-eapply RedF_mu_inj.
-left.
-eexists. split.
-eapply step_SN_star_trans.
-eexact st. eexact H2.
-
-eapply RedF_monotone.
-Focus 2. eexact H3.
-simpl. split. eapply Rarrs_id.
-intros G'' t'' H4. 
-eapply H4.
-eapply step_SN_star_refl.
-
-destruct H2. destruct H2.
-intros G'' t''.
-eapply RedF_mu_inj. right.
-eexists. split.
-eapply step_SN_star_trans. eexact t''.
-eexact H2. eexact H3.
-eauto.
-
-intros G t H0.
-eapply RedF_mu_inj. right.
-eexists. split.
-eapply step_SN_star_refl.
-eauto.
-
-intros G t H0.
-eapply H0.
-intros G' t' H1.
-destruct H1. destruct H1. destruct H1.
-
-pose proof (IHF (r, SN) (conj H SN_candidate)).
-destruct H3.
-eapply sn_closed_step_star.
-eexact H1.
-eapply sn_inj.
-eapply contained_SN0.
-eexact H2.
-
-destruct H1. destruct H1.
-eapply sn_closed_step_star.
-eexact H1. eauto.
-
-(* Case: nu *)
-split.
-intros G t H0 t0 st.
-set (P :=  (fun G (t0 : tm G) => exists t, step_SN_star t0 t /\ RedF (nu F) r t)).
-exists P.
-split.
-Focus 2. eexists t. split. eauto. eexact H0.
-intros G' t' H1. destruct H1. destruct H1. 
-pose proof (RedF_nu_out H2).
-destruct H3.
-split.
-eapply sn_closed_step_star; eauto.
-
-assert (candidate P).
-split. intros G'' u'' H5 t1 st'.
-destruct H5.  destruct H5.
-exists x0. split. eauto. eauto.
-admit. (* TODO: Redundant *)
-intros G'' u'' H5. destruct H5. destruct H5. pose proof (RedF_nu_out H6). destruct H7. eapply sn_closed_step_star; eauto. (* TODO: Redundant, but easy *)
-
-pose proof (IHF (r, P) (conj H H5)).
-destruct H6.
-pose proof (closed_to_star closed0).
-eapply H6.
-Focus 2.  eapply closed_star_out. eexact H1.
-eapply RedF_monotone.
-Focus 2. eexact H4.
-split. eapply Rarrs_id.
-unfold snd.
-intros G'' u H7.
-exists u. split; eauto.
-
-
-intros G t H0.
-set (P := fun G (t : tm G) => exists u, step_SN_star t u /\ SNe u).
-exists P.
-pose proof SNe_candidate.
-destruct H1.
-pose proof (IHF (r, P) (conj H SNe_candidate)).
-destruct H1. 
-split.
-intros G' t' H1. split. eapply contained_SN0. eauto.
-destruct H1. destruct H1.
-pose proof (closed_to_star closed1).
-eapply H3. apply includes_neut1.
-eapply sne_out.
- eexact H2.
-eapply closed_star_out.
-eexact H1.
-exists t. split; eauto.
-
-intros G t H0.
-pose proof (RedF_nu_out H0).
-destruct H1. auto.
 Qed.
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
