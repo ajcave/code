@@ -710,12 +710,12 @@ Lemma Nu_candidate F : candidate (Nu F).
 eapply gfp_candidate.
 Qed.
 
+Hint Resolve Arrow_candidate Times_candidate Plus_candidate Mu_candidate Nu_candidate I.
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
   : candidate (RedF F r).
-induction F; simpl.
+induction F; simpl in *; eauto.
 admit. (* Easy *)
-
-Qed.
+Qed. 
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
 
