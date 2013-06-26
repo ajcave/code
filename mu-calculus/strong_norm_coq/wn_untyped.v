@@ -517,17 +517,16 @@ match x in var D T return Rsub D -> Rel with
 | pop D' T' S' y => fun r => Rlookup y (fst r) 
 end.
 
+Definition star (R : Rel) (f : forall G, tm G -> tm G) : Rel := fun G t => exists t', t = f _ t' /\ R G t'.
+
 Fixpoint RedF (D : ctx sort) (F : functor D) (r : Rsub D) {struct F} : Rel :=
-match F (* return Rel (app_fsub _ F s) *) with
+match F with
 | fv D' X => fun G t => Rlookup X r t
 | arrow A F' => fun G t => forall G' (w : vsub G G') u, RedF A tt u -> RedF F' r (tapp (app_vsub_tm _ t w) u)
 | times F1 F2 => fun G t => RedF F1 r (tfst t) /\ RedF F2 r (tsnd t)
-| plus F1 F2 => fun G t =>    (exists t', step t (tinl t') /\ RedF F1 r t')
-                           \/ (exists t', step t (tinr t') /\ RedF F2 r t')
-                           \/ (exists t', step t t' /\ SNe t')
-| mu F => lfp (fun RR G t => (exists t', step t (tinj t') /\ RedF F (r, RR) t')
-                          \/ (exists t', step t t' /\ SNe t'))
-| nu F => gfp (fun RR G t => SN t /\ RedF F (r, RR) (tout t))
+| plus F1 F2 => closure (fun G t => (star (RedF F1 r) tinl) G t \/ (star (RedF F2 r) tinr) G t)
+| mu F => lfp (fun RR => closure (fun G t => (star (RedF F (r, RR)) tinj) G t))
+| nu F => gfp (fun RR G t => RedF F (r, RR) (tout t))
 end.
 
 Definition closed_under_step_SN_star (R : Rel) : Prop := forall G (t' : tm G), R G t' -> forall t, step_SN_star t t' -> R G t.
