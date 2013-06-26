@@ -737,49 +737,7 @@ eapply RedF_candidate.
 simpl.
 eauto.
 Qed.
-
-Corollary Red_closed (T : tp) : closed_under_step_SN (Red T).
-destruct (Red_candidate T).
-eauto.
-Qed.
-
-Corollary Red_closed_star (T : tp) : closed_under_step_SN_star (Red T).
-destruct (Red_candidate T).
-eapply closed_to_star.
-eauto.
-Qed.
-
-Corollary RedF_SN D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : contained_in_SN (RedF F r).
-destruct (RedF_candidate F r H).
-eauto.
-Qed.
-
-Corollary RedF_SNe D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : includes_SNe (RedF F r).
-destruct (RedF_candidate F r H).
-eauto.
-Qed.
-
-Corollary RedF_closed D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : closed_under_step_SN (RedF F r).
-destruct (RedF_candidate F r H).
-eauto.
-Qed.
-
-
-Corollary RedF_closed_star D (F : functor D) (r : Rsub D) (H : Rsub_candidates D r) : closed_under_step_SN_star (RedF F r).
-destruct (RedF_candidate F r H).
-eapply closed_to_star.
-eauto.
-Qed.
-
-Corollary Red_SN (T : tp) : contained_in_SN (Red T).
-destruct (Red_candidate T).
-eauto.
-Qed.
-
-Corollary Red_SNe (T : tp) : includes_SNe (Red T).
-destruct (Red_candidate T).
-eauto.
-Qed.
+Hint Resolve Red_candidate.
 
 Lemma Red_closed_eq (T : tp) : forall G (t t' : tm G), Red T t' -> t = t' -> Red T t.
 intros. subst.
@@ -797,7 +755,12 @@ Definition compose_tsub_vsub G1 G2 G3 (w : vsub G2 G3) (s : tsub G1 G2) : tsub G
 Implicit Arguments compose_tsub_vsub [G1 G2 G3].
 
 Lemma RedS_closed_vsub G1 G2 G3 s w : RedS G3 G1 s -> RedS G3 G2 (compose_tsub_vsub w s).
-Admitted.
+intros. induction G3; simpl in *; auto.
+split. firstorder.
+unfold Red.
+(* Lemma RedF_closed_vsub G1 G2 F ρ w t : RedF F ρ t -> RedF F ρ (app_vsub_tm _ t w). *)
+Admitted. (* TODO: This might require quite a bit of work *)
+
 Lemma RedS_closed_ext G1 G2 T s : RedS G1 G2 s -> RedS (snoc G1 T) (snoc G2 tt) (exttsub s).
 intros.
 simpl.
@@ -805,8 +768,7 @@ split.
 unfold wkntsub.
 eapply (RedS_closed_vsub _ (snoc G2 tt) _ s (weakening_vsub G2 tt)).
 eauto.
-eapply Red_SNe.
-eauto.
+eapply CR3; eauto.
 Qed.
 
 Lemma Red_compositional (F : functor (snoc nil type)) T : forall G (t : tm G), Red (app_fsub1 F T) t <-> RedF F (tt , RedF T tt) t.
