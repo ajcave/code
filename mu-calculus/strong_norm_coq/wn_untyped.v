@@ -402,6 +402,15 @@ eapply CR2; eauto.
 eapply CR3; eauto.
 Qed.
 
+Lemma closure_unit C : Rarrow C (closure C).
+firstorder.
+Qed.
+
+Lemma Rarrow_compose A B C : Rarrow B C -> Rarrow A B -> Rarrow A C.
+firstorder.
+Qed.
+Hint Resolve closure_unit Rarrow_compose.
+
 Definition glb (Pred : Rel -> Prop) : Rel := fun G t => (forall C, Pred C -> C G t) /\ normalizing t. 
 
 Definition lub (Pred : Rel -> Prop) : Rel := closure (fun G t => exists C, Pred C /\ C G t).
@@ -438,10 +447,11 @@ eapply CR2; eauto. eapply closure_cand. firstorder.
 firstorder.
 Qed.
 
-
 Definition lfp (F : Rel -> Rel) : Rel :=
  glb (fun C => candidate C /\ Rarrow (F C) C).
- (* fun G t => forall CR, (Rarrow (FR CR) CR) -> CR G t. *)
+
+Definition gfp (F : Rel -> Rel) : Rel :=
+ lub (fun C => candidate C /\ Rarrow C (F C)).
 
 Definition monotone (F : Rel -> Rel) : Prop :=
  forall (R1 R2 : Rel), Rarrow R1 R2 -> Rarrow (F R1) (F R2).
@@ -449,6 +459,11 @@ Definition monotone (F : Rel -> Rel) : Prop :=
 Lemma lfp_candidate (F : Rel -> Rel) : candidate (lfp F).
 eapply glb_cand. firstorder.
 Qed.
+
+Lemma gfp_candidate (F : Rel -> Rel) : candidate (gfp F).
+eapply lub_cand. firstorder.
+Qed.
+Hint Resolve lfp_candidate gfp_candidate.
 
 Lemma lfp_inj (FR : Rel -> Rel) (H : monotone FR) (Hy : forall C, candidate C -> candidate (FR C))
   : Rarrow (FR (lfp FR)) (lfp FR).
@@ -470,32 +485,25 @@ eexact H0.
 Qed.
 
 Lemma lfp_ind (F : Rel -> Rel) C (H0 : candidate C) (r : Rarrow (F C) C) : Rarrow (lfp F) C.
-intros G t H.
-destruct H.
-eapply H.
-split. eauto.
-eapply r.
+firstorder.
 Qed.
 
-
-
-
-Definition gfp (FR : Rel -> Rel) : Rel :=
- fun G t => exists CR : Rel, (Rarrow CR (FR CR)) /\ CR G t.
-
-Lemma gfp_out (FR : Rel -> Rel) (H : monotone FR) : Rarrow (gfp FR) (FR (gfp FR)).
-intros G t H0.
-destruct H0. destruct H0.
-pose proof (H0 _ _ H1).
+Lemma gfp_out (F : Rel -> Rel) (H : monotone F) (Hy : forall C, candidate C -> candidate (F C))
+  : Rarrow (gfp F) (F (gfp F)).
+eapply adjunction_closure; eauto.
+intros G t Hy0.
+destruct Hy0 as [C H0]. destruct H0. destruct H0.
 eapply H.
 Focus 2.
-eexact H2.
-intros.
-eexists.
-split.
-eexact H0.
-eexact H3.
-Qed. *)
+eapply H2. eexact H1.
+eapply Rarrow_compose.
+eapply closure_unit.
+firstorder.
+Qed.
+
+Lemma gfp_coind (F : Rel -> Rel) C (H0 : candidate C) (r : Rarrow C (F C)) : Rarrow C (gfp F).
+firstorder.
+Qed.
 
 Fixpoint Rsub (D : ctx sort) : Type :=
 match D with
