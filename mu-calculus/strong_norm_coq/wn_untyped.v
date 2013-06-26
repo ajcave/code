@@ -352,8 +352,8 @@ Record candidate (R : Rel) : Prop := {
 
 Definition Rarrow (R1 R2 : Rel) : Prop := forall G (t : tm G), R1 G t -> R2 G t.
 
-(*Definition lub (Pred : Rel -> Prop) : Rel := fun G t => (exists (C : Rel), candidate C /\ Pred C /\ C G t) \/ ( t).
-Need closure operator *)
+Definition closure (C : Rel) : Rel := fun G t => exists t', step t t' /\ (C G t' \/ isNeutral t').
+
 
 Hint Constructors step.
 Hint Constructors normalizing.
@@ -367,6 +367,31 @@ inversion H; subst.
 econstructor. eapply step_trans; eauto. auto.
 intros G t H. econstructor; eauto.
 Qed.
+Hint Resolve normalizing_candidate.
+
+Lemma closure_cand (C : Rel) (H : Rarrow C normalizing) : candidate (closure C).
+split.
+(* CR1 *)
+intros G t Hy0. destruct Hy0. destruct H0. destruct H1.
+eapply CR2. eauto.
+eapply H. eapply H1. auto.
+eauto.
+(* CR2*)
+intros G t' Hy1 t s.
+destruct Hy1. destruct H0.
+eexists.
+split. Focus 2.
+eexact H1.
+eauto.
+(* CR3 *)
+intros G t Hy0.
+eexists. split. Focus 2. right. eauto.
+eauto.
+Qed.
+
+(*Definition lub (Pred : Rel -> Prop) : Rel := fun G t => (exists (C : Rel), candidate C /\ Pred C /\ C G t) \/ ( t).
+Need closure operator *)
+
 
 Definition glb (Pred : Rel -> Prop) : Rel := fun G t => (forall C, Pred C -> C G t) /\ normalizing t. 
 
@@ -419,6 +444,17 @@ eapply Hy.
 eapply lfp_candidate.
 eexact H0.
 Qed.
+
+Lemma lfp_ind (F : Rel -> Rel) C (H0 : candidate C) (r : Rarrow (F C) C) : Rarrow (lfp F) C.
+intros G t H.
+destruct H.
+eapply H.
+split. eauto.
+eapply r.
+Qed.
+
+
+
 
 Definition gfp (FR : Rel -> Rel) : Rel :=
  fun G t => exists CR : Rel, (Rarrow CR (FR CR)) /\ CR G t.
