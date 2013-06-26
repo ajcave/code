@@ -802,23 +802,13 @@ Definition SemTyping G (Cs : forall G', Rels G G') (t : tm G) (C : Rel) : Prop :
  forall G' (s : tsub G G') (H : RedS' G G' (Cs G') s), C G' (app_tsub _ t s).
 Implicit Arguments SemTyping [G].
 
-(*
-Definition map_arr_red D (a : map_arrow D) (s1 s2 : fsub D nil) : Prop.
-Admitted. (* TODO *)
-
-Lemma Red_pair G T S t1 t2 : IsMorphism G t1 T -> IsMorphism G t2 S -> IsMorphism G (tpair t1 t2) (times T S).
-repeat intro. unfold Red. unfold IsMorphism in *.
-split.
-eapply Red_closed. Focus 2. eapply step_SN_times1.
-eapply Red_SN; eauto. 
-eauto.
-
-eapply Red_closed. Focus 2. eapply step_SN_times2.
-eapply Red_SN; eauto.
-eauto.
-Qed. *)
-
 Lemma SemTyping_Meet_intro G Γ (t : tm G) A B : SemTyping Γ t A -> SemTyping Γ t B -> SemTyping Γ t (Meet A B).
+firstorder.
+Qed.
+Lemma SemTyping_Meet_elim1 G Γ (t : tm G) A B : SemTyping Γ t (Meet A B) -> SemTyping Γ t A.
+firstorder.
+Qed.
+Lemma SemTyping_Meet_elim2 G Γ (t : tm G) A B : SemTyping Γ t (Meet A B) -> SemTyping Γ t B.
 firstorder.
 Qed.
 
@@ -829,6 +819,13 @@ Lemma SemTyping_circ G Γ (t : tm G) A (f : forall G, tm G -> tm G)
   : natural f -> SemTyping Γ (f _ t) A -> SemTyping Γ t (circ A f).
 unfold circ. repeat intro.
 rewrite <- H.
+eauto.
+Qed.
+
+Lemma SemTyping_circ' G Γ (t : tm G) A (f : forall G, tm G -> tm G)
+  : natural f -> SemTyping Γ t (circ A f) -> SemTyping Γ (f _ t) A.
+unfold circ. repeat intro.
+rewrite -> H.
 eauto.
 Qed.
 
@@ -854,6 +851,23 @@ intros.
 eapply SemTyping_Meet_intro; eapply SemTyping_circ; proveNatural;
 eapply SemTyping_closed; simpl; eauto.
 Qed.
+
+Lemma Red_fst G Γ A B (t : tm G) : candidate A -> SemTyping Γ t (Times A B) 
+ -> SemTyping Γ (tfst t) A.
+intros.
+eapply SemTyping_circ'; proveNatural.
+eapply SemTyping_Meet_elim1.
+eauto.
+Qed.
+
+Lemma Red_snd G Γ A B (t : tm G) : candidate B -> SemTyping Γ t (Times A B) 
+ -> SemTyping Γ (tsnd t) B.
+intros.
+eapply SemTyping_circ'; proveNatural.
+eapply SemTyping_Meet_elim2.
+eauto.
+Qed.
+
 
 (*
 
