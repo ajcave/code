@@ -1,13 +1,20 @@
 module contextual-substvars-spine where
-open import Level
-open import Unit
-open import FinMap
-open import Data.Product
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
-schema-ctx = ctx Unitz
+record Unit : Set where
+ constructor tt
 
-* : Unitz
+data ctx {a} (A : Set a) : Set a where
+ ⊡ : ctx A
+ _,_ : (ψ : ctx A) -> (T : A) -> ctx A
+
+data var {a} {A : Set a} : (Γ : ctx A) -> A -> Set a where
+ top : ∀ {Γ T} -> var (Γ , T) T
+ pop : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
+
+schema-ctx = ctx Unit
+
+* : Unit
 * = tt
 
 data tp : Set where
@@ -15,7 +22,6 @@ data tp : Set where
  _⇒_ : (A B : tp) -> tp
 
 data tctx-elt (Ω : schema-ctx) : Set where
-
  ▸ : (A : tp) -> tctx-elt Ω
 
 data tctx (Ω : schema-ctx) : Set where
@@ -59,11 +65,6 @@ infixl 10 _<<_
 <<-assoc {Ω} Ψ₁ Ψ₂ ⊡ = refl
 <<-assoc {Ω} Ψ₁ Ψ₂ (Ψ , A) = cong (λ α → α , ▸ A) (<<-assoc Ψ₁ Ψ₂ Ψ)
 
-{-<<-idl : ∀ {Ω} (Ψ : tctx Ω) -> ⊡ << Ψ ≡ Ψ
-<<-idl ⊡ = refl
-<<-idl (Ψ , A) = cong (λ α → α , A) (<<-idl Ψ) -}
-
--- TODO: Give also a non-normal calculus, which is convenient
 mutual
  data head {Ω} (Δ : mctx Ω) (Ψ : tctx Ω) : tp -> Set where
   ▹ : ∀ {A} (x : tvar Ψ A) -> head Δ Ψ A
@@ -84,27 +85,6 @@ mutual
  data rsub {Ω} (Δ : mctx Ω) : ∀ (Ψ : tctx Ω) -> tctx Ω -> Set where
   _[_] : ∀ {Ψ Φ₁ Φ₂} (s : var Δ ($ Φ₁ [ Φ₂ ])) (σ : nsub Δ Ψ Φ₂) -> rsub Δ Ψ Φ₁
 
-⟦_⟧tc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Φ : tctx Ω₁) -> tctx Ω₂
-⟦_⟧tc Ψs ⊡ = ⊡
-⟦_⟧tc Ψs (▹ φ) = lookup Ψs φ
-⟦_⟧tc Ψs (Φ , (▸ A)) = ⟦ Ψs ⟧tc Φ , (▸ A)
-
-⟦⟧tc-<< : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) Φ₁ Φ₂
- -> ⟦ Ψs ⟧tc (Φ₁ << Φ₂) ≡ ((⟦ Ψs ⟧tc Φ₁) << Φ₂)
-⟦⟧tc-<< Ψs Φ₁ ⊡ = refl
---⟦⟧tc-<< Ψs Φ₁ (▹ φ) = ? --trans (cong (λ α → α << lookup Ψs φ) (⟦⟧tc-<< Ψs Φ₁ ψ)) (<<-assoc (⟦ Ψs ⟧tc Φ₁) (⟦ Ψs ⟧tc ψ) (lookup Ψs φ))
-⟦⟧tc-<< Ψs Φ₁ (ψ , A) = cong (λ α → α , ▸ A) (⟦⟧tc-<< Ψs Φ₁ ψ)
-
-
-⟦_⟧mt : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (U : mtp Ω₁) -> mtp Ω₂
-⟦_⟧mt Ψs ($ Ψ [ Φ ]) = $ (⟦ Ψs ⟧tc Ψ) [ ⟦ Ψs ⟧tc Φ ]
-⟦_⟧mt Ψs ((♯ A) [ Φ ]) = (♯ A) [ ⟦ Ψs ⟧tc Φ ]
-⟦_⟧mt Ψs (% A [ Φ ]) = % A [ ⟦ Ψs ⟧tc Φ ]
-
-
-⟦_⟧mc : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) (Δ : mctx Ω₁) -> mctx Ω₂
-⟦_⟧mc Ψs Δ = cmap ⟦ Ψs ⟧mt Δ
-
 <<tv : ∀ {Ω} {Ψ₁ : tctx Ω} {A} -> tvar Ψ₁ A -> ∀ Ψ₂ -> tvar (Ψ₁ << Ψ₂) A
 <<tv x ⊡ = x
 <<tv x (ψ , T) = pop (<<tv x ψ)
@@ -112,10 +92,6 @@ mutual
 <<cv : ∀ {Ω} {Ψ₁ : tctx Ω} {φ} -> cvar Ψ₁ φ -> ∀ Ψ₂ -> cvar (Ψ₁ << Ψ₂) φ
 <<cv xs ⊡ = xs
 <<cv xs (Ψ , A) = pop (<<cv xs Ψ)
-
-⟦_⟧tv : ∀ {Ω₁ Ω₂} (Ψs : gksubst Ω₁ (tctx Ω₂)) {Φ : tctx Ω₁} {A} -> tvar Φ A -> tvar (⟦ Ψs ⟧tc Φ) A
-⟦_⟧tv Ψs top = top
-⟦_⟧tv Ψs (pop {Γ} {T} {▸ A} x) = pop (⟦ Ψs ⟧tv x)
 
 tvar-wkn : ∀ {Ω} (Ψ₁ : tctx Ω) Ψ₂ Ψ₃ {A} -> tvar (Ψ₁ << Ψ₃) A -> tvar (Ψ₁ << Ψ₂ << Ψ₃) A
 tvar-wkn Ψ₁ Ψ₂ ⊡ x = <<tv x Ψ₂
@@ -132,19 +108,12 @@ var-to-tvar : ∀ {Ω} (Ψ₂ : tctx Ω) {Ψ₃} {A} -> var Ψ₃ A -> tvar (Ψ�
 var-to-tvar Ψ₂ (top) = top
 var-to-tvar Ψ₂ (pop x) = pop (var-to-tvar Ψ₂ x)
 
-tvar-wkn1 : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₃ {A} -> tvar (Ψ₁ << Ψ₃) A -> tvar (Ψ₁ , ▸ B << Ψ₃) A
+tvar-wkn1 : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₃ {A} -> tvar (Ψ₁ << Ψ₃) A -> tvar ((Ψ₁ , ▸ B) << Ψ₃) A
 tvar-wkn1 {Ω} {Ψ₁} {B} Ψ₃ x = tvar-wkn Ψ₁ (⊡ , B) Ψ₃ x
 
 cvar-wkn : ∀ {Ω} (Ψ₁ : tctx Ω) Ψ₂ Ψ₃ {φ} -> cvar (Ψ₁ << Ψ₃) φ -> cvar (Ψ₁ << Ψ₂ << Ψ₃) φ
 cvar-wkn Ψ₁ Ψ₂ ⊡ xs = <<cv xs Ψ₂
 cvar-wkn Ψ₁ Ψ₂ (Ψ , A) (pop xs) = pop (cvar-wkn Ψ₁ Ψ₂ Ψ xs)
-
-cvar-wkn' : ∀ {Ω} (Ψ₂ : tctx Ω) Ψ₃ {φ} -> cvar (⊡ << Ψ₃) φ -> cvar (Ψ₂ << Ψ₃) φ
-cvar-wkn' Ψ₂ ⊡ ()
-cvar-wkn' Ψ₂ (Ψ , A) (pop xs) = pop (cvar-wkn' Ψ₂ Ψ xs)
-
-{-cvar-wkn1 : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₃ {A} -> cvar (Ψ₁ << Ψ₃) A -> cvar (Ψ₁ , B << Ψ₃) A
-cvar-wkn1 {Ω} {Ψ₁} {B} Ψ₃ x = cvar-wkn Ψ₁ (⊡ , ▸ B) Ψ₃ x -}
 
 mutual
  h-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {A} -> head Δ (Ψ₁ << Ψ₃) A -> head Δ (Ψ₁ << Ψ₂ << Ψ₃) A
@@ -170,31 +139,7 @@ mutual
  rs-wkn : ∀ {Ω} {Δ : mctx Ω} Ψ₁ Ψ₂ Ψ₃ {Φ} -> rsub Δ (Ψ₁ << Ψ₃) Φ -> rsub Δ (Ψ₁ << Ψ₂ << Ψ₃) Φ
  rs-wkn Ψ₁ Ψ₂ Ψ₃ (s [ σ ]) = s [ ns-wkn Ψ₁ Ψ₂ Ψ₃ σ ]
 
-mutual
- h-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {A} -> head Δ (⊡ << Ψ₃) A -> head Δ (Ψ₂ << Ψ₃) A
- h-wkn' Ψ₂ Ψ₃ (▹ x) = ▹ (tvar-wkn' Ψ₂ Ψ₃ x)
- h-wkn' Ψ₂ Ψ₃ (u [ σ ]) = u [ ns-wkn' Ψ₂ Ψ₃ σ ]
- h-wkn' Ψ₂ Ψ₃ (p ♯[ σ ]) = p ♯[ ns-wkn' Ψ₂ Ψ₃ σ ]
- h-wkn' Ψ₂ Ψ₃ (π x ρ) = π x (rs-wkn' Ψ₂ Ψ₃ ρ)
-
- s-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {A B} -> spine Δ (⊡ << Ψ₃) A B -> spine Δ ( Ψ₂ << Ψ₃) A B
- s-wkn' Ψ₂ Ψ₃ ε = ε
- s-wkn' Ψ₂ Ψ₃ (N , S) = (n-wkn' Ψ₂ Ψ₃ N) , (s-wkn' Ψ₂ Ψ₃ S)
-
- n-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {A} -> ntm Δ (⊡ << Ψ₃) A -> ntm Δ (Ψ₂ << Ψ₃) A
- n-wkn' Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn' Ψ₂ (Ψ₃ , A) N)
- n-wkn' Ψ₂ Ψ₃ (H · S) = (h-wkn' Ψ₂ Ψ₃ H) · (s-wkn' Ψ₂ Ψ₃ S)
-
- ns-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {Φ} -> nsub Δ (⊡ << Ψ₃) Φ -> nsub Δ (Ψ₂ << Ψ₃) Φ
- ns-wkn' Ψ₂ Ψ₃ ⊡ = ⊡
- ns-wkn' Ψ₂ Ψ₃ (σ , N) = (ns-wkn' Ψ₂ Ψ₃ σ) , (n-wkn' Ψ₂ Ψ₃ N)
- ns-wkn' Ψ₂ Ψ₃ ([ xs ] ρ) = [ xs ] (rs-wkn' Ψ₂ Ψ₃ ρ)
- ns-wkn' Ψ₂ Ψ₃ (id φ) = id (cvar-wkn' Ψ₂ Ψ₃ φ)
-
- rs-wkn' : ∀ {Ω} {Δ : mctx Ω} Ψ₂ Ψ₃ {Φ} -> rsub Δ (⊡ << Ψ₃) Φ -> rsub Δ (Ψ₂ << Ψ₃) Φ
- rs-wkn' Ψ₂ Ψ₃ (s [ σ ]) = s [ ns-wkn' Ψ₂ Ψ₃ σ ]
-
-cvar-str : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₂ {φ} -> cvar (Ψ₁ , ▸ B << Ψ₂) φ -> cvar (Ψ₁ << Ψ₂) φ
+cvar-str : ∀ {Ω} {Ψ₁ : tctx Ω} {B} Ψ₂ {φ} -> cvar ((Ψ₁ , ▸ B) << Ψ₂) φ -> cvar (Ψ₁ << Ψ₂) φ
 cvar-str ⊡ (pop xs) = xs
 cvar-str (Ψ , A) (pop xs) = pop (cvar-str Ψ xs)
 
@@ -202,7 +147,7 @@ cvar-str2 : ∀ {Ω} {Ψ₁ : tctx Ω} Ψ₂ {φ} -> cvar (Ψ₁ << Ψ₂) φ ->
 cvar-str2 ⊡ x = x
 cvar-str2 (Ψ , T) (pop x) = cvar-str2 Ψ x
 
-thatone : ∀ {Ω} {Ψ : tctx Ω} Φ {A} -> tvar (Ψ , ▸ A << Φ) A
+thatone : ∀ {Ω} {Ψ : tctx Ω} Φ {A} -> tvar ((Ψ , ▸ A) << Φ) A
 thatone ⊡ = top
 thatone (Φ , A) = pop (thatone Φ)
 
@@ -214,7 +159,7 @@ data split {Ω} {Ψ : tctx Ω} : ∀ {A} Φ -> tvar (Ψ << Φ) A -> Set where
  left : ∀ {A Φ} (x : tvar Ψ A) -> split Φ (tvar-wkn _ Φ ⊡ x)
  right : ∀ {A Φ} (x : var Φ A) -> split Φ (var-to-tvar Ψ x)
 
-eq? : ∀ {Ω} {Ψ : tctx Ω} Φ {A B} (x : tvar (Ψ , ▸ A << Φ) B) -> eqV A Φ x
+eq? : ∀ {Ω} {Ψ : tctx Ω} Φ {A B} (x : tvar ((Ψ , ▸ A) << Φ) B) -> eqV A Φ x
 eq? ⊡ top = same
 eq? ⊡ (pop x) = diff x
 eq? (Ψ , .B) {A} {B} top = diff top
@@ -230,7 +175,7 @@ decSplit (Φ , T) (pop .(<<tv x Φ)) | left x = left x
 decSplit {Ω} {Ψ} (Φ , T) (pop .(var-to-tvar Ψ x)) | right x = right (pop x)
 
 mutual
- n-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A} -> ntm Δ (Ψ₁ , ▸ B << Ψ₂) A -> ntm Δ Ψ₁ B -> ntm Δ (Ψ₁ << Ψ₂) A
+ n-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A} -> ntm Δ ((Ψ₁ , ▸ B) << Ψ₂) A -> ntm Δ Ψ₁ B -> ntm Δ (Ψ₁ << Ψ₂) A
  n-sub Ψ (ƛ {A} {B} N) M = ƛ (n-sub (Ψ , A) N M)
  n-sub Ψ (▹ x · S) M with eq? Ψ x
  n-sub Ψ (▹ .(thatone Ψ) · S) M | same = (n-wkn _ Ψ ⊡ M) ◇ (s-sub Ψ S M)
@@ -239,32 +184,23 @@ mutual
  n-sub Ψ (p ♯[ σ ] · S) M = (p ♯[ ns-sub Ψ σ M ]) · s-sub Ψ S M
  n-sub Ψ (π x ρ · S) M = π x (rs-sub Ψ ρ M) · s-sub Ψ S M
 
- s-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A C} -> spine Δ (Ψ₁ , ▸ B << Ψ₂) A C -> ntm Δ Ψ₁ B -> spine Δ (Ψ₁ << Ψ₂) A C
+ s-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {A C} -> spine Δ ((Ψ₁ , ▸ B) << Ψ₂) A C -> ntm Δ Ψ₁ B -> spine Δ (Ψ₁ << Ψ₂) A C
  s-sub Ψ ε N = ε
  s-sub Ψ (N , S) N' = (n-sub Ψ N N') , (s-sub Ψ S N')
 
- ns-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> nsub Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> nsub Δ (Ψ₁ << Ψ₂) Φ
+ ns-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> nsub Δ ((Ψ₁ , ▸ B) << Ψ₂) Φ -> ntm Δ Ψ₁ B -> nsub Δ (Ψ₁ << Ψ₂) Φ
  ns-sub Ψ ⊡ M = ⊡
  ns-sub Ψ (σ , N) M = (ns-sub Ψ σ M) , (n-sub Ψ N M)
  ns-sub Ψ ([ xs ] ρ) M = [ xs ] (rs-sub Ψ ρ M)
  ns-sub Ψ (id φ) M = id (cvar-str Ψ φ)
 
- rs-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> rsub Δ (Ψ₁ , ▸ B << Ψ₂) Φ -> ntm Δ Ψ₁ B -> rsub Δ (Ψ₁ << Ψ₂) Φ
+ rs-sub : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> rsub Δ ((Ψ₁ , ▸ B) << Ψ₂) Φ -> ntm Δ Ψ₁ B -> rsub Δ (Ψ₁ << Ψ₂) Φ
  rs-sub Ψ (s [ σ ]) M = s [ ns-sub Ψ σ M ]
 
  _◇_ : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B} -> ntm Δ Ψ A -> spine Δ Ψ A B -> ntm Δ Ψ B
  N ◇ ε = N
  (ƛ N) ◇ (N' , S) = (n-sub ⊡ N N') ◇ S
 
-
-tvar-str : ∀ {Ω} {B : var Ω *} Ψ₂ {Φ : tctx Ω} {φ} -> tvar (▹ B << Ψ₂) φ -> tvar (Φ << Ψ₂) φ
-tvar-str ⊡ ()
-tvar-str (Ψ , A) top = top
-tvar-str (Ψ , A) (pop xs) = pop (tvar-str Ψ xs)
-
-ceq : ∀ {Ω} Φ {A : var Ω *} {B} (x : cvar (▹ A << Φ) B) -> A ≡ B
-ceq ⊡ top = refl
-ceq (Φ , T) (pop x) = ceq Φ x
 
 mutual
  v-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ} {B} {A} -> tvar B A -> spine Δ Ψ A i -> nsub Δ Ψ B -> ntm Δ Ψ i
@@ -296,3 +232,30 @@ mutual
 
  rs-sub' : ∀ {Ω} {Δ : mctx Ω} {Ψ₁} {B} Ψ₂ {Φ} -> rsub Δ (B << Ψ₂) Φ -> nsub Δ Ψ₁ B -> rsub Δ (Ψ₁ << Ψ₂) Φ
  rs-sub' Ψ (s [ σ ]) σ₁ = s [ ns-sub' Ψ σ σ₁ ]
+
+sp-comp : ∀ {Ω} {Δ : mctx Ω} {Ψ} {A B C} -> spine Δ Ψ A B -> spine Δ Ψ B C -> spine Δ Ψ A C
+sp-comp ε S2 = S2
+sp-comp (N , S) S2 = N , (sp-comp S S2)
+
+η-expand : ∀ {B T} {Ω} {Δ : mctx Ω} {Ψ} -> head Δ Ψ T -> spine Δ Ψ T B -> ntm Δ Ψ B
+η-expand {i} x S = x · S
+η-expand {A ⇒ B} x S = ƛ (η-expand (h-wkn _ (⊡ , A) ⊡ x) (sp-comp (s-wkn _ (⊡ , A) ⊡ S) ((η-expand (▹ top) ε) , ε)))
+
+η-expand2 : ∀ {T} {Ω} {Δ : mctx Ω} {Ψ} -> head Δ Ψ T -> ntm Δ Ψ T
+η-expand2 x = η-expand x ε
+
+ηs-expand' : ∀ {Ω Φ'} {Δ : mctx Ω} {Ψ} Φ -> rsub Δ Ψ (Φ' << Φ) -> nsub Δ Ψ Φ'
+ηs-expand' {Ω} {⊡} Φ σ = ⊡
+ηs-expand' {Ω} {▹ φ} {Δ} {Ψ} Φ σ = [ <<cv top Φ ] σ
+ηs-expand' {Ω} {Φ' , ▸ A} {Δ} {Ψ} Φ σ = ηs-expand' {Ω} ((⊡ , A) <<' Φ) (subst (rsub Δ Ψ) (<<-assoc Φ' (⊡ , A) Φ) σ) , η-expand2 (π (thatone Φ) σ)
+
+ηs-expand : ∀ {Ω T} {Δ : mctx Ω} {Ψ} -> rsub Δ Ψ T -> nsub Δ Ψ T
+ηs-expand ρ = ηs-expand' ⊡ ρ
+
+nsub-ext : ∀ {Ω} {Δ : mctx Ω} {Ψ₁ Φ A} -> nsub Δ Φ Ψ₁ -> nsub Δ (Φ , A) (Ψ₁ , A)
+nsub-ext {A = ▸ A} σ = (ns-wkn _ (⊡ , _) ⊡ σ) , η-expand2 (▹ top)
+
+id-nsub : ∀ {Ω} {Γ} {Δ : mctx Ω} -> nsub Δ Γ Γ
+id-nsub {Ω} {⊡} = ⊡
+id-nsub {Ω} {▹ φ} = id top
+id-nsub {Ω} {Ψ , A} = nsub-ext id-nsub
