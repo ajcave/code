@@ -744,6 +744,15 @@ intros. subst.
 auto.
 Qed.
 
+Definition Rels (G G' : ctx scope) := gsub G (fun _ => tm G' -> Prop).
+
+Fixpoint RedS' (G : ctx scope) G' : Rels G G' -> tsub G G' -> Prop :=
+match G return Rels G G' -> tsub G G' -> Prop with
+| nil => fun Cs s => True
+| snoc G1 tt => fun Cs s => (RedS' G1 G' (fst Cs) (fst s)) /\ (snd Cs (snd s))
+end.
+
+(*
 Fixpoint RedS (G : ctx tp) (G' : ctx scope) : tsub (forget G) G' -> Prop :=
 match G return tsub (forget G) G' -> Prop with
 | nil => fun s => True
@@ -786,10 +795,14 @@ induction d; intros;
 simpl in *; destruct H; eauto.
 Qed.
 
-
 Definition IsMorphism G (t : tm (forget G)) T : Prop := 
- forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s).
+ forall G' (s : tsub (forget G) G') (H : RedS G G' s), Red T (app_tsub _ t s). *)
 
+Definition SemTyping G (Cs : forall G', Rels G G') (t : tm G) (C : Rel) : Prop :=
+ forall G' (s : tsub G G') (H : RedS' G G' (Cs G') s), C G' (app_tsub _ t s).
+Implicit Arguments SemTyping [G].
+
+(*
 Definition map_arr_red D (a : map_arrow D) (s1 s2 : fsub D nil) : Prop.
 Admitted. (* TODO *)
 
@@ -803,7 +816,46 @@ eauto.
 eapply Red_closed. Focus 2. eapply step_SN_times2.
 eapply Red_SN; eauto.
 eauto.
+Qed. *)
+
+Lemma SemTyping_Meet_intro G Γ (t : tm G) A B : SemTyping Γ t A -> SemTyping Γ t B -> SemTyping Γ t (Meet A B).
+firstorder.
 Qed.
+
+Definition natural (f : forall G, tm G -> tm G) :=
+ forall G G' t (s : tsub G G'), (app_tsub _ (f _ t) s) = f _ (app_tsub _ t s).
+
+Lemma SemTyping_circ G Γ (t : tm G) A (f : forall G, tm G -> tm G)
+  : natural f -> SemTyping Γ (f _ t) A -> SemTyping Γ t (circ A f).
+unfold circ. repeat intro.
+rewrite <- H.
+eauto.
+Qed.
+
+Ltac proveNatural :=
+match goal with
+| [ |- natural _] => firstorder
+| _ => idtac
+end.
+
+Lemma SemTyping_closed G Γ (t t' : tm G) A 
+  (H : forall G' (s : tsub G G'), step (app_tsub _ t s) (app_tsub _ t' s))
+ : candidate A
+ -> SemTyping Γ t' A -> SemTyping Γ t A.
+repeat intro.
+eapply CR2. auto.
+Focus 2. eapply H.
+eapply H1; eauto.
+Qed.
+
+Lemma Red_pair G Γ A B (t1 t2 : tm G) : candidate A -> candidate B -> SemTyping Γ t1 A -> SemTyping Γ t2 B
+ -> SemTyping Γ (tpair t1 t2) (Times A B).
+intros.
+eapply SemTyping_Meet_intro; eapply SemTyping_circ; proveNatural;
+eapply SemTyping_closed; simpl; eauto.
+Qed.
+
+(*
 
 Lemma Red_fst G T S t1 : IsMorphism G t1 (times T S) -> IsMorphism G (tfst t1) T.
 repeat intro. unfold Red. unfold IsMorphism in *.
