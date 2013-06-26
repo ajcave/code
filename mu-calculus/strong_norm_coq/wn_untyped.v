@@ -134,9 +134,9 @@ Inductive tm (G : ctx scope) : Set :=
  | tinr : tm G -> tm G
  | tcase : tm G -> tm (snoc G tt) -> tm (snoc G tt) -> tm G
  | tinj : tm G -> tm G
- | trec : forall (F : functor (snoc nil type)) (T : tp), tm G -> tm (snoc nil tt) -> tm G
+ | trec : forall (F : functor (snoc nil type)), tm G -> tm (snoc nil tt) -> tm G
  | tout : tm G -> tm G
- | tcorec : functor (snoc nil type) -> tp -> tm G -> tm (snoc nil tt) -> tm G
+ | tcorec : functor (snoc nil type) -> tm G -> tm (snoc nil tt) -> tm G
  | tmap : forall Δ (F : functor Δ), tm G -> gsub' (fun _ => tm (snoc nil tt)) Δ -> tm G
 .
 
@@ -164,9 +164,9 @@ Inductive oft : forall (G : ctx tp), tm (forget G) -> tp -> Prop :=
  | tpinr : forall G T S t, oft G t S -> oft G (tinr t) (plus T S)
  | tpcase : forall G T S C t1 t2 t3, oft G t1 (plus T S) -> oft (snoc G T) t2 C -> oft (snoc G S) t3 C -> oft G (tcase t1 t2 t3) C
  | tpinj : forall G F t, oft G t (app_fsub1 F (mu F)) -> oft G (tinj t) (mu F)
- | tprec : forall G F C t1 t2, oft G t1 (mu F) -> oft (snoc nil (app_fsub1 F C)) t2 C -> oft G (trec F C t1 t2) C
+ | tprec : forall G F C t1 t2, oft G t1 (mu F) -> oft (snoc nil (app_fsub1 F C)) t2 C -> oft G (trec F t1 t2) C
  | tpout : forall G F t, oft G t (nu F) -> oft G (tout t) (app_fsub1 F (nu F))
- | tpcorec : forall G F C t1 t2, oft G t1 C -> oft (snoc nil C) t2 (app_fsub1 F C) -> oft G (tcorec F C t1 t2) (nu F)
+ | tpcorec : forall G F C t1 t2, oft G t1 C -> oft (snoc nil C) t2 (app_fsub1 F C) -> oft G (tcorec F t1 t2) (nu F)
  | tpmap : forall Δ Γ (F : functor Δ) ρ₁ ρ₂ η M, oft Γ M (app_fsub _ F ρ₁)
    -> ofts ρ₁ η ρ₂ -> oft Γ (tmap F M η) (app_fsub _ F ρ₂) 
 with ofts : forall Δ (ρ₁ : fsub Δ nil) (η : map_arrow Δ) (ρ₂ : fsub Δ nil), Prop :=
@@ -187,9 +187,9 @@ match t with
 | tinr t1 => tinr (app_vsub_tm _ t1 s)
 | tcase t1 t2 t3 => tcase (app_vsub_tm _ t1 s) (app_vsub_tm _ t2 (extvsub s)) (app_vsub_tm _ t3 (extvsub s))
 | tinj t1 => tinj (app_vsub_tm _ t1 s)
-| trec F C t1 t2 => trec F C (app_vsub_tm _ t1 s) t2
+| trec F t1 t2 => trec F (app_vsub_tm _ t1 s) t2
 | tout t1 => tout (app_vsub_tm _ t1 s)
-| tcorec F C t1 t2 => tcorec F C (app_vsub_tm _ t1 s) t2
+| tcorec F t1 t2 => tcorec F (app_vsub_tm _ t1 s) t2
 | tmap _ F M η => tmap F (app_vsub_tm _ M s) η
 end.
 
@@ -225,9 +225,9 @@ match t with
 | tinr t1 => tinr (app_tsub _ t1 s)
 | tcase t1 t2 t3 => tcase (app_tsub _ t1 s) (app_tsub _ t2 (exttsub s)) (app_tsub _ t3 (exttsub s))
 | tinj t1 => tinj (app_tsub _ t1 s)
-| trec F C t1 t2 => trec F C (app_tsub _ t1 s) t2
+| trec F t1 t2 => trec F (app_tsub _ t1 s) t2
 | tout t1 => tout (app_tsub _ t1 s)
-| tcorec F C t1 t2 => tcorec F C (app_tsub _ t1 s) t2
+| tcorec F t1 t2 => tcorec F (app_tsub _ t1 s) t2
 | tmap _ F M η => tmap F (app_tsub _ M s) η
 end.
 
@@ -271,21 +271,21 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
 | step_case1 : forall (t : tm G) (t1 t1' : tm (snoc G tt)) t2, @step _ t1 t1' -> step (tcase t t1 t2) (tcase t t1' t2)
 | step_case2 : forall (t : tm G) (t1 : tm (snoc G tt)) t2 t2', @step _ t2 t2' -> step (tcase t t1 t2) (tcase t t1 t2')
 | step_inj : forall (t t' : tm G), step t t' -> step (tinj t) (tinj t')
-| step_rec1 : forall F C (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (trec F C t1 t2) (trec F C t1' t2)
-| step_rec2 : forall F C (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (trec F C t1 t2) (trec F C t1 t2')
+| step_rec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (trec F t1 t2) (trec F t1' t2)
+| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2')
 | step_out : forall (t t' : tm G), step t t' -> step (tout t) (tout t')
-| step_corec1 : forall F C (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (tcorec F C t1 t2) (tcorec F C t1' t2)
-| step_corec2 : forall F C (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (tcorec F C t1 t2) (tcorec F C t1 t2')
+| step_corec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (tcorec F t1 t2) (tcorec F t1' t2)
+| step_corec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (tcorec F t1 t2) (tcorec F t1 t2')
 
 | step_arrow : forall (t1 : tm (snoc G tt)) (t2 : tm G), step (tapp (tlam t1) t2) (app_tsub1 t1 t2)
 | step_times1 : forall (t1 : tm G) (t2 : tm G), step (tfst (tpair t1 t2)) t1
 | step_times2 : forall (t1 : tm G) (t2 : tm G), step (tsnd (tpair t1 t2)) t2
 | step_plus1 : forall (t1 : tm G) (t2 : tm (snoc G tt)) (t3 : tm (snoc G tt)), step (tcase (tinl t1) t2 t3) (app_tsub1 t2 t1)
 | step_plus2 : forall (t1 : tm G) (t2 : tm (snoc G tt)) (t3 : tm (snoc G tt)), step (tcase (tinr t1) t2 t3) (app_tsub1 t3 t1)
-| step_mu : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)),
-   step (trec F C (tinj t1) t2) (app_tsub _ t2 (tt, tmap1 F (trec F C (tv top) t2) t1))
-| step_nu : forall F C (t1 : tm G) (t2 : tm (snoc nil tt)),
-   step (tout (tcorec F C t1 t2)) (tmap1 F (tcorec F C (tv top) t2) (app_tsub _ t2 (tt, t1)))
+| step_mu : forall F (t1 : tm G) (t2 : tm (snoc nil tt)),
+   step (trec F (tinj t1) t2) (app_tsub _ t2 (tt, tmap1 F (trec F (tv top) t2) t1))
+| step_nu : forall F (t1 : tm G) (t2 : tm (snoc nil tt)),
+   step (tout (tcorec F t1 t2)) (tmap1 F (tcorec F (tv top) t2) (app_tsub _ t2 (tt, t1)))
 | step_map : forall Δ (F : functor Δ) M M' η,
      step M M'
   -> step (tmap F M η) (tmap F M' η)
@@ -301,28 +301,123 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
     step (tmap (mu F) (tinj M) η) (tinj (tmap F M (gsnoc η (tmap (mu F) (tv top) η))))
 | step_map_nu : forall Δ (F : functor (snoc Δ type)) M η,
     step (tout (tmap (nu F) M η)) (tmap F (tout M) (gsnoc η (tmap (nu F) (tv top) η)))
+
+| step_refl : forall M, step M M (* Build in refl and trans for convenience *)
+| step_trans : forall M1 M2 M3, step M1 M2 -> step M2 M3 -> step M1 M3.
+(* Note that we don't normalize inside the "arrow" of a map. We could, at least in the
+   non-temporal mu-nu language *)
+
+Inductive isNeutral G : tm G -> Prop :=
+ | ne_v : forall (x : var G tt), isNeutral (tv x)
+ | ne_app : forall t1 t2, isNeutral t1 -> isNormal t2 -> isNeutral (tapp t1 t2)
+ | ne_fst : forall t, isNeutral t -> isNeutral (tfst t)
+ | ne_snd : forall t, isNeutral t -> isNeutral (tsnd t)
+ | ne_case : forall t1 t2 t3, isNeutral t1 -> @isNormal (snoc G tt) t2 -> @isNormal (snoc G tt) t3
+     -> isNeutral (tcase t1 t2 t3)
+ | ne_rec : forall F t1 t2, isNeutral t1 -> @isNormal (snoc nil tt) t2 -> isNeutral (trec F t1 t2)
+ | ne_out : forall t, isNeutral t -> isNeutral (tout t)
+ | ne_map : forall Δ (F : functor (snoc Δ type)) η M,
+      isNeutral M
+(*   -> ofts ρ₁ η ρ₂ *)
+   -> isNeutral (tmap (mu F) M η)
+with isNormal G : tm G -> Prop :=
+ | no_lam : forall t, @isNormal (snoc G tt) t -> isNormal (tlam t)
+ | no_pair : forall t1 t2, isNormal t1 -> isNormal t2 -> isNormal (tpair t1 t2)
+ | no_inl : forall t, isNormal t -> isNormal (tinl t)
+ | no_inr : forall t, isNormal t -> isNormal (tinr t)
+ | no_inj : forall t, isNormal t  -> isNormal (tinj t)
+ | no_corec : forall F t1 t2, isNormal t1 -> @isNormal (snoc nil tt) t2 -> isNormal (tcorec F t1 t2) 
+ | no_map_nu : forall Δ (F : functor (snoc Δ type)) η M,
+      isNormal M
+(*   -> ofts ρ₁ η ρ₂ *)
+   -> isNormal (tmap (nu F) M η)
+ | no_ne : forall t, isNeutral t -> isNormal t
 .
 
 Definition Rel := forall (G : ctx scope), tm G -> Prop.
 
+Definition includes_neutral (R : Rel) : Prop := forall G (t : tm G), isNeutral t -> R G t.
+Inductive normalizing G : tm G -> Prop :=
+ | norm_intro : forall M N, step M N -> isNormal N -> normalizing M.
+Definition contained_in_normalizing (R : Rel) : Prop := forall G (t : tm G), R G t -> normalizing t.
+
+Definition closed_under_step (R : Rel) : Prop :=
+  forall G (t' : tm G), R G t' -> forall t, step t t' -> R G t.
+
+Record candidate (R : Rel) : Prop := {
+ CR1 : contained_in_normalizing R;
+ CR2 : closed_under_step R;
+ CR3 : includes_neutral R
+}.
+
 Definition Rarrow (R1 R2 : Rel) : Prop := forall G (t : tm G), R1 G t -> R2 G t.
 
-Definition lfp (FR : Rel -> Rel) : Rel:=
- fun G t => forall CR, (Rarrow (FR CR) CR) -> CR G t.
+(*Definition lub (Pred : Rel -> Prop) : Rel := fun G t => (exists (C : Rel), candidate C /\ Pred C /\ C G t) \/ ( t).
+Need closure operator *)
 
-Definition monotone (FR : Rel -> Rel) : Prop :=
- forall (R1 R2 : Rel), Rarrow R1 R2 -> Rarrow (FR R1) (FR R2).
+Hint Constructors step.
+Hint Constructors normalizing.
+Hint Constructors isNormal isNeutral.
 
-Lemma lfp_inj (FR : Rel -> Rel) (H : monotone FR) : Rarrow (FR (lfp FR)) (lfp FR).
+Lemma normalizing_candidate : candidate normalizing.
+constructor.
+intros G t. auto.
+intros G t' H t p.
+inversion H; subst.
+econstructor. eapply step_trans; eauto. auto.
+intros G t H. econstructor; eauto.
+Qed.
+
+Definition glb (Pred : Rel -> Prop) : Rel := fun G t => (forall C, Pred C -> C G t) /\ normalizing t. 
+
+Lemma glb_cand (Pred : Rel -> Prop) (Hy : forall C, Pred C -> candidate C) : candidate (glb Pred).
+unfold glb.
+constructor.
+(* CR1 *)
+intros G t H0. tauto.
+(* CR2 *)
+intros G t' H0 t s.
+destruct H0.
+split.
+intros.
+eapply CR2; eauto.  eapply H; eauto.
+eapply CR2. eapply normalizing_candidate. eauto. eauto.
+(* CR3 *)
 intros G t H0.
-intros R f.
+split.
+intros.
+eapply CR3; eauto.
+eauto.
+Qed.
+
+Definition lfp (F : Rel -> Rel) : Rel :=
+ glb (fun C => candidate C /\ Rarrow (F C) C).
+ (* fun G t => forall CR, (Rarrow (FR CR) CR) -> CR G t. *)
+
+Definition monotone (F : Rel -> Rel) : Prop :=
+ forall (R1 R2 : Rel), Rarrow R1 R2 -> Rarrow (F R1) (F R2).
+
+Lemma lfp_candidate (F : Rel -> Rel) : candidate (lfp F).
+eapply glb_cand. firstorder.
+Qed.
+
+Lemma lfp_inj (FR : Rel -> Rel) (H : monotone FR) (Hy : forall C, candidate C -> candidate (FR C))
+  : Rarrow (FR (lfp FR)) (lfp FR).
+intros G t H0.
+split.
+intros C Hy1.
+destruct Hy1 as [Hy0 f].
 eapply f.
 eapply H.
 Focus 2.
 eexact H0.
 intros G' t' H1.
-eapply H1. intros.
-eapply f.
+eapply H1. split.
+eexact Hy0. eexact f.
+eapply CR1.
+eapply Hy.
+eapply lfp_candidate.
+eexact H0.
 Qed.
 
 Definition gfp (FR : Rel -> Rel) : Rel :=
@@ -340,7 +435,7 @@ eexists.
 split.
 eexact H0.
 eexact H3.
-Qed.
+Qed. *)
 
 Fixpoint Rsub (D : ctx sort) : Type :=
 match D with
@@ -359,15 +454,14 @@ match F (* return Rel (app_fsub _ F s) *) with
 | fv D' X => fun G t => Rlookup X r t
 | arrow A F' => fun G t => forall G' (w : vsub G G') u, RedF A tt u -> RedF F' r (tapp (app_vsub_tm _ t w) u)
 | times F1 F2 => fun G t => RedF F1 r (tfst t) /\ RedF F2 r (tsnd t)
-| plus F1 F2 => fun G t =>    (exists t', step_SN_star t (tinl t') /\ RedF F1 r t')
-                           \/ (exists t', step_SN_star t (tinr t') /\ RedF F2 r t')
-                           \/ (exists t', step_SN_star t t' /\ SNe t')
-| mu F => lfp (fun RR G t => (exists t', step_SN_star t (tinj t') /\ RedF F (r, RR) t')
-                          \/ (exists t', step_SN_star t t' /\ SNe t'))
+| plus F1 F2 => fun G t =>    (exists t', step t (tinl t') /\ RedF F1 r t')
+                           \/ (exists t', step t (tinr t') /\ RedF F2 r t')
+                           \/ (exists t', step t t' /\ SNe t')
+| mu F => lfp (fun RR G t => (exists t', step t (tinj t') /\ RedF F (r, RR) t')
+                          \/ (exists t', step t t' /\ SNe t'))
 | nu F => gfp (fun RR G t => SN t /\ RedF F (r, RR) (tout t))
 end.
 
-Definition closed_under_step_SN (R : Rel) : Prop := forall G (t' : tm G), R G t' -> forall t, step_SN t t' -> R G t.
 Definition closed_under_step_SN_star (R : Rel) : Prop := forall G (t' : tm G), R G t' -> forall t, step_SN_star t t' -> R G t.
 Lemma closed_to_star (R : Rel) : closed_under_step_SN R -> closed_under_step_SN_star R.
 intros H. intros G t H0 t0 H1. induction H1; eauto.
@@ -387,13 +481,7 @@ Lemma closed_star_out G (t1 t2 : tm G) : step_SN_star t1 t2 -> step_SN_star (tou
 eapply closed_star_map. intros. econstructor; eauto.
 Qed.
 
-Definition includes_SNe (R : Rel) : Prop := forall G (t : tm G), SNe t -> R G t.
-Definition contained_in_SN (R : Rel) : Prop := forall G (t : tm G), R G t -> SN t.
-Record candidate (R : Rel) : Prop := {
- closed : closed_under_step_SN R;
- includes_neut : includes_SNe R;
- contained_SN : contained_in_SN R
-}.
+
 
 Fixpoint Rsub_candidates D : forall (r : Rsub D), Prop :=
 match D return forall (r : Rsub D), Prop with
