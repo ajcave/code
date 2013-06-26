@@ -852,7 +852,7 @@ eapply SemTyping_Meet_intro; eapply SemTyping_circ; proveNatural;
 eapply SemTyping_closed; simpl; eauto.
 Qed.
 
-Lemma Red_fst G Γ A B (t : tm G) : candidate A -> SemTyping Γ t (Times A B) 
+Lemma Red_fst G Γ A B (t : tm G) : SemTyping Γ t (Times A B) 
  -> SemTyping Γ (tfst t) A.
 intros.
 eapply SemTyping_circ'; proveNatural.
@@ -860,7 +860,7 @@ eapply SemTyping_Meet_elim1.
 eauto.
 Qed.
 
-Lemma Red_snd G Γ A B (t : tm G) : candidate B -> SemTyping Γ t (Times A B) 
+Lemma Red_snd G Γ A B (t : tm G) : SemTyping Γ t (Times A B) 
  -> SemTyping Γ (tsnd t) B.
 intros.
 eapply SemTyping_circ'; proveNatural.
@@ -868,20 +868,20 @@ eapply SemTyping_Meet_elim2.
 eauto.
 Qed.
 
+Definition snoc' G (Γ : forall G', Rels G G') (A : Rel) G' : Rels (snoc G tt) G' := ((Γ G') , (A G')).
+Implicit Arguments snoc' [G].
+
+Lemma Red_case G Γ A B C (t1 : tm G) (t2 t3 : tm (snoc G tt)) :
+    SemTyping Γ t1 (Plus A B)
+ -> SemTyping (snoc' Γ A) t2 C
+ -> SemTyping (snoc' Γ B) t3 C
+ -> SemTyping Γ (tcase t1 t2 t3) C.
+intros.
+Admitted. (* TODO: This is gonna be quite a pain *)
+
+
 
 (*
-
-Lemma Red_fst G T S t1 : IsMorphism G t1 (times T S) -> IsMorphism G (tfst t1) T.
-repeat intro. unfold Red. unfold IsMorphism in *.
-destruct (H _ s H0). auto.
-Qed.
-
-Lemma Red_snd G T S t1 : IsMorphism G t1 (times T S) -> IsMorphism G (tsnd t1) S.
-repeat intro. unfold Red. unfold IsMorphism in *.
-destruct (H _ s H0). auto.
-Qed.
-
-Hint Resolve RedS_closed_ext Red_SN.
 
 Lemma Red_case G T S C t1 t2 t3 : IsMorphism G t1 (plus T S) -> IsMorphism (snoc G T) t2 C -> IsMorphism (snoc G S) t3 C
  -> IsMorphism G (tcase t1 t2 t3) C.
