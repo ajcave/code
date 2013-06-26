@@ -877,7 +877,9 @@ Lemma Red_case G Γ A B C (t1 : tm G) (t2 t3 : tm (snoc G tt)) :
  -> SemTyping (snoc' Γ B) t3 C
  -> SemTyping Γ (tcase t1 t2 t3) C.
 intros.
-Admitted. (* TODO: This is gonna be quite a pain *)
+Admitted. (* TODO: This is gonna be quite a pain.
+ I guess it's consoling that it's a pain directly too?
+ (see below, or the partial sn proof) *)
 
 
 
