@@ -523,10 +523,21 @@ Definition circ (R : Rel) (f : forall G, tm G -> tm G) : Rel := fun G t => R G (
 Definition Meet (C D : Rel) : Rel := fun G t => C G t /\ D G t.
 Definition Join (C D : Rel) : Rel := fun G t => C G t \/ D G t.
 
+Lemma Join_elim (C D R : Rel) : Rarrow C R -> Rarrow D R -> Rarrow (Join C D) R.
+firstorder.
+Qed.
+Lemma Join_inl C D : Rarrow C (Join C D). firstorder. Qed.
+Lemma Join_inr C D : Rarrow D (Join C D). firstorder. Qed.
+Lemma Meet_elim1 C D : Rarrow (Meet C D) C. firstorder. Qed.
+Lemma Meet_elim2 C D : Rarrow (Meet C D) D. firstorder. Qed. 
+Lemma Meet_intro C D R : Rarrow R C -> Rarrow R D -> Rarrow R (Meet C D). firstorder. Qed.
+(* Hint Resolve Join_elim Join_inl Join_inr Meet_elim1 Meet_elim2 Meet_intro. *)
+
 Definition Arrow (C D : Rel) : Rel := 
  fun G t => forall G' (w : vsub G G') u, C G' u -> D G' (tapp (app_vsub_tm _ t w) u).
 Definition Times (C D : Rel) : Rel := Meet (circ C tfst) (circ D tsnd).
-Definition Plus (C D : Rel) : Rel := closure (Join (star C tinl) (star D tinr)).
+Definition PrePlus C D := Join (star C tinl) (star D tinr).
+Definition Plus (C D : Rel) : Rel := closure (PrePlus C D).
 Definition Mu (F : Rel -> Rel) := lfp (fun C => closure (star (F C) tinj)).
 Definition Nu (F : Rel -> Rel) := gfp (fun C => circ (F C) tout).
 
@@ -561,7 +572,7 @@ match D return forall (r : Rsub D), Rarrows D r r with
 end.
 
 Lemma RedF_monotone (D : ctx sort) (F : functor D) (r1 r2 : Rsub D) (H : Rarrows D r1 r2) : Rarrow (RedF F r1) (RedF F r2).
-induction F.
+induction F; simpl.
 Admitted.
 
 (*
@@ -618,6 +629,72 @@ destruct H. destruct H. eapply sn_closed_step_star.
 eexact H. eauto.
 Qed. *)
 
+
+Lemma step_wkn Γ Γ' (t t' : tm Γ) (w : vsub Γ Γ') : step t t' -> step (app_vsub_tm _ t w) (app_vsub_tm _ t' w).
+Admitted.
+Hint Resolve step_wkn.
+
+Lemma isNeutral_wkn Γ Γ' (t : tm Γ) (w : vsub Γ Γ') : isNeutral t -> isNeutral (app_vsub_tm _ t w).
+Admitted.
+Hint Resolve isNeutral_wkn.
+
+Lemma Arrow_candidate C D : candidate C -> candidate D -> candidate (Arrow C D).
+intros. split.
+(* CR1 *)
+intros G t Hy0. unfold Arrow in Hy0.
+admit. (* TODO: Annoying η property. I guess we could build it into the step relation *)
+(* CR2 *)
+intros G t' Hy0 t s G0 w u Hy1.
+eapply CR2; eauto.
+(* CR3 *)
+intros G t Hy0 G0 w u Hy1.
+pose proof (CR1 H _ Hy1). destruct H1.
+eapply CR2. eauto.
+Focus 2.
+econstructor 3. eauto.
+eapply CR3; eauto.
+Qed.
+
+(* TODO: Hmm, we will probably need to add a requirement for candidates saying they are closed
+   under weakening *)
+
+Lemma Times_candidate C D : candidate C -> candidate D -> candidate (Times C D).
+intros. split.
+(* CR1 *)
+intros G t [Hy0 Hy1]. unfold circ in *.
+admit. (* TODO: Annoying eta property *)
+(* CR2 *)
+intros G t' Hy0 t s. destruct Hy0.
+unfold Times. unfold Meet. unfold circ in *.
+firstorder.
+(* CR3 *)
+eapply Meet_intro; unfold circ; firstorder.
+Qed.
+
+Lemma tinl_norm G (t : tm G) : normalizing t -> normalizing (tinl t).
+intros. destruct H. econstructor. econstructor. eexact H.
+eauto.
+Qed. (* TODO: How to treat this more generally? *)
+
+Lemma tinr_norm G (t : tm G) : normalizing t -> normalizing (tinr t).
+intros. destruct H. econstructor. econstructor. eassumption.
+ firstorder.
+Qed.
+
+
+Lemma Plus_normalizing C D : candidate C -> candidate D -> Rarrow (PrePlus C D) normalizing.
+intros.
+eapply Join_elim; unfold star; intros G t Hy0;
+destruct Hy0; destruct H1; subst.
+eapply tinl_norm; firstorder.
+eapply tinr_norm; firstorder.
+Qed.
+
+Lemma Plus_candidate C D : candidate C -> candidate D -> candidate (Plus C D).
+intros.
+eapply closure_cand.
+eapply Plus_normalizing; auto.
+Qed.
 
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
   : candidate (RedF F r).
