@@ -711,11 +711,24 @@ eapply gfp_candidate.
 Qed.
 
 Hint Resolve Arrow_candidate Times_candidate Plus_candidate Mu_candidate Nu_candidate I.
+
+Lemma Rlookup_candidate D T (v : var D T) (r : Rsub D) (H : Rsub_candidates D r) : candidate (Rlookup v r).
+induction v; simpl in *; firstorder.
+Qed.
+
+Hint Resolve Rlookup_candidate.
+
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
   : candidate (RedF F r).
 induction F; simpl in *; eauto.
-admit. (* Easy *)
 Qed. 
+
+(* OHhh. We showed that arbitrary lubs and glbs of candidates are candidates.
+   Meet and Join are just 2-ary lubs and glbs. So this amounts to simply showing
+   that C ∘ fst is a candidate, C ∘ snd is a candidate,
+   and.. still a little mysteriously, If C ⊆ normalizing then C ⋆ inl ⊆ normalizing...
+   The whole thing is built out of lubs and glbs.
+*)
 
 Program Definition Red (T : tp) : Rel := RedF T tt. 
 
