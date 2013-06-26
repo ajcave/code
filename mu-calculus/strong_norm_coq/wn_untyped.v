@@ -662,7 +662,7 @@ Lemma Times_candidate C D : candidate C -> candidate D -> candidate (Times C D).
 intros. split.
 (* CR1 *)
 intros G t [Hy0 Hy1]. unfold circ in *.
-admit. (* TODO: Annoying eta property *)
+admit. (* TODO: Annoying eta property. i.e. Showing that C ∘ tfst is a candidate, just like for Mu *)
 (* CR2 *)
 intros G t' Hy0 t s. destruct Hy0.
 unfold Times. unfold Meet. unfold circ in *.
@@ -694,6 +694,20 @@ Lemma Plus_candidate C D : candidate C -> candidate D -> candidate (Plus C D).
 intros.
 eapply closure_cand.
 eapply Plus_normalizing; auto.
+Qed.
+
+Lemma tinj_norm G (t : tm G) : normalizing t -> normalizing (tinj t).
+intros. destruct H. econstructor. econstructor. eassumption.
+eauto.
+Qed.
+(* TODO: Again, how to generalize? *)
+
+Lemma Mu_candidate F : candidate (Mu F).
+eapply lfp_candidate.
+Qed.
+
+Lemma Nu_candidate F : candidate (Nu F).
+eapply gfp_candidate.
 Qed.
 
 Lemma RedF_candidate (D : ctx sort) (F : functor D) (r : Rsub D) (H : Rsub_candidates D r)
