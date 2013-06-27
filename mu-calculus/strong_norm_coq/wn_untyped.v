@@ -906,6 +906,20 @@ eapply CR3; eauto.
 econstructor.
 Admitted.
 
+Lemma rec_cand' (F : functor (snoc nil type)) C (M : tm (snoc nil tt)) :
+    candidate C
+ -> candidate (Meet (circ C (fun G t => trec F t M)) normalizing).
+intros. unfold circ.
+split.
+(* CR1 *) eapply Meet_elim2.
+(* CR2 *) intros G t' Hy t s.
+destruct Hy.
+split. eapply CR2; eauto.
+eapply CR2; eauto.
+(* CR3 *) intros G t Hy.
+split; eauto. eapply CR3; eauto. 
+Admitted. (* CRAP *)
+
 Lemma star_adj A B f : Rarrow A (circ B f) -> Rarrow (star A f) B.
 repeat intro.
 destruct H0. destruct H0. subst.
@@ -928,6 +942,37 @@ Lemma Red_map1 (F : functor (snoc nil type)) A B (M : tm (snoc nil tt)) :
 -> Rarrow (RedF F (tt , A))
     (circ (RedF F (tt , B)) (fun G t => tmap1 F M t)).
 Admitted. (* TODO: IMPORTANT *)
+
+
+Lemma Red_rec'' (F : functor (snoc nil type)) C (M : tm (snoc nil tt)) :
+    candidate C
+ -> Rarrow (RedF F (tt , C)) (circ C (fun G t => app_tsub _ M (tt , t)))
+ -> Rarrow (Red (mu F)) (circ C (fun G t => trec F t M)).
+intros.
+set (D := (Meet (circ C (fun G t => trec F t M)) normalizing)).
+assert (candidate D). admit. (* TODO: Hopefully not a problem now *)
+eapply Rarrow_compose with (B := D).
+eapply Meet_elim1.
+unfold Red. simpl.
+eapply lfp_ind.
+auto.
+eapply adjunction_closure. auto.
+eapply star_adj. unfold D.
+unfold circ.
+eapply Meet_intro.
+intros G t Hy.
+eapply CR2. auto. Focus 2. eapply step_mu.
+eapply H0.
+eapply Red_map1.
+unfold circ. unfold app_tsub. simpl.
+eapply Meet_elim1.
+eexact Hy.
+intros G t Hy.
+eapply tinj_norm.
+eapply CR1. Focus 2. eapply Hy.
+eapply RedF_candidate.
+split; simpl; auto.
+Qed.
 
 Lemma Red_rec' (F : functor (snoc nil type)) C (M : tm (snoc nil tt)) :
     candidate C
@@ -1069,6 +1114,7 @@ eapply Rarrow_compose. eapply closure_unit.
 eapply Rarrow_id.
 
 split; simpl; eauto.
+
 
 (*
 
