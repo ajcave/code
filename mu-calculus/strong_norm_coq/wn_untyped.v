@@ -912,6 +912,10 @@ destruct H0. destruct H0. subst.
 eapply H. auto.
 Qed.
 
+Lemma star_adj' A B f : Rarrow (star A f) B -> Rarrow A (circ B f).
+repeat intro. unfold circ. eapply H.
+firstorder.
+Qed.
 
 Inductive SemTypings : forall Δ (ρ₁ : Rsub Δ) (η : map_arrow Δ) (ρ₂ : Rsub Δ), Prop :=
 | rnil : @SemTypings nil tt gnil tt
@@ -947,8 +951,24 @@ unfold circ. simpl.
 firstorder.
 Qed.
 
+
+Lemma Mu_inj Δ (F : functor (snoc Δ type)) ρ :
+ Rarrow (RedF F (ρ , (RedF (mu F) ρ)))
+        (circ (RedF (mu F) ρ) tinj).
+intros G t Hy0. unfold circ. simpl.
+eapply lfp_inj.
+admit. (* TODO *)
+intros. eapply closure_cand.
+eapply star_adj. unfold circ. intros G0 t0 Hy1.
+admit. (* Easy *)
+eapply closure_unit.
+exists t. split. auto. auto.
+Qed.
+
+Lemma Rarrow_id C : Rarrow C C. firstorder. Qed.
+
 Hint Resolve RedF_candidate.
-Lemma Red_map Δ (F : functor Δ) ρ₁ ρ₂ η :
+Lemma Red_map Δ (F : functor Δ) ρ₁ ρ₂ η (Hyp : Rsub_candidates Δ ρ₁) :
    Rsub_candidates Δ ρ₂
 -> SemTypings ρ₁ η ρ₂
 -> Rarrow (RedF F ρ₁) (circ (RedF F ρ₂) (fun G t => tmap F t η)).
@@ -963,8 +983,8 @@ Focus 2. eapply step_map_times.
 destruct Hy0.
 simpl. split; unfold circ in *.
 eapply CR2. eauto. Focus 2. eapply step_times1.
-eapply IHF1. eauto. eauto. 
-eauto.
+eapply IHF1. eexact Hyp. eauto. auto. 
+eauto. 
 admit.
 Focus 3.
 unfold circ.
@@ -984,8 +1004,68 @@ unfold app_tsub1. simpl.
 eapply closure_unit.
 eapply Join_inl. exists (tmap F1 t η).
 split; auto.
-eapply IHF1; eauto.
+eapply IHF1. eexact Hyp. eauto. auto. auto.
 admit.
+Focus 3.
+simpl. unfold circ.
+eapply lfp_ind.
+admit. (* Crap, similar problem *)
+eapply adjunction_closure.
+admit. (* Same as above *)
+eapply star_adj.
+unfold circ.
+intros G t Hy0.
+eapply CR2. eauto. Focus 2. eapply step_map_mu.
+eapply Mu_inj.
+eapply IHF. Focus 2.
+split; simpl; eauto.
+Focus 3. eexact Hy0.
+Focus 2.
+econstructor; eauto.
+eapply Rarrow_id.
+split; simpl; eauto.
+admit. (* Same as above *)
+
+
+Focus 3.
+eapply star_adj'.
+eapply Rarrow_compose.
+Focus 2. eapply closure_unit.
+simpl RedF at 2.
+eapply gfp_coind.
+eapply closure_cand.
+eapply star_adj. unfold circ.
+intros G t Hy0.
+assert (normalizing t). eapply CR1. Focus 2. eexact Hy0.
+eapply RedF_candidate. admit. (* TODO: Add assumption. IMPORTANT *)
+destruct H1. econstructor. econstructor.
+eexact H1. econstructor. auto.
+eapply adjunction_closure.
+admit. (* TODO: DUNNO *)
+eapply star_adj.
+unfold circ.
+intros G t Hy0.
+eapply CR2.
+admit.
+Focus 2. eapply step_map_nu.
+eapply IHF.
+Focus 2.
+split; eauto. simpl. admit.
+Focus 3.
+
+Lemma Nu_out Δ (F : functor (snoc Δ type)) ρ :
+ Rarrow (RedF (nu F) ρ) (circ (RedF F (ρ , RedF (nu F) ρ)) tout).
+simpl. unfold circ.
+eapply gfp_out.
+unfold circ. admit. (* TODO *)
+unfold circ. intros. (* TODO *)
+Admitted.
+
+eapply Nu_out. eexact Hy0.
+econstructor; eauto. simpl.
+eapply star_adj'.
+eapply Rarrow_compose. eapply closure_unit.
+eapply Rarrow_id.
 
 
 (*
