@@ -881,7 +881,65 @@ Admitted. (* TODO: This is gonna be quite a pain.
  I guess it's consoling that it's a pain directly too?
  (see below, or the partial sn proof) *)
 
+(*
+Lemma norm_rec G F M (t : tm G) : normalizing (trec F t M) -> normalizing t.
+intro.
+inversion H. subst.
+*)
+(* TODO: CRAP! This is a problem! *)
+(* Use a deterministic relation? *)
 
+Lemma rec_cand (F : functor (snoc nil type)) C (M : tm (snoc nil tt)) :
+    candidate C
+ -> candidate (circ C (fun G t => trec F t M)).
+intros. unfold circ.
+split.
+(* CR1 *)
+intros G t Hy0.
+admit. (* Crap! Maybe we can quantify over the normalizing ones? *)
+(* CR2 *)
+intros G t' Hy0 t s.
+eapply CR2; eauto.
+(* CR3 *)
+intros G t Hy0.
+eapply CR3; eauto.
+econstructor.
+Admitted.
+
+Lemma star_adj A B f : Rarrow A (circ B f) -> Rarrow (star A f) B.
+repeat intro.
+destruct H0. destruct H0. subst.
+eapply H. auto.
+Qed.
+
+
+Lemma Red_map (F : functor (snoc nil type)) A B (M : tm (snoc nil tt)) :
+   Rarrow A (circ B (fun G t => app_tsub _ M (tt , t)))
+-> Rarrow (RedF F (tt , A))
+    (circ (RedF F (tt , B)) (fun G t => tmap1 F M t)).
+Admitted. (* TODO: IMPORTANT *)
+
+Lemma Red_rec' (F : functor (snoc nil type)) C (M : tm (snoc nil tt)) :
+    candidate C
+ -> Rarrow (RedF F (tt , C)) (circ C (fun G t => app_tsub _ M (tt , t)))
+ -> Rarrow (Red (mu F)) (circ C (fun G t => trec F t M)).
+intros. unfold Red. simpl.
+assert (candidate (circ C (fun G t => trec F t M))). eapply rec_cand; auto.
+eapply lfp_ind.
+auto.
+unfold circ in *.
+eapply adjunction_closure. auto.
+eapply star_adj.
+unfold circ.
+repeat intro.
+eapply CR2. auto.
+Focus 2. eapply step_mu.
+eapply H0.
+eapply Red_map.
+Focus 2. eapply H2.
+unfold circ. simpl.
+firstorder.
+Qed.
 
 (*
 
