@@ -1062,11 +1062,13 @@ unfold circ. intros. (* TODO *)
 Admitted.
 
 eapply Nu_out. eexact Hy0.
+Focus 2.
 econstructor; eauto. simpl.
 eapply star_adj'.
 eapply Rarrow_compose. eapply closure_unit.
 eapply Rarrow_id.
 
+split; simpl; eauto.
 
 (*
 
