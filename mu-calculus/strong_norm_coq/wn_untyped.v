@@ -662,7 +662,8 @@ Lemma Times_candidate C D : candidate C -> candidate D -> candidate (Times C D).
 intros. split.
 (* CR1 *)
 intros G t [Hy0 Hy1]. unfold circ in *.
-admit. (* TODO: Annoying eta property. i.e. Showing that C ∘ tfst is a candidate, just like for Mu *)
+admit. (* TODO: Annoying eta property. i.e. Showing that C ∘ tfst is a candidate, just like for Mu.
+ Except that C o tfst is *not* a candidate. Not the case that if tfst normalizes the t normalizes *)
 (* CR2 *)
 intros G t' Hy0 t s. destruct Hy0.
 unfold Times. unfold Meet. unfold circ in *.
