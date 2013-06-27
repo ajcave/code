@@ -913,7 +913,13 @@ eapply H. auto.
 Qed.
 
 
-Lemma Red_map (F : functor (snoc nil type)) A B (M : tm (snoc nil tt)) :
+Inductive SemTypings : forall Δ (ρ₁ : Rsub Δ) (η : map_arrow Δ) (ρ₂ : Rsub Δ), Prop :=
+| rnil : @SemTypings nil tt gnil tt
+| rsnoc : forall Δ ρ₁ η ρ₂ A B (M : tm (snoc nil tt)), @SemTypings Δ ρ₁ η ρ₂
+ -> Rarrow A (circ B (fun G t => app_tsub _ M (tt , t)))
+ -> @SemTypings (snoc Δ type) (ρ₁ , A) (gsnoc η M) (ρ₂ , B).
+
+Lemma Red_map1 (F : functor (snoc nil type)) A B (M : tm (snoc nil tt)) :
    Rarrow A (circ B (fun G t => app_tsub _ M (tt , t)))
 -> Rarrow (RedF F (tt , A))
     (circ (RedF F (tt , B)) (fun G t => tmap1 F M t)).
@@ -935,11 +941,52 @@ repeat intro.
 eapply CR2. auto.
 Focus 2. eapply step_mu.
 eapply H0.
-eapply Red_map.
+eapply Red_map1.
 Focus 2. eapply H2.
 unfold circ. simpl.
 firstorder.
 Qed.
+
+Hint Resolve RedF_candidate.
+Lemma Red_map Δ (F : functor Δ) ρ₁ ρ₂ η :
+   Rsub_candidates Δ ρ₂
+-> SemTypings ρ₁ η ρ₂
+-> Rarrow (RedF F ρ₁) (circ (RedF F ρ₂) (fun G t => tmap F t η)).
+intros.
+induction F.
+Focus 3.
+unfold circ.
+intros G t Hy0.
+eapply CR2. eauto.
+Focus 2. eapply step_map_times.
+(* Bad *)
+destruct Hy0.
+simpl. split; unfold circ in *.
+eapply CR2. eauto. Focus 2. eapply step_times1.
+eapply IHF1. eauto. eauto. 
+eauto.
+admit.
+Focus 3.
+unfold circ.
+intros G t Hy0.
+eapply CR2. eauto. Focus 2. eapply step_map_plus.
+simpl in *. unfold Plus in *.
+generalize G t Hy0. clear G t Hy0.
+eapply adjunction_closure.
+(* TODO: Crap, similar problem! *)
+admit.
+eapply Join_elim;
+eapply star_adj; unfold circ; intros G t Hy0.
+eapply CR2.
+eapply closure_cand. admit.
+Focus 2. eapply step_plus1.
+unfold app_tsub1. simpl.
+eapply closure_unit.
+eapply Join_inl. exists (tmap F1 t η).
+split; auto.
+eapply IHF1; eauto.
+admit.
+
 
 (*
 
