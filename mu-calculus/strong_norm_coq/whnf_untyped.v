@@ -925,12 +925,84 @@ Qed. (* This is Lemma 19.12 *)
 Lemma Rarrow_id C : Rarrow C C. firstorder. Qed.
 
 Hint Resolve RedF_candidate.
+
+Print Rarrow.
+Definition FancyArrow (R1 : Rel) (f : forall G, tm G -> tm G) (R2 : Rel) :=
+ Rarrow R1 (circ R2 f).
+
+
+Lemma Times_tpair G (F H : Rel) (t1 t2 : tm G) :
+ candidate F -> candidate H -> F _ t1 -> H _ t2 -> Times F H (tpair t1 t2).
+intros.
+split; unfold circ; simpl.
+eapply CR2; eauto.
+eapply CR2; eauto.
+Qed. (* TODO: This is kind of redundant with the semantic typing lemma for tpair *)
+
+Lemma Red_map_times Δ (F : functor Δ) F1 F2 H H1 H2 η ρ₁ ρ₂
+ (Hyp1 : Rsub_candidates Δ ρ₁)
+ (Hyp2 : Rsub_candidates Δ ρ₂) :
+   candidate F1 -> candidate F2 -> candidate H1 -> candidate H2
+-> FancyArrow F1 (fun _ t => tmap F t η) F2
+-> FancyArrow H1 (fun _ t => tmap H t η) H2
+-> FancyArrow (Times F1 H1) (fun _ t => tmap (times F H) t η) (Times F2 H2).
+intros.
+intros G t Hy. unfold circ.
+eapply CR2. eauto.
+Focus 2. eauto. destruct Hy.
+eapply Times_tpair; firstorder.
+Qed.
+
+Lemma tmap_mu_norm Δ (F : functor (snoc Δ type)) η G (t : tm G) :
+ normalizing (tmap (mu F) t η) -> normalizing t.
+intros.
+inversion H; subst. clear H.
+dependent induction H0.
+inversion H1; subst. inversion H; subst. eauto.
+inversion H; subst.
+simpl_existT. simpl_existT. subst.
+eapply CR2; eauto.
+eauto.
+Qed.
+
+Lemma cand_tmap_mu Δ (F : functor (snoc Δ type)) η C :
+ candidate C -> candidate (circ C (fun _ t => tmap (mu F) t η)).
+intros. unfold circ. split.
+(* CR1 *)
+intros G t Hy. eapply tmap_mu_norm. eapply CR1; eauto.
+(* CR2 *)
+intros G t' Hy t s. eapply CR2; eauto.
+(* CR3 *)
+intros G t Hy. eapply CR3; eauto.
+Qed.
+
 Lemma Red_map Δ (F : functor Δ) ρ₁ ρ₂ η (Hyp : Rsub_candidates Δ ρ₁) :
    Rsub_candidates Δ ρ₂
 -> SemTypings ρ₁ η ρ₂
--> Rarrow (RedF F ρ₁) (circ (RedF F ρ₂) (fun G t => tmap F t η)).
+-> FancyArrow (RedF F ρ₁) (fun G t => tmap F t η) (RedF F ρ₂).
 intros.
-induction F.
+induction F; simpl.
+Focus 3. (* Times *)
+eapply Red_map_times; eauto.
+
+Focus 4. (* Mu *)
+unfold FancyArrow.
+set (C := (circ (Mu (fun R : Rel => RedF F (ρ₂, R)))
+        (fun (G : ctx scope) (t : tm G) => tmap (mu F) t η))).
+assert (candidate C). eapply cand_tmap_mu; eauto.
+eapply lfp_ind; eauto.
+eapply adjunction_closure; eauto.
+eapply star_adj.
+unfold C. unfold circ.
+intros G t Hy.
+eapply CR2; eauto.
+eapply Mu_inj.
+eapply IHF; eauto.
+split; eauto.
+split; simpl; eauto.
+econstructor; simpl; eauto.
+eapply Rarrow_id.
+(* Yay! *)
 
 
 (*
