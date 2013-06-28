@@ -987,7 +987,7 @@ eapply star_adj. unfold circ. intros G0 t0 Hy1.
 eauto.
 eapply closure_unit.
 exists t. split. auto. auto.
-Qed.
+Qed. (* This is Lemma 19.12 *)
 
 Lemma Rarrow_id C : Rarrow C C. firstorder. Qed.
 
