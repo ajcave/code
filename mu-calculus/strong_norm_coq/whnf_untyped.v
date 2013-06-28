@@ -240,49 +240,25 @@ app_tsub _ t (single_tsub t2).
 
 Implicit Arguments app_tsub1 [ D T ].
 
-(* Gotta define map... *)
-
-
-(*
-Fixpoint tmap D (F : functor D) (s1 s2 : fsub D nil) (a : map_arrow D) G (t : tm G) : tm G :=
-match F with
-| fv _ X => app_tsub _ (glookup _ X a) (tt, t)
-| arrow T F2 => tlam (tmap F2 s1 s2 a (tapp (wkn_tm t) (tv top)))
-| times F1 F2 => tpair (tmap F1 s1 s2 a (tfst t)) (tmap F2 s1 s2 a (tsnd t))
-| plus F1 F2 => tcase t (tinl (tmap F1 s1 s2 a (tv top))) (tinr (tmap F2 s1 s2 a (tv top)))
-| mu F1 => trec (app_fsub _ F1 (extfsub s2)) (app_fsub _ (mu F1) s1) t (tinj (tmap F1 (s1, app_fsub _ (mu F1) s1) (s2, app_fsub _ (mu F1) s1) (a, (tv top)) (tv top)))
-| nu F1 => tcorec (app_fsub _ F1 (extfsub s1)) (app_fsub _ (nu F1) s2) t (tmap F1 (s1, app_fsub _ (nu F1) s2) (s2, app_fsub _ (nu F1) s2) (a, (tv top)) (tout (tv top)))
-end. *)
-
-(* TODO: DO the typing lemma for map and type preservation! Because I'm not sure I believe I got these definitions right *)
+(* TODO: type preservation! Because I'm not sure I believe I got these definitions right *)
 
 Definition tmap1 (F : functor (snoc nil type)) G (f : tm (snoc nil tt)) (t : tm G) : tm G :=
 tmap F t (gsnoc gnil f).
 
-(* For this logical relation, this is the most natural step relation *)
-Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
-(*| step_lam : forall (t1 t2 : tm (snoc G tt)), @step (snoc G tt) t1 t2 -> step (tlam t1) (tlam t2) *)
-| step_appl : forall (t1 t2 : tm G) t3, step t1 t2 -> step (tapp t1 t3) (tapp t2 t3)
-(*| step_appr : forall (t1 : tm G) (t2 t3 : tm G), step t2 t3 -> step (tapp t1 t2) (tapp t1 t3) *)
+(* For this logical relation, this is the most natural step relation:
+   Weak head reduction (i.e. only goes as far as confirming that, yep, its of the form tpair,
+   and doesn't care what's underneath *)
 (* TODO: Hmm, I think we could consider either going under pairs or not.
    If we were just defining an equality test, it seems like a redundant stage,
    but for normalization it seems relevant. "Positive" vs "Negative"?
    Hmm. We can normalize further *)
-(*| step_pairl : forall (t1 t1' : tm G) (t2 : tm G), step t1 t1' -> step (tpair t1 t2) (tpair t1' t2)
-| step_pairr : forall (t1 : tm G) (t2 t2' : tm G), step t2 t2' -> step (tpair t1 t2) (tpair t1 t2') *)
+Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
+| step_appl : forall (t1 t2 : tm G) t3, step t1 t2 -> step (tapp t1 t3) (tapp t2 t3)
 | step_fst : forall (t t' : tm G), step t t' -> step (tfst t) (tfst t')
 | step_snd : forall (t t' : tm G), step t t' -> step (tsnd t) (tsnd t')
-(*| step_inl : forall (t t' : tm G), step t t' -> step (tinl t) (tinl t') (* Ditto *)
-| step_inr : forall (t t' : tm G), step t t' -> step (tinr t) (tinr t') *)
 | step_case : forall (t t' : tm G) (t1 : tm (snoc G tt)) t2, step t t' -> step (tcase t t1 t2) (tcase t' t1 t2)
-(*| step_case1 : forall (t : tm G) (t1 t1' : tm (snoc G tt)) t2, @step _ t1 t1' -> step (tcase t t1 t2) (tcase t t1' t2)
-| step_case2 : forall (t : tm G) (t1 : tm (snoc G tt)) t2 t2', @step _ t2 t2' -> step (tcase t t1 t2) (tcase t t1 t2') *)
-(*| step_inj : forall (t t' : tm G), step t t' -> step (tinj t) (tinj t') *)
 | step_rec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (trec F t1 t2) (trec F t1' t2)
-(*| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2') *)
 | step_out : forall (t t' : tm G), step t t' -> step (tout t) (tout t')
-(*| step_corec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (tcorec F t1 t2) (tcorec F t1' t2)
-| step_corec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (tcorec F t1 t2) (tcorec F t1 t2') *)
 
 | step_arrow : forall (t1 : tm (snoc G tt)) (t2 : tm G), step (tapp (tlam t1) t2) (app_tsub1 t1 t2)
 | step_times1 : forall (t1 : tm G) (t2 : tm G), step (tfst (tpair t1 t2)) t1
@@ -643,61 +619,6 @@ Lemma RedF_monotone (D : ctx sort) (F : functor D) (r1 r2 : Rsub D) (H : Rarrows
 induction F; simpl.
 Admitted.
 
-(*
-Lemma RedF_mu_inj (D : ctx sort) (F : functor (snoc D type)) (r : Rsub D)
- : Rarrow (fun G (t : tm G) =>    (exists t', step_SN_star t (tinj t') /\ RedF F (r, (RedF (mu F) r)) t')
-                               \/ (exists t', step_SN_star t t' /\ SNe t'))
-   (RedF (mu F) r).
-intros G t H.
-simpl.
-eapply lfp_inj.
-intros R1 R2 arr G' t' H0.
-destruct H0. destruct H0. destruct H0.
-left.
-eexists. split. eexact H0. apply (RedF_monotone F (r, R1) (r, R2)).
-simpl. split. eapply Rarrs_id.
-eexact arr.
-eexact H1.
-destruct H0. destruct H0.
-right.
-eexists. split. eexact H0. eexact H1.
-eexact H.
-Qed. 
-
-Lemma RedF_nu_out (D : ctx sort) (F : functor (snoc D type)) (r : Rsub D)
- : Rarrow (RedF (nu F) r)
-          (fun G t => SN t /\ RedF F (r, (RedF (nu F) r)) (tout t)).
-intros G t H.
-pose proof (@gfp_out (fun RR G t => SN t /\ RedF F (r, RR) (tout t))).
-eapply H0.
-Focus 2.
-eexact H.
-intros R1 R2 arr G' u H1.
-destruct H1.
-split. auto.
-eapply (RedF_monotone F (r , R1) (r, R2)).
-split. eapply Rarrs_id.
-eexact arr.
-auto.
-Qed. 
-
-Lemma SN_candidate : candidate SN.
-split;
-intros G t H. 
-intros. eapply sn_closed. eexact H0. eexact H.
-eauto.
-eauto.
-Qed.
-
-Lemma SNe_candidate : candidate (fun G t => exists u, step_SN_star t u /\ SNe u).
-split; intros G t H.
-intros. destruct H. destruct H. eexists x. split; eauto.
-exists t. split; eauto.
-destruct H. destruct H. eapply sn_closed_step_star.
-eexact H. eauto.
-Qed. *)
-
-
 Lemma step_wkn Γ Γ' (t t' : tm Γ) (w : vsub Γ Γ') :
  step_star t t' -> step_star (app_vsub_tm _ t w) (app_vsub_tm _ t' w).
 Admitted.
@@ -707,11 +628,24 @@ Lemma isNeutral_wkn Γ Γ' (t : tm Γ) (w : vsub Γ Γ') : isNeutral t -> isNeut
 Admitted.
 Hint Resolve isNeutral_wkn.
 
+Lemma tapp_norm G (t u : tm G) : normalizing (tapp t u) -> normalizing t.
+intros. inversion H; subst. clear H.
+dependent induction H0.
+inversion H1; subst. inversion H; eauto.
+inversion H; subst.
+eapply CR2; eauto.
+eauto.
+Qed.
+
+Lemma wkn_norm G G' (w : vsub G G') t : normalizing (app_vsub_tm _ t w) -> normalizing t.
+Admitted.
+
 Lemma Arrow_candidate C D : candidate C -> candidate D -> candidate (Arrow C D).
 intros. split.
 (* CR1 *)
 intros G t Hy0. unfold Arrow in Hy0.
-admit. (* TODO: Annoying η property. I guess we could build it into the step relation *)
+eapply wkn_norm. eapply tapp_norm.
+eapply CR1. exact H0. eapply (Hy0 (snoc G tt) (weakening_vsub _ _) (tv top)). eapply CR3; eauto.
 (* CR2 *)
 intros G t' Hy0 t s G0 w u Hy1.
 eapply CR2; eauto.
@@ -748,7 +682,7 @@ Qed.
 
 Lemma tinl_norm G (t : tm G) : normalizing t -> normalizing (tinl t).
 eauto.
-Qed. (* TODO: How to treat this more generally? *)
+Qed.
 
 Lemma tinr_norm G (t : tm G) : normalizing t -> normalizing (tinr t).
 eauto.
