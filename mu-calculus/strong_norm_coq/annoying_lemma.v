@@ -379,9 +379,28 @@ Inductive hstep (G : ctx scope) : context G -> context G -> Prop :=
 .
 
 Inductive result G (M M' : tm G) (ε : context G) : tm G -> Prop :=
-| case1 : forall ε', hstep ε ε' -> result M M' ε (plug ε' M)
-| case2 : result M M' ε (plug ε M')
-| case3 : forall P M'', step M P -> mstep M' M'' -> step_SN P M'' -> result M M' ε (plug ε P). 
+| case1 : forall ε' N, hstep ε ε' -> N = plug ε' M -> result M M' ε N
+| case2 : forall N, N = plug ε M' -> result M M' ε N
+| case3 : forall P M'' N, step M P -> mstep M' M'' -> step_SN P M'' -> N = plug ε P -> result M M' ε N.
 
-Lemma annoying G (M M' N : tm G) ε : step_SN M M' -> cstep_SN (plug ε M) N -> result M M' ε N.
+Require Import Coq.Program.Equality.
+Hint Constructors result hstep step_SN cstep_SN mstep step.
+
+Lemma mstep_sub G (t t0 : tm (snoc G tt)) (t3 : tm G) : mstep t t0 -> mstep (app_tsub1 t t3) (app_tsub1 t0 t3).
+Admitted.
+Hint Resolve mstep_sub.
+
+Lemma annoying G (M M' N : tm G) ε : step_SN M M' -> step (plug ε M) N -> result M M' ε N.
 intros.
+dependent induction H0.
+destruct ε; try discriminate x; simpl in *; subst.
+inversion H; subst.
+
+destruct ε; try discriminate x; simpl in *; subst.
+inversion H; subst.
+inversion H0; subst.
+
+econstructor 3. Focus 4. reflexivity.
+eauto. Focus 2. econstructor. auto.
+eauto.
+inversion x; subst.
