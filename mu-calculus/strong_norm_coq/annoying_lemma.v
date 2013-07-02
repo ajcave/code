@@ -272,7 +272,7 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
 | step_case2 : forall (t : tm G) (t1 : tm (snoc G tt)) t2 t2', @step _ t2 t2' -> step (tcase t t1 t2) (tcase t t1 t2')
 | step_inj : forall (t t' : tm G), step t t' -> step (tinj t) (tinj t')
 | step_rec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc cnil tt)), step t1 t1' -> step (trec F t1 t2) (trec F t1' t2)
-| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2')
+(*| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2') *)
 | step_out : forall (t t' : tm G), step t t' -> step (tout t) (tout t')
 | step_corec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc cnil tt)), step t1 t1' -> step (tcorec F t1 t2) (tcorec F t1' t2)
 | step_corec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (tcorec F t1 t2) (tcorec F t1 t2')
@@ -316,7 +316,7 @@ Inductive context1 (G : ctx scope) : Set :=
  | cmap : forall Δ (F : functor (snoc Δ type)), gsub' (fun _ => tm (snoc cnil tt)) Δ -> context1 G
 .
 
-Fixpoint plug0 G (c : context1 G) : tm G -> tm G :=
+Definition plug0 G (c : context1 G) : tm G -> tm G :=
 match c with
 | capp M => fun N => tapp N M
 | cfst => fun N => tfst N
@@ -382,7 +382,7 @@ Inductive hstep (G : ctx scope) : context G -> context G -> Prop :=
 
 
 Require Import Coq.Program.Equality.
-Hint Constructors hstep step_SN cstep_SN mstep step.
+Hint Constructors hstep hstep1 step_SN cstep_SN mstep step.
 
 Lemma mstep_sub G (t t0 : tm (snoc G tt)) (t3 : tm G) : mstep t t0 -> mstep (app_tsub1 t t3) (app_tsub1 t0 t3).
 Admitted.
@@ -392,13 +392,25 @@ Lemma annoying1 G c : forall (M N : tm G) c1, step (plug0 c (plug0 c1 M)) N ->
     (exists M', step (plug0 c1 M) M')
  \/ (exists c', hstep1 c c').
 induction c; simpl in *; intros.
-assert (step (tapp (plug0 c1 M) t) N).
-exact H.
-(*
-Lemma annoying G ε : forall (M N : tm G) ε1, step (plug ε (plug1 ε1 M)) N ->
-    (exists M', step (plug1 ε1 M) M')
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+Qed.
+
+Lemma annoying G ε : forall (M N : tm G) ε1, step (plug ε (plug0 ε1 M)) N ->
+    (exists M', step (plug0 ε1 M) M')
  \/ (exists ε', hstep ε ε').
 induction ε; simpl in *; intros.
 eauto.
 destruct (IHε _ _ a H).
-destruct H0. *)
+destruct H0.
+destruct (annoying1 _ _ _ H0); eauto.
+destruct H1.
+right. eexists. econstructor 1. eauto.
+destruct H0.
+right. eexists. econstructor 2. eauto.
+Qed.
