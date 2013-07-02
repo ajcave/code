@@ -1,8 +1,8 @@
 Set Implicit Arguments.
 Inductive ctx (A : Type) : Type :=
- | nil : ctx A
+ | cnil : ctx A
  | snoc : ctx A -> A -> ctx A.
-Implicit Arguments nil [A].
+Implicit Arguments cnil [A].
 
 Inductive var (A : Type) : ctx A -> A -> Type :=
  | top : forall G T, var (snoc G T) T
@@ -13,12 +13,12 @@ Implicit Arguments pop [A G T S].
 Open Scope type_scope.
 Fixpoint gsub (A : Type) (G : ctx A) (F : A -> Type) : Type :=
 match G with
-| nil => unit
+| cnil => unit
 | snoc G' T => (gsub G' F) * (F T)
 end.
 
 Inductive gsub' (A : Type) (F : A -> Type) : forall (Γ : ctx A), Type :=
-| gnil : gsub' F nil
+| gnil : gsub' F cnil
 | gsnoc : forall Γ T, gsub' F Γ -> F T -> gsub' F (snoc Γ T).
 Implicit Arguments gnil [A F].
 Implicit Arguments gsnoc [A Γ F T].
@@ -44,7 +44,7 @@ Print glookup'.
 
 Fixpoint gmap (A : Type) (G : ctx A) (F1 F2 : A -> Type) (f : forall T, F1 T -> F2 T) : gsub G F1 -> gsub G F2 :=
 match G return gsub G F1 -> gsub G F2 with
-| nil => fun s => s
+| cnil => fun s => s
 | snoc G' T => fun s => pair (gmap G' F1 F2 f (fst s)) (f T (snd s))
 end.
 
@@ -59,7 +59,7 @@ Implicit Arguments extvsub [ A G G' T ].
 
 Fixpoint idvsub (A : Type) (G : ctx A) : vsub G G :=
 match G return vsub G G with
-| nil => tt
+| cnil => tt
 | snoc G' T => extvsub (idvsub G')
 end.
 Implicit Arguments idvsub [A G].
@@ -72,7 +72,7 @@ Inductive sort : Type :=
 
 Inductive functor (D : ctx sort) : Set :=
  | fv : forall T, var D T -> functor D
- | arrow : functor nil -> functor D -> functor D
+ | arrow : functor cnil -> functor D -> functor D
  | times : functor D -> functor D -> functor D
  | plus : functor D -> functor D -> functor D
  | mu : functor (snoc D type) -> functor D
@@ -99,7 +99,7 @@ Implicit Arguments extfsub [G G' T].
 
 Fixpoint idfsub (G : ctx sort) : fsub G G :=
 match G return fsub G G with
-| nil => tt
+| cnil => tt
 | snoc G' T => extfsub (idfsub G')
 end.
 
@@ -118,7 +118,7 @@ Definition single_fsub D T F : fsub (snoc D T) D := pair (idfsub D) F.
 Definition app_fsub1 D T (F : functor (snoc D T)) (G : functor D) : functor D :=
 app_fsub D F (single_fsub T G).
 
-Definition tp := functor nil.
+Definition tp := functor cnil.
 
 Definition scope := unit.
 
@@ -134,18 +134,18 @@ Inductive tm (G : ctx scope) : Set :=
  | tinr : tm G -> tm G
  | tcase : tm G -> tm (snoc G tt) -> tm (snoc G tt) -> tm G
  | tinj : tm G -> tm G
- | trec : forall (F : functor (snoc nil type)), tm G -> tm (snoc nil tt) -> tm G
+ | trec : forall (F : functor (snoc cnil type)), tm G -> tm (snoc cnil tt) -> tm G
  | tout : tm G -> tm G
- | tcorec : functor (snoc nil type) -> tm G -> tm (snoc nil tt) -> tm G
- | tmap : forall Δ (F : functor Δ), tm G -> gsub' (fun _ => tm (snoc nil tt)) Δ -> tm G
+ | tcorec : functor (snoc cnil type) -> tm G -> tm (snoc cnil tt) -> tm G
+ | tmap : forall Δ (F : functor Δ), tm G -> gsub' (fun _ => tm (snoc cnil tt)) Δ -> tm G
 .
 
 Definition map_arrow (Δ : ctx sort) : Type :=
-gsub' (fun _ => tm (snoc nil tt)) Δ.
+gsub' (fun _ => tm (snoc cnil tt)) Δ.
 
 Fixpoint forget (G : ctx tp) : ctx scope :=
 match G with
-| nil => nil
+| cnil => cnil
 | snoc G' T => snoc (forget G') tt
 end.
 
@@ -164,14 +164,14 @@ Inductive oft : forall (G : ctx tp), tm (forget G) -> tp -> Prop :=
  | tpinr : forall G T S t, oft G t S -> oft G (tinr t) (plus T S)
  | tpcase : forall G T S C t1 t2 t3, oft G t1 (plus T S) -> oft (snoc G T) t2 C -> oft (snoc G S) t3 C -> oft G (tcase t1 t2 t3) C
  | tpinj : forall G F t, oft G t (app_fsub1 F (mu F)) -> oft G (tinj t) (mu F)
- | tprec : forall G F C t1 t2, oft G t1 (mu F) -> oft (snoc nil (app_fsub1 F C)) t2 C -> oft G (trec F t1 t2) C
+ | tprec : forall G F C t1 t2, oft G t1 (mu F) -> oft (snoc cnil (app_fsub1 F C)) t2 C -> oft G (trec F t1 t2) C
  | tpout : forall G F t, oft G t (nu F) -> oft G (tout t) (app_fsub1 F (nu F))
- | tpcorec : forall G F C t1 t2, oft G t1 C -> oft (snoc nil C) t2 (app_fsub1 F C) -> oft G (tcorec F t1 t2) (nu F)
+ | tpcorec : forall G F C t1 t2, oft G t1 C -> oft (snoc cnil C) t2 (app_fsub1 F C) -> oft G (tcorec F t1 t2) (nu F)
  | tpmap : forall Δ Γ (F : functor Δ) ρ₁ ρ₂ η M, oft Γ M (app_fsub _ F ρ₁)
    -> ofts ρ₁ η ρ₂ -> oft Γ (tmap F M η) (app_fsub _ F ρ₂) 
-with ofts : forall Δ (ρ₁ : fsub Δ nil) (η : map_arrow Δ) (ρ₂ : fsub Δ nil), Prop :=
- | onil : @ofts nil tt gnil tt
- | osnoc : forall Δ (ρ₁ : fsub Δ nil) η ρ₂ A M B, ofts ρ₁ η ρ₂ -> oft (snoc nil A) M B
+with ofts : forall Δ (ρ₁ : fsub Δ cnil) (η : map_arrow Δ) (ρ₂ : fsub Δ cnil), Prop :=
+ | onil : @ofts cnil tt gnil tt
+ | osnoc : forall Δ (ρ₁ : fsub Δ cnil) η ρ₂ A M B, ofts ρ₁ η ρ₂ -> oft (snoc cnil A) M B
                -> @ofts (snoc Δ type) (ρ₁ , A) (gsnoc η M) (ρ₂ , B)
 .
 
@@ -208,7 +208,7 @@ Implicit Arguments exttsub [G G' T].
 
 Fixpoint idtsub (G : ctx scope) : tsub G G :=
 match G return tsub G G with
-| nil => tt
+| cnil => tt
 | snoc G' T => exttsub (idtsub G')
 end.
 Implicit Arguments idtsub [G].
@@ -254,7 +254,7 @@ end. *)
 
 (* TODO: DO the typing lemma for map and type preservation! Because I'm not sure I believe I got these definitions right *)
 
-Definition tmap1 (F : functor (snoc nil type)) G (f : tm (snoc nil tt)) (t : tm G) : tm G :=
+Definition tmap1 (F : functor (snoc cnil type)) G (f : tm (snoc cnil tt)) (t : tm G) : tm G :=
 tmap F t (gsnoc gnil f).
 
 Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
@@ -271,20 +271,20 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
 | step_case1 : forall (t : tm G) (t1 t1' : tm (snoc G tt)) t2, @step _ t1 t1' -> step (tcase t t1 t2) (tcase t t1' t2)
 | step_case2 : forall (t : tm G) (t1 : tm (snoc G tt)) t2 t2', @step _ t2 t2' -> step (tcase t t1 t2) (tcase t t1 t2')
 | step_inj : forall (t t' : tm G), step t t' -> step (tinj t) (tinj t')
-| step_rec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (trec F t1 t2) (trec F t1' t2)
-| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2')
+| step_rec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc cnil tt)), step t1 t1' -> step (trec F t1 t2) (trec F t1' t2)
+| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2')
 | step_out : forall (t t' : tm G), step t t' -> step (tout t) (tout t')
-| step_corec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step t1 t1' -> step (tcorec F t1 t2) (tcorec F t1' t2)
-| step_corec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @step _ t2 t2' -> step (tcorec F t1 t2) (tcorec F t1 t2')
+| step_corec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc cnil tt)), step t1 t1' -> step (tcorec F t1 t2) (tcorec F t1' t2)
+| step_corec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (tcorec F t1 t2) (tcorec F t1 t2')
 
 | step_arrow : forall (t1 : tm (snoc G tt)) (t2 : tm G), step (tapp (tlam t1) t2) (app_tsub1 t1 t2)
 | step_times1 : forall (t1 : tm G) (t2 : tm G), step (tfst (tpair t1 t2)) t1
 | step_times2 : forall (t1 : tm G) (t2 : tm G), step (tsnd (tpair t1 t2)) t2
 | step_plus1 : forall (t1 : tm G) (t2 : tm (snoc G tt)) (t3 : tm (snoc G tt)), step (tcase (tinl t1) t2 t3) (app_tsub1 t2 t1)
 | step_plus2 : forall (t1 : tm G) (t2 : tm (snoc G tt)) (t3 : tm (snoc G tt)), step (tcase (tinr t1) t2 t3) (app_tsub1 t3 t1)
-| step_mu : forall F (t1 : tm G) (t2 : tm (snoc nil tt)),
+| step_mu : forall F (t1 : tm G) (t2 : tm (snoc cnil tt)),
    step (trec F (tinj t1) t2) (app_tsub _ t2 (tt, tmap1 F (trec F (tv top) t2) t1))
-| step_nu : forall F (t1 : tm G) (t2 : tm (snoc nil tt)),
+| step_nu : forall F (t1 : tm G) (t2 : tm (snoc cnil tt)),
    step (tout (tcorec F t1 t2)) (tmap1 F (tcorec F (tv top) t2) (app_tsub _ t2 (tt, t1)))
 | step_map : forall Δ (F : functor Δ) M M' η,
      step M M'
@@ -306,28 +306,35 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
 Inductive sn G : tm G -> Prop :=
 | con_sn : forall t, (forall t', step t t' -> sn t') -> sn t.
 
-Inductive context (G : ctx scope) : Set :=
- | hole : context G
- | capp : context G -> tm G -> context G
- | cfst : context G -> context G
- | csnd : context G -> context G
- | ccase : context G -> tm (snoc G tt) -> tm (snoc G tt) -> context G
- | crec : forall (F : functor (snoc nil type)), context G -> tm (snoc nil tt) -> context G
- | cout : context G -> context G
- | cmap : forall Δ (F : functor (snoc Δ type)), context G
-   -> gsub' (fun _ => tm (snoc nil tt)) Δ -> context G
+Inductive context1 (G : ctx scope) : Set :=
+ | capp : tm G -> context1 G
+ | cfst : context1 G
+ | csnd : context1 G
+ | ccase : tm (snoc G tt) -> tm (snoc G tt) -> context1 G
+ | crec : forall (F : functor (snoc cnil type)), tm (snoc cnil tt) -> context1 G
+ | cout : context1 G
+ | cmap : forall Δ (F : functor (snoc Δ type)), gsub' (fun _ => tm (snoc cnil tt)) Δ -> context1 G
 .
+
+Fixpoint plug0 G (c : context1 G) : tm G -> tm G :=
+match c with
+| capp M => fun N => tapp N M
+| cfst => fun N => tfst N
+| csnd => fun N => tsnd N
+| ccase M1 M2 => fun N => tcase N M1 M2
+| crec F M => fun N => trec F N M
+| cout => fun N => tout N
+| cmap D F n => fun N => tmap (mu F) N n
+end.
+
+
+Definition context (G : ctx scope) : Set := list (context1 G).
+
 
 Fixpoint plug G (ε : context G) (N : tm G) : tm G :=
 match ε with
-| hole => N
-| capp ε M => tapp (plug ε N) M
-| cfst ε => tfst (plug ε N)
-| csnd ε => tsnd (plug ε N)
-| ccase ε M1 M2 => tcase (plug ε N) M1 M2
-| crec F ε M => trec F (plug ε N) M
-| cout ε => tout (plug ε N)
-| cmap Δ F ε η => tmap (mu F) (plug ε N) η
+| nil => N
+| cons ε1 ε' => plug ε' (plug0 ε1 N)
 end.
 
 Inductive step_SN G : tm G -> tm G -> Prop :=
@@ -345,10 +352,10 @@ Inductive step_SN G : tm G -> tm G -> Prop :=
 (*| step_SN_rec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc nil tt)), step_SN t1 t1' -> step_SN (trec F t1 t2) (trec F t1' t2)
 
 | step_SN_out : forall (t t' : tm G), step_SN t t' -> step_SN (tout t) (tout t') *)
-| step_SN_mu : forall F (t1 : tm G) (t2 : tm (snoc nil tt)),
+| step_SN_mu : forall F (t1 : tm G) (t2 : tm (snoc cnil tt)),
    sn t1 -> 
    step_SN (trec F (tinj t1) t2) (app_tsub _ t2 (tt, tmap1 F (trec F (tv top) t2) t1))
-| step_SN_nu : forall F (t1 : tm G) (t2 : tm (snoc nil tt)),
+| step_SN_nu : forall F (t1 : tm G) (t2 : tm (snoc cnil tt)),
    sn t1 -> @sn _ t2 ->
    step_SN (tout (tcorec F t1 t2)) (tmap1 F (tcorec F (tv top) t2) (app_tsub _ t2 (tt, t1)))
 .
@@ -362,45 +369,36 @@ Inductive cstep_SN G : tm G -> tm G -> Prop :=
 | cstep_con : forall ε M M', step_SN M M' -> cstep_SN (plug ε M) (plug ε M').
 
 
-Inductive hstep (G : ctx scope) : context G -> context G -> Prop :=
-| hstep_appl : forall t1 t2 t3, hstep t1 t2 -> hstep (capp t1 t3) (capp t2 t3)
-| hstep_appr : forall t1 t2 t3 , step t2 t3 -> hstep (capp t1 t2) (capp t1 t3)
-| hstep_fst : forall t t', hstep t t' -> hstep (cfst t) (cfst t')
-| hstep_snd : forall t t', hstep t t' -> hstep (csnd t) (csnd t')
-| hstep_case : forall t t' t1 t2, hstep t t' -> hstep (ccase t t1 t2) (ccase t' t1 t2)
-| hstep_case1 : forall t t1 t1' t2, @step _ t1 t1' -> hstep (ccase t t1 t2) (ccase t t1' t2)
-| hstep_case2 : forall t t1 t2 t2', @step _ t2 t2' -> hstep (ccase t t1 t2) (ccase t t1 t2')
-| hstep_rec1 : forall F t1 t1' t2, hstep t1 t1' -> hstep (crec F t1 t2) (crec F t1' t2)
-(*| hstep_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc nil tt)), @hstep _ t2 t2' -> hstep (trec F t1 t2) (trec F t1 t2') *)
-| hstep_out : forall t t', hstep t t' -> hstep (cout t) (cout t')
-| hstep_map : forall Δ (F : functor (snoc Δ type)) M M' η,
-     hstep M M'
-  -> hstep (cmap F M η) (cmap F M' η)
+Inductive hstep1 (G : ctx scope) : context1 G -> context1 G -> Prop :=
+| hstep_appr : forall t2 t3 , step t2 t3 -> hstep1 (capp t2) (capp t3)
+| hstep_case1 : forall t1 t1' t2, @step _ t1 t1' -> hstep1 (ccase t1 t2) (ccase t1' t2)
+| hstep_case2 : forall t1 t2 t2', @step _ t2 t2' -> hstep1 (ccase t1 t2) (ccase t1 t2')
 .
 
-Inductive result G (M M' : tm G) (ε : context G) : tm G -> Prop :=
-| case1 : forall ε' N, hstep ε ε' -> N = plug ε' M -> result M M' ε N
-| case2 : forall N, N = plug ε M' -> result M M' ε N
-| case3 : forall P M'' N, step M P -> mstep M' M'' -> step_SN P M'' -> N = plug ε P -> result M M' ε N.
+Inductive hstep (G : ctx scope) : context G -> context G -> Prop :=
+| hstep_cons1 : forall ε c1 c2, hstep1 c1 c2 -> hstep (cons c1 ε) (cons c2 ε)
+| hstep_cons2 : forall ε ε' c, hstep ε ε' -> hstep (cons c ε) (cons c ε')
+.
+
 
 Require Import Coq.Program.Equality.
-Hint Constructors result hstep step_SN cstep_SN mstep step.
+Hint Constructors hstep step_SN cstep_SN mstep step.
 
 Lemma mstep_sub G (t t0 : tm (snoc G tt)) (t3 : tm G) : mstep t t0 -> mstep (app_tsub1 t t3) (app_tsub1 t0 t3).
 Admitted.
 Hint Resolve mstep_sub.
 
-Lemma annoying G (M M' N : tm G) ε : step_SN M M' -> step (plug ε M) N -> result M M' ε N.
-intros.
-dependent induction H0.
-destruct ε; try discriminate x; simpl in *; subst.
-inversion H; subst.
-
-destruct ε; try discriminate x; simpl in *; subst.
-inversion H; subst.
-inversion H0; subst.
-
-econstructor 3. Focus 4. reflexivity.
-eauto. Focus 2. econstructor. auto.
+Lemma annoying1 G c : forall (M N : tm G) c1, step (plug0 c (plug0 c1 M)) N ->
+    (exists M', step (plug0 c1 M) M')
+ \/ (exists c', hstep1 c c').
+induction c; simpl in *; intros.
+assert (step (tapp (plug0 c1 M) t) N).
+exact H.
+(*
+Lemma annoying G ε : forall (M N : tm G) ε1, step (plug ε (plug1 ε1 M)) N ->
+    (exists M', step (plug1 ε1 M) M')
+ \/ (exists ε', hstep ε ε').
+induction ε; simpl in *; intros.
 eauto.
-inversion x; subst.
+destruct (IHε _ _ a H).
+destruct H0. *)
