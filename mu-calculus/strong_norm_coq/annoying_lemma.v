@@ -272,7 +272,7 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
 | step_case2 : forall (t : tm G) (t1 : tm (snoc G tt)) t2 t2', @step _ t2 t2' -> step (tcase t t1 t2) (tcase t t1 t2')
 | step_inj : forall (t t' : tm G), step t t' -> step (tinj t) (tinj t')
 | step_rec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc cnil tt)), step t1 t1' -> step (trec F t1 t2) (trec F t1' t2)
-| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2')
+(*| step_rec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (trec F t1 t2) (trec F t1 t2') *)
 | step_out : forall (t t' : tm G), step t t' -> step (tout t) (tout t')
 | step_corec1 : forall F (t1 t1' : tm G) (t2 : tm (snoc cnil tt)), step t1 t1' -> step (tcorec F t1 t2) (tcorec F t1' t2)
 | step_corec2 : forall F (t1 : tm G) (t2 t2' : tm (snoc cnil tt)), @step _ t2 t2' -> step (tcorec F t1 t2) (tcorec F t1 t2')
@@ -316,7 +316,7 @@ Inductive context1 (G : ctx scope) : Set :=
  | cmap : forall Δ (F : functor (snoc Δ type)), gsub' (fun _ => tm (snoc cnil tt)) Δ -> context1 G
 .
 
-Fixpoint plug0 G (c : context1 G) : tm G -> tm G :=
+Definition plug0 G (c : context1 G) : tm G -> tm G :=
 match c with
 | capp M => fun N => tapp N M
 | cfst => fun N => tfst N
@@ -362,8 +362,12 @@ Inductive step_SN G : tm G -> tm G -> Prop :=
 
 Inductive mstep G : tm G -> tm G -> Prop :=
 | mrefl : forall M, mstep M M
-| mtrans : forall M1 M2 M3, mstep M1 M2 -> mstep M2 M3 -> mstep M1 M3
-| mone : forall M1 M2, step M1 M2 -> mstep M1 M2.
+| mtrans1 : forall M1 M2 M3, step M1 M2 -> mstep M2 M3 -> mstep M1 M3.
+Hint Constructors mstep.
+
+Lemma mtrans G (M1 M2 M3 : tm G) : mstep M1 M2 -> mstep M2 M3 -> mstep M1 M3.
+induction 1; eauto.
+Qed.
 
 Inductive cstep_SN G : tm G -> tm G -> Prop :=
 | cstep_con : forall ε M M', step_SN M M' -> cstep_SN (plug ε M) (plug ε M').
@@ -382,23 +386,88 @@ Inductive hstep (G : ctx scope) : context G -> context G -> Prop :=
 
 
 Require Import Coq.Program.Equality.
-Hint Constructors hstep step_SN cstep_SN mstep step.
+Hint Constructors hstep hstep1 step_SN cstep_SN mstep step.
 
-Lemma mstep_sub G (t t0 : tm (snoc G tt)) (t3 : tm G) : mstep t t0 -> mstep (app_tsub1 t t3) (app_tsub1 t0 t3).
+Lemma step_sub G (t t0 : tm (snoc G tt)) (t3 : tm G) : step t t0 -> step (app_tsub1 t t3) (app_tsub1 t0 t3).
+Admitted.
+Hint Resolve step_sub.
+
+Lemma mstep_sub G (t : tm (snoc G tt)) (t3 t3' : tm G) : step t3 t3' -> mstep (app_tsub1 t t3) (app_tsub1 t t3').
 Admitted.
 Hint Resolve mstep_sub.
 
+Lemma step_plug G (ε : context G) : forall t1 t2, step t1 t2 -> step (plug ε t1) (plug ε t2).
+induction ε; simpl in *; intros; eauto.
+destruct a; simpl in *; eauto.
+Qed.
+Hint Resolve step_plug.
+
+Lemma step_plug1 G (ε ε' : context G) : hstep ε ε'
+ -> forall t, step (plug ε t) (plug ε' t).
+induction 1; simpl in *; intros; eauto.
+destruct H; simpl in *; eauto.
+Qed.
+Hint Resolve step_plug1.
+
+Lemma mstep_plug G (ε : context G) t1 t2 : mstep t1 t2 -> mstep (plug ε t1) (plug ε t2).
+induction 1; eauto.
+Qed.
+Hint Resolve mstep_plug.
+
+Lemma sn_step G (t1 t2 : tm G) : step t1 t2 -> sn t1 -> sn t2.
+intros. destruct H0. eauto.
+Qed.
+Hint Resolve sn_step.
+
+Lemma sn_mstep G (t1 t2 : tm G) : mstep t1 t2 -> sn t1 -> sn t2.
+induction 1; intros; eauto.
+Qed.
+
 Lemma annoying1 G c : forall (M N : tm G) c1, step (plug0 c (plug0 c1 M)) N ->
-    (exists M', step (plug0 c1 M) M')
- \/ (exists c', hstep1 c c').
+    (exists M', step (plug0 c1 M) M' /\ N = (plug0 c M'))
+ \/ (exists c', hstep1 c c' /\ N = plug0 c' (plug0 c1 M)).
 induction c; simpl in *; intros.
-assert (step (tapp (plug0 c1 M) t) N).
-exact H.
-(*
-Lemma annoying G ε : forall (M N : tm G) ε1, step (plug ε (plug1 ε1 M)) N ->
-    (exists M', step (plug1 ε1 M) M')
- \/ (exists ε', hstep ε ε').
+inversion H; subst; eauto. destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; eauto; destruct c1; discriminate.
+inversion H; subst; repeat simpl_existT; subst; eauto. destruct c1; discriminate.
+Qed.
+
+Lemma annoying G ε : forall (M N : tm G) ε1, step (plug ε (plug0 ε1 M)) N ->
+    (exists M', step (plug0 ε1 M) M' /\ N = (plug ε M'))
+ \/ (exists ε', hstep ε ε' /\ N = plug ε' (plug0 ε1 M)).
 induction ε; simpl in *; intros.
 eauto.
 destruct (IHε _ _ a H).
-destruct H0. *)
+destruct H0. destruct H0; subst.
+destruct (annoying1 _ _ _ H0); eauto.
+destruct H1. destruct H1; subst.
+left. eexists. split; eauto.
+destruct H1. destruct H1; subst.
+right. eexists. split. econstructor 1. eauto. eauto.
+destruct H0. destruct H0; subst.
+right. eexists. split. econstructor 2. eauto. eauto.
+Qed.
+
+Hint Constructors sn.
+Lemma foo G N : sn N -> forall Q, sn Q -> forall ε (M : tm (snoc G tt)), Q = (plug ε (app_tsub1 M N))
+ -> sn (plug ε (tapp (tlam M) N)).
+induction 1.
+induction 1; intros; subst.
+constructor; intros.
+destruct (annoying _ _ (capp t) H3); simpl in *.
+destruct H4. destruct H4; subst.
+inversion H4; subst.
+inversion H8; subst.
+eapply H2; eauto.
+eapply H0. eauto.
+instantiate (1 := (plug ε (app_tsub1 M t3))).
+eapply sn_mstep. eapply mstep_plug.
+eapply mstep_sub. eauto. eauto. eauto.
+eauto.
+destruct H4. destruct H4; subst.
+eauto.
+Qed.
