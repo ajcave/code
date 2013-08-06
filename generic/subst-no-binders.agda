@@ -37,13 +37,18 @@ U : ∀ T -> T -alg -> Set
 U T (X , f) = X
 
 mutual
- fold : ∀ T X -> (Y : T -alg) -> (X -> U T Y) -> Free T X -> U T Y
- fold T X (Y , h) f (inj x) = h (⟦ T ⟧f (fold T X (Y , h) f) x)
- fold T X (Y , h) f (var x) = f x
+ fold : ∀ T X Y -> (h : ⟦ T ⟧ Y -> Y) -> (X -> Y) -> Free T X -> Y
+ fold T X Y h f (inj x) = h (fold-map T T X Y h f x) --(⟦ T ⟧f (fold T X Y h f) x)
+ fold T X Y h f (var x) = f x
 
-{- fold-map : ∀ T X -> (Y : T -alg) -> (X -> U T Y) -> ⟦ T ⟧ (Free T X) -> ⟦ T ⟧ (U T Y)
- fold-map I X (Y , h) f t = unit
- fold-map (T + T₁) X (Y , h) f (inj₁ x) = inj₁ (fold-map T X (Y , h ∘ inj₁) f {!!})
- fold-map (T + T₁) X (Y , h) f (inj₂ y) = {!!}
- fold-map (T ⊗ T₁) X (Y , h) f t = {!!}
- fold-map var X (Y , h) f t = {!!} -}
+ fold-map : ∀ T T' X Y -> (⟦ T' ⟧ Y -> Y) -> (X -> Y) -> ⟦ T ⟧ (Free T' X) -> ⟦ T ⟧ Y
+ fold-map I T' X Y f g x = unit
+ fold-map (T + T₁) T' X Y f g (inj₁ x) = inj₁ (fold-map T T' X Y f g x)
+ fold-map (T + T₁) T' X Y f g (inj₂ y) = inj₂ (fold-map T₁ T' X Y f g y)
+ fold-map (T ⊗ T₁) T' X Y f g (proj₁ , proj₂) = (fold-map T T' X Y f g proj₁) , (fold-map T₁ T' X Y f g proj₂)
+ fold-map var T' X Y f g x = fold T' X Y f g x
+
+
+
+
+
