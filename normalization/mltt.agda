@@ -54,3 +54,17 @@ id-tsub {n , T} = tsub-ext id-tsub
 [_/x] : ∀ {n} -> tm n -> tm (n , *) -> tm n
 [ M /x] N = [ id-tsub , M ]t N
 
+data _⟶_ {n} : ∀ (M N : tm n) -> Set where
+ β : ∀ M N -> ((ƛ M) · N) ⟶ [ N /x] M
+ if1 : ∀ M N -> if tt M N ⟶ M
+ if2 : ∀ M N -> if ff M N ⟶ N
+ app1 : ∀ {M M' N} -> M ⟶ M' -> (M · N) ⟶ (M' · N)
+ ifc : ∀ {M M' N1 N2} -> M ⟶ M' -> if M N1 N2 ⟶ if M' N1 N2
+
+data _⟶*_ {n} : ∀ (M N : tm n) -> Set where
+ refl : ∀ {M} -> M ⟶* M
+ trans1 : ∀ {M N P} -> M ⟶ N -> N ⟶* P -> M ⟶* P
+
+⟶*-trans : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶* P -> M ⟶* P
+⟶*-trans refl s2 = s2
+⟶*-trans (trans1 x s1) s2 = trans1 x (⟶*-trans s1 s2)
