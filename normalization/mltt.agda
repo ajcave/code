@@ -174,7 +174,7 @@ mutual
   ▹ : ∀ {A x} -> Γ ⊢ A type -> Γ ∋ x ∶ A -> Γ ⊢ (▹ x) ∶ A
   Π : ∀ {A B} -> Γ ⊢ A ∶ set -> (Γ , A) ⊢ B ∶ set -> Γ ⊢ (Π A B) ∶ set
   ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
-  _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
+  _·_ : ∀ {M N A B} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
   conv : ∀ {A B} M -> Γ ⊢ A type -> A ⟶ B -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
 
@@ -196,6 +196,8 @@ lem0bool bool = refl
 lem0bool (neut .bool ())
 lem0bool (closed () t)
 -- proofs of Φ are unique (I hope), once we properly restrict neutral to also be normal
+-- Okay that's trickier: if ⟶ is non-deterministic, proofs of Φ aren't unique
+-- However, by Church-rosser, φ doesn't care
 
 lem-a : ∀ {n} {A B M : tm n} {p : Φ B} -> (s : A ⟶* B) -> φ p M -> φ (Φ-closed⟶* s p) M
 lem-a refl r = r
@@ -230,14 +232,19 @@ mutual
         ... | q1 , q2 with lem0 q1
         f a x | .set , q3 | refl = q3
  lem2 Γ qs (ƛ x d) = (Π (lem1 Γ qs x) {!!}) , {!!}
- lem2 Γ qs (d · d₁) = {!!}
+ lem2 Γ qs (d · d₁) with lem2 Γ qs d | lem2 Γ qs d₁
+ lem2 Γ {σ} qs (_·_ {M} {N} d d₁) | Π q1 x , q2 | q3 , q4 = (subst Φ {!!} (x ([ σ ]t N) {!!})) , {!!}
+ lem2 Γ {σ} qs (_·_ {A} {B} d d₁) | neut ._ () , q2 | q3 , q4 
+ lem2 Γ qs (d · d₁) | closed () q1 , q2 | q3 , q4 
  lem2 Γ qs (if x d d₁ d₂) with lem2 Γ qs d
  lem2 Γ qs (if x d d₁ d₂) | x₁ , x₂ with lem0bool x₁
  lem2 Γ qs (if {C} x d d₁ d₂) | .bool , (.tt , (x₂ , tt)) | refl with lem2 Γ qs d₁
  ... | q1 , q2 = d1 , φ-closed d1 (trans1r (if* x₂) if1) (lem-a d0 q2)
     where d0 = (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 x₂ C))
           d1 = (Φ-closed⟶* d0 q1)
- lem2 Γ qs (if x d d₁ d₂) | .bool , (.ff , (x₂ , ff)) | refl = {!!}
+ lem2 Γ {σ} {ps} qs (if {C} {M} x d d₁ d₂) | .bool , (.ff , (x₂ , ff)) | refl with lem2 Γ qs d₂
+ ... | q1 , q2 with lem1 (Γ , bool) {σ = σ , [ σ ]t M} {ps = ps , bool} (qs , (ff , (x₂ , ff))) x
+ ... | q0 = (subst Φ (subeq1 C) q0) , φ-closed (subst Φ (subeq1 C) q0) (trans1r (if* x₂) (if2 _ _)) {!!}
  lem2 Γ qs (if x₃ d d₁ d₂) | .bool , (x₁ , (x₂ , neut .x₁ x)) | refl = {!!}
  lem2 Γ qs (conv M x x₁ d) with lem2 Γ qs d
  ... | q1 , q2 = (Φ-closed⟶* d0 q1) , lem-a d0 q2
