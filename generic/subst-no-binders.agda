@@ -37,18 +37,25 @@ U : ∀ T -> T -alg -> Set
 U T (X , f) = X
 
 mutual
- fold : ∀ T X Y -> (h : ⟦ T ⟧ Y -> Y) -> (X -> Y) -> Free T X -> Y
- fold T X Y h f (inj x) = h (fold-map T T X Y h f x) --(⟦ T ⟧f (fold T X Y h f) x)
- fold T X Y h f (var x) = f x
+ fold : ∀ {T X Y} -> (h : ⟦ T ⟧ Y -> Y) -> (X -> Y) -> Free T X -> Y
+ fold {T} h f (inj x) = h (fold-map T h f x) --(⟦ T ⟧f (fold T X Y h f) x)
+ fold     h f (var x) = f x
 
- fold-map : ∀ T T' X Y -> (⟦ T' ⟧ Y -> Y) -> (X -> Y) -> ⟦ T ⟧ (Free T' X) -> ⟦ T ⟧ Y
- fold-map I T' X Y f g x = unit
- fold-map (T + T₁) T' X Y f g (inj₁ x) = inj₁ (fold-map T T' X Y f g x)
- fold-map (T + T₁) T' X Y f g (inj₂ y) = inj₂ (fold-map T₁ T' X Y f g y)
- fold-map (T ⊗ T₁) T' X Y f g (proj₁ , proj₂) = (fold-map T T' X Y f g proj₁) , (fold-map T₁ T' X Y f g proj₂)
- fold-map var T' X Y f g x = fold T' X Y f g x
+ fold-map : ∀ T {T' X Y} -> (⟦ T' ⟧ Y -> Y) -> (X -> Y) -> ⟦ T ⟧ (Free T' X) -> ⟦ T ⟧ Y
+ fold-map I f g x = unit
+ fold-map (T + T₁) f g (inj₁ x) = inj₁ (fold-map T f g x)
+ fold-map (T + T₁) f g (inj₂ y) = inj₂ (fold-map T₁ f g y)
+ fold-map (T ⊗ T₁) f g (x₁ , x₂) = (fold-map T f g x₁) , (fold-map T₁ f g x₂)
+ fold-map var f g x = fold f g x
+
+-- renamings
+Free-functor : ∀ {T X Y} -> (X -> Y) -> Free T X -> Free T Y
+Free-functor f = fold inj (var ∘ f)
+
+Free-subst : ∀ {T X Y} -> (X -> Free T Y) -> Free T X -> Free T Y
+Free-subst f = fold inj f
 
 
-
+-- Decision procedure lifting?
 
 
