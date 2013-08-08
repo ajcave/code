@@ -103,7 +103,7 @@ mutual
 ψ-closed (neut A x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
 ψ-closed (closed x p) s t = ψ-closed p s t
 
--- I could use this technique directly for LF (i.e. martin lof without the universe)
+-- I could use this technique directly for LF (i.e. MLTT without the universe)
 -- as an alternative to the erasure-based proof...
 
 mutual
