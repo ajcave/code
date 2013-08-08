@@ -195,9 +195,7 @@ lem0bool : ∀ {n} (t : Φ {n} bool) -> t ≡ bool
 lem0bool bool = refl
 lem0bool (neut .bool ())
 lem0bool (closed () t)
--- Arg, this are almost unique, except that neutral and closed can overlap.
--- Could fix this by requiring neutral and normal?
--- Meh, doesn't seem to matter?
+-- proofs of Φ are unique (I hope), once we properly restrict neutral to also be normal
 
 lem-a : ∀ {n} {A B M : tm n} {p : Φ B} -> (s : A ⟶* B) -> φ p M -> φ (Φ-closed⟶* s p) M
 lem-a refl r = r
@@ -241,4 +239,6 @@ mutual
           d1 = (Φ-closed⟶* d0 q1)
  lem2 Γ qs (if x d d₁ d₂) | .bool , (.ff , (x₂ , ff)) | refl = {!!}
  lem2 Γ qs (if x₃ d d₁ d₂) | .bool , (x₁ , (x₂ , neut .x₁ x)) | refl = {!!}
- lem2 {n} {m} {M} Γ qs (conv .M x x₁ d) = {!!}
+ lem2 Γ qs (conv M x x₁ d) with lem2 Γ qs d
+ ... | q1 , q2 = (Φ-closed⟶* d0 q1) , lem-a d0 q2
+    where d0 = (sub⟶* _ (trans1 x₁ refl))
