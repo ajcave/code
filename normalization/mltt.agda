@@ -83,7 +83,7 @@ if* refl = refl
 if* (trans1 x t) = trans1 (ifc x) (if* t)
 
 
--- TODO: This needs to be normal and non-canonical.
+-- TODO: This needs to be normal also!
 data neutral {n} : tm n -> Set where
  ▹ : ∀ x -> neutral (▹ x)
  _·_ : ∀ M N -> neutral (M · N)
