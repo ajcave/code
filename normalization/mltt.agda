@@ -108,6 +108,8 @@ mutual
  φ (closed x p) a = φ p a
  φ set a = Ψ a
 
+-- This proof might be easier in PTS style, where we don't need to duplicate things?
+
 data dctx : ctx Unitz -> Set where
  ⊡ : dctx ⊡
  _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
