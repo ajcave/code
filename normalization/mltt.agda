@@ -152,3 +152,12 @@ mutual
   _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
   conv : ∀ {A B} M -> Γ ⊢ A type -> A ⟶ B -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
+
+Ψs : ∀ {n m} -> dctx n -> tsubst n m -> Set
+Ψs ⊡ σ = Unit
+Ψs (Γ , A) (σ , a) = Ψs Γ σ × Ψ ([ σ ]t A)
+
+ψs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Ψs Γ σ -> Set
+ψs ⊡ σ ps = Unit
+ψs (Γ , A) (σ , a) (ps , p) = ψs Γ σ ps × ψ p a
+
