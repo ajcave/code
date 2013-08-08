@@ -121,7 +121,7 @@ mutual
  φ (closed x p) a = φ p a
  φ set a = Ψ a
 
--- Huh, I haven't even had to use Set₁? I-R is powerful...
+-- Huh, I haven't even had to use Set₁? I-R is powerful... 
 -- This proof might be easier in PTS style, where we don't need to duplicate things?
 
 data dctx : ctx Unitz -> Set where
