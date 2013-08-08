@@ -207,6 +207,7 @@ postulate
  sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
  sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
  subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
+ subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
 
 ⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
 ⟶*cong2 refl refl t = t
@@ -231,7 +232,9 @@ mutual
         f a x with lem2 (Γ , A) {σ = σ , a} {ps = ps , {!!} } (qs , x) d₁
         ... | q1 , q2 with lem0 q1
         f a x | .set , q3 | refl = q3
- lem2 Γ qs (ƛ x d) = (Π (lem1 Γ qs x) {!!}) , {!!}
+ lem2 Γ {σ} {ps} qs (ƛ {A} {B} {M} x d) = (Π (lem1 Γ qs x) (λ a x₁ → subst Φ (subeq2 B) (Σ.proj₁ (f a x₁)))) , (λ b q → φ-closed (subst Φ (subeq2 B) (Σ.proj₁ (f b q))) (trans1 (β _ _) refl) (subst (φ (subst Φ (subeq2 B) (Σ.proj₁ (f b q)))) (subeq2 M) {!just a bit of eqdep...!}))
+   where f : ∀ a -> φ (lem1 Γ qs x) a -> Σ (Φ ([ σ , a ]t B)) (λ q -> φ q ([ σ , a ]t M))
+         f a p = lem2 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs x } (qs , p) d
  lem2 Γ qs (d · d₁) with lem2 Γ qs d | lem2 Γ qs d₁
  lem2 Γ {σ} qs (_·_ {M} {N} d d₁) | Π q1 x , q2 | q3 , q4 = (subst Φ {!!} (x ([ σ ]t N) {!!})) , {!!}
  lem2 Γ {σ} qs (_·_ {A} {B} d d₁) | neut ._ () , q2 | q3 , q4 
