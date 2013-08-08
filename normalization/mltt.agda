@@ -1,9 +1,10 @@
 module mltt where
 open import FinMap
-open import Data.Unit
+open import Unit
 open import Product
 
-* = unit
+* : Unitz
+* = tt
 
 -- Based on Catarina Coquand's "A realizability interpretation of Martin-Lof 's type theory"
 
@@ -34,6 +35,10 @@ tsubst n m = gksubst n (tm m)
 tsub-ext : ∀ {n m} -> tsubst n m -> tsubst (n , *) (m , *)
 tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
 
+id-tsub : ∀ {n} -> tsubst n n
+id-tsub {⊡} = tt
+id-tsub {n , T} = tsub-ext id-tsub
+
 [_]t : ∀ {n m} -> tsubst n m -> tm n -> tm m
 [_]t σ (▹ x) = [ σ ]v x
 [_]t σ (ƛ M) = ƛ ([ tsub-ext σ ]t M)
@@ -44,3 +49,8 @@ tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
 [_]t σ bool = bool
 [_]t σ set = set
 [_]t σ (if M M₁ M₂) = if ([ σ ]t M) ([ σ ]t M₁) ([ σ ]t M₂)
+
+
+[_/x] : ∀ {n} -> tm n -> tm (n , *) -> tm n
+[ M /x] N = [ id-tsub , M ]t N
+
