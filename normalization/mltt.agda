@@ -70,6 +70,10 @@ data _⟶*_ {n} : ∀ (M N : tm n) -> Set where
 ⟶*-trans refl s2 = s2
 ⟶*-trans (trans1 x s1) s2 = trans1 x (⟶*-trans s1 s2)
 
+app1* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (M · N) ⟶* (M' · N)
+app1* refl = refl
+app1* (trans1 x s) = trans1 (app1 x) (app1* s)
+
 data neutral {n} : tm n -> Set where
  ▹ : ∀ x -> neutral (▹ x)
  _·_ : ∀ M N -> neutral (M · N)
@@ -92,6 +96,15 @@ mutual
  ψ (Π p f) a = ∀ b (q : ψ p b) → ψ (f b q) (a · b)
  ψ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ (closed x p) a = ψ p a
+
+ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
+ψ-closed bool s (t1 , (s2 , norm)) = t1 , ((⟶*-trans s s2) , norm)
+ψ-closed (Π p x) s t = λ b q → ψ-closed (x b q) (app1* s) (t b q)
+ψ-closed (neut A x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
+ψ-closed (closed x p) s t = ψ-closed p s t
+
+-- I could use this technique directly for LF (i.e. martin lof without the universe)
+-- as an alternative to the erasure-based proof...
 
 mutual
  data Φ {n} : tm n -> Set where
