@@ -52,7 +52,6 @@ id-tsub {n , T} = tsub-ext id-tsub
 [_]t σ set = set
 [_]t σ (if M M₁ M₂) = if ([ σ ]t M) ([ σ ]t M₁) ([ σ ]t M₂)
 
-
 [_/x] : ∀ {n} -> tm n -> tm (n , *) -> tm n
 [ M /x] N = [ id-tsub , M ]t N
 
@@ -93,3 +92,31 @@ mutual
  ψ (Π p f) a = ∀ b (q : ψ p b) → ψ (f b q) (a · b)
  ψ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ (closed x p) a = ψ p a
+
+data dctx : ctx Unitz -> Set where
+ ⊡ : dctx ⊡
+ _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
+
+data _∋_∶_ : ∀ {n} -> dctx n -> var n * -> tm n -> Set where
+ top : ∀ {n} {Γ : dctx n} {A} -> (Γ , A) ∋ top ∶ ([ wkn-vsub ]r A)
+ pop : ∀ {n} {Γ : dctx n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ ([ wkn-vsub ]r B)
+
+mutual
+ data wfctx : ∀ {n} -> dctx n -> Set where
+  ⊡ : wfctx ⊡
+  _,_ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> ∀ {A} -> Γ ⊢ A type -> wfctx (Γ , A)
+
+ data _⊢_type {n} (Γ : dctx n) : tm n -> Set where
+  set : Γ ⊢ set type
+  Π : ∀ {A B} -> Γ ⊢ A type -> (Γ , A) ⊢ B type -> Γ ⊢ (Π A B) type
+  emb : ∀ {A} -> Γ ⊢ A ∶ set -> Γ ⊢ A type
+
+ data _⊢_∶_ {n} (Γ : dctx n) : tm n -> tm n -> Set where
+  bool : Γ ⊢ bool ∶ set
+  tt : Γ ⊢ tt ∶ bool
+  ff : Γ ⊢ ff ∶ bool
+  ▹ : ∀ {A x} -> Γ ∋ x ∶ A -> Γ ⊢ (▹ x) ∶ A
+  Π : ∀ {A B} -> Γ ⊢ A ∶ set -> (Γ , A) ⊢ B ∶ set -> Γ ⊢ (Π A B) ∶ set
+  ƛ : ∀ {A B M} -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
+  _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
+  if : ∀ {C M N1 N2} -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
