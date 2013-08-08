@@ -142,7 +142,7 @@ mutual
 φ-closed (Π p x) s t = λ b q → φ-closed (x b q) (app1* s) (t b q)
 φ-closed (neut A x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
 φ-closed (closed x p) s t = φ-closed p s t
-φ-closed set s t = Ψ-closed⟶* s t 
+φ-closed set s t = Ψ-closed⟶* s t
 
 -- Huh, I haven't even had to use Set₁? I-R is powerful... 
 -- This proof might be easier in PTS style, where we don't need to duplicate things?
