@@ -82,6 +82,8 @@ if* : ∀ {n} {M M' N1 N2 : tm n} -> M ⟶* M' -> (if M N1 N2) ⟶* (if M' N1 N2
 if* refl = refl
 if* (trans1 x t) = trans1 (ifc x) (if* t)
 
+
+-- TODO: This needs to be normal and non-canonical.
 data neutral {n} : tm n -> Set where
  ▹ : ∀ x -> neutral (▹ x)
  _·_ : ∀ M N -> neutral (M · N)
@@ -195,6 +197,11 @@ lem0bool (neut .bool ())
 lem0bool (closed () t)
 -- Arg, this are almost unique, except that neutral and closed can overlap.
 -- Could fix this by requiring neutral and normal?
+-- Meh, doesn't seem to matter?
+
+lem-a : ∀ {n} {A B M : tm n} {p : Φ B} -> (s : A ⟶* B) -> φ p M -> φ (Φ-closed⟶* s p) M
+lem-a refl r = r
+lem-a (trans1 x s) r = lem-a s r
 
 postulate
  sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
@@ -229,8 +236,9 @@ mutual
  lem2 Γ qs (if x d d₁ d₂) with lem2 Γ qs d
  lem2 Γ qs (if x d d₁ d₂) | x₁ , x₂ with lem0bool x₁
  lem2 Γ qs (if {C} x d d₁ d₂) | .bool , (.tt , (x₂ , tt)) | refl with lem2 Γ qs d₁
- ... | q1 , q2 = d1 , φ-closed d1 (trans1r (if* x₂) if1) {!!}
-    where d1 = (Φ-closed⟶* (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 x₂ C)) q1)
+ ... | q1 , q2 = d1 , φ-closed d1 (trans1r (if* x₂) if1) (lem-a d0 q2)
+    where d0 = (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 x₂ C))
+          d1 = (Φ-closed⟶* d0 q1)
  lem2 Γ qs (if x d d₁ d₂) | .bool , (.ff , (x₂ , ff)) | refl = {!!}
  lem2 Γ qs (if x₃ d d₁ d₂) | .bool , (x₁ , (x₂ , neut .x₁ x)) | refl = {!!}
  lem2 {n} {m} {M} Γ qs (conv .M x x₁ d) = {!!}
