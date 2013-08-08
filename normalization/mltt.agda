@@ -93,6 +93,21 @@ mutual
  ψ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ (closed x p) a = ψ p a
 
+mutual
+ data Φ {n} : tm n -> Set where
+  bool : Φ bool
+  Π : ∀ {A B} -> (p : Φ A) -> (∀ a -> φ p a -> Φ ([ a /x] B)) -> Φ (Π A B)
+  neut : ∀ A -> neutral A -> Φ A
+  closed : ∀ {A B} -> A ⟶* B -> Φ B -> Φ A
+  set : Φ set
+
+ φ : ∀ {n} -> {A : tm n} -> Φ A -> tm n -> Set
+ φ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
+ φ (Π p f) a = ∀ b (q : φ p b) → φ (f b q) (a · b)
+ φ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
+ φ (closed x p) a = φ p a
+ φ set a = Ψ a
+
 data dctx : ctx Unitz -> Set where
  ⊡ : dctx ⊡
  _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
