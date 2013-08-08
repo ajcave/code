@@ -3,6 +3,7 @@ open import FinMap
 open import Unit
 open import Data.Product hiding (_×_)
 open import Product
+open import Relation.Binary.PropositionalEquality
 
 * : Unitz
 * = tt
@@ -57,7 +58,7 @@ id-tsub {n , T} = tsub-ext id-tsub
 
 data _⟶_ {n} : ∀ (M N : tm n) -> Set where
  β : ∀ M N -> ((ƛ M) · N) ⟶ [ N /x] M
- if1 : ∀ M N -> if tt M N ⟶ M
+ if1 : ∀ {M N} -> if tt M N ⟶ M
  if2 : ∀ M N -> if ff M N ⟶ N
  app1 : ∀ {M M' N} -> M ⟶ M' -> (M · N) ⟶ (M' · N)
  ifc : ∀ {M M' N1 N2} -> M ⟶ M' -> if M N1 N2 ⟶ if M' N1 N2
@@ -70,9 +71,16 @@ data _⟶*_ {n} : ∀ (M N : tm n) -> Set where
 ⟶*-trans refl s2 = s2
 ⟶*-trans (trans1 x s1) s2 = trans1 x (⟶*-trans s1 s2)
 
+trans1r : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶ P -> M ⟶* P
+trans1r s t = ⟶*-trans s (trans1 t refl)
+
 app1* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (M · N) ⟶* (M' · N)
 app1* refl = refl
 app1* (trans1 x s) = trans1 (app1 x) (app1* s)
+
+if* : ∀ {n} {M M' N1 N2 : tm n} -> M ⟶* M' -> (if M N1 N2) ⟶* (if M' N1 N2)
+if* refl = refl
+if* (trans1 x t) = trans1 (ifc x) (if* t)
 
 data neutral {n} : tm n -> Set where
  ▹ : ∀ x -> neutral (▹ x)
@@ -89,13 +97,17 @@ mutual
   bool : Ψ bool
   Π : ∀ {A B} -> (p : Ψ A) -> (∀ a -> ψ p a -> Ψ ([ a /x] B)) -> Ψ (Π A B)
   neut : ∀ A -> neutral A -> Ψ A
-  closed : ∀ {A B} -> A ⟶* B -> Ψ B -> Ψ A
+  closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
 
  ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
  ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
  ψ (Π p f) a = ∀ b (q : ψ p b) → ψ (f b q) (a · b)
  ψ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ (closed x p) a = ψ p a
+
+Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
+Ψ-closed⟶* refl t = t
+Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
 
 ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
 ψ-closed bool s (t1 , (s2 , norm)) = t1 , ((⟶*-trans s s2) , norm)
@@ -111,7 +123,7 @@ mutual
   bool : Φ bool
   Π : ∀ {A B} -> (p : Φ A) -> (∀ a -> φ p a -> Φ ([ a /x] B)) -> Φ (Π A B)
   neut : ∀ A -> neutral A -> Φ A
-  closed : ∀ {A B} -> A ⟶* B -> Φ B -> Φ A
+  closed : ∀ {A B} -> A ⟶ B -> Φ B -> Φ A
   set : Φ set
 
  φ : ∀ {n} -> {A : tm n} -> Φ A -> tm n -> Set
@@ -120,6 +132,17 @@ mutual
  φ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  φ (closed x p) a = φ p a
  φ set a = Ψ a
+
+Φ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Φ B -> Φ A
+Φ-closed⟶* refl t = t
+Φ-closed⟶* (trans1 x s) t = closed x (Φ-closed⟶* s t)
+
+φ-closed : ∀ {n} {A : tm n} {M N} -> (p : Φ A) -> M ⟶* N -> φ p N -> φ p M
+φ-closed bool s (t1 , (s2 , norm)) = t1 , ((⟶*-trans s s2) , norm)
+φ-closed (Π p x) s t = λ b q → φ-closed (x b q) (app1* s) (t b q)
+φ-closed (neut A x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
+φ-closed (closed x p) s t = φ-closed p s t
+φ-closed set s t = Ψ-closed⟶* s t 
 
 -- Huh, I haven't even had to use Set₁? I-R is powerful... 
 -- This proof might be easier in PTS style, where we don't need to duplicate things?
@@ -153,11 +176,61 @@ mutual
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
   conv : ∀ {A B} M -> Γ ⊢ A type -> A ⟶ B -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
 
-Ψs : ∀ {n m} -> dctx n -> tsubst n m -> Set
-Ψs ⊡ σ = Unit
-Ψs (Γ , A) (σ , a) = Ψs Γ σ × Ψ ([ σ ]t A)
+Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set
+Φs ⊡ σ = Unit
+Φs (Γ , A) (σ , a) = Φs Γ σ × Φ ([ σ ]t A)
 
-ψs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Ψs Γ σ -> Set
-ψs ⊡ σ ps = Unit
-ψs (Γ , A) (σ , a) (ps , p) = ψs Γ σ ps × ψ p a
+φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set
+φs ⊡ σ ps = Unit
+φs (Γ , A) (σ , a) (ps , p) = φs Γ σ ps × φ p a
 
+lem0 : ∀ {n} (t : Φ {n} set) -> t ≡ set
+lem0 (neut .set ())
+lem0 (closed () t)
+lem0 set = refl
+
+lem0bool : ∀ {n} (t : Φ {n} bool) -> t ≡ bool
+lem0bool bool = refl
+lem0bool (neut .bool ())
+lem0bool (closed () t)
+-- Arg, this are almost unique, except that neutral and closed can overlap.
+-- Could fix this by requiring neutral and normal?
+
+postulate
+ sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
+ sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
+ subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
+
+⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
+⟶*cong2 refl refl t = t
+
+mutual
+ lem1 : ∀ {n m A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> φs Γ σ ps -> Γ ⊢ A type -> Φ ([ σ ]t A)
+ lem1 Γ qs set = set
+ lem1 Γ {σ} {ps} qs (Π {A} {B} d d₁) = Π (lem1 Γ qs d) (λ a x → subst Φ {!!} (lem1 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs d } (qs , x) d₁))
+ lem1 Γ qs (emb x) with lem2 Γ qs x
+ lem1 Γ qs (emb x) | w1 , w2 with lem0 w1
+ lem1 Γ qs (emb x) | .set , w2 | refl = {!!}
+ 
+ lem2 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> Γ ⊢ M ∶ A -> Σ (Φ ([ σ ]t A)) (λ q -> φ q ([ σ ]t M))
+ lem2 Γ qs bool = set , bool
+ lem2 Γ qs tt = bool , (tt , (refl , tt))
+ lem2 Γ qs ff = bool , (ff , (refl , ff))
+ lem2 Γ qs (▹ x₁ x₂) = {!!}
+ lem2 Γ qs (Π d d₁) with lem2 Γ qs d
+ ... | q1 , q2 with lem0 q1
+ lem2 Γ {σ} {ps} qs (Π {A} {B} d d₁) | .set , q2 | refl = set , Π q2 (λ a x → subst Ψ {!!} (f a x))
+  where f : ∀ (a : tm _) -> ψ q2 a -> Ψ ([ σ , a ]t B)
+        f a x with lem2 (Γ , A) {σ = σ , a} {ps = ps , {!!} } (qs , x) d₁
+        ... | q1 , q2 with lem0 q1
+        f a x | .set , q3 | refl = q3
+ lem2 Γ qs (ƛ x d) = (Π (lem1 Γ qs x) {!!}) , {!!}
+ lem2 Γ qs (d · d₁) = {!!}
+ lem2 Γ qs (if x d d₁ d₂) with lem2 Γ qs d
+ lem2 Γ qs (if x d d₁ d₂) | x₁ , x₂ with lem0bool x₁
+ lem2 Γ qs (if {C} x d d₁ d₂) | .bool , (.tt , (x₂ , tt)) | refl with lem2 Γ qs d₁
+ ... | q1 , q2 = d1 , φ-closed d1 (trans1r (if* x₂) if1) {!!}
+    where d1 = (Φ-closed⟶* (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 x₂ C)) q1)
+ lem2 Γ qs (if x d d₁ d₂) | .bool , (.ff , (x₂ , ff)) | refl = {!!}
+ lem2 Γ qs (if x₃ d d₁ d₂) | .bool , (x₁ , (x₂ , neut .x₁ x)) | refl = {!!}
+ lem2 {n} {m} {M} Γ qs (conv .M x x₁ d) = {!!}
