@@ -1,8 +1,5 @@
-module weak-normalization-beta-only-halts where
+module weak-normalization-beta-only2 where
 open import Relation.Binary.PropositionalEquality hiding ([_])
-
--- This demonstrates that for weak normalization without η, it's more natural to 
--- include "halts" in the definition of reduce for arrow types than it is to do the M x halts implies M halts thing
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -20,9 +17,6 @@ data _+_ (A B : Set) : Set where
  inl : A -> A + B
  inr : B -> A + B
 
-{-data _≡_ {A : Set} (x : A) : A -> Set where
- refl : x ≡ x -}
-
 postulate
  funext : ∀ {A} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
  funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ {_} { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
@@ -33,8 +27,6 @@ cong-app1 refl x = refl
 cong-app : ∀ {A B : Set} {f g : A -> B} -> f ≡ g -> {x y : A} -> x ≡ y -> f x ≡ g y
 cong-app refl refl = refl 
 
-{-cong : ∀ {A B : Set} (f : A -> B) {x y : A} -> x ≡ y -> f x ≡ f y
-cong f refl = refl -}
 
 cong1/2 : ∀ {A B C : Set} (f : A -> B -> C) -> {x y : A} -> x ≡ y -> (z : B) -> f x z ≡ f y z
 cong1/2 f refl z = refl 
@@ -54,11 +46,6 @@ eq-sub1 P refl p = p
 eq-sub2 : ∀ {A B C} (P : A -> B -> C) {t} -> {x y : A} -> x ≡ y -> {z w : B} -> z ≡ w -> P y w ≡ t -> P x z ≡ t
 eq-sub2 P refl refl p = p
 
-{-trans : ∀ {A} {x y z : A} -> x ≡ y -> y ≡ z -> x ≡ z
-trans refl refl = refl -}
-
-{-sym : ∀ {A} {x y : A} -> x ≡ y -> y ≡ x
-sym refl = refl -}
 
 record Unit : Set where
  constructor tt
@@ -204,18 +191,18 @@ nbe M = reify (eval (λ x → reflect (v x)) M)
 sub : (Γ1 Γ2 : ctx) -> Set
 sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
 
-_,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
-(σ ,, M) z = M
-(σ ,, M) (s y) = σ y
-
 sub-ext : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> sub (Γ1 , T) (Γ2 , T)
-sub-ext σ = (λ x -> [ s ]v (σ x)) ,, v z
+sub-ext σ z = v z
+sub-ext σ (s y) = [ s ]v (σ y)
 
 [_] : ∀ {Γ1 Γ2 T} (σ : sub Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
 [_] σ (v y) = σ y
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
 
+_,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
+(σ ,, M) z = M
+(σ ,, M) (s y) = σ y
 
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
@@ -315,59 +302,105 @@ mutual
 halts : ∀ {Γ T} (t : tm Γ T) -> Set
 halts {Γ} {T} t = Σ (λ (n : ntm Γ T) → t →* ninj n)
 
-halts-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> halts t' -> halts t
-halts-closed p (fst , snd) = fst , (→*-trans p snd)
-
 reduce : ∀ Γ T -> tm Γ T -> Set
 reduce Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
-reduce Γ (T ⇝ S) t = halts t * (∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T x -> reduce Δ S (([ σ ]v t) · x))
+reduce Γ (T ⇝ S) t = (∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T x -> reduce Δ S (([ σ ]v t) · x))
 
 reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
-reduce-closed {atom A} p h = halts-closed p h
-reduce-closed {T ⇝ S} p (h , x) =  halts-closed p h , λ Δ σ x' x0 → reduce-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
+reduce-closed {atom A} p (N , q) = N , (→*-trans p q)
+reduce-closed {T ⇝ S} p x =  λ Δ σ x' x0 → reduce-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
 
 reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) {T} {t : tm Δ T} (w : reduce Δ T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce Δ U ((σ ,, t) x)
 reduce-ext θ w z = w
 reduce-ext θ w (s y) = θ y
 
-halts-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : halts t) -> halts ([ σ ]v t)
-halts-funct σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
-
 reduce-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : reduce Γ T t) -> reduce Δ T ([ σ ]v t)
-reduce-funct {atom A} σ h = halts-funct σ h
-reduce-funct {T ⇝ S} σ (h , w) = halts-funct σ h , λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
-
-mutual
- reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
- reflect {atom A} r = (neut r) , →*-refl
- reflect {T ⇝ S} r = ((neut r) , →*-refl) , λ Δ σ x x' -> reduce-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
-
- reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
- reify {atom A} t p = p
- reify {T ⇝ S} t (p , _) = p 
-
-
-halts-ƛ : ∀ {Γ T S} {M : tm (Γ , T) S} -> halts M -> halts (ƛ M)
-halts-ƛ (N , p) = (ƛ N) , (ƛ p)
+reduce-funct {atom A} σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
+reduce-funct {T ⇝ S} σ w = λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
 
 thm : ∀ {Γ Δ T} (σ : ∀ {U} (x : var Γ U) -> tm Δ U) (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) (t : tm Γ T) -> reduce Δ T ([ σ ] t)
 thm σ θ (v y) = θ y
-thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((_*_.snd (thm σ θ M)) _ id ([ σ ] N) (thm σ θ N))
-thm σ θ (ƛ M) with thm (sub-ext σ) (reduce-ext (λ x0 -> reduce-funct s (θ x0)) (reflect (v z))) M
-... | q = halts-ƛ (reify _ q) , (λ Δ σ' x x' → reduce-closed (β _ _) (eq-ind (reduce Δ _)
+thm σ θ (M · N) = eq-ind (reduce _ _) (cong2 _·_ []v-id refl) ((thm σ θ M) _ id ([ σ ] N) (thm σ θ N))
+thm σ θ (ƛ M) = (λ Δ σ' x x' → reduce-closed (β _ _) (eq-ind (reduce Δ _)
   (trans (trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x0 → trans ([]v-eq-[] σ' (σ x0))
     (sym ([]nv-funct ((v ,, x) ∘₁ ext σ') s (σ x0)))) refl))
     (sym ([]-funct   ((v ,, x) ∘₁ ext σ') (sub-ext σ) M)))
     (sym ([]nv-funct  (v ,, x) (ext σ') ([ sub-ext σ ] M))))
   (thm (([ σ' ]v ∘₁ σ) ,, x) (reduce-ext (λ x0 → reduce-funct σ' (θ x0)) x') M)))
 
+data grar {Γ T S} (t : tm Γ (T ⇝ S)) (u : tm Γ T) : ∀ N -> Set where
+ inl : ∀ {t' u'}   -> t →* t'     -> u →* u' -> grar t u (t' · u')
+ inr : ∀ {t' u' N} -> t →* (ƛ t') -> u →* u' -> ([ v ,, u' ] t') →* N -> grar t u N
+
+blah : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} {u : tm Γ T} {N} -> ((t · u) →* N) -> grar t u N
+blah (y · y') = inl y y'
+blah {Γ} {T} {S} {.(ƛ M)} {u} (β M .u) = inr →*-refl →*-refl →*-refl
+blah (→*-trans y y') with blah y
+blah (→*-trans y y1) | inl y' y0 with blah y1
+blah (→*-trans y0 y1) | inl y2 y3 | inl y y' = inl (→*-trans y2 y) (→*-trans y3 y')
+blah (→*-trans y2 y1) | inl y3 y4 | inr y y' y0 = inr (→*-trans y3 y) (→*-trans y4 y') y0
+blah (→*-trans y y2) | inr y' y0 y1 = inr y' y0 (→*-trans y1 y2)
+
+lem : ∀ {Γ T} (x : var Γ T) u -> v x →* u -> u ≡ v x
+lem x u p = {!!}
+
+-- This might be false: σ probably needs to be injective or something (restrict to just s?)
+zah2 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (t : tm Γ T) u -> [ σ ]v t →* u -> Σ (λ u' -> u ≡ [ σ ]v u')
+zah2 σ t u p = {!!}
+
+-- Seems easier with multi-step built from one-step. Same with lem above
+zah4 : ∀ {Γ S T} (t u : tm Γ T) -> ([_]v {Γ} {Γ , S} s) t →* [ s ]v u -> t →* u
+zah4 t u p = {!t!}  
+
+zah8 : ∀ {Γ T1 T2 S} {M1 : tm Γ (T1 ⇝ S)} {M2 : tm Γ (T2 ⇝ S)} {N1} {N2} -> _≡_ {_} {tm Γ S} (M1 · N1) (M2 · N2) -> T1 ≡ T2
+zah8 refl = refl
+
+zah6 : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> _≡_ {_} {tm Γ S} (M1 · N1) (M2 · N2) -> M1 ≡ M2
+zah6 refl = refl
+
+zah7 : ∀ {Γ T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 N2 : tm Γ T} -> _≡_ {_} {tm Γ S} (M1 · N1) (M2 · N2) -> N1 ≡ N2
+zah7 refl = refl
+
+mutual
+ zah5 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (R : rtm Δ T) (r : tm Γ T) -> rinj R ≡ [ σ ]v r -> Σ (λ R' -> r ≡ rinj R')
+ zah5 σ (v .(σ y')) (v y') refl = (v y') , refl
+ zah5 σ (y · y') (v y0) ()
+ zah5 σ (v y) (y' · y0) ()
+ zah5 σ (y · y') (y0 · y1) p with zah8 p
+ zah5 σ (_·_ {T} y y') (_·_ {.T} y0 y1) p | refl with zah5 σ y y0 (zah6 p) | zah9 σ y' y1 (zah7 p)
+ ... | (R' , q1) | (N' , q2) = (R' · N') , cong2 _·_ q1 q2
+ zah5 σ (v y) (ƛ y') ()
+ zah5 σ (y · y') (ƛ y0) ()
+
+ zah9 : ∀ {Γ Δ T} (σ : vsubst Γ Δ) (N : ntm Δ T) (n : tm Γ T) -> ninj N ≡ [ σ ]v n -> Σ (λ N' -> n ≡ ninj N')
+ zah9 σ N n p = {!!}
+ 
+
+zah : ∀ {Γ T S} {t : tm Γ (T ⇝ S)} {N} -> ((([ s ]v t) · v z) →* (ninj N))  -> halts t
+zah p with blah p
+zah {N = (neut (R · N))} p | inl y y' with zah2 s _ (rinj R) y
+zah {N = neut (R · N)} p | inl y y0 | r' , y' with zah5 s R r' y'
+zah {N = neut (R · N)} p | inl y0 y1 | .(rinj r'') , y' | r'' , refl = (neut r'') , (zah4 _ (rinj r'') (→*≡-trans y0 y'))
+zah {N = N} p | inr y y' y0 with lem z _ y'
+zah p | inr y y' y0 | refl with zah2 s _ _ y
+zah p | inr y y1 y2 | refl | v y' , ()
+zah p | inr y y2 y3 | refl | (y' · y0) , () 
+zah {N = N} p | inr y y1 y2 | refl | ƛ y' , refl = (ƛ N) , (→*-trans (→*≡-trans (zah4 _ _ y) (cong ƛ (trans (trans (sym []-id) (cong (λ (α : sub _ _) → [ α ] y') (var-dom-eq (λ x → refl) refl))) (sym ([]nv-funct (v ,, v z) (ext s) y'))))) (ƛ y2))
+
+bluh : ∀ {Γ T S} {M : tm Γ (T ⇝ S)} {N} {P} -> (M · N) →* (ninj P) -> halts M
+bluh h with blah h
+... | q = {!q!}
+
+mutual
+ reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
+ reflect {atom A} r = (neut r) , →*-refl
+ reflect {T ⇝ S} r = λ Δ σ x x' -> reduce-closed (→*-refl · (Σ.snd (reify x x'))) (eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-comm-rinj σ r)) refl) (reflect (rappSubst σ r · Σ.fst (reify x x'))))
+
+ reify : ∀ {T Γ} (t : tm Γ T) -> reduce Γ T t -> halts t
+ reify {atom A} t p = p
+ reify {T ⇝ S} t p with reify ([ s ]v t · v z) (p (_ , _) s (v z) (reflect (v z)))
+ reify {T ⇝ S} t p | N , q = zah {N = N} q 
+
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
-
-{- Compare to (nbe/)weak-normalization-beta-only
-   Conclusion: it's more natural to include "halts" in the ⇝ case of reducibility than it is to do M x halts implies M halts -}
-
--- Huh I think in this proof we don't actually use context extension anymore? Wrong, we use it in thm to normalize under ƛ
--- I tried to get rid of the need for this by switching to something more like CBV where we only substitute in normal terms,
--- but I can't see how to make that work out. Seems we would still need to show that normal terms are reducible...

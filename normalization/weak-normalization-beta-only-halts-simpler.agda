@@ -1,4 +1,4 @@
-module weak-normalization-beta-only-halts where
+module weak-normalization-beta-only-halts-simpler where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
 -- This demonstrates that for weak normalization without η, it's more natural to 
@@ -320,11 +320,11 @@ halts-closed p (fst , snd) = fst , (→*-trans p snd)
 
 reduce : ∀ Γ T -> tm Γ T -> Set
 reduce Γ (atom A) t = Σ (λ (n : ntm Γ (atom A)) → t →* ninj n)
-reduce Γ (T ⇝ S) t = halts t * (∀ Δ (σ : vsubst Γ Δ) (x : tm Δ T) -> reduce Δ T x -> reduce Δ S (([ σ ]v t) · x))
+reduce Γ (T ⇝ S) t = halts t * (∀ (x : tm Γ T) -> reduce Γ T x -> reduce Γ S (t · x))
 
 reduce-closed : ∀ {T Γ} {t t' : tm Γ T} -> (t →* t') -> reduce Γ T t' -> reduce Γ T t
 reduce-closed {atom A} p h = halts-closed p h
-reduce-closed {T ⇝ S} p (h , x) =  halts-closed p h , λ Δ σ x' x0 → reduce-closed (→*-subst σ p · →*-refl) (x Δ σ x' x0)
+reduce-closed {T ⇝ S} p (h , x) =  halts-closed p h , λ x' x0 → reduce-closed (p · →*-refl) (x x' x0)
 
 reduce-ext : ∀ {Γ Δ} {σ : ∀ {U} (x : var Γ U) -> tm Δ U} (θ : ∀ {U} (x : var Γ U) -> reduce Δ U (σ x)) {T} {t : tm Δ T} (w : reduce Δ T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce Δ U ((σ ,, t) x)
@@ -333,10 +333,6 @@ reduce-ext θ w (s y) = θ y
 
 halts-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : halts t) -> halts ([ σ ]v t)
 halts-funct σ (N , p) = (nappSubst σ N) , (eq-ind (_→*_ ([ σ ]v _)) ([]v-comm-ninj σ N) (→*-subst σ p))
-
-reduce-funct : ∀ {T Γ Δ} (σ : vsubst Γ Δ) {t : tm Γ T} (w : reduce Γ T t) -> reduce Δ T ([ σ ]v t)
-reduce-funct {atom A} σ h = halts-funct σ h
-reduce-funct {T ⇝ S} σ (h , w) = halts-funct σ h , λ Δ σ' x x' → eq-ind (reduce Δ S) (cong2 _·_ (sym ([]v-funct σ' σ _)) refl) (w Δ (σ' ∘ σ) x x')
 
 mutual
  reflect : ∀ {T Γ} (r : rtm Γ T) -> reduce Γ T (rinj r)
@@ -368,6 +364,4 @@ done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
 {- Compare to (nbe/)weak-normalization-beta-only
    Conclusion: it's more natural to include "halts" in the ⇝ case of reducibility than it is to do M x halts implies M halts -}
 
--- Huh I think in this proof we don't actually use context extension anymore? Wrong, we use it in thm to normalize under ƛ
--- I tried to get rid of the need for this by switching to something more like CBV where we only substitute in normal terms,
--- but I can't see how to make that work out. Seems we would still need to show that normal terms are reducible...
+-- Huh I think in this proof we don't actually use context extension anymore?
