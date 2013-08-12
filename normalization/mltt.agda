@@ -61,6 +61,7 @@ data _⟶_ {n} : ∀ (M N : tm n) -> Set where
  if1 : ∀ {M N} -> if tt M N ⟶ M
  if2 : ∀ M N -> if ff M N ⟶ N
  app1 : ∀ {M M' N} -> M ⟶ M' -> (M · N) ⟶ (M' · N)
+ app2 : ∀ {M N N'} -> N ⟶ N' -> (M · N) ⟶ (M · N')
  ifc : ∀ {M M' N1 N2} -> M ⟶ M' -> if M N1 N2 ⟶ if M' N1 N2
 
 data _⟶*_ {n} : ∀ (M N : tm n) -> Set where
@@ -78,16 +79,28 @@ app1* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (M · N) ⟶* (M' · N)
 app1* refl = refl
 app1* (trans1 x s) = trans1 (app1 x) (app1* s)
 
+app2* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (N · M) ⟶* (N · M')
+app2* refl = refl
+app2* (trans1 x s) = trans1 (app2 x) (app2* s)
+
 if* : ∀ {n} {M M' N1 N2 : tm n} -> M ⟶* M' -> (if M N1 N2) ⟶* (if M' N1 N2)
 if* refl = refl
 if* (trans1 x t) = trans1 (ifc x) (if* t)
 
+mutual
+ data neutral {n} : tm n -> Set where
+  ▹ : ∀ x -> neutral (▹ x)
+  _·_ : ∀ {M N} -> neutral M -> normal N -> neutral (M · N)
+  if : ∀ {M N P} -> neutral M -> normal N -> normal P -> neutral (if M N P) 
 
--- TODO: This needs to be normal also!
-data neutral {n} : tm n -> Set where
- ▹ : ∀ x -> neutral (▹ x)
- _·_ : ∀ M N -> neutral (M · N)
- if : ∀ M N P -> neutral (if M N P) 
+ data normal {n} : tm n -> Set where
+  ƛ : ∀ {M} -> normal M -> normal (ƛ M)
+  Π : ∀ {A B} -> normal A -> normal B -> normal (Π A B)
+  tt : normal tt
+  ff : normal ff
+  bool : normal bool
+  set : normal set
+  neut : ∀ {M} -> neutral M -> normal M
 
 data normal-bool {n} : tm n -> Set where
  tt : normal-bool tt
@@ -212,6 +225,7 @@ postulate
 ⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
 ⟶*cong2 refl refl t = t
 
+{-
 mutual
  lem1 : ∀ {n m A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> φs Γ σ ps -> Γ ⊢ A type -> Φ ([ σ ]t A)
  lem1 Γ qs set = set
@@ -251,4 +265,32 @@ mutual
  lem2 Γ qs (if x₃ d d₁ d₂) | .bool , (x₁ , (x₂ , neut .x₁ x)) | refl = {!!}
  lem2 Γ qs (conv M x x₁ d) with lem2 Γ qs d
  ... | q1 , q2 = (Φ-closed⟶* d0 q1) , lem-a d0 q2
-    where d0 = (sub⟶* _ (trans1 x₁ refl))
+    where d0 = (sub⟶* _ (trans1 x₁ refl)) -}
+
+data normalizable {n} (M : tm n) : Set where
+ norm : ∀ N -> M ⟶* N -> normal N -> normalizable M
+
+-- Can I just use "normal" and get rid of normal-bool?
+normal-bool-normal : ∀ {n} {M : tm n} -> normal-bool M -> normal M
+normal-bool-normal tt = tt
+normal-bool-normal ff = ff
+normal-bool-normal (neut A x) = neut x
+
+-- Huh I think the more natural thing to do for a "weak head normal form"
+-- for arrow is to say that any term of arrow type is normal?
+
+mutual
+ reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
+ reflect bool r = _ , (refl , (neut _ r))
+ reflect (Π p x) r = f
+  where f : ∀ b -> (q : ψ p b) -> ψ (x b q) (_ · b)
+        f b q with reify p q
+        f b q | norm N x₁ x₂ = ψ-closed (x b q) (app2* x₁) (reflect (x b q) (r · x₂))
+ reflect (neut A x) r = _ , (refl , r)
+ reflect (closed x p) r = reflect p r
+
+ reify : ∀ {n} {A M : tm n} -> (p : Ψ A) -> ψ p M -> normalizable M
+ reify bool (x₁ , (x₂ , x₃)) = norm x₁ x₂ (normal-bool-normal x₃)
+ reify (Π p x) r = {!!}
+ reify (neut A x) (x₁ , (x₂ , x₃)) = norm x₁ x₂ (neut x₃)
+ reify (closed x p) r = reify p r
