@@ -1,6 +1,9 @@
 module weak-normalization-beta-only-halts where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
+-- This demonstrates that for weak normalization without η, it's more natural to 
+-- include "halts" in the definition of reduce for arrow types than it is to do the M x halts implies M halts thing
+
 record _*_ (A B : Set) : Set where
  constructor _,_
  field
