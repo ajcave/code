@@ -361,3 +361,6 @@ thm σ θ (ƛ M) with thm (sub-ext σ) (reduce-ext (λ x0 -> reduce-funct s (θ 
 
 done : ∀ {Γ T} (t : tm Γ T) -> halts t
 done t = reify t (eq-ind (reduce _ _) []-id (thm v (λ x → reflect (v x)) t))
+
+{- Compare to (nbe/)weak-normalization-beta-only
+   Conclusion: it's more natural to include "halts" in the ⇝ case of reducibility than it is to do M x halts implies M halts
