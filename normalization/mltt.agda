@@ -278,6 +278,8 @@ normal-bool-normal (neut A x) = neut x
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
 -- for arrow is to say that any term of arrow type is normal?
+-- Maybe use CBPV to motivate? Function types are computation types.. need to thunk to turn into value types...
+-- Or.. for weak normalization, could we just add "halts" to the definition of the logical predicate?
 
 mutual
  reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
