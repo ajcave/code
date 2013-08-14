@@ -259,6 +259,9 @@ mutual
  lemma3-3b (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
  lemma3-3b (neut x) (neut x₁) t r = r
 
+lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
+lemma3-3c p q t = lemma3-3 p q ≈-refl t
+
 {-
 mutual
  invariance : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
