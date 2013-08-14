@@ -321,6 +321,12 @@ mutual
 φ-closed (closed x p) s t = φ-closed p s t
 φ-closed set s t = Ψ-closed⟶* s t
 
+lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
+lemma3-3c' p q t = {!!}
+
+lemma3-3' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ p M -> φ q M
+lemma3-3' p q t r = {!!}
+
 -- Huh, I haven't even had to use Set₁? I-R is powerful... 
 -- This proof might be easier in PTS style, where we don't need to duplicate things?
 
@@ -452,14 +458,16 @@ mutual
  lem3 Γ qs (Π d d₁) with lem2 Γ qs d | lem3 Γ qs d 
  ... | q0 | q1 with lem0 q0
  lem3 Γ qs (Π {A} {B} d d₁) | .set | q1 | refl = Π q1 (λ a x → subst Ψ (subeq2 B) {!!})
- lem3 Γ qs (ƛ x d) = {!!}
+ lem3 Γ qs (ƛ {A} {B} x d) = {!!} , (λ b q → φ-closed (subst Φ (subeq2 B) (lem2 (Γ , A) (qs , q) d)) (trans1 (β _ _) refl) {!!})
+  --(λ b q → lemma3-3' (lem2 (Γ , A) (qs , q) d) {!!} {!!} (lem3 (Γ , A) {σ = _ , b} {ps = _ , lem1 Γ qs x} (qs , q) d))
+  --where f : ∀ b -> (q : φ (lem1 Γ qs x) b) -> φ (lem2 (Γ , A) (qs , q) d) ([ 
  lem3 Γ qs (d · d₁) = {!!}
  lem3 Γ qs (if x d d₁ d₂) with lem2 Γ qs d | lem3 Γ qs d
  ... | q0 | q1 with lem0bool q0
  lem3 Γ qs (if x d d₁ d₂) | .bool | .tt , (q2 , tt) | refl = {!!}
  lem3 Γ qs (if x d d₁ d₂) | .bool | .ff , (q2 , ff) | refl = {!!}
  lem3 Γ qs (if x₁ d d₁ d₂) | .bool | q1 , (q2 , neut ._ x) | refl = {!!}
- lem3 Γ qs (conv M x x₁ d) = lem-a (sub⟶* _ (trans1 x₁ refl)) (lem3 Γ qs d)
+ lem3 Γ qs (conv M x x₁ d) = lem-a (sub⟶* _ (trans1 x₁ refl)) (lem3 Γ qs d) 
 
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
