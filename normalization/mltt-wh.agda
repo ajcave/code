@@ -146,6 +146,15 @@ data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
 
 postulate
+ sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
+ sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
+ subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
+ subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
+
+⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
+⟶*cong2 refl refl t = t
+
+postulate
  cr : ∀ {n} {a b c : tm n} -> a ⟶* b -> a ⟶* c -> b ≈ c
 
 data pi-inj1-res {n} (A : tm n) B : (C : tm n) -> Set where
@@ -155,37 +164,59 @@ pi-inj1 : ∀ {n} {A : tm n} {B C} -> (Π A B) ⟶* C -> pi-inj1-res A B C
 pi-inj1 refl = yep refl refl
 pi-inj1 (trans1 () s) -- More generally...
 
+pi-inj2 : ∀ {n} {A A' : tm n} {B B'} -> (Π A B) ≈ (Π A' B') -> A ≈ A'
+pi-inj2 (common x x₁) with pi-inj1 x | pi-inj1 x₁
+pi-inj2 (common x x₁) | yep x₂ x₃ | yep x₄ x₅ = common x₂ x₄
+
+pi-inj3 : ∀ {n} {A A' : tm n} {B B'} -> (Π A B) ≈ (Π A' B') -> B ≈ B'
+pi-inj3 (common x x₁) with pi-inj1 x | pi-inj1 x₁
+... | yep t1 t2 | yep t3 t4 = common t2 t4
+
+[]-cong : ∀ {n m} {A B : tm n} {σ : tsubst n m} -> A ≈ B -> [ σ ]t A ≈ [ σ ]t B
+[]-cong (common x x₁) = common (sub⟶* _ x) (sub⟶* _ x₁)
+
+≈-trans : ∀ {n} {A B C : tm n} -> A ≈ B -> B ≈ C -> A ≈ C
+≈-trans (common t1 t2) (common t3 t4) with cr t2 t3
+... | common t5 t6 = common (⟶*-trans t1 t5) (⟶*-trans t4 t6)
+
+≈-sym : ∀ {n} {A B : tm n} -> A ≈ B -> B ≈ A
+≈-sym (common t1 t2) = common t2 t1
+
+⟶-≈ : ∀ {n} {A B : tm n} -> A ⟶ B -> A ≈ B
+⟶-≈ t = common (trans1 t refl) refl
+
+⟶≈trans : ∀ {n} {A B C : tm n} -> A ≈ B -> B ⟶ C -> A ≈ C
+⟶≈trans t u = ≈-trans t (⟶-≈ u)
+
+⟶≈trans' : ∀ {n} {A B C : tm n} -> A ≈ B -> A ⟶ C -> C ≈ B
+⟶≈trans' t u = ≈-trans (≈-sym (⟶-≈ u)) t
 
 mutual
  lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
+ lemma3-3 (closed x p) q t r = lemma3-3 p q (⟶≈trans' t x) r
+ lemma3-3 p (closed x q) t r = lemma3-3 p q (⟶≈trans t x) r
  lemma3-3 bool bool t r = r
  lemma3-3 bool (Π q x) t r = {!!}
  lemma3-3 bool (neut x) t r = {!!}
- lemma3-3 bool (closed x q) t r = lemma3-3 bool q {!!} r
  lemma3-3 (Π p x) bool t r = {!!}
- lemma3-3 (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3 (x b (lemma3-3b p q {!!} q₁)) (x₁ b q₁) {!!} (r2 b (lemma3-3b p q {!!} q₁)))
+ lemma3-3 (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3 (x b (lemma3-3b p q (pi-inj2 t) q₁)) (x₁ b q₁) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3b p q (pi-inj2 t) q₁)))
  lemma3-3 (Π p x) (neut x₁) t r = {!!}
- lemma3-3 (Π p x) (closed x₁ q) t r = lemma3-3 (Π p x) q {!!} r
  lemma3-3 (neut x) bool t r = {!!}
  lemma3-3 (neut x) (Π q x₁) t r = {!!}
  lemma3-3 (neut x) (neut x₁) t r = r
- lemma3-3 (neut x) (closed x₁ q) t r = lemma3-3 (neut x) q {!!} r
- lemma3-3 (closed x p) q t r = lemma3-3 p q {!!} r 
 
  lemma3-3b : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ q M -> ψ p M
+ lemma3-3b (closed x p) q t r = lemma3-3b p q (⟶≈trans' t x) r 
+ lemma3-3b p (closed x q) t r = lemma3-3b p q (⟶≈trans t x) r
  lemma3-3b bool bool t r = r
  lemma3-3b bool (Π q x) t r = {!!}
  lemma3-3b bool (neut x) t r = {!!}
- lemma3-3b bool (closed x q) t r = lemma3-3b bool q {!!} r
  lemma3-3b (Π p x) bool t r = {!!}
- lemma3-3b (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3b (x b q₁) (x₁ b (lemma3-3 p q {!!} q₁)) {!!} (r2 b (lemma3-3 p q {!!} q₁)))
+ lemma3-3b (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3b (x b q₁) (x₁ b (lemma3-3 p q (pi-inj2 t) q₁)) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3 p q (pi-inj2 t) q₁)))
  lemma3-3b (Π p x) (neut x₁) t r = {!!}
- lemma3-3b (Π p x) (closed x₁ q) t r = lemma3-3b (Π p x) q {!!} r
  lemma3-3b (neut x) bool t r = {!!}
  lemma3-3b (neut x) (Π q x₁) t r = {!!}
  lemma3-3b (neut x) (neut x₁) t r = r
- lemma3-3b (neut x) (closed x₁ q) t r = lemma3-3b (neut x) q {!!} r
- lemma3-3b (closed x p) q t r = lemma3-3b p q {!!} r 
 
 {-
 mutual
@@ -303,14 +334,6 @@ lem-a : ∀ {n} {A B M : tm n} {p : Φ B} -> (s : A ⟶* B) -> φ p M -> φ (Φ-
 lem-a refl r = r
 lem-a (trans1 x s) r = lem-a s r
 
-postulate
- sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
- sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
- subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
- subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
-
-⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
-⟶*cong2 refl refl t = t
 
 
 {-mutual
