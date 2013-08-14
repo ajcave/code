@@ -123,13 +123,13 @@ mutual
  data Ψ {n} : tm n -> Set where
   bool : Ψ bool
   Π : ∀ {A B} -> (p : Ψ A) -> (∀ a -> ψ p a -> Ψ ([ a /x] B)) -> Ψ (Π A B)
-  neut : ∀ A -> neutral A -> Ψ A
+  neut : ∀ {A} -> neutral A -> Ψ A
   closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
 
  ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
  ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
  ψ (Π p f) a = (normalizable a) × (∀ b (q : ψ p b) → ψ (f b q) (a · b))
- ψ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
+ ψ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ (closed x p) a = ψ p a
 
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
@@ -139,12 +139,64 @@ mutual
 ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
 ψ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
 ψ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed (x b q) (app1* s) (t b q)
-ψ-closed (neut A x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
+ψ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
 ψ-closed (closed x p) s t = ψ-closed p s t
+
+data _≈_ {n} (a b : tm n) : Set where
+ common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
+
+postulate
+ cr : ∀ {n} {a b c : tm n} -> a ⟶* b -> a ⟶* c -> b ≈ c
+
+mutual
+ lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
+ lemma3-3 bool bool t r = r
+ lemma3-3 bool (Π q x) t r = {!!}
+ lemma3-3 bool (neut x) t r = {!!}
+ lemma3-3 bool (closed x q) t r = lemma3-3 bool q {!!} r
+ lemma3-3 (Π p x) bool t r = {!!}
+ lemma3-3 (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3 (x b (lemma3-3 q p {!!} q₁)) (x₁ b q₁) {!!} (r2 b (lemma3-3 q p {!!} q₁)))
+ lemma3-3 (Π p x) (neut x₁) t r = {!!}
+ lemma3-3 (Π p x) (closed x₁ q) t r = lemma3-3 (Π p x) q {!!} r
+ lemma3-3 (neut x) bool t r = {!!}
+ lemma3-3 (neut x) (Π q x₁) t r = {!!}
+ lemma3-3 (neut x) (neut x₁) t r = r
+ lemma3-3 (neut x) (closed x₁ q) t r = lemma3-3 (neut x) q {!!} r
+ lemma3-3 (closed x p) q t r = lemma3-3 p q {!!} r
+
+{-
+mutual
+ invariance : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
+ invariance bool bool t = t
+ invariance bool (neut .bool ()) t
+ invariance bool (closed () q) t
+ invariance (Π p x) (Π q x₁) (t1 , t2) = t1 , (λ b q₁ → invariance (x b (invariance q p q₁)) (x₁ b q₁) (t2 b (invariance q p q₁)))
+ invariance (Π p x) (neut ._ ()) t
+ invariance (Π p x) (closed () q) t -- If we're doing full reduction, this isn't trivial
+ invariance (neut ._ ()) bool t 
+ invariance (neut ._ ()) (Π q x₁) t
+ invariance (neut _ x) (neut ._ x₁) t = t
+ invariance (neut _ x) (closed x₁ q) t = {!!}
+ invariance (closed () p) bool t
+ invariance (closed () p) (Π q x₁) t
+ invariance (closed x p) (neut ._ x₁) t = {!!}
+ invariance (closed x p) (closed x₁ q) t = {!!} -}
+
+-- invariance2 : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ q M -> ψ q M
 
 -- I could use this technique directly for LF (i.e. MLTT without the universe)
 -- as an alternative to the erasure-based proof...
 
+{- I think this might be better behaved if I define a set of (weak head) normal types
+   and then define Φ by case on the (wh) normal type, and a Φ' as the bar-closure of Φ
+   i.e closure under ⟶ and neutral
+   by analogy with CBV logical relations...
+   Then it is nicer to define φ and a φ' mutually on these
+   i.e. we can think of Φ as it's written now as an explicit description of the bar-closure of Φ
+   Or somehow simplify the typing derivations... I think we only want to do conv at specific points?
+   Require wh normal types most of the type or something?
+   Bidirectional? Normal types vs neutral types vs "computation" types?
+-}
 mutual
  data Φ {n} : tm n -> Set where
   bool : Φ bool
@@ -237,8 +289,8 @@ postulate
 ⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
 ⟶*cong2 refl refl t = t
 
-{-
-mutual
+
+{-mutual
  lem1 : ∀ {n m A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> φs Γ σ ps -> Γ ⊢ A type -> Φ ([ σ ]t A)
  lem1 Γ qs set = set
  lem1 Γ {σ} {ps} qs (Π {A} {B} d d₁) = Π (lem1 Γ qs d) (λ a x → subst Φ {!!} (lem1 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs d } (qs , x) d₁))
@@ -258,7 +310,8 @@ mutual
         f a x with lem2 (Γ , A) {σ = σ , a} {ps = ps , {!!} } (qs , x) d₁
         ... | q1 , q2 with lem0 q1
         f a x | .set , q3 | refl = q3
- lem2 Γ {σ} {ps} qs (ƛ {A} {B} {M} x d) = (Π (lem1 Γ qs x) (λ a x₁ → subst Φ (subeq2 B) (Σ.proj₁ (f a x₁)))) , (λ b q → φ-closed (subst Φ (subeq2 B) (Σ.proj₁ (f b q))) (trans1 (β _ _) refl) (subst (φ (subst Φ (subeq2 B) (Σ.proj₁ (f b q)))) (subeq2 M) {!just a bit of eqdep...!}))
+ lem2 Γ {σ} {ps} qs (ƛ {A} {B} {M} x d) = (Π (lem1 Γ qs x) (λ a x₁ → subst Φ (subeq2 B) (Σ.proj₁ (f a x₁)))) , ( norm _ refl ƛ ,
+   (λ b q → φ-closed (subst Φ (subeq2 B) (Σ.proj₁ (f b q))) (trans1 (β _ _) refl) (subst (φ (subst Φ (subeq2 B) (Σ.proj₁ (f b q)))) (subeq2 M) {!just a bit of eqdep...!})))
    where f : ∀ a -> φ (lem1 Γ qs x) a -> Σ (Φ ([ σ , a ]t B)) (λ q -> φ q ([ σ , a ]t M))
          f a p = lem2 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs x } (qs , p) d
  lem2 Γ qs (d · d₁) with lem2 Γ qs d | lem2 Γ qs d₁
@@ -279,6 +332,45 @@ mutual
  ... | q1 , q2 = (Φ-closed⟶* d0 q1) , lem-a d0 q2
     where d0 = (sub⟶* _ (trans1 x₁ refl)) -}
 
+mutual
+ lem1 : ∀ {n m A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> φs Γ σ ps -> Γ ⊢ A type -> Φ ([ σ ]t A)
+ lem1 Γ qs set = set
+ lem1 Γ {σ} {ps} qs (Π {A} {B} d d₁) = Π (lem1 Γ qs d) (λ a x → subst Φ (subeq2 B) (lem1 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs d } (qs , x) d₁))
+ lem1 Γ qs (emb x) with lem2 Γ qs x | lem3 Γ qs x
+ ... | q0 | q with lem0 q0
+ lem1 Γ qs (emb x) | .set | q | refl = {!!}
+ 
+  -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
+ -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
+ lem2 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> Γ ⊢ M ∶ A -> Φ ([ σ ]t A)
+ lem2 Γ qs bool = set
+ lem2 Γ qs tt = bool
+ lem2 Γ qs ff = bool
+ lem2 Γ qs (▹ x₁ x₂) = {!!}
+ lem2 Γ qs (Π d d₁) = set
+ lem2 Γ qs (ƛ {A} {B} x d) = Π (lem1 Γ qs x) (λ a x₁ → subst Φ (subeq2 B) (lem2 (Γ , A) {σ = _ , a} {ps = _ , lem1 Γ qs x } (qs , x₁) d))
+                             -- Notice that this is the Pi case of lem1
+ lem2 Γ qs (d · d₁) = {!!}
+ lem2 Γ {σ} qs (if {C} {M} x d d₁ d₂) = subst Φ (subeq1 C) (lem1 (Γ , bool) {σ = σ , [ σ ]t M} {ps = _ , lem2 Γ qs d} (qs , lem3 Γ qs d) x)
+ lem2 Γ qs (conv _ x x₁ d) = Φ-closed⟶* (sub⟶* _ (trans1 x₁ refl)) (lem2 Γ qs d)
+
+ lem3 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> (d : Γ ⊢ M ∶ A) -> φ (lem2 Γ qs d) ([ σ ]t M)
+ lem3 Γ qs bool = bool
+ lem3 Γ qs tt = _ , (refl , tt)
+ lem3 Γ qs ff = _ , (refl , ff)
+ lem3 Γ qs (▹ x₁ x₂) = {!!}
+ lem3 Γ qs (Π d d₁) with lem2 Γ qs d | lem3 Γ qs d 
+ ... | q0 | q1 with lem0 q0
+ lem3 Γ qs (Π {A} {B} d d₁) | .set | q1 | refl = Π q1 (λ a x → subst Ψ (subeq2 B) {!!})
+ lem3 Γ qs (ƛ x d) = {!!}
+ lem3 Γ qs (d · d₁) = {!!}
+ lem3 Γ qs (if x d d₁ d₂) with lem2 Γ qs d | lem3 Γ qs d
+ ... | q0 | q1 with lem0bool q0
+ lem3 Γ qs (if x d d₁ d₂) | .bool | .tt , (q2 , tt) | refl = {!!}
+ lem3 Γ qs (if x d d₁ d₂) | .bool | .ff , (q2 , ff) | refl = {!!}
+ lem3 Γ qs (if x₁ d d₁ d₂) | .bool | q1 , (q2 , neut ._ x) | refl = {!!}
+ lem3 Γ qs (conv M x x₁ d) = lem-a (sub⟶* _ (trans1 x₁ refl)) (lem3 Γ qs d)
+
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
 -- for arrow is to say that any term of arrow type is normal?
@@ -292,11 +384,11 @@ mutual
   {-where f : ∀ b -> (q : ψ p b) -> ψ (x b q) (_ · b)
         f b q with reify p q
         f b q | norm N x₁ x₂ = ψ-closed (x b q) (app2* x₁) (reflect (x b q) (r · x₂)) -}
- reflect (neut A x) r = _ , (refl , r)
+ reflect (neut x) r = _ , (refl , r)
  reflect (closed x p) r = reflect p r
 
  reify : ∀ {n} {A M : tm n} -> (p : Ψ A) -> ψ p M -> normalizable M
  reify bool (x₁ , (x₂ , x₃)) = norm x₁ x₂ (normal-bool-normal x₃)
  reify (Π p x) (h , _) = h
- reify (neut A x) (x₁ , (x₂ , x₃)) = norm x₁ x₂ (neut x₃)
+ reify (neut x) (x₁ , (x₂ , x₃)) = norm x₁ x₂ (neut x₃)
  reify (closed x p) r = reify p r
