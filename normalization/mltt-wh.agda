@@ -4,6 +4,7 @@ open import Unit
 open import Data.Product hiding (_×_)
 open import Product
 open import Relation.Binary.PropositionalEquality
+open import Data.Empty
 
 * : Unitz
 * = tt
@@ -59,7 +60,7 @@ id-tsub {n , T} = tsub-ext id-tsub
 data _⟶_ {n} : ∀ (M N : tm n) -> Set where
  β : ∀ M N -> ((ƛ M) · N) ⟶ [ N /x] M
  if1 : ∀ {M N} -> if tt M N ⟶ M
- if2 : ∀ M N -> if ff M N ⟶ N
+ if2 : ∀ {M N} -> if ff M N ⟶ N
  app1 : ∀ {M M' N} -> M ⟶ M' -> (M · N) ⟶ (M' · N)
 -- app2 : ∀ {M N N'} -> N ⟶ N' -> (M · N) ⟶ (M · N')
  ifc : ∀ {M M' N1 N2} -> M ⟶ M' -> if M N1 N2 ⟶ if M' N1 N2
@@ -182,6 +183,9 @@ pi-inj3 (common x x₁) with pi-inj1 x | pi-inj1 x₁
 ≈-sym : ∀ {n} {A B : tm n} -> A ≈ B -> B ≈ A
 ≈-sym (common t1 t2) = common t2 t1
 
+≈-refl : ∀ {n} {A : tm n} -> A ≈ A
+≈-refl = common refl refl
+
 ⟶-≈ : ∀ {n} {A B : tm n} -> A ⟶ B -> A ≈ B
 ⟶-≈ t = common (trans1 t refl) refl
 
@@ -191,31 +195,68 @@ pi-inj3 (common x x₁) with pi-inj1 x | pi-inj1 x₁
 ⟶≈trans' : ∀ {n} {A B C : tm n} -> A ≈ B -> A ⟶ C -> C ≈ B
 ⟶≈trans' t u = ≈-trans (≈-sym (⟶-≈ u)) t
 
+neutral-step : ∀ {n} {C : Set} {A B : tm n} -> neutral A -> A ⟶ B -> C
+neutral-step (▹ x) ()
+neutral-step (_·_ ()) (β M N)
+neutral-step (_·_ t) (app1 s) = neutral-step t s
+neutral-step (if ()) if1
+neutral-step (if ()) if2
+neutral-step (if t) (ifc s) = neutral-step t s
+
+neutral-step* : ∀ {n} {A B : tm n} -> neutral A -> A ⟶* B -> A ≡ B
+neutral-step* t refl = refl
+neutral-step* t (trans1 x s) = neutral-step t x
+
+normal-step : ∀ {n} {A B : tm n} {C : Set} -> normal A -> A ⟶ B -> C
+normal-step ƛ ()
+normal-step Π ()
+normal-step tt ()
+normal-step ff ()
+normal-step bool ()
+normal-step set ()
+normal-step (neut x) s = neutral-step x s
+
+normal-step* : ∀ {n} {A B : tm n} -> normal A -> A ⟶* B -> A ≡ B
+normal-step* t refl = refl
+normal-step* t (trans1 x s) = normal-step t x
+
+bool-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> bool ≈ A -> C
+bool-≈-neutral t (common x x₁) with normal-step* bool x | neutral-step* t x₁
+bool-≈-neutral () (common x x₁) | refl | refl
+
+bool≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> bool ≈ (Π A B) -> C
+bool≈Π (common x x₁) with normal-step* bool x | pi-inj1 x₁
+bool≈Π (common x x₁) | refl | ()
+
+Π≈neutral : ∀ {n} {A : tm n} {B D} {C : Set} -> neutral A -> (Π B D) ≈ A -> C
+Π≈neutral t (common x x₁) with neutral-step* t x₁ | pi-inj1 x
+Π≈neutral () (common x x₁) | refl | yep x₂ x₃
+
 mutual
  lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
  lemma3-3 (closed x p) q t r = lemma3-3 p q (⟶≈trans' t x) r
  lemma3-3 p (closed x q) t r = lemma3-3 p q (⟶≈trans t x) r
  lemma3-3 bool bool t r = r
- lemma3-3 bool (Π q x) t r = {!!}
- lemma3-3 bool (neut x) t r = {!!}
- lemma3-3 (Π p x) bool t r = {!!}
+ lemma3-3 bool (Π q x) t r = bool≈Π t
+ lemma3-3 bool (neut x) t r = bool-≈-neutral x t
+ lemma3-3 (Π p x) bool t r = bool≈Π (≈-sym t)
  lemma3-3 (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3 (x b (lemma3-3b p q (pi-inj2 t) q₁)) (x₁ b q₁) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3b p q (pi-inj2 t) q₁)))
- lemma3-3 (Π p x) (neut x₁) t r = {!!}
- lemma3-3 (neut x) bool t r = {!!}
- lemma3-3 (neut x) (Π q x₁) t r = {!!}
+ lemma3-3 (Π p x) (neut x₁) t r = Π≈neutral x₁ t
+ lemma3-3 (neut x) bool t r = bool-≈-neutral x (≈-sym t)
+ lemma3-3 (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
  lemma3-3 (neut x) (neut x₁) t r = r
 
  lemma3-3b : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ q M -> ψ p M
  lemma3-3b (closed x p) q t r = lemma3-3b p q (⟶≈trans' t x) r 
  lemma3-3b p (closed x q) t r = lemma3-3b p q (⟶≈trans t x) r
  lemma3-3b bool bool t r = r
- lemma3-3b bool (Π q x) t r = {!!}
- lemma3-3b bool (neut x) t r = {!!}
- lemma3-3b (Π p x) bool t r = {!!}
+ lemma3-3b bool (Π q x) t r = bool≈Π t
+ lemma3-3b bool (neut x) t r = bool-≈-neutral x t
+ lemma3-3b (Π p x) bool t r = bool≈Π (≈-sym t)
  lemma3-3b (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3b (x b q₁) (x₁ b (lemma3-3 p q (pi-inj2 t) q₁)) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3 p q (pi-inj2 t) q₁)))
- lemma3-3b (Π p x) (neut x₁) t r = {!!}
- lemma3-3b (neut x) bool t r = {!!}
- lemma3-3b (neut x) (Π q x₁) t r = {!!}
+ lemma3-3b (Π p x) (neut x₁) t r = Π≈neutral x₁ t
+ lemma3-3b (neut x) bool t r = bool-≈-neutral x (≈-sym t)
+ lemma3-3b (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
  lemma3-3b (neut x) (neut x₁) t r = r
 
 {-
