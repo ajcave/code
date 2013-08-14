@@ -148,6 +148,14 @@ data _≈_ {n} (a b : tm n) : Set where
 postulate
  cr : ∀ {n} {a b c : tm n} -> a ⟶* b -> a ⟶* c -> b ≈ c
 
+data pi-inj1-res {n} (A : tm n) B : (C : tm n) -> Set where
+ yep : ∀ {A' B'} -> A ⟶* A' -> B ⟶* B' -> pi-inj1-res A B (Π A' B')
+
+pi-inj1 : ∀ {n} {A : tm n} {B C} -> (Π A B) ⟶* C -> pi-inj1-res A B C
+pi-inj1 refl = yep refl refl
+pi-inj1 (trans1 () s) -- More generally...
+
+
 mutual
  lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
  lemma3-3 bool bool t r = r
@@ -155,14 +163,29 @@ mutual
  lemma3-3 bool (neut x) t r = {!!}
  lemma3-3 bool (closed x q) t r = lemma3-3 bool q {!!} r
  lemma3-3 (Π p x) bool t r = {!!}
- lemma3-3 (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3 (x b (lemma3-3 q p {!!} q₁)) (x₁ b q₁) {!!} (r2 b (lemma3-3 q p {!!} q₁)))
+ lemma3-3 (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3 (x b (lemma3-3b p q {!!} q₁)) (x₁ b q₁) {!!} (r2 b (lemma3-3b p q {!!} q₁)))
  lemma3-3 (Π p x) (neut x₁) t r = {!!}
  lemma3-3 (Π p x) (closed x₁ q) t r = lemma3-3 (Π p x) q {!!} r
  lemma3-3 (neut x) bool t r = {!!}
  lemma3-3 (neut x) (Π q x₁) t r = {!!}
  lemma3-3 (neut x) (neut x₁) t r = r
  lemma3-3 (neut x) (closed x₁ q) t r = lemma3-3 (neut x) q {!!} r
- lemma3-3 (closed x p) q t r = lemma3-3 p q {!!} r
+ lemma3-3 (closed x p) q t r = lemma3-3 p q {!!} r 
+
+ lemma3-3b : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ q M -> ψ p M
+ lemma3-3b bool bool t r = r
+ lemma3-3b bool (Π q x) t r = {!!}
+ lemma3-3b bool (neut x) t r = {!!}
+ lemma3-3b bool (closed x q) t r = lemma3-3b bool q {!!} r
+ lemma3-3b (Π p x) bool t r = {!!}
+ lemma3-3b (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3b (x b q₁) (x₁ b (lemma3-3 p q {!!} q₁)) {!!} (r2 b (lemma3-3 p q {!!} q₁)))
+ lemma3-3b (Π p x) (neut x₁) t r = {!!}
+ lemma3-3b (Π p x) (closed x₁ q) t r = lemma3-3b (Π p x) q {!!} r
+ lemma3-3b (neut x) bool t r = {!!}
+ lemma3-3b (neut x) (Π q x₁) t r = {!!}
+ lemma3-3b (neut x) (neut x₁) t r = r
+ lemma3-3b (neut x) (closed x₁ q) t r = lemma3-3b (neut x) q {!!} r
+ lemma3-3b (closed x p) q t r = lemma3-3b p q {!!} r 
 
 {-
 mutual
