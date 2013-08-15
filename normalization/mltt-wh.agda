@@ -106,19 +106,19 @@ mutual
 data normal-bool {n} : tm n -> Set where
  tt : normal-bool tt
  ff : normal-bool ff
- neut : ∀ M -> neutral M -> normal-bool M
+ neut : ∀ {M} -> neutral M -> normal-bool M
 
 data normalizable {n} (M : tm n) : Set where
- norm : ∀ N -> M ⟶* N -> normal N -> normalizable M
+ norm : ∀ {N} -> M ⟶* N -> normal N -> normalizable M
 
 -- Can I just use "normal" and get rid of normal-bool?
 normal-bool-normal : ∀ {n} {M : tm n} -> normal-bool M -> normal M
 normal-bool-normal tt = tt
 normal-bool-normal ff = ff
-normal-bool-normal (neut A x) = neut x
+normal-bool-normal (neut x) = neut x
 
 normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
-normalizable-closed p (norm N q r) = norm N (⟶*-trans p q) r
+normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
 mutual
  data Ψ {n} : tm n -> Set where
@@ -453,16 +453,65 @@ _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p N -> φ q M
 φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
 
+φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p N -> φ q M
+φeq p q s1 s t = lemma3-3' p q (common refl s1) (φ-closed p s t)
+
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
-ƛ' A B M d1 d2 t {σ = σ} qs = (norm _ refl ƛ) , (λ b q ->
+ƛ' A B M d1 d2 t {σ = σ} qs = (norm refl ƛ) , (λ b q ->
    let z = (d2 (qs ,[ d1 qs ] q))
    in φeqdep' z (subst Φ (subeq2 B) z) (subeq2 B) β (subst (φ z) (subeq2 M) (t (qs ,[ d1 qs ] q) z)))
+
+φeqdep'' : ∀ {n} {B B' M : tm n} (p : Φ B) -> (e : B ≡ B') -> φ p M -> φ (subst Φ e p) M
+φeqdep'' p refl t = t
 
 app' : ∀ {n} {Γ} (A : tm n) B M N (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) -> Γ ⊨ M ∶ (Π A B) -> (t : Γ ⊨ N ∶ A) -> Γ ⊨ (M · N) ∶' ([ N /x] B) [ ⊨subst A B d2 d1 t ]
 app' A B M N d1 d2 t1 t2 {σ = σ} qs with t1 qs (Π' A B d1 d2 qs)
 app' A B M N d1 d2 t1 t2 {σ = σ} qs | q1 , q2 with q2 ([ σ ]t N) (t2 qs (d1 qs))
 ... | z2 = φeqdep (subst Φ (subeq2 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs))))
              (subst Φ (subeq1 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs)))) (trans (sym (subeq2 B)) (subeq1 B)) z2
+mutual
+ reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
+ reflect bool r = _ , (refl , (neut r))
+ reflect (Π p x) r = norm refl (neut r) , λ b q → reflect (x b q) (_·_ r)
+ reflect (neut x) r = _ , (refl , r)
+ reflect (closed x p) r = reflect p r
+
+ reify : ∀ {n} {A M : tm n} -> (p : Ψ A) -> ψ p M -> normalizable M
+ reify bool (x₁ , (x₂ , x₃)) = norm  x₂ (normal-bool-normal x₃)
+ reify (Π p x) (h , _) = h
+ reify (neut x) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
+ reify (closed x p) r = reify p r
+
+reifyt : ∀ {n} {A : tm n} -> Ψ A -> normalizable A
+reifyt bool = norm refl bool
+reifyt (Π t x) = norm refl Π
+reifyt (neut x) = norm refl (neut x)
+reifyt (closed x t) with reifyt t
+reifyt (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁
+
+mutual
+ reflect' : ∀ {n} {A M : tm n} -> (p : Φ A) -> neutral M -> φ p M
+ reflect' bool r = , refl , neut r
+ reflect' (Π p x) r = norm refl (neut r) , (λ b q → reflect' (x b q) (_·_ r))
+ reflect' (neut x) r = , refl , r
+ reflect' (closed x p) r = reflect' p r
+ reflect' set r = neut r
+
+ reify' : ∀ {n} {A M : tm n} -> (p : Φ A) -> φ p M -> normalizable M
+ reify' bool (x₁ , (x₂ , x₃)) = norm x₂ (normal-bool-normal x₃)
+ reify' (Π t x) (h , _) = h
+ reify' (neut x) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
+ reify' (closed x t) r = reify' t r
+ reify' set r = reifyt r
+
+-- TODO: Try doing this in "premonoidal category" style
+if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
+if' C M N1 N2 d t t1 t2 qs with t qs bool
+if' C M N1 N2 d t t1 t2 qs | .tt , (q1 , tt) = φeq (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , tt)))) (subst Φ (subeq1 C) (d (qs ,[ bool ] (, q1 , tt))))
+    (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if1 refl)) (t1 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , tt)))))
+if' C M N1 N2 d t t1 t2 qs | .ff , (q1 , ff) = φeq (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))) (subst Φ (subeq1 C) (d (qs ,[ bool ] (, q1 , ff))))
+    (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if2 refl)) (t2 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))))
+if' C M N1 N2 d t t1 t2 qs | M' , (q1 , neut x) = φ-closed (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if* q1) (reflect' (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if x))
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
@@ -502,19 +551,3 @@ mutual
 -- for arrow is to say that any term of arrow type is normal?
 -- Maybe use CBPV to motivate? Function types are computation types.. need to thunk to turn into value types...
 -- Or.. for weak normalization, could we just add "halts" to the definition of the logical predicate?
-
-mutual
- reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
- reflect bool r = _ , (refl , (neut _ r))
- reflect (Π p x) r = norm _ refl (neut r) , λ b q → reflect (x b q) (_·_ r)
-  {-where f : ∀ b -> (q : ψ p b) -> ψ (x b q) (_ · b)
-        f b q with reify p q
-        f b q | norm N x₁ x₂ = ψ-closed (x b q) (app2* x₁) (reflect (x b q) (r · x₂)) -}
- reflect (neut x) r = _ , (refl , r)
- reflect (closed x p) r = reflect p r
-
- reify : ∀ {n} {A M : tm n} -> (p : Ψ A) -> ψ p M -> normalizable M
- reify bool (x₁ , (x₂ , x₃)) = norm x₁ x₂ (normal-bool-normal x₃)
- reify (Π p x) (h , _) = h
- reify (neut x) (x₁ , (x₂ , x₃)) = norm x₁ x₂ (neut x₃)
- reify (closed x p) r = reify p r
