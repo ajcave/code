@@ -475,6 +475,10 @@ app' A B M N d1 d2 t1 t2 {σ = σ} qs with t1 qs (Π' A B d1 d2 qs)
 app' A B M N d1 d2 t1 t2 {σ = σ} qs | q1 , q2 with q2 ([ σ ]t N) (t2 qs (d1 qs))
 ... | z2 = φeqdep (subst Φ (subeq2 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs))))
              (subst Φ (subeq1 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs)))) (trans (sym (subeq2 B)) (subeq1 B)) z2
+
+⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> A ⟶ B -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
+⊨conv M p q s t qs = φeq (p qs) (q qs) (sub⟶* _ (trans1 s refl)) refl (t qs (p qs))
+
 mutual
  reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
  reflect bool r = _ , (refl , (neut r))
@@ -551,7 +555,7 @@ mutual
  lem3' Γ (ƛ {A} {B} {M} x t) = ƛ' A B M (lem1 Γ x) (lem2 (Γ , A) t) (lem3 (Γ , A) t)
  lem3' Γ (_·_ {A} {B} {M} {N} t t₁) = app' A B M N (lem2 Γ t₁) (Πinv2 A B (lem2 Γ t)) (lem3 Γ t) (lem3 Γ t₁)
  lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
- lem3' Γ (conv x x₁ t) = {!!}
+ lem3' Γ (conv {A} {B} {M} x x₁ t) = ⊨conv M (lem2 Γ t) (lem1 Γ x) x₁ (lem3 Γ t)
 
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
