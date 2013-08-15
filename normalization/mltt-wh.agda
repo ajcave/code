@@ -510,7 +510,7 @@ mutual
  
  idφ : ∀ {n} {Γ : dctx n} (d : wfctx Γ) -> φs _ id-tsub (idΦ d)
  idφ ⊡ = ⊡
- idφ (d , x) = {!!}
+ idφ (d , x) = {!!} ,[ {!!} ] {!!}
 
 yay : ∀ {n M A} {Γ : dctx n} -> wfctx Γ -> Γ ⊢ M ∶ A -> normalizable M
 yay d0 d with reify' (lem2 _ d (idφ d0)) (lem3' _ d (idφ d0))
