@@ -58,7 +58,7 @@ id-tsub {n , T} = tsub-ext id-tsub
 [ M /x] N = [ id-tsub , M ]t N
 
 data _⟶_ {n} : ∀ (M N : tm n) -> Set where
- β : ∀ M N -> ((ƛ M) · N) ⟶ [ N /x] M
+ β : ∀ {M N} -> ((ƛ M) · N) ⟶ [ N /x] M
  if1 : ∀ {M N} -> if tt M N ⟶ M
  if2 : ∀ {M N} -> if ff M N ⟶ N
  app1 : ∀ {M M' N} -> M ⟶ M' -> (M · N) ⟶ (M' · N)
@@ -197,7 +197,7 @@ pi-inj3 (common x x₁) with pi-inj1 x | pi-inj1 x₁
 
 neutral-step : ∀ {n} {C : Set} {A B : tm n} -> neutral A -> A ⟶ B -> C
 neutral-step (▹ x) ()
-neutral-step (_·_ ()) (β M N)
+neutral-step (_·_ ()) β
 neutral-step (_·_ t) (app1 s) = neutral-step t s
 neutral-step (if ()) if1
 neutral-step (if ()) if2
@@ -467,6 +467,13 @@ _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 φeqdep : ∀ {n} {B B' M : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> φ p M -> φ q M
 φeqdep p q refl t = lemma3-3c' p q t
 
+φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p N -> φ q M
+φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
+
+ƛ' : ∀ {n} {Γ} (A : tm n) B {M} (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
+ƛ' A B {M} d1 d2 t {σ = σ} qs = (norm _ refl ƛ) , (λ b q ->
+   let z = (d2 (qs ,[ d1 qs ] q))
+   in φeqdep' z (subst Φ (subeq2 B) z) (subeq2 B) β (subst (φ z) (subeq2 M) (t (qs ,[ d1 qs ] q) z)))
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
@@ -491,9 +498,9 @@ mutual
  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
 
  lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
- lem3' Γ bool = {!!}
- lem3' Γ tt = {!!}
- lem3' Γ ff = {!!}
+ lem3' Γ bool = κ bool
+ lem3' Γ tt = κ (tt , (refl , tt))
+ lem3' Γ ff = κ (ff , (refl , ff))
  lem3' Γ (▹ x₁ x₂) = {!!}
  lem3' Γ (Π t t₁) = {!!}
  lem3' Γ (ƛ x t) = {!!}
