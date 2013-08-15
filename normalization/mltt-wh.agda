@@ -568,9 +568,16 @@ mutual
 -- Maybe use CBPV to motivate? Function types are computation types.. need to thunk to turn into value types...
 -- Or.. for weak normalization, could we just add "halts" to the definition of the logical predicate?
 
-idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
-idΦ ⊡ = ⊡
-idΦ (d , x) = {!!} , {!!}
+mutual
+ idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
+ idΦ ⊡ = ⊡
+ idΦ (d , x) with idΦ d | lem1 _ x (idφ d)
+ ... | q1 | q2 = {!!} , {!!}
+ 
+ idφ : ∀ {n} {Γ : dctx n} (d : wfctx Γ) -> φs _ id-tsub (idΦ d)
+ idφ ⊡ = ⊡
+ idφ (d , x) = {!!}
 
-yay : ∀ {n M A} {Γ : dctx n} -> Γ ⊢ M ∶ A -> normalizable M
-yay d = {!!}
+yay : ∀ {n M A} {Γ : dctx n} -> wfctx Γ -> Γ ⊢ M ∶ A -> normalizable M
+yay d0 d with reify' (lem2 _ d (idφ d0)) (lem3' _ d (idφ d0))
+... | q = {!!}
