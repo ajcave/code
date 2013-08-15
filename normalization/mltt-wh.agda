@@ -264,26 +264,6 @@ mutual
 lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
 lemma3-3c p q t = lemma3-3 p q ≈-refl t
 
-{-
-mutual
- invariance : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
- invariance bool bool t = t
- invariance bool (neut .bool ()) t
- invariance bool (closed () q) t
- invariance (Π p x) (Π q x₁) (t1 , t2) = t1 , (λ b q₁ → invariance (x b (invariance q p q₁)) (x₁ b q₁) (t2 b (invariance q p q₁)))
- invariance (Π p x) (neut ._ ()) t
- invariance (Π p x) (closed () q) t -- If we're doing full reduction, this isn't trivial
- invariance (neut ._ ()) bool t 
- invariance (neut ._ ()) (Π q x₁) t
- invariance (neut _ x) (neut ._ x₁) t = t
- invariance (neut _ x) (closed x₁ q) t = {!!}
- invariance (closed () p) bool t
- invariance (closed () p) (Π q x₁) t
- invariance (closed x p) (neut ._ x₁) t = {!!}
- invariance (closed x p) (closed x₁ q) t = {!!} -}
-
--- invariance2 : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ q M -> ψ q M
-
 -- I could use this technique directly for LF (i.e. MLTT without the universe)
 -- as an alternative to the erasure-based proof...
 
