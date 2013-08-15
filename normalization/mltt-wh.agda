@@ -358,27 +358,15 @@ mutual
   ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
   _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
-  conv : ∀ {A B} {M} -> Γ ⊢ A type -> A ⟶ B -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
-  -- TODO: Try changing this to A ≈ B
-
-{-Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set
-Φs ⊡ σ = Unit
-Φs (Γ , A) (σ , a) = Φs Γ σ × Φ ([ σ ]t A) -}
+  conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
 
 data Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set where
  ⊡ : ∀ {m} -> Φs {m = m} ⊡ tt
  _,_ : ∀ {n m} {Γ} {σ : tsubst n m} {A} {a} -> Φs Γ σ -> Φ ([ σ ]t A) -> Φs (Γ , A) (σ , a)
 
-{-φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set
-φs ⊡ σ ps = Unit
-φs (Γ , A) (σ , a) (ps , p) = φs Γ σ ps × φ p a -}
-
 data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set where
  ⊡ : ∀ {m} -> φs {m = m} ⊡ tt ⊡
  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> φs Γ σ ps -> ∀ p -> φ p a -> φs (Γ , A) (σ , a) (ps , p)
-
-
-
 
 _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
@@ -422,6 +410,9 @@ _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p N -> φ q M
 φeq p q s1 s t = lemma3-3' p q (common refl s1) (φ-closed p s t)
 
+φeq' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≈ B' -> M ⟶* N -> φ p N -> φ q M
+φeq' p q s1 s t = lemma3-3' p q s1 (φ-closed p s t)
+
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
 ƛ' A B M d1 d2 t {σ = σ} qs = (norm refl ƛ) , (λ b q ->
    let z = (d2 (qs ,[ d1 qs ] q))
@@ -436,8 +427,8 @@ app' A B M N d1 d2 t1 t2 {σ = σ} qs | q1 , q2 with q2 ([ σ ]t N) (t2 qs (d1 q
 ... | z2 = φeqdep (subst Φ (subeq2 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs))))
              (subst Φ (subeq1 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs)))) (trans (sym (subeq2 B)) (subeq1 B)) z2
 
-⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> A ⟶ B -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
-⊨conv M p q s t qs = φeq (p qs) (q qs) (sub⟶* _ (trans1 s refl)) refl (t qs (p qs))
+⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
+⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
 
 mutual
  reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
