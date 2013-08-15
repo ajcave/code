@@ -470,8 +470,8 @@ _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p N -> φ q M
 φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
 
-ƛ' : ∀ {n} {Γ} (A : tm n) B {M} (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
-ƛ' A B {M} d1 d2 t {σ = σ} qs = (norm _ refl ƛ) , (λ b q ->
+ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
+ƛ' A B M d1 d2 t {σ = σ} qs = (norm _ refl ƛ) , (λ b q ->
    let z = (d2 (qs ,[ d1 qs ] q))
    in φeqdep' z (subst Φ (subeq2 B) z) (subeq2 B) β (subst (φ z) (subeq2 M) (t (qs ,[ d1 qs ] q) z)))
 
@@ -503,7 +503,7 @@ mutual
  lem3' Γ ff = κ (ff , (refl , ff))
  lem3' Γ (▹ x₁ x₂) = {!!}
  lem3' Γ (Π t t₁) = {!!}
- lem3' Γ (ƛ x t) = {!!}
+ lem3' Γ (ƛ {A} {B} {M} x t) = ƛ' A B M (lem1 Γ x) (lem2 (Γ , A) t) (lem3 (Γ , A) t)
  lem3' Γ (t · t₁) = {!!}
  lem3' Γ (if x t t₁ t₂) = {!!}
  lem3' Γ (conv x x₁ t) = {!!}
