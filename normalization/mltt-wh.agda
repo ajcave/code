@@ -376,23 +376,6 @@ data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set w
  ⊡ : ∀ {m} -> φs {m = m} ⊡ tt ⊡
  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> φs Γ σ ps -> ∀ p -> φ p a -> φs (Γ , A) (σ , a) (ps , p)
 
-lem0 : ∀ {n} (t : Φ {n} set) -> t ≡ set
-lem0 (neut ())
-lem0 (closed () t)
-lem0 set = refl
-
-lem0bool : ∀ {n} (t : Φ {n} bool) -> t ≡ bool
-lem0bool bool = refl
-lem0bool (neut ())
-lem0bool (closed () t)
--- proofs of Φ are unique (I hope), once we properly restrict neutral to also be normal
--- Okay that's trickier: if ⟶ is non-deterministic, proofs of Φ aren't unique
--- However, by Church-rosser, φ doesn't care
-
-lem-a : ∀ {n} {A B M : tm n} {p : Φ B} -> (s : A ⟶* B) -> φ p M -> φ (Φ-closed⟶* s p) M
-lem-a refl r = r
-lem-a (trans1 x s) r = lem-a s r
-
 
 
 {-mutual
@@ -493,12 +476,12 @@ mutual
  lem2 Γ bool = κ set
  lem2 Γ tt = κ bool
  lem2 Γ ff = κ bool
- lem2 Γ (▹ x₁ x₂) = {!!}
+ lem2 Γ (▹ x₁ x₂) = lem1 Γ x₁
  lem2 Γ (Π t t₁) = κ set
  lem2 Γ (ƛ {A} {B} x t) = Π' A B (lem1 Γ x) (lem2 (Γ , A) t)
  lem2 Γ (_·_ {A} {B} t t₁) = ⊨subst A B (Πinv2 A B (lem2 Γ t)) (lem2 Γ t₁) (lem3 Γ t₁)
  lem2 Γ (if {C} x t t₁ t₂) = ⊨subst bool C (lem1 (Γ , bool) x) (κ bool) (lem3 Γ t)
- lem2 Γ (conv x x₁ t) = {!!}
+ lem2 Γ (conv x x₁ t) = lem1 Γ x
 
  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
