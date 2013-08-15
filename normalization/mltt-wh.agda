@@ -522,7 +522,7 @@ mutual
  idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
  idΦ ⊡ = ⊡
  idΦ (d , x) with idΦ d | lem1 _ x (idφ d)
- ... | q1 | q2 = {!!} , {!!}
+ ... | q1 | q2 = {!!} , {!!} -- TODO: Figure out how to do weakening...
  
  idφ : ∀ {n} {Γ : dctx n} (d : wfctx Γ) -> φs _ id-tsub (idΦ d)
  idφ ⊡ = ⊡
