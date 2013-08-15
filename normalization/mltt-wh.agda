@@ -358,14 +358,23 @@ mutual
   _·_ : ∀ {M N A B} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
   conv : ∀ {A B} M -> Γ ⊢ A type -> A ⟶ B -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
+  -- TODO: Try changing this to A ≈ B
 
-Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set
+{-Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set
 Φs ⊡ σ = Unit
-Φs (Γ , A) (σ , a) = Φs Γ σ × Φ ([ σ ]t A)
+Φs (Γ , A) (σ , a) = Φs Γ σ × Φ ([ σ ]t A) -}
 
-φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set
+data Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set where
+ ⊡ : ∀ {m} -> Φs {m = m} ⊡ tt
+ _,_ : ∀ {n m} {Γ} {σ : tsubst n m} {A} {a} -> Φs Γ σ -> Φ ([ σ ]t A) -> Φs (Γ , A) (σ , a)
+
+{-φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set
 φs ⊡ σ ps = Unit
-φs (Γ , A) (σ , a) (ps , p) = φs Γ σ ps × φ p a
+φs (Γ , A) (σ , a) (ps , p) = φs Γ σ ps × φ p a -}
+
+data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set where
+ ⊡ : ∀ {m} -> φs {m = m} ⊡ tt ⊡
+ _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> φs Γ σ ps -> ∀ p -> φ p a -> φs (Γ , A) (σ , a) (ps , p)
 
 lem0 : ∀ {n} (t : Φ {n} set) -> t ≡ set
 lem0 (neut .set ())
@@ -428,46 +437,39 @@ lem-a (trans1 x s) r = lem-a s r
  ... | q1 , q2 = (Φ-closed⟶* d0 q1) , lem-a d0 q2
     where d0 = (sub⟶* _ (trans1 x₁ refl)) -}
 
+_⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
+Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
+
+Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
+Π' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
+
+_⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
+Γ ⊨ M ∶ A = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> Φ ([ σ ]t A)
+
+κ : ∀ {A B : Set} -> B -> A -> B
+κ b = λ _ -> b
+
 mutual
- lem1 : ∀ {n m A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> φs Γ σ ps -> Γ ⊢ A type -> Φ ([ σ ]t A)
- lem1 Γ qs set = set
- lem1 Γ {σ} {ps} qs (Π {A} {B} d d₁) = Π (lem1 Γ qs d) (λ a x → subst Φ (subeq2 B) (lem1 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs d } (qs , x) d₁))
- lem1 Γ qs (emb x) with lem2 Γ qs x | lem3 Γ qs x
- ... | q0 | q with lem0 q0
- lem1 Γ qs (emb x) | .set | q | refl = {!!}
+ lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
+ lem1 Γ set = κ set
+ lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
+ lem1 Γ (emb x) = {!!}
  
   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
- lem2 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> Γ ⊢ M ∶ A -> Φ ([ σ ]t A)
- lem2 Γ qs bool = set
- lem2 Γ qs tt = bool
- lem2 Γ qs ff = bool
- lem2 Γ qs (▹ x₁ x₂) = {!!}
- lem2 Γ qs (Π d d₁) = set
- lem2 Γ qs (ƛ {A} {B} x d) = Π (lem1 Γ qs x) (λ a x₁ → subst Φ (subeq2 B) (lem2 (Γ , A) {σ = _ , a} {ps = _ , lem1 Γ qs x } (qs , x₁) d))
-                             -- Notice that this is the Pi case of lem1
- lem2 Γ qs (d · d₁) = {!!}
- lem2 Γ {σ} qs (if {C} {M} x d d₁ d₂) = subst Φ (subeq1 C) (lem1 (Γ , bool) {σ = σ , [ σ ]t M} {ps = _ , lem2 Γ qs d} (qs , lem3 Γ qs d) x)
- lem2 Γ qs (conv _ x x₁ d) = Φ-closed⟶* (sub⟶* _ (trans1 x₁ refl)) (lem2 Γ qs d)
+ lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ M ∶ A
+ lem2 Γ bool = κ set
+ lem2 Γ tt = κ bool
+ lem2 Γ ff = κ bool
+ lem2 Γ (▹ x₁ x₂) = {!!}
+ lem2 Γ (Π t t₁) = κ set
+ lem2 Γ (ƛ {A} {B} x t) = Π' A B (lem1 Γ x) (lem2 (Γ , A) t)
+ lem2 Γ (t · t₁) = {!!}
+ lem2 Γ (if x t t₁ t₂) = {!!}
+ lem2 {n} {M} Γ (conv .M x x₁ t) = {!!}
 
- lem3 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> (d : Γ ⊢ M ∶ A) -> φ (lem2 Γ qs d) ([ σ ]t M)
- lem3 Γ qs bool = bool
- lem3 Γ qs tt = _ , (refl , tt)
- lem3 Γ qs ff = _ , (refl , ff)
- lem3 Γ qs (▹ x₁ x₂) = {!!}
- lem3 Γ qs (Π d d₁) with lem2 Γ qs d | lem3 Γ qs d 
- ... | q0 | q1 with lem0 q0
- lem3 Γ qs (Π {A} {B} d d₁) | .set | q1 | refl = Π q1 (λ a x → subst Ψ (subeq2 B) {!!})
- lem3 Γ qs (ƛ {A} {B} x d) = {!!} , (λ b q → φ-closed (subst Φ (subeq2 B) (lem2 (Γ , A) (qs , q) d)) (trans1 (β _ _) refl) {!!})
-  --(λ b q → lemma3-3' (lem2 (Γ , A) (qs , q) d) {!!} {!!} (lem3 (Γ , A) {σ = _ , b} {ps = _ , lem1 Γ qs x} (qs , q) d))
-  --where f : ∀ b -> (q : φ (lem1 Γ qs x) b) -> φ (lem2 (Γ , A) (qs , q) d) ([ 
- lem3 Γ qs (d · d₁) = {!!}
- lem3 Γ qs (if x d d₁ d₂) with lem2 Γ qs d | lem3 Γ qs d
- ... | q0 | q1 with lem0bool q0
- lem3 Γ qs (if x d d₁ d₂) | .bool | .tt , (q2 , tt) | refl = {!!}
- lem3 Γ qs (if x d d₁ d₂) | .bool | .ff , (q2 , ff) | refl = {!!}
- lem3 Γ qs (if x₁ d d₁ d₂) | .bool | q1 , (q2 , neut ._ x) | refl = {!!}
- lem3 Γ qs (conv M x x₁ d) = lem-a (sub⟶* _ (trans1 x₁ refl)) (lem3 Γ qs d) 
+ --lem3 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> (d : Γ ⊢ M ∶ A) -> φ (lem2 Γ qs d) ([ σ ]t M)
+ --lem3 Γ qs t = {!!}
 
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
