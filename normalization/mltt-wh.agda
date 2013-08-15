@@ -379,47 +379,6 @@ data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set w
 
 
 
-{-mutual
- lem1 : ∀ {n m A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> φs Γ σ ps -> Γ ⊢ A type -> Φ ([ σ ]t A)
- lem1 Γ qs set = set
- lem1 Γ {σ} {ps} qs (Π {A} {B} d d₁) = Π (lem1 Γ qs d) (λ a x → subst Φ {!!} (lem1 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs d } (qs , x) d₁))
- lem1 Γ qs (emb x) with lem2 Γ qs x
- lem1 Γ qs (emb x) | w1 , w2 with lem0 w1
- lem1 Γ qs (emb x) | .set , w2 | refl = {!!}
- 
- lem2 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> Γ ⊢ M ∶ A -> Σ (Φ ([ σ ]t A)) (λ q -> φ q ([ σ ]t M))
- lem2 Γ qs bool = set , bool
- lem2 Γ qs tt = bool , (tt , (refl , tt))
- lem2 Γ qs ff = bool , (ff , (refl , ff))
- lem2 Γ qs (▹ x₁ x₂) = {!!}
- lem2 Γ qs (Π d d₁) with lem2 Γ qs d
- ... | q1 , q2 with lem0 q1
- lem2 Γ {σ} {ps} qs (Π {A} {B} d d₁) | .set , q2 | refl = set , Π q2 (λ a x → subst Ψ {!!} (f a x))
-  where f : ∀ (a : tm _) -> ψ q2 a -> Ψ ([ σ , a ]t B)
-        f a x with lem2 (Γ , A) {σ = σ , a} {ps = ps , {!!} } (qs , x) d₁
-        ... | q1 , q2 with lem0 q1
-        f a x | .set , q3 | refl = q3
- lem2 Γ {σ} {ps} qs (ƛ {A} {B} {M} x d) = (Π (lem1 Γ qs x) (λ a x₁ → subst Φ (subeq2 B) (Σ.proj₁ (f a x₁)))) , ( norm _ refl ƛ ,
-   (λ b q → φ-closed (subst Φ (subeq2 B) (Σ.proj₁ (f b q))) (trans1 (β _ _) refl) (subst (φ (subst Φ (subeq2 B) (Σ.proj₁ (f b q)))) (subeq2 M) {!just a bit of eqdep...!})))
-   where f : ∀ a -> φ (lem1 Γ qs x) a -> Σ (Φ ([ σ , a ]t B)) (λ q -> φ q ([ σ , a ]t M))
-         f a p = lem2 (Γ , A) {σ = σ , a} {ps = ps , lem1 Γ qs x } (qs , p) d
- lem2 Γ qs (d · d₁) with lem2 Γ qs d | lem2 Γ qs d₁
- lem2 Γ {σ} qs (_·_ {M} {N} d d₁) | Π q1 x , q2 | q3 , q4 = (subst Φ {!!} (x ([ σ ]t N) {!!})) , {!!}
- lem2 Γ {σ} qs (_·_ {A} {B} d d₁) | neut ._ () , q2 | q3 , q4 
- lem2 Γ qs (d · d₁) | closed () q1 , q2 | q3 , q4 
- lem2 Γ qs (if x d d₁ d₂) with lem2 Γ qs d
- lem2 Γ qs (if x d d₁ d₂) | x₁ , x₂ with lem0bool x₁
- lem2 Γ qs (if {C} x d d₁ d₂) | .bool , (.tt , (x₂ , tt)) | refl with lem2 Γ qs d₁
- ... | q1 , q2 = d1 , φ-closed d1 (trans1r (if* x₂) if1) (lem-a d0 q2)
-    where d0 = (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 x₂ C))
-          d1 = (Φ-closed⟶* d0 q1)
- lem2 Γ {σ} {ps} qs (if {C} {M} x d d₁ d₂) | .bool , (.ff , (x₂ , ff)) | refl with lem2 Γ qs d₂
- ... | q1 , q2 with lem1 (Γ , bool) {σ = σ , [ σ ]t M} {ps = ps , bool} (qs , (ff , (x₂ , ff))) x
- ... | q0 = (subst Φ (subeq1 C) q0) , φ-closed (subst Φ (subeq1 C) q0) (trans1r (if* x₂) (if2 _ _)) {!!}
- lem2 Γ qs (if x₃ d d₁ d₂) | .bool , (x₁ , (x₂ , neut .x₁ x)) | refl = {!!}
- lem2 Γ qs (conv M x x₁ d) with lem2 Γ qs d
- ... | q1 , q2 = (Φ-closed⟶* d0 q1) , lem-a d0 q2
-    where d0 = (sub⟶* _ (trans1 x₁ refl)) -}
 
 _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
