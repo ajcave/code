@@ -535,3 +535,5 @@ mutual
 yay : ∀ {n M A} {Γ : dctx n} -> wfctx Γ -> Γ ⊢ M ∶ A -> normalizable M
 yay d0 d with reify' (lem2 _ d (idφ d0)) (lem3' _ d (idφ d0))
 ... | q = {!!}
+
+-- Do the corollary: type checking is decidable (i.e. define algorithmic typing, show it's complete)
