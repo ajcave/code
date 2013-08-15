@@ -299,14 +299,14 @@ mutual
  data Φ {n} : tm n -> Set where
   bool : Φ bool
   Π : ∀ {A B} -> (p : Φ A) -> (∀ a -> φ p a -> Φ ([ a /x] B)) -> Φ (Π A B)
-  neut : ∀ A -> neutral A -> Φ A
+  neut : ∀ {A} -> neutral A -> Φ A
   closed : ∀ {A B} -> A ⟶ B -> Φ B -> Φ A
   set : Φ set
 
  φ : ∀ {n} -> {A : tm n} -> Φ A -> tm n -> Set
  φ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
  φ (Π p f) a = (normalizable a) × (∀ b (q : φ p b) → φ (f b q) (a · b))
- φ (neut A x) a = ∃ (λ b → (a ⟶* b) × neutral b)
+ φ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  φ (closed x p) a = φ p a
  φ set a = Ψ a
 
@@ -317,7 +317,7 @@ mutual
 φ-closed : ∀ {n} {A : tm n} {M N} -> (p : Φ A) -> M ⟶* N -> φ p N -> φ p M
 φ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
 φ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → φ-closed (x b q) (app1* s) (t b q)
-φ-closed (neut A x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
+φ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
 φ-closed (closed x p) s t = φ-closed p s t
 φ-closed set s t = Ψ-closed⟶* s t
 
@@ -355,9 +355,9 @@ mutual
   ▹ : ∀ {A x} -> Γ ⊢ A type -> Γ ∋ x ∶ A -> Γ ⊢ (▹ x) ∶ A
   Π : ∀ {A B} -> Γ ⊢ A ∶ set -> (Γ , A) ⊢ B ∶ set -> Γ ⊢ (Π A B) ∶ set
   ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
-  _·_ : ∀ {M N A B} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
+  _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
-  conv : ∀ {A B} M -> Γ ⊢ A type -> A ⟶ B -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
+  conv : ∀ {A B} {M} -> Γ ⊢ A type -> A ⟶ B -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
   -- TODO: Try changing this to A ≈ B
 
 {-Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set
@@ -377,13 +377,13 @@ data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set w
  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> φs Γ σ ps -> ∀ p -> φ p a -> φs (Γ , A) (σ , a) (ps , p)
 
 lem0 : ∀ {n} (t : Φ {n} set) -> t ≡ set
-lem0 (neut .set ())
+lem0 (neut ())
 lem0 (closed () t)
 lem0 set = refl
 
 lem0bool : ∀ {n} (t : Φ {n} bool) -> t ≡ bool
 lem0bool bool = refl
-lem0bool (neut .bool ())
+lem0bool (neut ())
 lem0bool (closed () t)
 -- proofs of Φ are unique (I hope), once we properly restrict neutral to also be normal
 -- Okay that's trickier: if ⟶ is non-deterministic, proofs of Φ aren't unique
@@ -444,10 +444,22 @@ _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Π' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
 
 _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
-Γ ⊨ M ∶ A = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> Φ ([ σ ]t A)
+Γ ⊨ M ∶ A = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) (p : Φ ([ σ ]t A)) -> φ p ([ σ ]t M)
 
 κ : ∀ {A B : Set} -> B -> A -> B
 κ b = λ _ -> b
+
+Πinv2 : ∀ {n} {Γ : dctx n} A B -> Γ ⊨ (Π A B) type -> (Γ , A) ⊨ B type
+Πinv2 A B t (x1 ,[ _ ] x2) with t x1
+Πinv2 A B t (x1 ,[ p ] x2) | Π q x = subst Φ (sym (subeq2 B)) (x _ (lemma3-3c' p q x2))
+Πinv2 A B t (x1 ,[ p ] x2) | neut ()
+Πinv2 A B t (x1 ,[ p ] x2) | closed () q
+
+{-⊨type-cong : ∀ {n} {Γ : dctx n} {A B} -> A ≡ B -> Γ ⊨ A type -> Γ ⊨ B type
+⊨type-cong refl t = t -}
+
+⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
+⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
@@ -457,19 +469,19 @@ mutual
  
   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
- lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ M ∶ A
+ lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
  lem2 Γ bool = κ set
  lem2 Γ tt = κ bool
  lem2 Γ ff = κ bool
  lem2 Γ (▹ x₁ x₂) = {!!}
  lem2 Γ (Π t t₁) = κ set
  lem2 Γ (ƛ {A} {B} x t) = Π' A B (lem1 Γ x) (lem2 (Γ , A) t)
- lem2 Γ (t · t₁) = {!!}
+ lem2 Γ (_·_ {A} {B} t t₁) = ⊨subst A B (Πinv2 A B (lem2 Γ t)) (lem2 Γ t₁) (lem3 Γ t₁)
  lem2 Γ (if x t t₁ t₂) = {!!}
- lem2 {n} {M} Γ (conv .M x x₁ t) = {!!}
+ lem2 Γ (conv x x₁ t) = {!!}
 
- --lem3 : ∀ {n m M A} (Γ : dctx n) {σ : tsubst n m} {ps : Φs Γ σ} -> (qs : φs Γ σ ps) -> (d : Γ ⊢ M ∶ A) -> φ (lem2 Γ qs d) ([ σ ]t M)
- --lem3 Γ qs t = {!!}
+ lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
+ lem3 Γ t = {!!}
 
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
