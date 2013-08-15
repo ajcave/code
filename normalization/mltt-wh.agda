@@ -443,6 +443,9 @@ _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
 Π' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
 
+_⊨_∶'_[_] : ∀ {n} (Γ : dctx n) (M : tm n) A -> Γ ⊨ A type -> Set
+Γ ⊨ M ∶' A [ d ] = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> φ (d qs) ([ σ ]t M)
+
 _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 Γ ⊨ M ∶ A = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) (p : Φ ([ σ ]t A)) -> φ p ([ σ ]t M)
 
@@ -461,6 +464,10 @@ _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 ⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
 ⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
 
+φeqdep : ∀ {n} {B B' M : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> φ p M -> φ q M
+φeqdep p q refl t = lemma3-3c' p q t
+
+
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
@@ -477,11 +484,22 @@ mutual
  lem2 Γ (Π t t₁) = κ set
  lem2 Γ (ƛ {A} {B} x t) = Π' A B (lem1 Γ x) (lem2 (Γ , A) t)
  lem2 Γ (_·_ {A} {B} t t₁) = ⊨subst A B (Πinv2 A B (lem2 Γ t)) (lem2 Γ t₁) (lem3 Γ t₁)
- lem2 Γ (if x t t₁ t₂) = {!!}
+ lem2 Γ (if {C} x t t₁ t₂) = ⊨subst bool C (lem1 (Γ , bool) x) (κ bool) (lem3 Γ t)
  lem2 Γ (conv x x₁ t) = {!!}
 
  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
- lem3 Γ t = {!!}
+ lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
+
+ lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
+ lem3' Γ bool = {!!}
+ lem3' Γ tt = {!!}
+ lem3' Γ ff = {!!}
+ lem3' Γ (▹ x₁ x₂) = {!!}
+ lem3' Γ (Π t t₁) = {!!}
+ lem3' Γ (ƛ x t) = {!!}
+ lem3' Γ (t · t₁) = {!!}
+ lem3' Γ (if x t t₁ t₂) = {!!}
+ lem3' Γ (conv x x₁ t) = {!!}
 
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
