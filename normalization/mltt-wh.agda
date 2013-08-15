@@ -517,7 +517,8 @@ mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
  lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
- lem1 Γ (emb x) = {!!}
+ lem1 Γ (emb x) with lem3 Γ x
+ ... | t = λ x₁ → let z = t x₁ set in {! z !}
  
   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
