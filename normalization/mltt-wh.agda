@@ -226,6 +226,10 @@ bool-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> bool ≈ A -> C
 bool-≈-neutral t (common x x₁) with normal-step* bool x | neutral-step* t x₁
 bool-≈-neutral () (common x x₁) | refl | refl
 
+set-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> set ≈ A -> C
+set-≈-neutral t (common x x₁) with normal-step* set x | neutral-step* t x₁
+set-≈-neutral () (common x x₁) | refl | refl
+
 bool≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> bool ≈ (Π A B) -> C
 bool≈Π (common x x₁) with normal-step* bool x | pi-inj1 x₁
 bool≈Π (common x x₁) | refl | ()
@@ -233,6 +237,14 @@ bool≈Π (common x x₁) | refl | ()
 Π≈neutral : ∀ {n} {A : tm n} {B D} {C : Set} -> neutral A -> (Π B D) ≈ A -> C
 Π≈neutral t (common x x₁) with neutral-step* t x₁ | pi-inj1 x
 Π≈neutral () (common x x₁) | refl | yep x₂ x₃
+
+set≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> set ≈ (Π A B) -> C
+set≈Π (common x x₁) with normal-step* set x | pi-inj1 x₁
+set≈Π (common x x₁) | refl | ()
+
+bool≈set : ∀ {n} {C : Set} -> _≈_ {n} bool set -> C
+bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
+bool≈set (common x x₁) | refl | ()
 
 mutual
  lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
@@ -314,12 +326,12 @@ mutual
  lemma3-3' (neut x) bool t r = bool-≈-neutral x (≈-sym t)
  lemma3-3' (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
  lemma3-3' (neut x) (neut x₁) t r = r
- lemma3-3' (neut x) set t r = {!!}
- lemma3-3' (Π p x) set t r = {!!}
- lemma3-3' bool set t r = {!!}
- lemma3-3' set bool t r = {!!}
- lemma3-3' set (Π q x) t r = {!!}
- lemma3-3' set (neut x) t r = {!!}
+ lemma3-3' (neut x) set t r = set-≈-neutral x (≈-sym t)
+ lemma3-3' (Π p x) set t r = set≈Π (≈-sym t)
+ lemma3-3' bool set t r = bool≈set t
+ lemma3-3' set bool t r = bool≈set (≈-sym t)
+ lemma3-3' set (Π q x) t r = set≈Π t
+ lemma3-3' set (neut x) t r = set-≈-neutral x t
  lemma3-3' set set t r = r
  lemma3-3' p (closed x q) t r = lemma3-3' p q (⟶≈trans t x) r
  lemma3-3' (closed x p) q t r = lemma3-3' p q (⟶≈trans' t x) r
@@ -336,12 +348,12 @@ mutual
  lemma3-3b' (neut x) bool t r = bool-≈-neutral x (≈-sym t)
  lemma3-3b' (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
  lemma3-3b' (neut x) (neut x₁) t r = r
- lemma3-3b' (neut x) set t r = {!!}
- lemma3-3b' (Π p x) set t r = {!!}
- lemma3-3b' bool set t r = {!!}
- lemma3-3b' set bool t r = {!!}
- lemma3-3b' set (Π q x) t r = {!!}
- lemma3-3b' set (neut x) t r = {!!}
+ lemma3-3b' (neut x) set t r = set-≈-neutral x (≈-sym t)
+ lemma3-3b' (Π p x) set t r = set≈Π (≈-sym t)
+ lemma3-3b' bool set t r = bool≈set t
+ lemma3-3b' set bool t r = bool≈set (≈-sym t)
+ lemma3-3b' set (Π q x) t r = set≈Π t
+ lemma3-3b' set (neut x) t r = set-≈-neutral x t
  lemma3-3b' set set t r = r
 
 lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
