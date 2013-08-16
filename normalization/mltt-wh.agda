@@ -354,7 +354,7 @@ mutual
  lemma3-3b' set bool t r = bool≈set (≈-sym t)
  lemma3-3b' set (Π q x) t r = set≈Π t
  lemma3-3b' set (neut x) t r = set-≈-neutral x t
- lemma3-3b' set set t r = r
+ lemma3-3b' set set t r = r 
 
 lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
 lemma3-3c' p q t = lemma3-3' p q ≈-refl t
