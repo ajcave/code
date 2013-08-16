@@ -325,7 +325,24 @@ mutual
  lemma3-3' (closed x p) q t r = lemma3-3' p q (⟶≈trans' t x) r
 
  lemma3-3b' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ q M -> φ p M
- lemma3-3b' p q t r = {!!}
+ lemma3-3b' (closed x p) q t r = lemma3-3b' p q (⟶≈trans' t x) r 
+ lemma3-3b' p (closed x q) t r = lemma3-3b' p q (⟶≈trans t x) r
+ lemma3-3b' bool bool t r = r
+ lemma3-3b' bool (Π q x) t r = bool≈Π t
+ lemma3-3b' bool (neut x) t r = bool-≈-neutral x t
+ lemma3-3b' (Π p x) bool t r = bool≈Π (≈-sym t)
+ lemma3-3b' (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3b' (x b q₁) (x₁ b (lemma3-3' p q (pi-inj2 t) q₁)) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3' p q (pi-inj2 t) q₁)))
+ lemma3-3b' (Π p x) (neut x₁) t r = Π≈neutral x₁ t
+ lemma3-3b' (neut x) bool t r = bool-≈-neutral x (≈-sym t)
+ lemma3-3b' (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
+ lemma3-3b' (neut x) (neut x₁) t r = r
+ lemma3-3b' (neut x) set t r = {!!}
+ lemma3-3b' (Π p x) set t r = {!!}
+ lemma3-3b' bool set t r = {!!}
+ lemma3-3b' set bool t r = {!!}
+ lemma3-3b' set (Π q x) t r = {!!}
+ lemma3-3b' set (neut x) t r = {!!}
+ lemma3-3b' set set t r = r
 
 lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
 lemma3-3c' p q t = lemma3-3' p q ≈-refl t
