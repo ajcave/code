@@ -460,6 +460,33 @@ mem .top (top {_} {_} {A}) (qs ,[ p ] x) p₁ = φeqdep p p₁ (subeq3 A) x
 mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst Φ (sym (subeq3 B)) p₁) p₁ (subeq3 B) (mem x d qs (subst Φ (sym (subeq3 B)) p₁))
 
 mutual
+ prop1 : ∀ {n} {A : tm n} -> Ψ A -> Φ A
+ prop1 bool = bool
+ prop1 (Π t x) = Π (prop1 t) (λ a x₁ → prop1 (x a (prop3' t x₁)))
+ prop1 (neut x) = neut x
+ prop1 (closed x t) = closed x (prop1 t)
+
+ prop2 : ∀ {n} {M A : tm n} (p : Ψ A) (q : Φ A) -> ψ p M -> φ q M
+ prop2 p q r = {!!}
+
+ prop2' : ∀ {n} {M A : tm n} (p : Ψ A) (q : Φ A) -> φ q M -> ψ p M
+ prop2' p q r = {!q!}
+
+ prop3 : ∀ {n} {M A : tm n} (p : Ψ A) -> ψ p M -> φ (prop1 p) M
+ prop3 bool r = r
+ prop3 (Π t x) (r1 , r2) = r1 , (λ b q → prop3 (x b (prop3' t q)) (r2 b (prop3' t q)))
+ prop3 (neut x) r = r
+ prop3 (closed x t) r = prop3 t r
+
+ prop3' : ∀ {n} {M A : tm n} (p : Ψ A) -> φ (prop1 p) M -> ψ p M
+ prop3' bool r = r
+ prop3' (Π t x) (r1 , r2) = r1 , (λ b q → prop3' (x b q) (f b q)) --{! (prop1 (x b (prop3' t ?))) !} {! (prop1 (x b q)) !}!})
+  where f : ∀ b q -> _
+        f b q = lemma3-3c' (prop1 (x b (prop3' t (prop3 t q)))) (prop1 (x b q)) (r2 b (prop3 t q))
+ prop3' (neut x) r = r
+ prop3' (closed x t) r = prop3' t r
+
+mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
  lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
