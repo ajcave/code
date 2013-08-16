@@ -129,25 +129,31 @@ normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 mutual
  data Ψ {n} : tm n -> Set where
   bool : Ψ bool
-  Π : ∀ {A B} -> (p : Ψ A) -> (∀ a -> ψ p a -> Ψ ([ a /x] B)) -> Ψ (Π A B)
+  Π : ∀ {A B} -> (p : Ψ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> ψ (Ψwkn w p) a -> Ψ ([ a /x] ([ vsub-ext w ]r B))) -> Ψ (Π A B)
   neut : ∀ {A} -> neutral A -> Ψ A
   closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
 
  ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
  ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
- ψ (Π p f) a = (normalizable a) × (∀ b (q : ψ p b) → ψ (f b q) (a · b))
+ ψ (Π p f) a = (normalizable a) × {!!} --(∀ b (q : ψ p b) → ψ (f b q) (a · b))
  ψ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ (closed x p) a = ψ p a
+
+ Ψwkn : ∀ {n m} (w : vsubst n m) {A} -> Ψ A -> Ψ ([ w ]r A)
+ Ψwkn w bool = bool
+ Ψwkn w (Π t x) = {!!}
+ Ψwkn w (neut x) = neut {!!}
+ Ψwkn w (closed x t) = {!!}
 
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
 Ψ-closed⟶* refl t = t
 Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
 
-ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
+{- ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
 ψ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
 ψ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed (x b q) (app1* s) (t b q)
 ψ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
-ψ-closed (closed x p) s t = ψ-closed p s t
+ψ-closed (closed x p) s t = ψ-closed p s t -}
 
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
@@ -262,6 +268,7 @@ bool≈set : ∀ {n} {C : Set} -> _≈_ {n} bool set -> C
 bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
 bool≈set (common x x₁) | refl | ()
 
+{-
 mutual
  lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
  lemma3-3 (closed x p) q t r = lemma3-3 p q (⟶≈trans' t x) r
@@ -290,7 +297,7 @@ mutual
  lemma3-3b (neut x) (neut x₁) t r = r
 
 lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
-lemma3-3c p q t = lemma3-3 p q ≈-refl t
+lemma3-3c p q t = lemma3-3 p q ≈-refl t -}
 
 -- I could use this technique directly for LF (i.e. MLTT without the universe)
 -- as an alternative to the erasure-based proof...
@@ -488,6 +495,7 @@ app' A B M N d1 d2 t1 t2 {σ = σ} qs | q1 , q2 with q2 ([ σ ]t N) (t2 qs (d1 q
 ⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
 ⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
 
+{-
 mutual
  reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
  reflect bool r = _ , (refl , (neut r))
@@ -521,7 +529,7 @@ mutual
  reify' (Π t x) (h , _) = h
  reify' (neut x) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
  reify' (closed x t) r = reify' t r
- reify' set r = reifyt r
+ reify' set r = reifyt r -}
 
 -- TODO: Try doing this in "premonoidal category" style
 if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
@@ -536,6 +544,7 @@ mem : ∀ {n} {Γ} {A : tm n} x -> Γ ∋ x ∶ A -> Γ ⊨ (▹ x) ∶ A
 mem .top (top {_} {_} {A}) (qs ,[ p ] x) p₁ = φeqdep p p₁ (subeq3 A) x
 mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst Φ (sym (subeq3 B)) p₁) p₁ (subeq3 B) (mem x d qs (subst Φ (sym (subeq3 B)) p₁))
 
+{-
 mutual
  prop1 : ∀ {n} {A : tm n} -> Ψ A -> Φ A
  prop1 bool = bool
@@ -589,15 +598,17 @@ mutual
  lem3' Γ (_·_ {A} {B} {M} {N} t t₁) = app' A B M N (lem2 Γ t₁) (Πinv2 A B (lem2 Γ t)) (lem3 Γ t) (lem3 Γ t₁)
  lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
  lem3' Γ (conv {A} {B} {M} x x₁ t) = ⊨conv M (lem2 Γ t) (lem1 Γ x) x₁ (lem3 Γ t)
-
+-}
 
 -- Huh I think the more natural thing to do for a "weak head normal form"
 -- for arrow is to say that any term of arrow type is normal?
 -- Maybe use CBPV to motivate? Function types are computation types.. need to thunk to turn into value types...
 -- Or.. for weak normalization, could we just add "halts" to the definition of the logical predicate?
 
+{-
 yay1 : ∀ {M A}  -> ⊡ ⊢ M ∶ A -> normalizable M
 yay1 d = subst normalizable subeq4 (reify' {n = ⊡} (lem2 ⊡ d ⊡) (lem3' _ d ⊡))
+-}
 
 {-
 mutual
