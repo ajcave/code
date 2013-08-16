@@ -303,12 +303,16 @@ mutual
 φ-closed (closed x p) s t = φ-closed p s t
 φ-closed set s t = Ψ-closed⟶* s t
 
-postulate
- lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
- --lemma3-3c' p q t = {!!}
-
+mutual
  lemma3-3' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ p M -> φ q M
- --lemma3-3' p q t r = {!!}
+ lemma3-3' p q t r = {!!}
+
+ lemma3-3b' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ q M -> φ p M
+ lemma3-3b' p q t r = {!!}
+
+lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
+lemma3-3c' p q t = lemma3-3' p q ≈-refl t
+
 
 -- Huh, I haven't even had to use Set₁? I-R is powerful... 
 -- This proof might be easier in PTS style, where we don't need to duplicate things?
