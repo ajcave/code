@@ -303,11 +303,12 @@ mutual
 φ-closed (closed x p) s t = φ-closed p s t
 φ-closed set s t = Ψ-closed⟶* s t
 
-lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
-lemma3-3c' p q t = {!!}
+postulate
+ lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
+ --lemma3-3c' p q t = {!!}
 
-lemma3-3' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ p M -> φ q M
-lemma3-3' p q t r = {!!}
+ lemma3-3' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ p M -> φ q M
+ --lemma3-3' p q t r = {!!}
 
 -- Huh, I haven't even had to use Set₁? I-R is powerful... 
 -- This proof might be easier in PTS style, where we don't need to duplicate things?
@@ -466,12 +467,6 @@ mutual
  prop1 (neut x) = neut x
  prop1 (closed x t) = closed x (prop1 t)
 
- prop2 : ∀ {n} {M A : tm n} (p : Ψ A) (q : Φ A) -> ψ p M -> φ q M
- prop2 p q r = {!!}
-
- prop2' : ∀ {n} {M A : tm n} (p : Ψ A) (q : Φ A) -> φ q M -> ψ p M
- prop2' p q r = {!q!}
-
  prop3 : ∀ {n} {M A : tm n} (p : Ψ A) -> ψ p M -> φ (prop1 p) M
  prop3 bool r = r
  prop3 (Π t x) (r1 , r2) = r1 , (λ b q → prop3 (x b (prop3' t q)) (r2 b (prop3' t q)))
@@ -480,7 +475,7 @@ mutual
 
  prop3' : ∀ {n} {M A : tm n} (p : Ψ A) -> φ (prop1 p) M -> ψ p M
  prop3' bool r = r
- prop3' (Π t x) (r1 , r2) = r1 , (λ b q → prop3' (x b q) (f b q)) --{! (prop1 (x b (prop3' t ?))) !} {! (prop1 (x b q)) !}!})
+ prop3' (Π t x) (r1 , r2) = r1 , (λ b q → prop3' (x b q) (f b q))
   where f : ∀ b q -> _
         f b q = lemma3-3c' (prop1 (x b (prop3' t (prop3 t q)))) (prop1 (x b q)) (r2 b (prop3 t q))
  prop3' (neut x) r = r
@@ -490,8 +485,7 @@ mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
  lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
- lem1 Γ (emb x) with lem3 Γ x
- ... | t = λ x₁ → let z = t x₁ set in {! z !}
+ lem1 Γ (emb x) = λ x₁ → prop1 (lem3 Γ x x₁ set)
  
   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
@@ -514,7 +508,7 @@ mutual
  lem3' Γ tt = κ (tt , (refl , tt))
  lem3' Γ ff = κ (ff , (refl , ff))
  lem3' Γ (▹ {A} {x} x₁ x₂) = λ qs → mem x x₂ qs (lem1 Γ x₁ qs)
- lem3' Γ (Π {A} {B} t t₁) = λ qs -> Π (lem3 Γ t qs set) (λ a x → subst Ψ (subeq2 B) (lem3 (Γ , A) t₁ (qs ,[ {!!} ] {!!}) set)) -- TODO: Clean up this case somehow?
+ lem3' Γ (Π {A} {B} t t₁) = λ qs -> Π (lem3 Γ t qs set) (λ a x → subst Ψ (subeq2 B) (lem3 (Γ , A) t₁ (qs ,[ prop1 (lem3 Γ t qs set) ] prop3 (lem3 Γ t qs set) x) set)) -- TODO: Clean up this case somehow?
  lem3' Γ (ƛ {A} {B} {M} x t) = ƛ' A B M (lem1 Γ x) (lem2 (Γ , A) t) (lem3 (Γ , A) t)
  lem3' Γ (_·_ {A} {B} {M} {N} t t₁) = app' A B M N (lem2 Γ t₁) (Πinv2 A B (lem2 Γ t)) (lem3 Γ t) (lem3 Γ t₁)
  lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
