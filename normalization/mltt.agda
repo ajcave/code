@@ -126,6 +126,21 @@ normal-bool-normal (neut x) = neut x
 normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
 normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
+postulate
+ ren⟶*' : ∀ {n m} (σ : vsubst n m) {M N} -> M ⟶ N -> [ σ ]r M ⟶ [ σ ]r N
+ sub⟶*' : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶ N -> [ σ ]t M ⟶ [ σ ]t N
+ sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
+ ren-ext-comp : ∀ {n m k} {w : vsubst n m} {w' : vsubst m k} B
+   -> [ vsub-ext (w' ∘v w) ]r B ≡ [ vsub-ext w' ]r ([ vsub-ext w ]r B)
+ sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
+ subeq3 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ ]t M ≡ [ σ , N ]t ([ wkn-vsub ]r M)
+ subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
+ subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
+ subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
+ rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
+ 
+-- TODO: Can we define a general enough library by generic program that obtains functoriality 
+-- for free for this definition?
 mutual
  data Ψ {n} : tm n -> Set where
   bool : Ψ bool
@@ -148,9 +163,18 @@ mutual
 
  Ψwkn : ∀ {n m} (w : vsubst n m) {A} -> Ψ A -> Ψ ([ w ]r A)
  Ψwkn w bool = bool
- Ψwkn w (Π t x) = Π (Ψwkn w t) (λ w' a x' → subst Ψ {!!} (x (w' ∘v w) a {!!}))
- Ψwkn w (neut x) = neut {!!}
- Ψwkn w (closed x t) = closed {!!} (Ψwkn w t)
+ Ψwkn w (Π {A} {B} t x) = Π (Ψwkn w t) (λ w' a x' → subst Ψ (cong [ a /x] (ren-ext-comp B)) (x (w' ∘v w) a (ψfunct w w' t x')))
+ Ψwkn w (neut x) = neut (rename-neut x)
+ Ψwkn w (closed x t) = closed (ren⟶*' w x) (Ψwkn w t)
+
+ ψfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ (Ψwkn w t) w' a -> ψ t (w' ∘v w) a
+ ψfunct w w' bool r = r
+ ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , (λ {m} v b q → f m v b q)
+  where f : ∀ m v b q -> _
+        f m v b q with r2 v b {!!}
+        ... | q0 = {!!}
+ ψfunct w w' (neut y) r = r
+ ψfunct w w' (closed y y') r = ψfunct w w' y' r
 
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
 Ψ-closed⟶* refl t = t
@@ -165,14 +189,6 @@ mutual
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
 
-postulate
- sub⟶*' : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶ N -> [ σ ]t M ⟶ [ σ ]t N
- sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
- sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
- subeq3 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ ]t M ≡ [ σ , N ]t ([ wkn-vsub ]r M)
- subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
- subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
- subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
 
 ⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
 ⟶*cong2 refl refl t = t
