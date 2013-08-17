@@ -279,7 +279,7 @@ mutual
   where f : ∀ {k'} (v : vsubst _ k') b q -> _
         f v b q with (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q)) 
         ... | z0 = let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
-                    in φeqdep (subst Ψ q1 (y ((v ∘v w') ∘v w) b (ψfunct w (v ∘v w') p z0)))
+                    in ψeqdep (subst Ψ q1 (y ((v ∘v w') ∘v w) b (ψfunct w (v ∘v w') p z0)))
                               (y (v ∘v (w' ∘v w)) b q)
                               (sym (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) q1))
                               (r2 v b z0)
@@ -290,15 +290,20 @@ mutual
  ψfunct' w w' bool r = r
  ψfunct' w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
   where f : ∀ {k'} (v : vsubst _ k') b q -> _
-        f v b q = {!!}
+        f v b q with ψfunct w (v ∘v w') p q
+        ... | z0 with r2 v b (subst (λ α → ψ p α b) (sym (ren-assoc w)) z0)
+        ... | z1 = ψeqdep (y (v ∘v (w' ∘v w)) b (subst (λ α -> ψ p α b) (sym (ren-assoc w)) z0))
+                          (subst Ψ (cong [ b /x] (ren-ext-comp B)) (y ((v ∘v w') ∘v w) b (ψfunct w (v ∘v w') p q)))
+                          (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) (cong [ b /x] (ren-ext-comp B)))
+                          z1
  ψfunct' w w' (neut y) r = r
  ψfunct' w w' (closed y y') r = ψfunct' w w' y' r
 
  lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
  lemma3-3c p q t = {!!}
 
- φeqdep : ∀ {n} {B B' M : tm n} (p : Ψ B) (q : Ψ B') -> B ≡ B' -> ψ p id-vsub M -> ψ q id-vsub M
- φeqdep p q refl t = lemma3-3c p q t
+ ψeqdep : ∀ {n} {B B' M : tm n} (p : Ψ B) (q : Ψ B') -> B ≡ B' -> ψ p id-vsub M -> ψ q id-vsub M
+ ψeqdep p q refl t = lemma3-3c p q t
 
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
 Ψ-closed⟶* refl t = t
