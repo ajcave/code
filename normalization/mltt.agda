@@ -276,9 +276,14 @@ mutual
  ψfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ (Ψwkn w t) w' a -> ψ t (w' ∘v w) a
  ψfunct w w' bool r = r
  ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , (λ {m} v b q → f m v b q)
-  where f : ∀ m v b q -> _
-        f m v b q with r2 v b (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q))
-        ... | q0 = {!!}
+  where f : ∀ k' v b q -> _
+        f k' v b q with (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q)) 
+        ... | z0 with r2 v b z0 
+        ... | q0  = let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
+                    in φeqdep (subst Ψ q1 (y ((v ∘v w') ∘v w) b (ψfunct w (v ∘v w') p z0)))
+                              (y (v ∘v (w' ∘v w)) b q)
+                              (sym (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) q1))
+                              q0
  ψfunct w w' (neut y) r = r
  ψfunct w w' (closed y y') r = ψfunct w w' y' r
 
@@ -287,6 +292,12 @@ mutual
  ψfunct' w w' (Π p y) r = {!!}
  ψfunct' w w' (neut y) r = {!!}
  ψfunct' w w' (closed y y') r = {!!}
+
+ lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
+ lemma3-3c p q t = {!!}
+
+ φeqdep : ∀ {n} {B B' M : tm n} (p : Ψ B) (q : Ψ B') -> B ≡ B' -> ψ p id-vsub M -> ψ q id-vsub M
+ φeqdep p q refl t = lemma3-3c p q t
 
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
 Ψ-closed⟶* refl t = t
@@ -343,6 +354,10 @@ lemma3-3c p q t = lemma3-3 p q ≈-refl t -}
    Require wh normal types most of the type or something?
    Bidirectional? Normal types vs neutral types vs "computation" types?
 -}
+
+{- i.e. if instead of a reduction relation, I used a "step function" (so implicitly deterministic)
+   then perhaps I could make lemma3-3 trivial? Gotta make it so there's really only one way to derive Ψ...
+   i.e. also need for Pi case that A and B are normal (i.e. step function returns "Nothing") -}
 {-
 
 mutual
