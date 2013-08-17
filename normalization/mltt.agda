@@ -128,6 +128,7 @@ normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
 postulate
  ren⟶*' : ∀ {n m} (σ : vsubst n m) {M N} -> M ⟶ N -> [ σ ]r M ⟶ [ σ ]r N
+ ren⟶* : ∀ {n m} (σ : vsubst n m) {M N} -> M ⟶* N -> [ σ ]r M ⟶* [ σ ]r N
  sub⟶*' : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶ N -> [ σ ]t M ⟶ [ σ ]t N
  sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
  ren-ext-comp : ∀ {n m k} {w : vsubst n m} {w' : vsubst m k} B
@@ -167,6 +168,9 @@ pi-inj2 (common x x₁) | yep x₂ x₃ | yep x₄ x₅ = common x₂ x₄
 pi-inj3 : ∀ {n} {A A' : tm n} {B B'} -> (Π A B) ≈ (Π A' B') -> B ≈ B'
 pi-inj3 (common x x₁) with pi-inj1 x | pi-inj1 x₁
 ... | yep t1 t2 | yep t3 t4 = common t2 t4
+
+[]r-cong : ∀ {n m} {A B : tm n} {σ : vsubst n m} -> A ≈ B -> [ σ ]r A ≈ [ σ ]r B
+[]r-cong (common x x₁) = common (ren⟶* _ x) (ren⟶* _ x₁)
 
 []-cong : ∀ {n m} {A B : tm n} {σ : tsubst n m} -> A ≈ B -> [ σ ]t A ≈ [ σ ]t B
 []-cong (common x x₁) = common (sub⟶* _ x) (sub⟶* _ x₁)
@@ -298,6 +302,23 @@ mutual
                           z1
  ψfunct' w w' (neut y) r = r
  ψfunct' w w' (closed y y') r = ψfunct' w w' y' r
+
+ lemma3-3 : ∀ {n m} {A B : tm n} {M} (p : Ψ A) (q : Ψ B) (w : vsubst n m) -> A ≈ B -> ψ p w M -> ψ q w M
+ lemma3-3 bool bool w s r = r
+ lemma3-3 bool (Π p y) w s r = {!!}
+ lemma3-3 bool (neut y) w s r = {!!}
+ lemma3-3 bool (closed y y') w s r = {!!}
+ lemma3-3 (Π p y) bool w s r = {!!}
+ lemma3-3 (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q' ->
+    let q = lemma3-3b p p' (v ∘v w) (pi-inj2 s) q'
+    in lemma3-3 (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q))
+ lemma3-3 (Π p y) (neut y') w s r = {!!}
+ lemma3-3 (Π p y) (closed y' y0) w s r = {!!}
+ lemma3-3 (neut y) q w s r = {!!}
+ lemma3-3 (closed y y') q w s r = {!!}
+
+ lemma3-3b : ∀ {n m} {A B : tm n} {M} (p : Ψ A) (q : Ψ B) (w : vsubst n m) -> A ≈ B -> ψ q w M -> ψ p w M
+ lemma3-3b p q w s r = {!!}
 
  lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
  lemma3-3c p q t = {!!}
