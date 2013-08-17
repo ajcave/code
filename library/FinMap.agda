@@ -105,4 +105,8 @@ cmap-var : ∀ {a b} {A : Set a} {B : Set b} (f : A -> B) {Ψ : ctx A} {T} (x : 
 cmap-var f top = top
 cmap-var f (pop y) = pop (cmap-var f y)
 
+ren-assoc : ∀ {a} {A : Set a} {n m k k' : ctx A} (w : vsubst n m) {w' : vsubst m k} {v : vsubst k k'}
+ -> (v ∘v (w' ∘v w)) ≡ ((v ∘v w') ∘v w)
+ren-assoc w {w'} {v} = trans (gmap-funct w) (gmap-cong (λ x → sym (lookup-gmap (lookup v) w' x)))
+
 -- id-v-right

@@ -138,6 +138,7 @@ postulate
  subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
  rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
+ ren-assoc : ∀ {n m k k' : ctx Unitz} (w : vsubst n m) {w' : vsubst m k} {v : vsubst k k'} -> (v ∘v (w' ∘v w)) ≡ ((v ∘v w') ∘v w)
  
 -- TODO: Can we define a general enough library by generic program that obtains functoriality 
 -- for free for this definition?
@@ -171,10 +172,13 @@ mutual
  ψfunct w w' bool r = r
  ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , (λ {m} v b q → f m v b q)
   where f : ∀ m v b q -> _
-        f m v b q with r2 v b {!!}
+        f m v b q with r2 v b (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) {!!} q))
         ... | q0 = {!!}
  ψfunct w w' (neut y) r = r
  ψfunct w w' (closed y y') r = ψfunct w w' y' r
+
+ ψfunct' : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ t (w' ∘v w) a -> ψ (Ψwkn w t) w' a
+ ψfunct' w w' t r = {!!}
 
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
 Ψ-closed⟶* refl t = t
