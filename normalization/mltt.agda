@@ -318,7 +318,15 @@ mutual
  lemma3-3 (closed y y') q w s r = {!!}
 
  lemma3-3b : ∀ {n m} {A B : tm n} {M} (p : Ψ A) (q : Ψ B) (w : vsubst n m) -> A ≈ B -> ψ q w M -> ψ p w M
- lemma3-3b p q w s r = {!!}
+ lemma3-3b bool q w s r = {!!}
+ lemma3-3b (Π p y) bool w s r = {!!}
+ lemma3-3b (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q ->
+     let q' = lemma3-3 p p' (v ∘v w) (pi-inj2 s) q
+     in lemma3-3b (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q'))
+ lemma3-3b (Π p y) (neut y') w s r = {!!}
+ lemma3-3b (Π p y) (closed y' y0) w s r = {!!}
+ lemma3-3b (neut y) q w s r = {!!}
+ lemma3-3b (closed y y') q w s r = {!!}
 
  lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
  lemma3-3c p q t = {!!}
