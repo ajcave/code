@@ -275,23 +275,24 @@ mutual
 
  ψfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ (Ψwkn w t) w' a -> ψ t (w' ∘v w) a
  ψfunct w w' bool r = r
- ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , (λ {m} v b q → f m v b q)
-  where f : ∀ k' v b q -> _
-        f k' v b q with (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q)) 
-        ... | z0 with r2 v b z0 
-        ... | q0  = let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
+ ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
+  where f : ∀ {k'} (v : vsubst _ k') b q -> _
+        f v b q with (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q)) 
+        ... | z0 = let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
                     in φeqdep (subst Ψ q1 (y ((v ∘v w') ∘v w) b (ψfunct w (v ∘v w') p z0)))
                               (y (v ∘v (w' ∘v w)) b q)
                               (sym (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) q1))
-                              q0
+                              (r2 v b z0)
  ψfunct w w' (neut y) r = r
  ψfunct w w' (closed y y') r = ψfunct w w' y' r
 
  ψfunct' : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ t (w' ∘v w) a -> ψ (Ψwkn w t) w' a
- ψfunct' w w' bool r = {!!}
- ψfunct' w w' (Π p y) r = {!!}
- ψfunct' w w' (neut y) r = {!!}
- ψfunct' w w' (closed y y') r = {!!}
+ ψfunct' w w' bool r = r
+ ψfunct' w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
+  where f : ∀ {k'} (v : vsubst _ k') b q -> _
+        f v b q = {!!}
+ ψfunct' w w' (neut y) r = r
+ ψfunct' w w' (closed y y') r = ψfunct' w w' y' r
 
  lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
  lemma3-3c p q t = {!!}
