@@ -109,4 +109,6 @@ ren-assoc : ∀ {a} {A : Set a} {n m k k' : ctx A} (w : vsubst n m) {w' : vsubst
  -> (v ∘v (w' ∘v w)) ≡ ((v ∘v w') ∘v w)
 ren-assoc w {w'} {v} = trans (gmap-funct w) (gmap-cong (λ x → sym (lookup-gmap (lookup v) w' x)))
 
--- id-v-right
+id-v-right : ∀ {a} {A : Set a} {n m : ctx A} {w : vsubst n m} -> w ≡ (w ∘v id-vsub)
+id-v-right {a} {A} {⊡} = refl
+id-v-right {a} {A} {ψ , T} = cong₂ _,_ (trans id-v-right (sym (gmap-funct id-vsub))) refl

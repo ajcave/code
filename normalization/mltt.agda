@@ -338,11 +338,16 @@ mutual
 Ψ-closed⟶* refl t = t
 Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
 
-{- ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
+ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p id-vsub N -> ψ p id-vsub M
 ψ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
-ψ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed (x b q) (app1* s) (t b q)
+ψ-closed {M = M} {N} (Π p x) s (h , t) = normalizable-closed s h , λ v b →
+   subst (λ α → (q : ψ p α b) → ψ (x α b q) id-vsub ([ v ]r M · b))
+         id-v-right
+         (λ q → ψ-closed (x v b q) (app1* (ren⟶* v s))
+          (subst (λ α → (q' : ψ p α b) → ψ (x α b q') id-vsub ([ v ]r N · b))
+             (sym id-v-right) (t v b) q))
 ψ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
-ψ-closed (closed x p) s t = ψ-closed p s t -}
+ψ-closed (closed x p) s t = ψ-closed p s t 
 
 
 {-
