@@ -365,8 +365,104 @@ mutual
 {- i.e. if instead of a reduction relation, I used a "step function" (so implicitly deterministic)
    then perhaps I could make lemma3-3 trivial? Gotta make it so there's really only one way to derive Ψ...
    i.e. also need for Pi case that A and B are normal (i.e. step function returns "Nothing") -}
-{-
+mutual
+ data Φ {n} : tm n -> Set where
+  bool : Φ bool
+  Π : ∀ {A B} -> (p : Φ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> φ p w a -> Φ ([ a /x] ([ vsub-ext w ]r B))) -> Φ (Π A B)
+  neut : ∀ {A} -> neutral A -> Φ A
+  closed : ∀ {A B} -> A ⟶ B -> Φ B -> Φ A
+  set : Φ set
 
+ φ : ∀ {n} -> {A : tm n} -> Φ A -> ∀ {m} (w : vsubst n m) -> tm m -> Set
+ φ bool w a = ∃ (λ b → (a ⟶* b) × normal-bool b)
+ φ (Π p f) w a = normalizable a × (∀ {k} (v : vsubst _ k) b (q : φ p (v ∘v w) b) → φ (f (v ∘v w) b q) id-vsub ([ v ]r a · b))
+ φ (neut y) w a = ∃ (λ b → (a ⟶* b) × neutral b)
+ φ (closed y y') w a = φ y' w a
+ φ set w a = Ψ a
+
+ Φwkn : ∀ {n m} (w : vsubst n m) {A} -> Φ A -> Φ ([ w ]r A)
+ Φwkn w bool = bool
+ Φwkn w (Π {A} {B} t x) = Π (Φwkn w t) (λ w' a x' → subst Φ (cong [ a /x] (ren-ext-comp B)) (x (w' ∘v w) a (φfunct w w' t x')))
+ Φwkn w (neut x) = neut (rename-neut x)
+ Φwkn w (closed x t) = closed (ren⟶*' w x) (Φwkn w t)
+ Φwkn w set = set
+
+ φfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Φ A) {a} -> φ (Φwkn w t) w' a -> φ t (w' ∘v w) a
+ φfunct w w' bool r = r
+ φfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
+  where f : ∀ {k'} (v : vsubst _ k') b q -> _
+        f v b q with (φfunct' w (v ∘v w') p (subst (λ α → φ p α b) (ren-assoc w) q)) 
+        ... | z0 = let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
+                    in φeqdep (subst Φ q1 (y ((v ∘v w') ∘v w) b (φfunct w (v ∘v w') p z0)))
+                              (y (v ∘v (w' ∘v w)) b q)
+                              (sym (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) q1))
+                              (r2 v b z0)
+ φfunct w w' (neut y) r = r
+ φfunct w w' (closed y y') r = φfunct w w' y' r
+ φfunct w w' set r = r
+
+ φfunct' : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Φ A) {a} -> φ t (w' ∘v w) a -> φ (Φwkn w t) w' a
+ φfunct' w w' bool r = r
+ φfunct' w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
+  where f : ∀ {k'} (v : vsubst _ k') b q -> _
+        f v b q with φfunct w (v ∘v w') p q
+        ... | z0 with r2 v b (subst (λ α → φ p α b) (sym (ren-assoc w)) z0)
+        ... | z1 = φeqdep (y (v ∘v (w' ∘v w)) b (subst (λ α -> φ p α b) (sym (ren-assoc w)) z0))
+                          (subst Φ (cong [ b /x] (ren-ext-comp B)) (y ((v ∘v w') ∘v w) b (φfunct w (v ∘v w') p q)))
+                          (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) (cong [ b /x] (ren-ext-comp B)))
+                          z1
+ φfunct' w w' (neut y) r = r
+ φfunct' w w' (closed y y') r = φfunct' w w' y' r
+ φfunct' w w' set r = r
+
+ lemma3-3' : ∀ {n m} {A B : tm n} {M} (p : Φ A) (q : Φ B) (w : vsubst n m) -> A ≈ B -> φ p w M -> φ q w M
+ lemma3-3' bool p w s r = {!!}
+ lemma3-3' (Π p y) bool w s r = {!!}
+ lemma3-3' (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q' ->
+    let q = lemma3-3b' p p' (v ∘v w) (pi-inj2 s) q'
+    in lemma3-3' (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q))
+ lemma3-3' (Π p y) (neut y') w s r = {!!}
+ lemma3-3' (Π p y) (closed y' y0) w s r = {!!}
+ lemma3-3' (Π p y) set w s r = {!!}
+ lemma3-3' (neut y) q w s r = {!!}
+ lemma3-3' (closed y y') q w s r = {!!}
+ lemma3-3' set q w s r = {!!}
+
+ lemma3-3b' : ∀ {n m} {A B : tm n} {M} (p : Φ A) (q : Φ B) (w : vsubst n m) -> A ≈ B -> φ q w M -> φ p w M
+ lemma3-3b' bool q w s r = {!!}
+ lemma3-3b' (Π p y) bool w s r = {!!}
+ lemma3-3b' (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q ->
+     let q' = lemma3-3' p p' (v ∘v w) (pi-inj2 s) q
+     in lemma3-3b' (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q'))
+ lemma3-3b' (Π p y) (neut y') w s r = {!!}
+ lemma3-3b' (Π p y) (closed y' y0) w s r = {!!}
+ lemma3-3b' (Π p y) set w s r = {!!}
+ lemma3-3b' (neut y) q w s r = {!!}
+ lemma3-3b' (closed y y') q w s r = {!!}
+ lemma3-3b' set q w s r = {!!}
+
+ lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p id-vsub M -> φ q id-vsub M
+ lemma3-3c' p q t = lemma3-3' p q id-vsub ≈-refl t
+
+ φeqdep : ∀ {n} {B B' M : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> φ p id-vsub M -> φ q id-vsub M
+ φeqdep p q refl t = lemma3-3c' p q t
+
+Φ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Φ B -> Φ A
+Φ-closed⟶* refl t = t
+Φ-closed⟶* (trans1 x s) t = closed x (Φ-closed⟶* s t)
+
+φ-closed' : ∀ {n m} {A : tm n} (w : vsubst n m) {M N} -> (p : Φ A) -> M ⟶* N -> φ p w N -> φ p w M
+φ-closed' w bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
+φ-closed' w (Π p y) s (h , t) = normalizable-closed s h ,
+  (λ v b q → φ-closed' id-vsub (y (v ∘v w) b q) (app1* (ren⟶* v s)) (t v b q))
+φ-closed' w (neut y) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
+φ-closed' w (closed y y') s t = φ-closed' w y' s t
+φ-closed' w set s t = Ψ-closed⟶* s t
+
+φ-closed : ∀ {n} {A : tm n} {M N} -> (p : Φ A) -> M ⟶* N -> φ p id-vsub N -> φ p id-vsub M
+φ-closed p s t = φ-closed' id-vsub p s t
+
+{-
 mutual
  data Φ {n} : tm n -> Set where
   bool : Φ bool

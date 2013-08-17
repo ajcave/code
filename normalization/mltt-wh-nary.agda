@@ -5,6 +5,7 @@ open import Data.Product hiding (_×_)
 open import Product
 open import Relation.Binary.PropositionalEquality
 open import Data.Empty
+open import Data.Nat
 
 * : Unitz
 * = tt
@@ -19,8 +20,9 @@ data tm (n : ctx Unit) : Set where
  ƛ : (M : tm (n , *)) -> tm n
  Π : (A : tm n) -> (B : tm (n , *)) -> tm n
  _·_ : (M N : tm n) -> tm n
- tt ff bool set : tm n
+ tt ff bool : tm n
  if : (M N P : tm n) -> tm n
+ set : ℕ -> tm n
 
 [_]r : ∀ {n m} -> vsubst n m -> tm n -> tm m
 [_]r σ (▹ x) = ▹ ([ σ ]v x)
@@ -30,7 +32,7 @@ data tm (n : ctx Unit) : Set where
 [_]r σ tt = tt
 [_]r σ ff = ff
 [_]r σ bool = bool
-[_]r σ set = set
+[_]r σ (set n) = set n
 [_]r σ (if M M₁ M₂) = if ([ σ ]r M) ([ σ ]r M₁) ([ σ ]r M₂)
 
 tsubst : ∀ (n m : ctx Unit) -> Set
@@ -51,7 +53,7 @@ id-tsub {n , T} = tsub-ext id-tsub
 [_]t σ tt = tt
 [_]t σ ff = ff
 [_]t σ bool = bool
-[_]t σ set = set
+[_]t σ (set n) = set n
 [_]t σ (if M M₁ M₂) = if ([ σ ]t M) ([ σ ]t M₁) ([ σ ]t M₂)
 
 [_/x] : ∀ {n} -> tm n -> tm (n , *) -> tm n
@@ -100,7 +102,7 @@ mutual
   tt : normal tt
   ff : normal ff
   bool : normal bool
-  set : normal set
+  set : ∀ {n} -> normal (set n)
   neut : ∀ {M} -> neutral M -> normal M
 
 data normal-bool {n} : tm n -> Set where
@@ -121,18 +123,26 @@ normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> norm
 normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
 mutual
- data Ψ {n} : tm n -> Set where
-  bool : Ψ bool
-  Π : ∀ {A B} -> (p : Ψ A) -> (∀ a -> ψ p a -> Ψ ([ a /x] B)) -> Ψ (Π A B)
-  neut : ∀ {A} -> neutral A -> Ψ A
-  closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
+ data Ψ {γ} (P : ∀ {γ'} -> tm γ' -> Set) : tm γ -> Set where
+  bool : Ψ P bool
+  Π : ∀ {A B} -> (p : Ψ P A) -> (∀ a -> ψ P p a -> Ψ P ([ a /x] B)) -> Ψ P (Π A B)
+  neut : ∀ {A} -> neutral A -> Ψ P A
+  closed : ∀ {A B} -> A ⟶ B -> Ψ P B -> Ψ P A
+  set : ∀ n -> Ψ P (set n)
 
- ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
- ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
- ψ (Π p f) a = (normalizable a) × (∀ b (q : ψ p b) → ψ (f b q) (a · b))
- ψ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
- ψ (closed x p) a = ψ p a
+ ψ : ∀ {γ} (P : ∀ {γ'} -> tm γ' -> Set) -> {A : tm γ} -> Ψ P A -> tm γ -> Set
+ ψ P bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
+ ψ P (Π p f) a = (normalizable a) × (∀ b (q : ψ P p b) → ψ P (f b q) (a · b))
+ ψ P (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
+ ψ P (closed x p) a = ψ P p a
+ ψ P (set n) a = P a
 
+mutual
+ Φ : ∀ {γ} (n : ℕ) -> tm γ -> Set
+ Φ zero A = {!!}
+ Φ (suc n) A = Ψ (Φ n) A
+
+{-
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
 Ψ-closed⟶* refl t = t
 Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
@@ -589,3 +599,4 @@ yay d0 d with reify' (lem2 _ d (idφ d0)) (lem3' _ d (idφ d0))
 ... | q = {!!} -}
 
 -- Do the corollary: type checking is decidable (i.e. define algorithmic typing, show it's complete)
+-}
