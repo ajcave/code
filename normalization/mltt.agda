@@ -329,7 +329,7 @@ mutual
  lemma3-3b (closed y y') q w s r = {!!}
 
  lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
- lemma3-3c p q t = {!!}
+ lemma3-3c p q t = lemma3-3 p q id-vsub ≈-refl t
 
  ψeqdep : ∀ {n} {B B' M : tm n} (p : Ψ B) (q : Ψ B') -> B ≡ B' -> ψ p id-vsub M -> ψ q id-vsub M
  ψeqdep p q refl t = lemma3-3c p q t
