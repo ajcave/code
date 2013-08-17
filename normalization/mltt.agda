@@ -138,57 +138,7 @@ postulate
  subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
  rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
- ren-assoc : ∀ {n m k k' : ctx Unitz} (w : vsubst n m) {w' : vsubst m k} {v : vsubst k k'} -> (v ∘v (w' ∘v w)) ≡ ((v ∘v w') ∘v w)
  
--- TODO: Can we define a general enough library by generic program that obtains functoriality 
--- for free for this definition?
-mutual
- data Ψ {n} : tm n -> Set where
-  bool : Ψ bool
-  Π : ∀ {A B} -> (p : Ψ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> ψ p w a -> Ψ ([ a /x] ([ vsub-ext w ]r B))) -> Ψ (Π A B)
-  neut : ∀ {A} -> neutral A -> Ψ A
-  closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
-
- {- ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
- ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
- ψ (Π p f) a = ?{- (normalizable a) × (∀ {m} (w : vsubst _ m) b (q : ψ (Ψwkn w p) b) →
-                                     ψ (f w b q) ([ w ]r a · b)) -}
- ψ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
- ψ (closed x p) a = ψ p a -}
-
- ψ : ∀ {n} -> {A : tm n} -> Ψ A -> ∀ {m} (w : vsubst n m) -> tm m -> Set
- ψ bool w a = ∃ (λ b → (a ⟶* b) × normal-bool b)
- ψ (Π p f) w a = normalizable a × (∀ {k} (v : vsubst _ k) b (q : ψ p (v ∘v w) b) → ψ (f (v ∘v w) b q) id-vsub ([ v ]r a · b))
- ψ (neut y) w a = ∃ (λ b → (a ⟶* b) × neutral b)
- ψ (closed y y') w a = ψ y' w a
-
- Ψwkn : ∀ {n m} (w : vsubst n m) {A} -> Ψ A -> Ψ ([ w ]r A)
- Ψwkn w bool = bool
- Ψwkn w (Π {A} {B} t x) = Π (Ψwkn w t) (λ w' a x' → subst Ψ (cong [ a /x] (ren-ext-comp B)) (x (w' ∘v w) a (ψfunct w w' t x')))
- Ψwkn w (neut x) = neut (rename-neut x)
- Ψwkn w (closed x t) = closed (ren⟶*' w x) (Ψwkn w t)
-
- ψfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ (Ψwkn w t) w' a -> ψ t (w' ∘v w) a
- ψfunct w w' bool r = r
- ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , (λ {m} v b q → f m v b q)
-  where f : ∀ m v b q -> _
-        f m v b q with r2 v b (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) {!!} q))
-        ... | q0 = {!!}
- ψfunct w w' (neut y) r = r
- ψfunct w w' (closed y y') r = ψfunct w w' y' r
-
- ψfunct' : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ t (w' ∘v w) a -> ψ (Ψwkn w t) w' a
- ψfunct' w w' t r = {!!}
-
-Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
-Ψ-closed⟶* refl t = t
-Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
-
-{- ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
-ψ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
-ψ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed (x b q) (app1* s) (t b q)
-ψ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
-ψ-closed (closed x p) s t = ψ-closed p s t -}
 
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
@@ -295,6 +245,60 @@ bool≈set : ∀ {n} {C : Set} -> _≈_ {n} bool set -> C
 bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
 bool≈set (common x x₁) | refl | ()
 
+-- TODO: Can we define a general enough library by generic program that obtains functoriality 
+-- for free for this definition?
+mutual
+ data Ψ {n} : tm n -> Set where
+  bool : Ψ bool
+  Π : ∀ {A B} -> (p : Ψ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> ψ p w a -> Ψ ([ a /x] ([ vsub-ext w ]r B))) -> Ψ (Π A B)
+  neut : ∀ {A} -> neutral A -> Ψ A
+  closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
+
+ {- ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
+ ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
+ ψ (Π p f) a = ?{- (normalizable a) × (∀ {m} (w : vsubst _ m) b (q : ψ (Ψwkn w p) b) →
+                                     ψ (f w b q) ([ w ]r a · b)) -}
+ ψ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
+ ψ (closed x p) a = ψ p a -}
+
+ ψ : ∀ {n} -> {A : tm n} -> Ψ A -> ∀ {m} (w : vsubst n m) -> tm m -> Set
+ ψ bool w a = ∃ (λ b → (a ⟶* b) × normal-bool b)
+ ψ (Π p f) w a = normalizable a × (∀ {k} (v : vsubst _ k) b (q : ψ p (v ∘v w) b) → ψ (f (v ∘v w) b q) id-vsub ([ v ]r a · b))
+ ψ (neut y) w a = ∃ (λ b → (a ⟶* b) × neutral b)
+ ψ (closed y y') w a = ψ y' w a
+
+ Ψwkn : ∀ {n m} (w : vsubst n m) {A} -> Ψ A -> Ψ ([ w ]r A)
+ Ψwkn w bool = bool
+ Ψwkn w (Π {A} {B} t x) = Π (Ψwkn w t) (λ w' a x' → subst Ψ (cong [ a /x] (ren-ext-comp B)) (x (w' ∘v w) a (ψfunct w w' t x')))
+ Ψwkn w (neut x) = neut (rename-neut x)
+ Ψwkn w (closed x t) = closed (ren⟶*' w x) (Ψwkn w t)
+
+ ψfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ (Ψwkn w t) w' a -> ψ t (w' ∘v w) a
+ ψfunct w w' bool r = r
+ ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , (λ {m} v b q → f m v b q)
+  where f : ∀ m v b q -> _
+        f m v b q with r2 v b (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q))
+        ... | q0 = {!!}
+ ψfunct w w' (neut y) r = r
+ ψfunct w w' (closed y y') r = ψfunct w w' y' r
+
+ ψfunct' : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ t (w' ∘v w) a -> ψ (Ψwkn w t) w' a
+ ψfunct' w w' bool r = {!!}
+ ψfunct' w w' (Π p y) r = {!!}
+ ψfunct' w w' (neut y) r = {!!}
+ ψfunct' w w' (closed y y') r = {!!}
+
+Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
+Ψ-closed⟶* refl t = t
+Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
+
+{- ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
+ψ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
+ψ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed (x b q) (app1* s) (t b q)
+ψ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
+ψ-closed (closed x p) s t = ψ-closed p s t -}
+
+
 {-
 mutual
  lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
@@ -339,6 +343,8 @@ lemma3-3c p q t = lemma3-3 p q ≈-refl t -}
    Require wh normal types most of the type or something?
    Bidirectional? Normal types vs neutral types vs "computation" types?
 -}
+{-
+
 mutual
  data Φ {n} : tm n -> Set where
   bool : Φ bool
@@ -653,3 +659,4 @@ yay d0 d with reify' (lem2 _ d (idφ d0)) (lem3' _ d (idφ d0))
 ... | q = {!!} -}
 
 -- Do the corollary: type checking is decidable (i.e. define algorithmic typing, show it's complete)
+-}
