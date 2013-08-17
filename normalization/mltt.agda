@@ -129,21 +129,28 @@ normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 mutual
  data Ψ {n} : tm n -> Set where
   bool : Ψ bool
-  Π : ∀ {A B} -> (p : Ψ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> ψ (Ψwkn w p) a -> Ψ ([ a /x] ([ vsub-ext w ]r B))) -> Ψ (Π A B)
+  Π : ∀ {A B} -> (p : Ψ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> ψ p w a -> Ψ ([ a /x] ([ vsub-ext w ]r B))) -> Ψ (Π A B)
   neut : ∀ {A} -> neutral A -> Ψ A
   closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
 
- ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
+ {- ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
  ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
- ψ (Π p f) a = (normalizable a) × {!!} --(∀ b (q : ψ p b) → ψ (f b q) (a · b))
+ ψ (Π p f) a = ?{- (normalizable a) × (∀ {m} (w : vsubst _ m) b (q : ψ (Ψwkn w p) b) →
+                                     ψ (f w b q) ([ w ]r a · b)) -}
  ψ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
- ψ (closed x p) a = ψ p a
+ ψ (closed x p) a = ψ p a -}
+
+ ψ : ∀ {n} -> {A : tm n} -> Ψ A -> ∀ {m} (w : vsubst n m) -> tm m -> Set
+ ψ bool w a = ∃ (λ b → (a ⟶* b) × normal-bool b)
+ ψ (Π p f) w a = normalizable a × (∀ {k} (v : vsubst _ k) b (q : ψ p (v ∘v w) b) → ψ (f (v ∘v w) b q) id-vsub ([ v ]r a · b))
+ ψ (neut y) w a = ∃ (λ b → (a ⟶* b) × neutral b)
+ ψ (closed y y') w a = ψ y' w a
 
  Ψwkn : ∀ {n m} (w : vsubst n m) {A} -> Ψ A -> Ψ ([ w ]r A)
  Ψwkn w bool = bool
- Ψwkn w (Π t x) = {!!}
+ Ψwkn w (Π t x) = Π (Ψwkn w t) (λ w' a x' → subst Ψ {!!} (x (w' ∘v w) a {!!}))
  Ψwkn w (neut x) = neut {!!}
- Ψwkn w (closed x t) = {!!}
+ Ψwkn w (closed x t) = closed {!!} (Ψwkn w t)
 
 Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
 Ψ-closed⟶* refl t = t
