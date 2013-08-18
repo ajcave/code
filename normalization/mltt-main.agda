@@ -207,15 +207,15 @@ mutual
  lem2 Γ (ƛ {A} {B} y y') = Π' A B (lem1 Γ y) (lem2 (Γ , A) y')
  lem2 Γ (y · y') = {!!}
  lem2 Γ (if y y' y0 y1) = {!!}
- lem2 Γ (conv y y' y0) = {!!}
+ lem2 Γ (conv y y' y0) = lem1 Γ y
 
  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
 
  lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
  lem3' Γ bool = κ bool
- lem3' Γ tt = {!!}
- lem3' Γ ff = {!!}
+ lem3' Γ tt = λ qs → tt , (refl , tt)
+ lem3' Γ ff = λ qs → ff , (refl , ff)
  lem3' Γ (▹ y y') = {!!}
  lem3' Γ (Π y y') = {!!}
  lem3' Γ (ƛ {A} {B} {M} y y') = ƛ' A B M (lem1 Γ y) (lem2 (Γ , A) y') (lem3 (Γ , A) y')
