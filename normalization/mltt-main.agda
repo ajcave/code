@@ -192,6 +192,10 @@ mutual
        ... | z  with reify' (d2 z) (t z (d2 z))
        nor | z | norm y y' = norm (ƛ* y) (ƛ y')
 
+mem : ∀ {n} {Γ} {A : tm n} x -> Γ ∋ x ∶ A -> Γ ⊨ (▹ x) ∶ A
+mem .top (top {_} {_} {A}) (qs ,[ p ] x) p₁ = φeqdep p p₁ (subeq3 A) x
+mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst Φ (sym (subeq3 B)) p₁) p₁ (subeq3 B) (mem x d qs (subst Φ (sym (subeq3 B)) p₁))
+
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
@@ -202,7 +206,7 @@ mutual
  lem2 Γ bool = κ set
  lem2 Γ tt = κ bool
  lem2 Γ ff = κ bool
- lem2 Γ (▹ y y') = {!!}
+ lem2 Γ (▹ y y') = lem1 Γ y
  lem2 Γ (Π y y') = κ set
  lem2 Γ (ƛ {A} {B} y y') = Π' A B (lem1 Γ y) (lem2 (Γ , A) y')
  lem2 Γ (y · y') = {!!}
@@ -216,7 +220,7 @@ mutual
  lem3' Γ bool = κ bool
  lem3' Γ tt = λ qs → tt , (refl , tt)
  lem3' Γ ff = λ qs → ff , (refl , ff)
- lem3' Γ (▹ y y') = {!!}
+ lem3' Γ (▹ y y') = λ qs → mem _ y' qs (lem1 Γ y qs)
  lem3' Γ (Π y y') = {!!}
  lem3' Γ (ƛ {A} {B} {M} y y') = ƛ' A B M (lem1 Γ y) (lem2 (Γ , A) y') (lem3 (Γ , A) y')
  lem3' Γ (y · y') = {!!}
