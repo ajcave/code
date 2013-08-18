@@ -115,6 +115,12 @@ mutual
 φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p id-vsub N -> φ q id-vsub M
 φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
 
+φstep : ∀ {n} {B M N : tm n} (p : Φ B) -> M ⟶ N -> φ p id-vsub N -> φ p id-vsub M
+φstep p s t = φ-closed p (trans1 s refl) t
+
+φcong : ∀ {n} {B M N : tm n} (p : Φ B) -> M ≡ N -> φ p id-vsub N -> φ p id-vsub M
+φcong p refl t = t
+
 φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p id-vsub N -> φ q id-vsub M
 φeq p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub (common refl s1)) (φ-closed p s t)
 
@@ -122,10 +128,11 @@ mutual
 φeq' p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub s1) (φ-closed p s t)
 
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
-ƛ' A B M d1 d2 t {σ = σ} qs = {!!} , f
-  where f : ∀ {k} (v : vsubst _ k) b q -> _
-        f v b q =  let z1 = (φswkn _ qs ,[ subst Φ (ren-sub-comp A) (Φwkn _ (d1 qs)) ] φsubst (Φwkn _ (d1 qs)) (ren-sub-comp A) (φfunct'id _ (d1 qs) q))
-                   in let q1 = t z1 (d2 z1) in {!!}
- {-{!!} , (λ b q ->
-   let z = (d2 (qs ,[ d1 qs ] q))
-   in φeqdep' z (subst Φ (subeq2 B) z) (subeq2 B) β (subst (φ z) (subeq2 M) (t (qs ,[ d1 qs ] q) z))) -}
+ƛ' A B M d1 d2 t {σ = σ} qs = {!!} , λ v b q ->
+ let z = (φswkn _ qs ,[ subst Φ (ren-sub-comp A) (Φwkn _ (d1 qs)) ] φsubst (Φwkn _ (d1 qs)) (ren-sub-comp A) (φfunct'id _ (d1 qs) q))
+ in let q1 = t z (d2 z)
+ in φsubst (d2 z) (sub-ren-lem σ (v ∘v id-vsub) b B)
+    (φstep (d2 z) β
+    (φcong (d2 z)
+    (trans (sym (sub-ren-lem σ v b M)) (cong (λ α → [ [ α ]rs σ , b ]t M) id-v-right))
+    q1))
