@@ -40,7 +40,8 @@ tsub-ext : ∀ {n m} -> tsubst n m -> tsubst (n , *) (m , *)
 tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
 
 id-tsub : ∀ {n} -> tsubst n n
-id-tsub = gmap ▹ id-vsub
+id-tsub {⊡} = tt
+id-tsub {n , *} = tsub-ext id-tsub --gmap ▹ id-vsub
 
 [_]t : ∀ {n m} -> tsubst n m -> tm n -> tm m
 [_]t σ (▹ x) = [ σ ]v x

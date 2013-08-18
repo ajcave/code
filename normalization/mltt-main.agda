@@ -191,3 +191,37 @@ mutual
        nor with (φswkn wkn-vsub qs ,[ subst Φ (ren-sub-comp A) (Φwkn _ (d1 qs)) ] φsubst (Φwkn _ (d1 qs)) (ren-sub-comp A) (reflect' (Φwkn _ (d1 qs)) (▹ top)))
        ... | z  with reify' (d2 z) (t z (d2 z))
        nor | z | norm y y' = norm (ƛ* y) (ƛ y')
+
+mutual
+ lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
+ lem1 Γ t = {!!}
+ 
+ lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
+ lem2 Γ bool = {!!}
+ lem2 Γ tt = {!!}
+ lem2 Γ ff = {!!}
+ lem2 Γ (▹ y y') = {!!}
+ lem2 Γ (Π y y') = {!!}
+ lem2 Γ (ƛ y y') = {!!}
+ lem2 Γ (y · y') = {!!}
+ lem2 Γ (if y y' y0 y1) = {!!}
+ lem2 Γ (conv y y' y0) = {!!}
+
+ lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
+ lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
+
+ lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
+ lem3' Γ d t = {!!}
+
+mutual
+ idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
+ idΦ ⊡ = ⊡
+ idΦ (_,_ d {A} x) = Φswkn wkn-vsub (idΦ d) , subst Φ (ren-sub-comp A) (Φwkn wkn-vsub (lem1 _ x (idφ d))) 
+ 
+ idφ : ∀ {n} {Γ : dctx n} (d : wfctx Γ) -> φs _ id-tsub (idΦ d)
+ idφ ⊡ = ⊡
+ idφ (_,_ d {A} x) = φswkn wkn-vsub (idφ d) ,[ subst Φ (ren-sub-comp A) (Φwkn wkn-vsub (lem1 _ x (idφ d))) ]
+  φsubst (Φwkn wkn-vsub (lem1 _ x (idφ d))) (ren-sub-comp A) (reflect' (Φwkn wkn-vsub (lem1 _ x (idφ d))) (▹ top)) 
+
+yay : ∀ {n M A} {Γ : dctx n} -> wfctx Γ -> Γ ⊢ M ∶ A -> normalizable M
+yay d0 d = subst normalizable subeq4 (reify' (lem2 _ d (idφ d0)) (lem3' _ d (idφ d0)))
