@@ -122,8 +122,10 @@ mutual
 φeq' p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub s1) (φ-closed p s t)
 
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
-ƛ' A B M d1 d2 t {σ = σ} qs with t ({!!} ,[ {!!} ] {!!}) {!!}
-... | q1 = {!!} , {!!}
+ƛ' A B M d1 d2 t {σ = σ} qs = {!!} , f
+  where f : ∀ {k} (v : vsubst _ k) b q -> _
+        f v b q =  let z1 = (φswkn _ qs ,[ subst Φ (ren-sub-comp A) (Φwkn _ (d1 qs)) ] φsubst (Φwkn _ (d1 qs)) (ren-sub-comp A) (φfunct'id _ (d1 qs) q))
+                   in let q1 = t z1 (d2 z1) in {!!}
  {-{!!} , (λ b q ->
    let z = (d2 (qs ,[ d1 qs ] q))
    in φeqdep' z (subst Φ (subeq2 B) z) (subeq2 B) β (subst (φ z) (subeq2 M) (t (qs ,[ d1 qs ] q) z))) -}
