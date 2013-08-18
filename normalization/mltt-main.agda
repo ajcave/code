@@ -196,6 +196,9 @@ mem : ∀ {n} {Γ} {A : tm n} x -> Γ ∋ x ∶ A -> Γ ⊨ (▹ x) ∶ A
 mem .top (top {_} {_} {A}) (qs ,[ p ] x) p₁ = φeqdep p p₁ (subeq3 A) x
 mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst Φ (sym (subeq3 B)) p₁) p₁ (subeq3 B) (mem x d qs (subst Φ (sym (subeq3 B)) p₁))
 
+⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
+⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
+
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
@@ -209,8 +212,8 @@ mutual
  lem2 Γ (▹ y y') = lem1 Γ y
  lem2 Γ (Π y y') = κ set
  lem2 Γ (ƛ {A} {B} y y') = Π' A B (lem1 Γ y) (lem2 (Γ , A) y')
- lem2 Γ (y · y') = {!!}
- lem2 Γ (if y y' y0 y1) = {!!}
+ lem2 Γ (_·_ {A} {B} y y') = ⊨subst A B (Πinv2 A B (lem2 Γ y)) (lem2 Γ y') (lem3 Γ y')
+ lem2 Γ (if {C} x t t₁ t₂) = ⊨subst bool C (lem1 (Γ , bool) x) (κ bool) (lem3 Γ t)
  lem2 Γ (conv y y' y0) = lem1 Γ y
 
  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
@@ -225,7 +228,7 @@ mutual
  lem3' Γ (ƛ {A} {B} {M} y y') = ƛ' A B M (lem1 Γ y) (lem2 (Γ , A) y') (lem3 (Γ , A) y')
  lem3' Γ (y · y') = {!!}
  lem3' Γ (if y y' y0 y1) = {!!}
- lem3' Γ (conv y y' y0) = {!!} 
+ lem3' Γ (conv {A} {B} {M} y y' y0) = ⊨conv M (lem2 Γ y0) (lem1 Γ y) y' (lem3 Γ y0) 
 
 mutual
  idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
