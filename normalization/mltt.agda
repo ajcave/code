@@ -303,33 +303,31 @@ mutual
  ψfunct' w w' (neut y) r = r
  ψfunct' w w' (closed y y') r = ψfunct' w w' y' r
 
- lemma3-3 : ∀ {n m} {A B : tm n} {M} (p : Ψ A) (q : Ψ B) (w : vsubst n m) -> A ≈ B -> ψ p w M -> ψ q w M
- lemma3-3 bool bool w s r = r
- lemma3-3 bool (Π p y) w s r = {!!}
- lemma3-3 bool (neut y) w s r = {!!}
- lemma3-3 bool (closed y y') w s r = {!!}
- lemma3-3 (Π p y) bool w s r = {!!}
- lemma3-3 (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q' ->
-    let q = lemma3-3b p p' (v ∘v w) (pi-inj2 s) q'
-    in lemma3-3 (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q))
- lemma3-3 (Π p y) (neut y') w s r = {!!}
- lemma3-3 (Π p y) (closed y' y0) w s r = {!!}
- lemma3-3 (neut y) q w s r = {!!}
- lemma3-3 (closed y y') q w s r = {!!}
-
- lemma3-3b : ∀ {n m} {A B : tm n} {M} (p : Ψ A) (q : Ψ B) (w : vsubst n m) -> A ≈ B -> ψ q w M -> ψ p w M
- lemma3-3b bool q w s r = {!!}
- lemma3-3b (Π p y) bool w s r = {!!}
- lemma3-3b (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q ->
-     let q' = lemma3-3 p p' (v ∘v w) (pi-inj2 s) q
-     in lemma3-3b (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q'))
- lemma3-3b (Π p y) (neut y') w s r = {!!}
- lemma3-3b (Π p y) (closed y' y0) w s r = {!!}
- lemma3-3b (neut y) q w s r = {!!}
- lemma3-3b (closed y y') q w s r = {!!}
+ lemma3-3 : ∀ {n m} {A B : tm n} {M} (p : Ψ A) (q : Ψ B) (w : vsubst n m) -> A ≈ B -> (ψ p w M -> ψ q w M) × (ψ q w M -> ψ p w M)
+ lemma3-3 bool bool w s = (λ r -> r) , (λ r -> r)
+ lemma3-3 bool (Π p y) w s = bool≈Π s
+ lemma3-3 bool (neut y) w s = bool-≈-neutral y s
+ lemma3-3 (Π p y) bool w s = bool≈Π (≈-sym s)
+ lemma3-3 (Π p y) (Π p' y') w s = (λ { (r1 , r2) -> 
+     (r1 , (λ v b q' ->
+       let q = _×_.proj₂ (lemma3-3 p p' (v ∘v w) (pi-inj2 s)) q'
+        in _×_.proj₁ (lemma3-3 (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s)))) (r2 v b q)))
+     })
+    ,
+    (λ { (r1 , r2) →  
+      (r1 , (λ v b q ->
+        let q' = _×_.proj₁ (lemma3-3 p p' (v ∘v w) (pi-inj2 s)) q
+        in _×_.proj₂ (lemma3-3 (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s)))) (r2 v b q')))
+     })
+ lemma3-3 (Π p y) (neut y') w s = Π≈neutral y' s
+ lemma3-3 (neut y) bool w s = bool-≈-neutral y (≈-sym s)
+ lemma3-3 (neut y) (Π p y') w s = Π≈neutral y (≈-sym s)
+ lemma3-3 (neut y) (neut y') w s = (λ r -> r) , (λ r -> r)
+ lemma3-3 (closed y y') q w s = lemma3-3 y' q w (⟶≈trans' s y)
+ lemma3-3 p (closed y y') w s = lemma3-3 p y' w (⟶≈trans s y)
 
  lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
- lemma3-3c p q t = lemma3-3 p q id-vsub ≈-refl t
+ lemma3-3c p q t = _×_.proj₁ (lemma3-3 p q id-vsub ≈-refl) t
 
  ψeqdep : ∀ {n} {B B' M : tm n} (p : Ψ B) (q : Ψ B') -> B ≡ B' -> ψ p id-vsub M -> ψ q id-vsub M
  ψeqdep p q refl t = lemma3-3c p q t
@@ -415,34 +413,38 @@ mutual
  φfunct' w w' (closed y y') r = φfunct' w w' y' r
  φfunct' w w' set r = r
 
- lemma3-3' : ∀ {n m} {A B : tm n} {M} (p : Φ A) (q : Φ B) (w : vsubst n m) -> A ≈ B -> φ p w M -> φ q w M
- lemma3-3' bool p w s r = {!!}
- lemma3-3' (Π p y) bool w s r = {!!}
- lemma3-3' (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q' ->
-    let q = lemma3-3b' p p' (v ∘v w) (pi-inj2 s) q'
-    in lemma3-3' (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q))
- lemma3-3' (Π p y) (neut y') w s r = {!!}
- lemma3-3' (Π p y) (closed y' y0) w s r = {!!}
- lemma3-3' (Π p y) set w s r = {!!}
- lemma3-3' (neut y) q w s r = {!!}
- lemma3-3' (closed y y') q w s r = {!!}
- lemma3-3' set q w s r = {!!}
-
- lemma3-3b' : ∀ {n m} {A B : tm n} {M} (p : Φ A) (q : Φ B) (w : vsubst n m) -> A ≈ B -> φ q w M -> φ p w M
- lemma3-3b' bool q w s r = {!!}
- lemma3-3b' (Π p y) bool w s r = {!!}
- lemma3-3b' (Π p y) (Π p' y') w s (r1 , r2) = r1 , (λ v b q ->
-     let q' = lemma3-3' p p' (v ∘v w) (pi-inj2 s) q
-     in lemma3-3b' (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s))) (r2 v b q'))
- lemma3-3b' (Π p y) (neut y') w s r = {!!}
- lemma3-3b' (Π p y) (closed y' y0) w s r = {!!}
- lemma3-3b' (Π p y) set w s r = {!!}
- lemma3-3b' (neut y) q w s r = {!!}
- lemma3-3b' (closed y y') q w s r = {!!}
- lemma3-3b' set q w s r = {!!}
+ lemma3-3' : ∀ {n m} {A B : tm n} {M} (p : Φ A) (q : Φ B) (w : vsubst n m) -> A ≈ B -> (φ p w M -> φ q w M) × (φ q w M -> φ p w M)
+ lemma3-3' bool bool w s = (λ r -> r) , (λ r -> r)
+ lemma3-3' bool (Π p y) w s = bool≈Π s
+ lemma3-3' bool (neut y) w s = bool-≈-neutral y s
+ lemma3-3' (Π p y) bool w s = bool≈Π (≈-sym s)
+ lemma3-3' (Π p y) (Π p' y') w s = (λ { (r1 , r2) -> 
+     (r1 , (λ v b q' ->
+       let q = _×_.proj₂ (lemma3-3' p p' (v ∘v w) (pi-inj2 s)) q'
+        in _×_.proj₁ (lemma3-3' (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s)))) (r2 v b q)))
+     })
+    ,
+    (λ { (r1 , r2) →  
+      (r1 , (λ v b q ->
+        let q' = _×_.proj₁ (lemma3-3' p p' (v ∘v w) (pi-inj2 s)) q
+        in _×_.proj₂ (lemma3-3' (y (v ∘v w) b q) (y' (v ∘v w) b q') id-vsub ([]-cong ([]r-cong (pi-inj3 s)))) (r2 v b q')))
+     })
+ lemma3-3' (Π p y) (neut y') w s = Π≈neutral y' s
+ lemma3-3' (neut y) bool w s = bool-≈-neutral y (≈-sym s)
+ lemma3-3' (neut y) (Π p y') w s = Π≈neutral y (≈-sym s)
+ lemma3-3' (neut y) (neut y') w s = (λ r -> r) , (λ r -> r)
+ lemma3-3' (closed y y') q w s = lemma3-3' y' q w (⟶≈trans' s y)
+ lemma3-3' p (closed y y') w s = lemma3-3' p y' w (⟶≈trans s y)
+ lemma3-3' bool set w s = bool≈set s
+ lemma3-3' (Π p y) set w s = set≈Π (≈-sym s)
+ lemma3-3' (neut y) set w s = set-≈-neutral y (≈-sym s)
+ lemma3-3' set set w s = (λ x → x) , (λ x → x)
+ lemma3-3' set bool w s = bool≈set (≈-sym s)
+ lemma3-3' set (Π p y) w s = set≈Π s
+ lemma3-3' set (neut y) w s = set-≈-neutral y s
 
  lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p id-vsub M -> φ q id-vsub M
- lemma3-3c' p q t = lemma3-3' p q id-vsub ≈-refl t
+ lemma3-3c' p q = _×_.proj₁ (lemma3-3' p q id-vsub ≈-refl)
 
  φeqdep : ∀ {n} {B B' M : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> φ p id-vsub M -> φ q id-vsub M
  φeqdep p q refl t = lemma3-3c' p q t
