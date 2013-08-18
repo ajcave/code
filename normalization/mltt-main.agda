@@ -150,10 +150,13 @@ mutual
  reify (neut y) (t1 , (t2 , r)) = norm t2 (neut r)
  reify (closed y y') r = reify y' r
 
+subeq7 : ∀ {n} {B : tm (n , *)} -> [ id-tsub , ▹ top ]t ([ vsub-ext wkn-vsub ]r B) ≡ B
+subeq7 = {!!}
+
 reifyt : ∀ {n} {A : tm n} -> Ψ A -> normalizable A
 reifyt bool = norm refl bool
 reifyt (Π t x) with reifyt t | reifyt (x wkn-vsub (▹ top) (ψfunctid wkn-vsub t (reflect (Ψwkn wkn-vsub t) (▹ top))))
-reifyt (Π t x) | norm y y' | norm y0 y1 = norm (Π* y {!!}) (Π y' y1)
+reifyt (Π {A} {B} t x) | norm y y' | norm y0 y1 = norm (Π* y (⟶*cong2 subeq7 refl y0)) (Π y' y1)
 reifyt (neut x) = norm refl (neut x)
 reifyt (closed x t) with reifyt t
 reifyt (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁

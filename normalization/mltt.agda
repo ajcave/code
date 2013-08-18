@@ -144,6 +144,9 @@ normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 [_]rs : ∀ {n m k} (w : vsubst m k) (σ : tsubst n m) -> tsubst n k
 [ w ]rs σ = gmap [ w ]r σ
 
+[_]tr : ∀ {n m k} (σ : tsubst m k) (w : vsubst n m) -> tsubst n k
+[ σ ]tr w = gmap [ σ ]v w
+
 postulate
  ren⟶*' : ∀ {n m} (σ : vsubst n m) {M N} -> M ⟶ N -> [ σ ]r M ⟶ [ σ ]r N
  ren⟶* : ∀ {n m} (σ : vsubst n m) {M N} -> M ⟶* N -> [ σ ]r M ⟶* [ σ ]r N
@@ -154,6 +157,7 @@ postulate
  sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
  subeq3 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ ]t M ≡ [ σ , N ]t ([ wkn-vsub ]r M)
  subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
+ subeq2' : ∀ {n m} {w : vsubst n m} M {N} -> [ ([ id-tsub ]tr w) , N ]t M ≡ [ id-tsub , N ]t ([ vsub-ext w ]r M)
  subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
  reneq4 : ∀ {n} {M : tm n} -> [ id-vsub ]r M ≡ M
@@ -161,6 +165,9 @@ postulate
  rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
  ren-comp : ∀ {n m k} {w : vsubst m k} {v : vsubst n m} M -> [ w ]r ([ v ]r M) ≡ [ w ∘v v ]r M
  ren-sub-comp : ∀ {n m k} {w : vsubst m k} {σ : tsubst n m} M -> [ w ]r ([ σ ]t M) ≡ [ [ w ]rs σ ]t M
+ sub-ren-comp : ∀ {n m k} {σ : tsubst m k} {w : vsubst n m} M -> [ σ ]t ([ w ]r M) ≡ [ [ σ ]tr w ]t M
+ sub-ren-ext-comp :  ∀ {n m k} {σ : tsubst m k} {w : vsubst n m}
+  -> ([ tsub-ext σ ]tr (vsub-ext w)) ≡ (tsub-ext ([ σ ]tr w))
  ren-sub-ext-comp :  ∀ {n m k} {w : vsubst m k} {σ : tsubst n m}
   -> ([ vsub-ext w ]rs (tsub-ext σ)) ≡ (tsub-ext ([ w ]rs σ))
  
