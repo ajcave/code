@@ -4,6 +4,16 @@ open import mltt
 φsubst : ∀ {n m} {A A' : tm n} (p : Φ A) (e : A ≡ A') {M} {w : vsubst n m} -> φ p w M -> φ (subst Φ e p) w M
 φsubst p refl t = t
 
+φwkn : ∀ {n m k} {A : tm n} {w : vsubst n m} (v : vsubst m k) (p : Φ A) {M} -> φ p w M -> φ p (v ∘v w) ([ v ]r M)
+φwkn v bool t = {!!}
+φwkn {w = w} v (Π p y) (t1 , t2) = {!!} , f
+ where f : ∀ {k'} (v' : vsubst _ k') b q -> _
+       f v' b q with t2 (v' ∘v v) b (subst (λ α → φ p α b) (ren-assoc w) q)
+       ... | z = {!!}
+φwkn v (neut y) t = {!!}
+φwkn v (closed y y') t = φwkn v y' t
+φwkn v set t = Ψwkn v t
+
 data dctx : ctx Unitz -> Set where
  ⊡ : dctx ⊡
  _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
