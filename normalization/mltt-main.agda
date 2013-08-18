@@ -14,6 +14,9 @@ open import mltt
 φwkn v (closed y y') t = φwkn v y' t
 φwkn v set t = Ψwkn v t
 
+φwkn' : ∀ {m k} {A : tm m}  (v : vsubst m k) (p : Φ A) {M} -> φ p id-vsub M -> φ (Φwkn v p) id-vsub ([ v ]r M)
+φwkn' v p {M} t = φfunct'id v p (subst (λ α → φ p α ([ v ]r M)) (sym id-v-right) (φwkn v p t))
+
 data dctx : ctx Unitz -> Set where
  ⊡ : dctx ⊡
  _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
@@ -57,7 +60,7 @@ data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set w
 
 φswkn : ∀ {n m k} {Γ : dctx n} {σ : tsubst n m} (w : vsubst m k) {ps : Φs Γ σ} -> φs Γ σ ps -> φs Γ ([ w ]rs σ) (Φswkn w ps)
 φswkn w ⊡ = ⊡
-φswkn {Γ = Γ , A} w (y ,[ p ] y') = (φswkn w y) ,[ subst Φ (ren-sub-comp A) (Φwkn w p) ] φsubst (Φwkn w p) (ren-sub-comp A) {!!}
+φswkn {Γ = Γ , A} w (y ,[ p ] y') = (φswkn w y) ,[ subst Φ (ren-sub-comp A) (Φwkn w p) ] φsubst (Φwkn w p) (ren-sub-comp A) (φwkn' w p y')
 
 _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
