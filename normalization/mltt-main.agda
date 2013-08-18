@@ -48,7 +48,10 @@ _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Π'' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Ψ (subeq2 B) (t2 (x ,[ {!!} ] x₁))) -}
 
 Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
-Π' A B t1 t2 = λ x → Π (t1 x) (λ a v x₁ → {!!}) --subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
+Π' A B t1 t2 {σ = σ} x = Π (t1 x) f --subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
+ where f : ∀ {m'} (v : vsubst _ m') a (x₁ : φ (t1 x) v a) -> Φ ([ a /x] ([ vsub-ext v ]r ([ tsub-ext σ ]t B)))
+       f v a x₁ with t2 ({!!} ,[ subst Φ (ren-sub-comp A) (Φwkn v (t1 x)) ] {!!})
+       ... | q' = {!!}
 
 _⊨_∶'_[_] : ∀ {n} (Γ : dctx n) (M : tm n) A -> Γ ⊨ A type -> Set
 Γ ⊨ M ∶' A [ d ] = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> φ (d qs) id-vsub ([ σ ]t M)
@@ -74,3 +77,22 @@ mutual
 
 Πinv2 : ∀ {n} {Γ : dctx n} A B -> Γ ⊨ (Π A B) type -> (Γ , A) ⊨ B type
 Πinv2 A B t (x1 ,[ p ] x2) = subst Φ (sym (subeq2 B)) (Πinv2' _ _ (t x1) (lemma3-3c' p (Πinv1' _ _ (t x1))  x2))
+
+⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
+⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
+
+φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p id-vsub N -> φ q id-vsub M
+φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
+
+φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p id-vsub N -> φ q id-vsub M
+φeq p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub (common refl s1)) (φ-closed p s t)
+
+φeq' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≈ B' -> M ⟶* N -> φ p id-vsub N -> φ q id-vsub M
+φeq' p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub s1) (φ-closed p s t)
+
+ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
+ƛ' A B M d1 d2 t {σ = σ} qs with t ({!!} ,[ {!!} ] {!!}) {!!}
+... | q1 = {!!} , {!!}
+ {-{!!} , (λ b q ->
+   let z = (d2 (qs ,[ d1 qs ] q))
+   in φeqdep' z (subst Φ (subeq2 B) z) (subeq2 B) β (subst (φ z) (subeq2 M) (t (qs ,[ d1 qs ] q) z))) -}

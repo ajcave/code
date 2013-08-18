@@ -126,6 +126,9 @@ normal-bool-normal (neut x) = neut x
 normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
 normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
+[_]rs : ∀ {n m k} (w : vsubst m k) (σ : tsubst n m) -> tsubst n k
+[ w ]rs σ = gmap [ w ]r σ
+
 postulate
  ren⟶*' : ∀ {n m} (σ : vsubst n m) {M N} -> M ⟶ N -> [ σ ]r M ⟶ [ σ ]r N
  ren⟶* : ∀ {n m} (σ : vsubst n m) {M N} -> M ⟶* N -> [ σ ]r M ⟶* [ σ ]r N
@@ -140,6 +143,7 @@ postulate
  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
  reneq4 : ∀ {n} {M : tm n} -> [ id-vsub ]r M ≡ M
  rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
+ ren-sub-comp : ∀ {n m k} {w : vsubst m k} {σ : tsubst n m} M -> [ w ]r ([ σ ]t M) ≡ [ [ w ]rs σ ]t M
  
 
 data _≈_ {n} (a b : tm n) : Set where
