@@ -133,12 +133,25 @@ mutual
 ⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
 ⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
 
+mutual
+ reflect' : ∀ {n} {A M : tm n} -> (p : Φ A) -> neutral M -> φ p id-vsub M
+ reflect' p r = {!!}
+
+ reify' : ∀ {n} {A M : tm n} -> (p : Φ A) -> φ p id-vsub M -> normalizable M
+ reify' p r = {!!}
 
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
-ƛ' A B M d1 d2 t {σ = σ} qs = {!!} , λ v b q ->
+ƛ' A B M d1 d2 t {σ = σ} qs =
+ nor
+ ,
+ λ v b q ->
  let z = (φswkn _ qs ,[ subst Φ (ren-sub-comp A) (Φwkn _ (d1 qs)) ] φsubst (Φwkn _ (d1 qs)) (ren-sub-comp A) (φfunct'id _ (d1 qs) q))
  in φsubst (d2 z) (sub-ren-lem σ (v ∘v id-vsub) b B)
     (φstep (d2 z) β
     (φcong (d2 z)
     (trans (sym (sub-ren-lem σ v b M)) (cong (λ α → [ [ α ]rs σ , b ]t M) id-v-right))
     (t z (d2 z))))
+ where nor : normalizable ([ σ ]t (ƛ M))
+       nor with (φswkn wkn-vsub qs ,[ subst Φ (ren-sub-comp A) (Φwkn _ (d1 qs)) ] φsubst (Φwkn _ (d1 qs)) (ren-sub-comp A) (reflect' (Φwkn _ (d1 qs)) (▹ top)))
+       ... | z  with reify' (d2 z) (t z (d2 z))
+       nor | z | norm y y' = norm (ƛ* y) (ƛ y')

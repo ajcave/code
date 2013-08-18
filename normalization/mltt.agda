@@ -94,6 +94,10 @@ if* : ∀ {n} {M M' N1 N2 : tm n} -> M ⟶* M' -> (if M N1 N2) ⟶* (if M' N1 N2
 if* refl = refl
 if* (trans1 x t) = trans1 (ifc x) (if* t)
 
+ƛ* : ∀ {n} {M M' : tm (n , *)} -> M ⟶* M' -> (ƛ M) ⟶* (ƛ M')
+ƛ* refl = refl
+ƛ* (trans1 x t) = trans1 (ƛ x) (ƛ* t)
+
 mutual
  data neutral {n} : tm n -> Set where
   ▹ : ∀ x -> neutral (▹ x)
