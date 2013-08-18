@@ -133,12 +133,48 @@ mutual
 ⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
 ⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
 
+
+mutual
+ reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p id-vsub M
+ reflect bool r = _ , (refl , neut r)
+ reflect (Π p y) r = (norm refl (neut r)) , f
+  where f : ∀ {k} (v : vsubst _ k) b q -> _
+        f v b q with reify (Ψwkn v p) (ψfunct'id v p (subst (λ α → ψ p α b) (sym id-v-right) q))
+        f v b q | norm y' y0 = ψ-closed (y (v ∘v id-vsub) b q) (app2* y') (reflect (y (v ∘v id-vsub) b q) ((rename-neut r) · y0))
+ reflect (neut y) r = _ , (refl , r)
+ reflect (closed y y') r = reflect y' r
+
+ reify : ∀ {n} {A M : tm n} -> (p : Ψ A) -> ψ p id-vsub M -> normalizable M
+ reify bool (t1 , (t2 , t3)) = norm t2 (normal-bool-normal t3)
+ reify (Π p y) (h , _) = h
+ reify (neut y) (t1 , (t2 , r)) = norm t2 (neut r)
+ reify (closed y y') r = reify y' r
+
+reifyt : ∀ {n} {A : tm n} -> Ψ A -> normalizable A
+reifyt bool = norm refl bool
+reifyt (Π t x) with reifyt t | reifyt (x wkn-vsub (▹ top) (ψfunctid wkn-vsub t (reflect (Ψwkn wkn-vsub t) (▹ top))))
+reifyt (Π t x) | norm y y' | norm y0 y1 = norm (Π* y {!!}) (Π y' y1)
+reifyt (neut x) = norm refl (neut x)
+reifyt (closed x t) with reifyt t
+reifyt (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁
+
 mutual
  reflect' : ∀ {n} {A M : tm n} -> (p : Φ A) -> neutral M -> φ p id-vsub M
- reflect' p r = {!!}
+ reflect' bool r = _ , (refl , neut r)
+ reflect' (Π p y) r = (norm refl (neut r)) , f
+  where f : ∀ {k} (v : vsubst _ k) b q -> _
+        f v b q with reify' (Φwkn v p) (φfunct'id v p (subst (λ α → φ p α b) (sym id-v-right) q))
+        f v b q | norm y' y0 = φ-closed (y (v ∘v id-vsub) b q) (app2* y') (reflect' (y (v ∘v id-vsub) b q) ((rename-neut r) · y0))
+ reflect' (neut y) r = _ , (refl , r)
+ reflect' (closed y y') r = reflect' y' r
+ reflect' set r = neut r
 
  reify' : ∀ {n} {A M : tm n} -> (p : Φ A) -> φ p id-vsub M -> normalizable M
- reify' p r = {!!}
+ reify' bool (t1 , (t2 , t3)) = norm t2 (normal-bool-normal t3)
+ reify' (Π p y) (h , _) = h
+ reify' (neut y) (t1 , (t2 , r)) = norm t2 (neut r)
+ reify' (closed y y') r = reify' y' r
+ reify' set r = {!!}
 
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
 ƛ' A B M d1 d2 t {σ = σ} qs =

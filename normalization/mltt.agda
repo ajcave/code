@@ -86,9 +86,20 @@ app1* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (M · N) ⟶* (M' · N)
 app1* refl = refl
 app1* (trans1 x s) = trans1 (app1 x) (app1* s)
 
-{-app2* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (N · M) ⟶* (N · M')
+app2* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (N · M) ⟶* (N · M')
 app2* refl = refl
-app2* (trans1 x s) = trans1 (app2 x) (app2* s) -}
+app2* (trans1 x s) = trans1 (app2 x) (app2* s)
+
+Π1* : ∀ {n} {M M' : tm n} {N} -> M ⟶* M' -> (Π M N) ⟶* (Π M' N)
+Π1* refl = refl
+Π1* (trans1 x s) = trans1 (Π1 x) (Π1* s)
+
+Π2* : ∀ {n} {N : tm n} {M M'} -> M ⟶* M' -> (Π N M) ⟶* (Π N M')
+Π2* refl = refl
+Π2* (trans1 x s) = trans1 (Π2 x) (Π2* s)
+
+Π* : ∀ {n} {N N' : tm n} {M M'} -> N ⟶* N' -> M ⟶* M' -> (Π N M) ⟶* (Π N' M')
+Π* s1 s2 = ⟶*-trans (Π1* s1) (Π2* s2)
 
 if* : ∀ {n} {M M' N1 N2 : tm n} -> M ⟶* M' -> (if M N1 N2) ⟶* (if M' N1 N2)
 if* refl = refl
@@ -319,6 +330,12 @@ mutual
                           z1
  ψfunct' w w' (neut y) r = r
  ψfunct' w w' (closed y y') r = ψfunct' w w' y' r
+
+ ψfunctid : ∀ {n m} {A} (w : vsubst n m) (t : Ψ A) {a} -> ψ (Ψwkn w t) id-vsub a -> ψ t w a
+ ψfunctid w t {a} p = subst (λ α → ψ t α a) (sym id-v-left) (ψfunct w id-vsub t p)
+
+ ψfunct'id : ∀ {n m} {A} (w : vsubst n m) (t : Ψ A) {a} -> ψ t w a -> ψ (Ψwkn w t) id-vsub a
+ ψfunct'id w t {a} p = ψfunct' w id-vsub t (subst (λ α → ψ t α a) id-v-left p)
 
  lemma3-3 : ∀ {n m} {A B : tm n} {M} (p : Ψ A) (q : Ψ B) (w : vsubst n m) -> A ≈ B -> (ψ p w M -> ψ q w M) × (ψ q w M -> ψ p w M)
  lemma3-3 bool bool w s = (λ r -> r) , (λ r -> r)
