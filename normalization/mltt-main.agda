@@ -38,6 +38,14 @@ data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set w
  ⊡ : ∀ {m} -> φs {m = m} ⊡ tt ⊡
  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> φs Γ σ ps -> ∀ p -> φ p id-vsub a -> φs (Γ , A) (σ , a) (ps , p)
 
+Φswkn : ∀ {n m k} {Γ : dctx n} {σ : tsubst n m} (w : vsubst m k) -> Φs Γ σ -> Φs Γ ([ w ]rs σ)
+Φswkn w ⊡ = ⊡
+Φswkn {Γ = Γ , A} w (y , y') = (Φswkn w y) , subst Φ (ren-sub-comp A) (Φwkn w y')
+
+φswkn : ∀ {n m k} {Γ : dctx n} {σ : tsubst n m} (w : vsubst m k) {ps : Φs Γ σ} -> φs Γ σ ps -> φs Γ ([ w ]rs σ) (Φswkn w ps)
+φswkn w ⊡ = ⊡
+φswkn {Γ = Γ , A} w (y ,[ p ] y') = (φswkn w y) ,[ subst Φ (ren-sub-comp A) (Φwkn w p) ] {!!}
+
 _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
 
