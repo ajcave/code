@@ -150,9 +150,6 @@ mutual
  reify (neut y) (t1 , (t2 , r)) = norm t2 (neut r)
  reify (closed y y') r = reify y' r
 
-subeq7 : ∀ {n} {B : tm (n , *)} -> [ id-tsub , ▹ top ]t ([ vsub-ext wkn-vsub ]r B) ≡ B
-subeq7 = {!!}
-
 reifyt : ∀ {n} {A : tm n} -> Ψ A -> normalizable A
 reifyt bool = norm refl bool
 reifyt (Π t x) with reifyt t | reifyt (x wkn-vsub (▹ top) (ψfunctid wkn-vsub t (reflect (Ψwkn wkn-vsub t) (▹ top))))
@@ -177,7 +174,7 @@ mutual
  reify' (Π p y) (h , _) = h
  reify' (neut y) (t1 , (t2 , r)) = norm t2 (neut r)
  reify' (closed y y') r = reify' y' r
- reify' set r = {!!}
+ reify' set r = reifyt r
 
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
 ƛ' A B M d1 d2 t {σ = σ} qs =

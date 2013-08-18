@@ -40,8 +40,7 @@ tsub-ext : ∀ {n m} -> tsubst n m -> tsubst (n , *) (m , *)
 tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
 
 id-tsub : ∀ {n} -> tsubst n n
-id-tsub {⊡} = tt
-id-tsub {n , T} = tsub-ext id-tsub
+id-tsub = gmap ▹ id-vsub
 
 [_]t : ∀ {n m} -> tsubst n m -> tm n -> tm m
 [_]t σ (▹ x) = [ σ ]v x
@@ -157,7 +156,7 @@ postulate
  sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
  subeq3 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ ]t M ≡ [ σ , N ]t ([ wkn-vsub ]r M)
  subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
- subeq2' : ∀ {n m} {w : vsubst n m} M {N} -> [ ([ id-tsub ]tr w) , N ]t M ≡ [ id-tsub , N ]t ([ vsub-ext w ]r M)
+ --subeq2' : ∀ {n m} {w : vsubst n m} M {N} -> [ ([ id-tsub ]tr w) , N ]t M ≡ [ id-tsub , N ]t ([ vsub-ext w ]r M)
  subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
  reneq4 : ∀ {n} {M : tm n} -> [ id-vsub ]r M ≡ M
@@ -170,6 +169,18 @@ postulate
   -> ([ tsub-ext σ ]tr (vsub-ext w)) ≡ (tsub-ext ([ σ ]tr w))
  ren-sub-ext-comp :  ∀ {n m k} {w : vsubst m k} {σ : tsubst n m}
   -> ([ vsub-ext w ]rs (tsub-ext σ)) ≡ (tsub-ext ([ w ]rs σ))
+ 
+subeq6 : ∀ {n m} (B : tm (n , *)) {N} {w : vsubst n m} -> [ N /x] ([ vsub-ext w ]r B) ≡ [ [ id-tsub ]tr w , N ]t B
+subeq6 B {N} = trans (sub-ren-comp B) (cong (λ α → [ α , N ]t B) (gmap-funct _))
+
+subeq5 : ∀ {n m k} {σ : tsubst m k} {N} {w : vsubst n m} -> [ σ , N ]tr (gmap pop w) ≡ [ σ ]tr w
+subeq5 = gmap-funct _
+
+postulate
+ subeq7 : ∀ {n} {B : tm (n , *)} -> [ id-tsub , ▹ top ]t ([ vsub-ext wkn-vsub ]r B) ≡ B
+ {-subeq7 {n} {B} = trans
+ (subeq6 B)
+ (trans (cong (λ α → [ α , ▹ top ]t B) (trans (gmap-funct id-vsub) (trans (gmap-cong {!!}) (sym (gmap-funct id-vsub))))) subeq4) -}
  
 rename-norm-bool : ∀ {n m} {w : vsubst n m} {A} -> normal-bool A -> normal-bool ([ w ]r A)
 rename-norm-bool tt = tt
