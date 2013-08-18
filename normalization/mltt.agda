@@ -138,6 +138,7 @@ postulate
  subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
  subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
+ reneq4 : ∀ {n} {M : tm n} -> [ id-vsub ]r M ≡ M
  rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
  
 
