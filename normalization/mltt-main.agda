@@ -1,6 +1,9 @@
 module mltt-main where
 open import mltt
 
+φsubst : ∀ {n m} {A A' : tm n} (p : Φ A) (e : A ≡ A') {M} {w : vsubst n m} -> φ p w M -> φ (subst Φ e p) w M
+φsubst p refl t = t
+
 data dctx : ctx Unitz -> Set where
  ⊡ : dctx ⊡
  _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
@@ -44,7 +47,7 @@ data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set w
 
 φswkn : ∀ {n m k} {Γ : dctx n} {σ : tsubst n m} (w : vsubst m k) {ps : Φs Γ σ} -> φs Γ σ ps -> φs Γ ([ w ]rs σ) (Φswkn w ps)
 φswkn w ⊡ = ⊡
-φswkn {Γ = Γ , A} w (y ,[ p ] y') = (φswkn w y) ,[ subst Φ (ren-sub-comp A) (Φwkn w p) ] {!!}
+φswkn {Γ = Γ , A} w (y ,[ p ] y') = (φswkn w y) ,[ subst Φ (ren-sub-comp A) (Φwkn w p) ] φsubst (Φwkn w p) (ren-sub-comp A) {!!}
 
 _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
@@ -55,11 +58,18 @@ _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
 Π'' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A set -> (Γ , A) ⊨ B set -> Γ ⊨ (Π A B) set
 Π'' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Ψ (subeq2 B) (t2 (x ,[ {!!} ] x₁))) -}
 
+sub-ren-lem : ∀ {n m k} (σ : tsubst n m) (v : vsubst m k) (a : tm k) B
+ -> [ [ v ]rs σ , a ]t B ≡ [ a /x] ([ vsub-ext v ]r ([ tsub-ext σ ]t B))
+sub-ren-lem σ v a B = trans (trans
+   (subeq2 B)
+   (cong (λ α → [ a /x] ([ α ]t B)) (sym ren-sub-ext-comp)))
+   (cong [ a /x] (sym (ren-sub-comp B)))
+
 Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
 Π' A B t1 t2 {σ = σ} x = Π (t1 x) f --subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
  where f : ∀ {m'} (v : vsubst _ m') a (x₁ : φ (t1 x) v a) -> Φ ([ a /x] ([ vsub-ext v ]r ([ tsub-ext σ ]t B)))
-       f v a x₁ with t2 ({!!} ,[ subst Φ (ren-sub-comp A) (Φwkn v (t1 x)) ] {!!})
-       ... | q' = {!!}
+       f v a x₁ with t2 (φswkn v x ,[ subst Φ (ren-sub-comp A) (Φwkn v (t1 x)) ] φsubst (Φwkn v (t1 x)) (ren-sub-comp A) (φfunct'id v (t1 x) x₁))
+       ... | q' = subst Φ (sub-ren-lem σ v a B) q'
 
 _⊨_∶'_[_] : ∀ {n} (Γ : dctx n) (M : tm n) A -> Γ ⊨ A type -> Set
 Γ ⊨ M ∶' A [ d ] = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> φ (d qs) id-vsub ([ σ ]t M)

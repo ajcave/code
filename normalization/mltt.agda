@@ -144,6 +144,8 @@ postulate
  reneq4 : ∀ {n} {M : tm n} -> [ id-vsub ]r M ≡ M
  rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
  ren-sub-comp : ∀ {n m k} {w : vsubst m k} {σ : tsubst n m} M -> [ w ]r ([ σ ]t M) ≡ [ [ w ]rs σ ]t M
+ ren-sub-ext-comp :  ∀ {n m k} {w : vsubst m k} {σ : tsubst n m}
+  -> ([ vsub-ext w ]rs (tsub-ext σ)) ≡ (tsub-ext ([ w ]rs σ))
  
 
 data _≈_ {n} (a b : tm n) : Set where
@@ -417,6 +419,9 @@ mutual
  φfunct' w w' (neut y) r = r
  φfunct' w w' (closed y y') r = φfunct' w w' y' r
  φfunct' w w' set r = r
+
+ φfunct'id : ∀ {n m} {A} (w : vsubst n m) (t : Φ A) {a} -> φ t w a -> φ (Φwkn w t) id-vsub a
+ φfunct'id w t {a} p = φfunct' w id-vsub t (subst (λ α → φ t α a) id-v-left p)
 
  lemma3-3' : ∀ {n m} {A B : tm n} {M} (p : Φ A) (q : Φ B) (w : vsubst n m) -> A ≈ B -> (φ p w M -> φ q w M) × (φ q w M -> φ p w M)
  lemma3-3' bool bool w s = (λ r -> r) , (λ r -> r)

@@ -112,3 +112,12 @@ ren-assoc w {w'} {v} = trans (gmap-funct w) (gmap-cong (λ x → sym (lookup-gma
 id-v-right : ∀ {a} {A : Set a} {n m : ctx A} {w : vsubst n m} -> w ≡ (w ∘v id-vsub)
 id-v-right {a} {A} {⊡} = refl
 id-v-right {a} {A} {ψ , T} = cong₂ _,_ (trans id-v-right (sym (gmap-funct id-vsub))) refl
+
+lookup-id : ∀ {a} {A : Set a} {n : ctx A} {T} {x : var n T} -> x ≡ lookup id-vsub x
+lookup-id {a} {A} {⊡} {x = ()}
+lookup-id {a} {A} {ψ , .T} {T} {top} = refl
+lookup-id {a} {A} {ψ , T} {T'} {pop y} = trans (cong pop lookup-id) (sym (lookup-gmap pop id-vsub y))
+
+id-v-left : ∀ {a} {A : Set a} {n m : ctx A} {w : vsubst n m} -> w ≡ (id-vsub ∘v w)
+id-v-left {a} {A} {⊡} = refl
+id-v-left {a} {A} {ψ , T} = cong₂ _,_ id-v-left lookup-id
