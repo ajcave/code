@@ -66,7 +66,7 @@ sub-ren-lem σ v a B = trans (trans
    (cong [ a /x] (sym (ren-sub-comp B)))
 
 Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
-Π' A B t1 t2 {σ = σ} x = Π (t1 x) f --subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
+Π' A B t1 t2 {σ = σ} x = Π (t1 x) f
  where f : ∀ {m'} (v : vsubst _ m') a (x₁ : φ (t1 x) v a) -> Φ ([ a /x] ([ vsub-ext v ]r ([ tsub-ext σ ]t B)))
        f v a x₁ with t2 (φswkn v x ,[ subst Φ (ren-sub-comp A) (Φwkn v (t1 x)) ] φsubst (Φwkn v (t1 x)) (ren-sub-comp A) (φfunct'id v (t1 x) x₁))
        ... | q' = subst Φ (sub-ren-lem σ v a B) q'
