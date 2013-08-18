@@ -142,11 +142,17 @@ postulate
  subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
  reneq4 : ∀ {n} {M : tm n} -> [ id-vsub ]r M ≡ M
+ rename-norm : ∀ {n m} {w : vsubst n m} {A} -> normal A -> normal ([ w ]r A)
  rename-neut : ∀ {n m} {w : vsubst n m} {A} -> neutral A -> neutral ([ w ]r A)
+ ren-comp : ∀ {n m k} {w : vsubst m k} {v : vsubst n m} M -> [ w ]r ([ v ]r M) ≡ [ w ∘v v ]r M
  ren-sub-comp : ∀ {n m k} {w : vsubst m k} {σ : tsubst n m} M -> [ w ]r ([ σ ]t M) ≡ [ [ w ]rs σ ]t M
  ren-sub-ext-comp :  ∀ {n m k} {w : vsubst m k} {σ : tsubst n m}
   -> ([ vsub-ext w ]rs (tsub-ext σ)) ≡ (tsub-ext ([ w ]rs σ))
  
+rename-norm-bool : ∀ {n m} {w : vsubst n m} {A} -> normal-bool A -> normal-bool ([ w ]r A)
+rename-norm-bool tt = tt
+rename-norm-bool ff = ff
+rename-norm-bool (neut y) = neut (rename-neut y)
 
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b

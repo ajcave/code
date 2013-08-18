@@ -4,13 +4,34 @@ open import mltt
 φsubst : ∀ {n m} {A A' : tm n} (p : Φ A) (e : A ≡ A') {M} {w : vsubst n m} -> φ p w M -> φ (subst Φ e p) w M
 φsubst p refl t = t
 
+φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p id-vsub N -> φ q id-vsub M
+φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
+
+φeqdep2 : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ≡ N -> φ p id-vsub N -> φ q id-vsub M
+φeqdep2 p q refl refl t = lemma3-3c' p q t
+
+φstep : ∀ {n} {B M N : tm n} (p : Φ B) -> M ⟶ N -> φ p id-vsub N -> φ p id-vsub M
+φstep p s t = φ-closed p (trans1 s refl) t
+
+φcong : ∀ {n} {B M N : tm n} (p : Φ B) -> M ≡ N -> φ p id-vsub N -> φ p id-vsub M
+φcong p refl t = t
+
+φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p id-vsub N -> φ q id-vsub M
+φeq p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub (common refl s1)) (φ-closed p s t)
+
+φeq' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≈ B' -> M ⟶* N -> φ p id-vsub N -> φ q id-vsub M
+φeq' p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub s1) (φ-closed p s t)
+
 φwkn : ∀ {n m k} {A : tm n} {w : vsubst n m} (v : vsubst m k) (p : Φ A) {M} -> φ p w M -> φ p (v ∘v w) ([ v ]r M)
-φwkn v bool t = {!!}
-φwkn {w = w} v (Π p y) (t1 , t2) = {!!} , f
- where f : ∀ {k'} (v' : vsubst _ k') b q -> _
-       f v' b q with t2 (v' ∘v v) b (subst (λ α → φ p α b) (ren-assoc w) q)
-       ... | z = {!!}
-φwkn v (neut y) t = {!!}
+φwkn v bool (t1 , (t2 , t3)) = ([ v ]r t1) , ((ren⟶* v t2) , rename-norm-bool t3)
+φwkn {w = w} v (Π {A} {B} p y) (norm q r , t2) = norm (ren⟶* v q) (rename-norm r) , λ v' b q ->
+                 φeqdep2
+                 (y ((v' ∘v v) ∘v w) b (subst (λ α → φ p α b) (ren-assoc w) q))
+                 (y (v' ∘v (v ∘v w)) b q)
+                 (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (sym (ren-assoc w)))
+                 (cong₂ _·_ (ren-comp _) refl)
+                 (t2 (v' ∘v v) b (subst (λ α → φ p α b) (ren-assoc w) q))
+φwkn v (neut y) (t1 , (t2 , t3)) = ([ v ]r t1) , ((ren⟶* v t2) , (rename-neut t3))
 φwkn v (closed y y') t = φwkn v y' t
 φwkn v set t = Ψwkn v t
 
@@ -112,20 +133,6 @@ mutual
 ⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
 ⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
 
-φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p id-vsub N -> φ q id-vsub M
-φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
-
-φstep : ∀ {n} {B M N : tm n} (p : Φ B) -> M ⟶ N -> φ p id-vsub N -> φ p id-vsub M
-φstep p s t = φ-closed p (trans1 s refl) t
-
-φcong : ∀ {n} {B M N : tm n} (p : Φ B) -> M ≡ N -> φ p id-vsub N -> φ p id-vsub M
-φcong p refl t = t
-
-φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p id-vsub N -> φ q id-vsub M
-φeq p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub (common refl s1)) (φ-closed p s t)
-
-φeq' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≈ B' -> M ⟶* N -> φ p id-vsub N -> φ q id-vsub M
-φeq' p q s1 s t = _×_.proj₁ (lemma3-3' p q id-vsub s1) (φ-closed p s t)
 
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
 ƛ' A B M d1 d2 t {σ = σ} qs = {!!} , λ v b q ->
