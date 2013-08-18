@@ -1,10 +1,10 @@
 module mltt where
-open import FinMap
-open import Unit
-open import Data.Product hiding (_×_)
-open import Product
-open import Relation.Binary.PropositionalEquality
-open import Data.Empty
+open import FinMap public
+open import Unit public
+open import Data.Product public hiding (_×_)
+open import Product public hiding (proj₁ ; proj₂)
+open import Relation.Binary.PropositionalEquality public
+open import Data.Empty public
 
 * : Unitz
 * = tt
