@@ -194,15 +194,17 @@ mutual
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
- lem1 Γ t = {!!}
+ lem1 Γ set = κ set
+ lem1 Γ (Π {A} {B} y y') = Π' A B (lem1 Γ y) (lem1 _ y')
+ lem1 Γ (emb y) = {!!}
  
  lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
- lem2 Γ bool = {!!}
- lem2 Γ tt = {!!}
- lem2 Γ ff = {!!}
+ lem2 Γ bool = κ set
+ lem2 Γ tt = κ bool
+ lem2 Γ ff = κ bool
  lem2 Γ (▹ y y') = {!!}
- lem2 Γ (Π y y') = {!!}
- lem2 Γ (ƛ y y') = {!!}
+ lem2 Γ (Π y y') = κ set
+ lem2 Γ (ƛ {A} {B} y y') = Π' A B (lem1 Γ y) (lem2 (Γ , A) y')
  lem2 Γ (y · y') = {!!}
  lem2 Γ (if y y' y0 y1) = {!!}
  lem2 Γ (conv y y' y0) = {!!}
@@ -211,7 +213,15 @@ mutual
  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
 
  lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
- lem3' Γ d t = {!!}
+ lem3' Γ bool = κ bool
+ lem3' Γ tt = {!!}
+ lem3' Γ ff = {!!}
+ lem3' Γ (▹ y y') = {!!}
+ lem3' Γ (Π y y') = {!!}
+ lem3' Γ (ƛ {A} {B} {M} y y') = ƛ' A B M (lem1 Γ y) (lem2 (Γ , A) y') (lem3 (Γ , A) y')
+ lem3' Γ (y · y') = {!!}
+ lem3' Γ (if y y' y0 y1) = {!!}
+ lem3' Γ (conv y y' y0) = {!!} 
 
 mutual
  idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
