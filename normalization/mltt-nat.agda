@@ -125,6 +125,10 @@ if* (trans1 x t) = trans1 (ifc x) (if* t)
 ƛ* refl = refl
 ƛ* (trans1 x t) = trans1 (ƛ x) (ƛ* t)
 
+suc* : ∀ {n} {M M' : tm n} -> M ⟶* M' -> (suc M) ⟶* (suc M')
+suc* refl = refl
+suc* (trans1 x t) = trans1 (suc x) (suc* t)
+
 mutual
  data neutral {n} : tm n -> Set where
   ▹ : ∀ x -> neutral (▹ x)
