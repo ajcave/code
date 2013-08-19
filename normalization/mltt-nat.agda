@@ -1,4 +1,4 @@
-module mltt where
+module mltt-nat where
 open import FinMap public
 open import Unit public
 open import Data.Product public hiding (_×_)
@@ -19,7 +19,9 @@ data tm (n : ctx Unit) : Set where
  ƛ : (M : tm (n , *)) -> tm n
  Π : (A : tm n) -> (B : tm (n , *)) -> tm n
  _·_ : (M N : tm n) -> tm n
- tt ff bool set : tm n
+ tt ff bool set nat zero : tm n
+ suc : tm n -> tm n
+ rec : tm n -> tm n -> tm ((n , *) , *) -> tm n
  if : (M N P : tm n) -> tm n
 
 [_]r : ∀ {n m} -> vsubst n m -> tm n -> tm m
@@ -31,6 +33,10 @@ data tm (n : ctx Unit) : Set where
 [_]r σ ff = ff
 [_]r σ bool = bool
 [_]r σ set = set
+[_]r σ nat = nat
+[_]r σ zero = zero
+[_]r σ (suc n) = suc ([ σ ]r n)
+[_]r σ (rec n cz cs) = rec ([ σ ]r n) ([ σ ]r cz) ([ vsub-ext (vsub-ext σ) ]r cs)
 [_]r σ (if M M₁ M₂) = if ([ σ ]r M) ([ σ ]r M₁) ([ σ ]r M₂)
 
 tsubst : ∀ (n m : ctx Unit) -> Set
@@ -52,6 +58,10 @@ id-tsub {n , *} = tsub-ext id-tsub --gmap ▹ id-vsub
 [_]t σ ff = ff
 [_]t σ bool = bool
 [_]t σ set = set
+[_]t σ nat = nat
+[_]t σ zero = zero
+[_]t σ (suc n) = suc ([ σ ]t n)
+[_]t σ (rec n cz cs) = rec ([ σ ]t n) ([ σ ]t cz) ([ tsub-ext (tsub-ext σ) ]t cs)
 [_]t σ (if M M₁ M₂) = if ([ σ ]t M) ([ σ ]t M₁) ([ σ ]t M₂)
 
 [_/x] : ∀ {n} -> tm n -> tm (n , *) -> tm n
@@ -69,6 +79,12 @@ data _⟶_ {n} : ∀ (M N : tm n) -> Set where
  ƛ : ∀ {M M'} -> M ⟶ M' -> (ƛ M) ⟶ (ƛ M')
  Π1 : ∀ {A A' B} -> A ⟶ A' -> (Π A B) ⟶ (Π A' B)
  Π2 : ∀ {A B B'} -> B ⟶ B' -> (Π A B) ⟶ (Π A B')
+ suc : ∀ {M M'} -> M ⟶ M' -> (suc M) ⟶ (suc M')
+ recβz : ∀ {M P} -> (rec zero M P) ⟶ M
+ recβsuc : ∀ {N M P} -> (rec (suc N) M P) ⟶ [ (id-tsub , N) , (rec N M P) ]t P
+ rec1 : ∀ {N N' M P} -> N ⟶ N' -> (rec N M P) ⟶ (rec N' M P)
+ rec2 : ∀ {N M M' P} -> M ⟶ M' -> (rec N M P) ⟶ (rec N M' P)
+ rec3 : ∀ {N M P P'} -> P ⟶ P' -> (rec N M P) ⟶ (rec N M P')
  
 
 data _⟶*_ {n} : ∀ (M N : tm n) -> Set where
@@ -113,7 +129,8 @@ mutual
  data neutral {n} : tm n -> Set where
   ▹ : ∀ x -> neutral (▹ x)
   _·_ : ∀ {M N} -> neutral M  -> normal N  -> neutral (M · N)
-  if : ∀ {M N P} -> neutral M  -> normal N -> normal P  -> neutral (if M N P) 
+  if : ∀ {M N P} -> neutral M  -> normal N -> normal P  -> neutral (if M N P)
+  rec : ∀ {N M P} -> neutral N -> normal M -> normal P -> neutral (rec N M P)
 
  data normal {n} : tm n -> Set where
   ƛ : ∀ {M} -> normal M  -> normal (ƛ M)
@@ -122,12 +139,20 @@ mutual
   ff : normal ff
   bool : normal bool
   set : normal set
+  nat : normal nat
+  zero : normal zero
+  suc : ∀ {n} -> normal n -> normal (suc n)
   neut : ∀ {M} -> neutral M -> normal M
 
 data normal-bool {n} : tm n -> Set where
  tt : normal-bool tt
  ff : normal-bool ff
  neut : ∀ {M} -> neutral M -> normal-bool M
+
+data normal-nat {n} : tm n -> Set where
+ zero : normal-nat zero
+ suc : ∀ {n} -> normal-nat n -> normal-nat (suc n)
+ neut : ∀ {M} -> neutral M -> normal-nat M
 
 data normalizable {n} (M : tm n) : Set where
  norm : ∀ {N} -> M ⟶* N -> normal N -> normalizable M
@@ -137,6 +162,11 @@ normal-bool-normal : ∀ {n} {M : tm n} -> normal-bool M -> normal M
 normal-bool-normal tt = tt
 normal-bool-normal ff = ff
 normal-bool-normal (neut x) = neut x
+
+normal-nat-normal : ∀ {n} {M : tm n} -> normal-nat M -> normal M
+normal-nat-normal zero = zero
+normal-nat-normal (suc n) = suc (normal-nat-normal n)
+normal-nat-normal (neut x) = neut x
 
 normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
 normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
@@ -188,6 +218,11 @@ rename-norm-bool : ∀ {n m} {w : vsubst n m} {A} -> normal-bool A -> normal-boo
 rename-norm-bool tt = tt
 rename-norm-bool ff = ff
 rename-norm-bool (neut y) = neut (rename-neut y)
+
+rename-norm-nat : ∀ {n m} {w : vsubst n m} {A} -> normal-nat A -> normal-nat ([ w ]r A)
+rename-norm-nat zero = zero
+rename-norm-nat (suc n) = suc (rename-norm-nat n)
+rename-norm-nat (neut y) = neut (rename-neut y)
 
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
@@ -253,6 +288,11 @@ mutual
  neutral-step (if t x x₁) (ifc s) = neutral-step t s
  neutral-step (if t x x₁) (ifc1 s) = normal-step x s
  neutral-step (if t x x₁) (ifc2 s) = normal-step x₁ s
+ neutral-step (rec () x x₁) recβz
+ neutral-step (rec () x x₁) recβsuc
+ neutral-step (rec t x x₁) (rec1 s) = neutral-step t s
+ neutral-step (rec t x x₁) (rec2 s) = normal-step x s
+ neutral-step (rec t x x₁) (rec3 s) = normal-step x₁ s
 
  normal-step : ∀ {n} {A B : tm n} {C : Set} -> normal A -> A ⟶ B -> C
  normal-step (ƛ t) (ƛ s) = normal-step t s
@@ -262,6 +302,9 @@ mutual
  normal-step ff ()
  normal-step bool ()
  normal-step set ()
+ normal-step nat ()
+ normal-step zero ()
+ normal-step (suc n₂) (suc s) = normal-step n₂ s
  normal-step (neut x) s = neutral-step x s
 
 neutral-step* : ∀ {n} {A B : tm n} -> neutral A -> A ⟶* B -> A ≡ B
@@ -297,11 +340,28 @@ bool≈set : ∀ {n} {C : Set} -> _≈_ {n} bool set -> C
 bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
 bool≈set (common x x₁) | refl | ()
 
+nat≈set : ∀ {n} {C : Set} -> _≈_ {n} nat set -> C
+nat≈set (common x x₁) with normal-step* nat x | normal-step* set x₁
+nat≈set (common x x₁) | refl | ()
+
+nat≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> nat ≈ (Π A B) -> C
+nat≈Π (common x x₁) with normal-step* nat x | pi-inj1 x₁
+nat≈Π (common x x₁) | refl | ()
+
+bool≈nat : ∀ {n} {C : Set} -> _≈_ {n} bool nat -> C
+bool≈nat (common x x₁) with normal-step* bool x | normal-step* nat x₁
+bool≈nat (common x x₁) | refl | ()
+
+nat-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> nat ≈ A -> C
+nat-≈-neutral t (common x x₁) with normal-step* nat x | neutral-step* t x₁
+nat-≈-neutral () (common x x₁) | refl | refl
+
 -- TODO: Can we define a general enough library by generic program that obtains functoriality 
 -- for free for this definition?
 mutual
  data Ψ {n} : tm n -> Set where
   bool : Ψ bool
+  nat : Ψ nat
   Π : ∀ {A B} -> (p : Ψ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> ψ p w a -> Ψ ([ a /x] ([ vsub-ext w ]r B))) -> Ψ (Π A B)
   neut : ∀ {A} -> neutral A -> Ψ A
   closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
@@ -314,6 +374,7 @@ mutual
  ψ (closed x p) a = ψ p a -}
 
  ψ : ∀ {n} -> {A : tm n} -> Ψ A -> ∀ {m} (w : vsubst n m) -> tm m -> Set
+ ψ nat w a = ∃ (λ b → (a ⟶* b) × normal-nat b)
  ψ bool w a = ∃ (λ b → (a ⟶* b) × normal-bool b)
  ψ (Π p f) w a = normalizable a × (∀ {k} (v : vsubst _ k) b (q : ψ p (v ∘v w) b) → ψ (f (v ∘v w) b q) id-vsub ([ v ]r a · b))
  ψ (neut y) w a = ∃ (λ b → (a ⟶* b) × neutral b)
@@ -324,6 +385,7 @@ mutual
  Ψwkn w (Π {A} {B} t x) = Π (Ψwkn w t) (λ w' a x' → subst Ψ (cong [ a /x] (ren-ext-comp B)) (x (w' ∘v w) a (ψfunct w w' t x')))
  Ψwkn w (neut x) = neut (rename-neut x)
  Ψwkn w (closed x t) = closed (ren⟶*' w x) (Ψwkn w t)
+ Ψwkn w nat = nat
 
  ψfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ (Ψwkn w t) w' a -> ψ t (w' ∘v w) a
  ψfunct w w' bool r = r
@@ -337,6 +399,7 @@ mutual
                               (r2 v b z0)
  ψfunct w w' (neut y) r = r
  ψfunct w w' (closed y y') r = ψfunct w w' y' r
+ ψfunct w w' nat r = r
 
  ψfunct' : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ t (w' ∘v w) a -> ψ (Ψwkn w t) w' a
  ψfunct' w w' bool r = r
@@ -350,6 +413,7 @@ mutual
                           z1
  ψfunct' w w' (neut y) r = r
  ψfunct' w w' (closed y y') r = ψfunct' w w' y' r
+ ψfunct' w w' nat r = r
 
  ψfunctid : ∀ {n m} {A} (w : vsubst n m) (t : Ψ A) {a} -> ψ (Ψwkn w t) id-vsub a -> ψ t w a
  ψfunctid w t {a} p = subst (λ α → ψ t α a) (sym id-v-left) (ψfunct w id-vsub t p)
@@ -379,6 +443,13 @@ mutual
  lemma3-3 (neut y) (neut y') w s = (λ r -> r) , (λ r -> r)
  lemma3-3 (closed y y') q w s = lemma3-3 y' q w (⟶≈trans' s y)
  lemma3-3 p (closed y y') w s = lemma3-3 p y' w (⟶≈trans s y)
+ lemma3-3 bool nat w s = bool≈nat s
+ lemma3-3 nat nat w s = (λ x → x) , (λ x → x)
+ lemma3-3 (Π p x) nat w s = nat≈Π (≈-sym s)
+ lemma3-3 (neut x) nat w s = nat-≈-neutral x (≈-sym s)
+ lemma3-3 nat bool w s = bool≈nat (≈-sym s)
+ lemma3-3 nat (Π q x) w s = nat≈Π s
+ lemma3-3 nat (neut x) w s = nat-≈-neutral x s
 
  lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p id-vsub M -> ψ q id-vsub M
  lemma3-3c p q t = _×_.proj₁ (lemma3-3 p q id-vsub ≈-refl) t
@@ -396,6 +467,7 @@ mutual
   (λ v b q → ψ-closed' id-vsub (y (v ∘v w) b q) (app1* (ren⟶* v s)) (t v b q))
 ψ-closed' w (neut y) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
 ψ-closed' w (closed y y') s t = ψ-closed' w y' s t
+ψ-closed' w nat s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
 
 ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p id-vsub N -> ψ p id-vsub M
 ψ-closed p s t = ψ-closed' id-vsub p s t
@@ -424,6 +496,7 @@ mutual
   neut : ∀ {A} -> neutral A -> Φ A
   closed : ∀ {A B} -> A ⟶ B -> Φ B -> Φ A
   set : Φ set
+  nat : Φ nat
 
  φ : ∀ {n} -> {A : tm n} -> Φ A -> ∀ {m} (w : vsubst n m) -> tm m -> Set
  φ bool w a = ∃ (λ b → (a ⟶* b) × normal-bool b)
@@ -431,6 +504,7 @@ mutual
  φ (neut y) w a = ∃ (λ b → (a ⟶* b) × neutral b)
  φ (closed y y') w a = φ y' w a
  φ set w a = Ψ a
+ φ nat w a = ∃ (λ b → (a ⟶* b) × normal-nat b)
 
  Φwkn : ∀ {n m} (w : vsubst n m) {A} -> Φ A -> Φ ([ w ]r A)
  Φwkn w bool = bool
@@ -438,6 +512,7 @@ mutual
  Φwkn w (neut x) = neut (rename-neut x)
  Φwkn w (closed x t) = closed (ren⟶*' w x) (Φwkn w t)
  Φwkn w set = set
+ Φwkn w nat = nat
 
  φfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Φ A) {a} -> φ (Φwkn w t) w' a -> φ t (w' ∘v w) a
  φfunct w w' bool r = r
@@ -452,6 +527,7 @@ mutual
  φfunct w w' (neut y) r = r
  φfunct w w' (closed y y') r = φfunct w w' y' r
  φfunct w w' set r = r
+ φfunct w w' nat r = r
 
  φfunct' : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Φ A) {a} -> φ t (w' ∘v w) a -> φ (Φwkn w t) w' a
  φfunct' w w' bool r = r
@@ -466,6 +542,7 @@ mutual
  φfunct' w w' (neut y) r = r
  φfunct' w w' (closed y y') r = φfunct' w w' y' r
  φfunct' w w' set r = r
+ φfunct' w w' nat r = r
 
  φfunct'id : ∀ {n m} {A} (w : vsubst n m) (t : Φ A) {a} -> φ t w a -> φ (Φwkn w t) id-vsub a
  φfunct'id w t {a} p = φfunct' w id-vsub t (subst (λ α → φ t α a) id-v-left p)
@@ -499,6 +576,15 @@ mutual
  lemma3-3' set bool w s = bool≈set (≈-sym s)
  lemma3-3' set (Π p y) w s = set≈Π s
  lemma3-3' set (neut y) w s = set-≈-neutral y s
+ lemma3-3' bool nat w s = bool≈nat s
+ lemma3-3' (Π p x) nat w s = nat≈Π (≈-sym s)
+ lemma3-3' (neut x) nat w s = nat-≈-neutral x (≈-sym s)
+ lemma3-3' set nat w s = nat≈set (≈-sym s)
+ lemma3-3' nat nat w s = (λ x → x) , (λ x → x)
+ lemma3-3' nat bool w s = bool≈nat (≈-sym s)
+ lemma3-3' nat (Π q x) w s = nat≈Π s
+ lemma3-3' nat (neut x) w s = nat-≈-neutral x s
+ lemma3-3' nat set w s = nat≈set s
 
  lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p id-vsub M -> φ q id-vsub M
  lemma3-3c' p q = _×_.proj₁ (lemma3-3' p q id-vsub ≈-refl)
@@ -517,323 +603,7 @@ mutual
 φ-closed' w (neut y) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
 φ-closed' w (closed y y') s t = φ-closed' w y' s t
 φ-closed' w set s t = Ψ-closed⟶* s t
+φ-closed' w nat s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n) 
 
 φ-closed : ∀ {n} {A : tm n} {M N} -> (p : Φ A) -> M ⟶* N -> φ p id-vsub N -> φ p id-vsub M
 φ-closed p s t = φ-closed' id-vsub p s t
-
-{-
-mutual
- data Φ {n} : tm n -> Set where
-  bool : Φ bool
-  Π : ∀ {A B} -> (p : Φ A) -> (∀ a -> φ p a -> Φ ([ a /x] B)) -> Φ (Π A B)
-  neut : ∀ {A} -> neutral A -> Φ A
-  closed : ∀ {A B} -> A ⟶ B -> Φ B -> Φ A
-  set : Φ set
-
- φ : ∀ {n} -> {A : tm n} -> Φ A -> tm n -> Set
- φ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
- φ (Π p f) a = (normalizable a) × (∀ b (q : φ p b) → φ (f b q) (a · b))
- φ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
- φ (closed x p) a = φ p a
- φ set a = Ψ a
-
-Φ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Φ B -> Φ A
-Φ-closed⟶* refl t = t
-Φ-closed⟶* (trans1 x s) t = closed x (Φ-closed⟶* s t)
-
-φ-closed : ∀ {n} {A : tm n} {M N} -> (p : Φ A) -> M ⟶* N -> φ p N -> φ p M
-φ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
-φ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → φ-closed (x b q) (app1* s) (t b q)
-φ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
-φ-closed (closed x p) s t = φ-closed p s t
-φ-closed set s t = Ψ-closed⟶* s t
-
-mutual
- lemma3-3' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ p M -> φ q M
- lemma3-3' bool bool t r = r
- lemma3-3' bool (Π q x) t r = bool≈Π t
- lemma3-3' bool (neut x) t r = bool-≈-neutral x t
- lemma3-3' (Π p x) bool t r = bool≈Π (≈-sym t)
- lemma3-3' (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3' (x b (lemma3-3b' p q (pi-inj2 t) q₁)) (x₁ b q₁) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3b' p q (pi-inj2 t) q₁)))
- lemma3-3' (Π p x) (neut x₁) t r = Π≈neutral x₁ t
- lemma3-3' (neut x) bool t r = bool-≈-neutral x (≈-sym t)
- lemma3-3' (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
- lemma3-3' (neut x) (neut x₁) t r = r
- lemma3-3' (neut x) set t r = set-≈-neutral x (≈-sym t)
- lemma3-3' (Π p x) set t r = set≈Π (≈-sym t)
- lemma3-3' bool set t r = bool≈set t
- lemma3-3' set bool t r = bool≈set (≈-sym t)
- lemma3-3' set (Π q x) t r = set≈Π t
- lemma3-3' set (neut x) t r = set-≈-neutral x t
- lemma3-3' set set t r = r
- lemma3-3' p (closed x q) t r = lemma3-3' p q (⟶≈trans t x) r
- lemma3-3' (closed x p) q t r = lemma3-3' p q (⟶≈trans' t x) r
-
- lemma3-3b' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ q M -> φ p M
- lemma3-3b' (closed x p) q t r = lemma3-3b' p q (⟶≈trans' t x) r 
- lemma3-3b' p (closed x q) t r = lemma3-3b' p q (⟶≈trans t x) r
- lemma3-3b' bool bool t r = r
- lemma3-3b' bool (Π q x) t r = bool≈Π t
- lemma3-3b' bool (neut x) t r = bool-≈-neutral x t
- lemma3-3b' (Π p x) bool t r = bool≈Π (≈-sym t)
- lemma3-3b' (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3b' (x b q₁) (x₁ b (lemma3-3' p q (pi-inj2 t) q₁)) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3' p q (pi-inj2 t) q₁)))
- lemma3-3b' (Π p x) (neut x₁) t r = Π≈neutral x₁ t
- lemma3-3b' (neut x) bool t r = bool-≈-neutral x (≈-sym t)
- lemma3-3b' (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
- lemma3-3b' (neut x) (neut x₁) t r = r
- lemma3-3b' (neut x) set t r = set-≈-neutral x (≈-sym t)
- lemma3-3b' (Π p x) set t r = set≈Π (≈-sym t)
- lemma3-3b' bool set t r = bool≈set t
- lemma3-3b' set bool t r = bool≈set (≈-sym t)
- lemma3-3b' set (Π q x) t r = set≈Π t
- lemma3-3b' set (neut x) t r = set-≈-neutral x t
- lemma3-3b' set set t r = r 
-
-lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
-lemma3-3c' p q t = lemma3-3' p q ≈-refl t
-
-
--- Huh, I haven't even had to use Set₁? I-R is powerful... 
--- This proof might be easier in PTS style, where we don't need to duplicate things?
-
-data dctx : ctx Unitz -> Set where
- ⊡ : dctx ⊡
- _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
-
-data _∋_∶_ : ∀ {n} -> dctx n -> var n * -> tm n -> Set where
- top : ∀ {n} {Γ : dctx n} {A} -> (Γ , A) ∋ top ∶ ([ wkn-vsub ]r A)
- pop : ∀ {n} {Γ : dctx n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ ([ wkn-vsub ]r B)
-
-mutual
- data wfctx : ∀ {n} -> dctx n -> Set where
-  ⊡ : wfctx ⊡
-  _,_ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> ∀ {A} -> Γ ⊢ A type -> wfctx (Γ , A)
-
- data _⊢_type {n} (Γ : dctx n) : tm n -> Set where
-  set : Γ ⊢ set type
-  Π : ∀ {A B} -> Γ ⊢ A type -> (Γ , A) ⊢ B type -> Γ ⊢ (Π A B) type
-  emb : ∀ {A} -> Γ ⊢ A ∶ set -> Γ ⊢ A type
-
- data _⊢_∶_ {n} (Γ : dctx n) : tm n -> tm n -> Set where
-  bool : Γ ⊢ bool ∶ set
-  tt : Γ ⊢ tt ∶ bool
-  ff : Γ ⊢ ff ∶ bool
-  ▹ : ∀ {A x} -> Γ ⊢ A type -> Γ ∋ x ∶ A -> Γ ⊢ (▹ x) ∶ A
-  Π : ∀ {A B} -> Γ ⊢ A ∶ set -> (Γ , A) ⊢ B ∶ set -> Γ ⊢ (Π A B) ∶ set
-  ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
-  _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
-  if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
-  conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
-
-data Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set where
- ⊡ : ∀ {m} -> Φs {m = m} ⊡ tt
- _,_ : ∀ {n m} {Γ} {σ : tsubst n m} {A} {a} -> Φs Γ σ -> Φ ([ σ ]t A) -> Φs (Γ , A) (σ , a)
-
-data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set where
- ⊡ : ∀ {m} -> φs {m = m} ⊡ tt ⊡
- _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> φs Γ σ ps -> ∀ p -> φ p a -> φs (Γ , A) (σ , a) (ps , p)
-
-_⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
-Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
-
-{-_⊨_set : ∀ {n} (Γ : dctx n) -> tm n -> Set
-Γ ⊨ A set = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Ψ ([ σ ]t A)
-
-Π'' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A set -> (Γ , A) ⊨ B set -> Γ ⊨ (Π A B) set
-Π'' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Ψ (subeq2 B) (t2 (x ,[ {!!} ] x₁))) -}
-
-Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
-Π' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
-
-_⊨_∶'_[_] : ∀ {n} (Γ : dctx n) (M : tm n) A -> Γ ⊨ A type -> Set
-Γ ⊨ M ∶' A [ d ] = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> φ (d qs) ([ σ ]t M)
-
-_⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
-Γ ⊨ M ∶ A = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) (p : Φ ([ σ ]t A)) -> φ p ([ σ ]t M)
-
-κ : ∀ {A B : Set} -> B -> A -> B
-κ b = λ _ -> b
-
-mutual
- Πinv1' : ∀ {n} (A : tm n) B -> Φ (Π A B) -> Φ A
- Πinv1' A B (Π p x) = p
- Πinv1' A B (neut ())
- Πinv1' A B (closed (Π1 x) p) = closed x (Πinv1' _ B p)
- Πinv1' A B (closed (Π2 x) p) = Πinv1' A _ p
-
- Πinv2' : ∀ {n} (A : tm n) B -> (p : Φ (Π A B)) -> ∀ {a} -> φ (Πinv1' A B p) a -> Φ ([ a /x] B)
- Πinv2' A B (Π p x) q = x _ q
- Πinv2' A B (neut ()) q
- Πinv2' A B (closed (Π1 x) p) q = Πinv2' _ B p q
- Πinv2' A B (closed (Π2 x) p) q = closed (sub⟶*' _ x) (Πinv2' A _ p q)
-
-Πinv2 : ∀ {n} {Γ : dctx n} A B -> Γ ⊨ (Π A B) type -> (Γ , A) ⊨ B type
-Πinv2 A B t (x1 ,[ p ] x2) = subst Φ (sym (subeq2 B)) (Πinv2' _ _ (t x1) (lemma3-3c' p (Πinv1' _ _ (t x1))  x2))
-
-{-⊨type-cong : ∀ {n} {Γ : dctx n} {A B} -> A ≡ B -> Γ ⊨ A type -> Γ ⊨ B type
-⊨type-cong refl t = t -}
-
-⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
-⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
-
-φeqdep : ∀ {n} {B B' M : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> φ p M -> φ q M
-φeqdep p q refl t = lemma3-3c' p q t
-
-φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p N -> φ q M
-φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
-
-φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p N -> φ q M
-φeq p q s1 s t = lemma3-3' p q (common refl s1) (φ-closed p s t)
-
-φeq' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≈ B' -> M ⟶* N -> φ p N -> φ q M
-φeq' p q s1 s t = lemma3-3' p q s1 (φ-closed p s t)
-
-ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
-ƛ' A B M d1 d2 t {σ = σ} qs = {!!} , (λ b q ->
-   let z = (d2 (qs ,[ d1 qs ] q))
-   in φeqdep' z (subst Φ (subeq2 B) z) (subeq2 B) β (subst (φ z) (subeq2 M) (t (qs ,[ d1 qs ] q) z)))
-
-φeqdep'' : ∀ {n} {B B' M : tm n} (p : Φ B) -> (e : B ≡ B') -> φ p M -> φ (subst Φ e p) M
-φeqdep'' p refl t = t
-
-app' : ∀ {n} {Γ} (A : tm n) B M N (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) -> Γ ⊨ M ∶ (Π A B) -> (t : Γ ⊨ N ∶ A) -> Γ ⊨ (M · N) ∶' ([ N /x] B) [ ⊨subst A B d2 d1 t ]
-app' A B M N d1 d2 t1 t2 {σ = σ} qs with t1 qs (Π' A B d1 d2 qs)
-app' A B M N d1 d2 t1 t2 {σ = σ} qs | q1 , q2 with q2 ([ σ ]t N) (t2 qs (d1 qs))
-... | z2 = φeqdep (subst Φ (subeq2 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs))))
-             (subst Φ (subeq1 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs)))) (trans (sym (subeq2 B)) (subeq1 B)) z2
-
-⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
-⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
-
-{-
-mutual
- reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p M
- reflect bool r = _ , (refl , (neut r))
- reflect (Π p x) r = norm refl (neut r) , λ b q → reflect (x b q) (_·_ r {!!})
- reflect (neut x) r = _ , (refl , r)
- reflect (closed x p) r = reflect p r
-
- reify : ∀ {n} {A M : tm n} -> (p : Ψ A) -> ψ p M -> normalizable M
- reify bool (x₁ , (x₂ , x₃)) = norm  x₂ (normal-bool-normal x₃)
- reify (Π p x) (h , _) = h
- reify (neut x) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
- reify (closed x p) r = reify p r
-
-reifyt : ∀ {n} {A : tm n} -> Ψ A -> normalizable A
-reifyt bool = norm refl bool
-reifyt (Π t x) = {!!} --norm refl Π
-reifyt (neut x) = norm refl (neut x)
-reifyt (closed x t) with reifyt t
-reifyt (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁
-
-mutual
- reflect' : ∀ {n} {A M : tm n} -> (p : Φ A) -> neutral M -> φ p M
- reflect' bool r = , refl , neut r
- reflect' (Π p x) r = norm refl (neut r) , (λ b q → reflect' (x b q) (_·_ r {!!}))
- reflect' (neut x) r = , refl , r
- reflect' (closed x p) r = reflect' p r
- reflect' set r = neut r
-
- reify' : ∀ {n} {A M : tm n} -> (p : Φ A) -> φ p M -> normalizable M
- reify' bool (x₁ , (x₂ , x₃)) = norm x₂ (normal-bool-normal x₃)
- reify' (Π t x) (h , _) = h
- reify' (neut x) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
- reify' (closed x t) r = reify' t r
- reify' set r = reifyt r -}
-
--- TODO: Try doing this in "premonoidal category" style
-if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
-if' C M N1 N2 d t t1 t2 qs with t qs bool
-if' C M N1 N2 d t t1 t2 qs | .tt , (q1 , tt) = φeq (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , tt)))) (subst Φ (subeq1 C) (d (qs ,[ bool ] (, q1 , tt))))
-    (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if1 refl)) (t1 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , tt)))))
-if' C M N1 N2 d t t1 t2 qs | .ff , (q1 , ff) = φeq (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))) (subst Φ (subeq1 C) (d (qs ,[ bool ] (, q1 , ff))))
-    (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if2 refl)) (t2 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))))
-if' C M N1 N2 d t t1 t2 qs | M' , (q1 , neut x) = {!!} --φ-closed (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if* q1) (reflect' (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if x))
-
-mem : ∀ {n} {Γ} {A : tm n} x -> Γ ∋ x ∶ A -> Γ ⊨ (▹ x) ∶ A
-mem .top (top {_} {_} {A}) (qs ,[ p ] x) p₁ = φeqdep p p₁ (subeq3 A) x
-mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst Φ (sym (subeq3 B)) p₁) p₁ (subeq3 B) (mem x d qs (subst Φ (sym (subeq3 B)) p₁))
-
-{-
-mutual
- prop1 : ∀ {n} {A : tm n} -> Ψ A -> Φ A
- prop1 bool = bool
- prop1 (Π t x) = Π (prop1 t) (λ a x₁ → prop1 (x a (prop3' t x₁)))
- prop1 (neut x) = neut x
- prop1 (closed x t) = closed x (prop1 t)
-
- prop3 : ∀ {n} {M A : tm n} (p : Ψ A) -> ψ p M -> φ (prop1 p) M
- prop3 bool r = r
- prop3 (Π t x) (r1 , r2) = r1 , (λ b q → prop3 (x b (prop3' t q)) (r2 b (prop3' t q)))
- prop3 (neut x) r = r
- prop3 (closed x t) r = prop3 t r
-
- prop3' : ∀ {n} {M A : tm n} (p : Ψ A) -> φ (prop1 p) M -> ψ p M
- prop3' bool r = r
- prop3' (Π t x) (r1 , r2) = r1 , (λ b q → prop3' (x b q) (f b q))
-  where f : ∀ b q -> _
-        f b q = lemma3-3c' (prop1 (x b (prop3' t (prop3 t q)))) (prop1 (x b q)) (r2 b (prop3 t q))
- prop3' (neut x) r = r
- prop3' (closed x t) r = prop3' t r
-
-mutual
- lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
- lem1 Γ set = κ set
- lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
- lem1 Γ (emb x) = λ x₁ → prop1 (lem3 Γ x x₁ set)
- 
-  -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
- -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
- lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
- lem2 Γ bool = κ set
- lem2 Γ tt = κ bool
- lem2 Γ ff = κ bool
- lem2 Γ (▹ x₁ x₂) = lem1 Γ x₁
- lem2 Γ (Π t t₁) = κ set
- lem2 Γ (ƛ {A} {B} x t) = Π' A B (lem1 Γ x) (lem2 (Γ , A) t)
- lem2 Γ (_·_ {A} {B} t t₁) = ⊨subst A B (Πinv2 A B (lem2 Γ t)) (lem2 Γ t₁) (lem3 Γ t₁)
- lem2 Γ (if {C} x t t₁ t₂) = ⊨subst bool C (lem1 (Γ , bool) x) (κ bool) (lem3 Γ t)
- lem2 Γ (conv x x₁ t) = lem1 Γ x
-
- lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
- lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
-
- lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
- lem3' Γ bool = κ bool
- lem3' Γ tt = κ (tt , (refl , tt))
- lem3' Γ ff = κ (ff , (refl , ff))
- lem3' Γ (▹ {A} {x} x₁ x₂) = λ qs → mem x x₂ qs (lem1 Γ x₁ qs)
- lem3' Γ (Π {A} {B} t t₁) = λ qs -> Π (lem3 Γ t qs set) (λ a x → subst Ψ (subeq2 B) (lem3 (Γ , A) t₁ (qs ,[ prop1 (lem3 Γ t qs set) ] prop3 (lem3 Γ t qs set) x) set)) -- TODO: Clean up this case somehow?
- lem3' Γ (ƛ {A} {B} {M} x t) = ƛ' A B M (lem1 Γ x) (lem2 (Γ , A) t) (lem3 (Γ , A) t)
- lem3' Γ (_·_ {A} {B} {M} {N} t t₁) = app' A B M N (lem2 Γ t₁) (Πinv2 A B (lem2 Γ t)) (lem3 Γ t) (lem3 Γ t₁)
- lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
- lem3' Γ (conv {A} {B} {M} x x₁ t) = ⊨conv M (lem2 Γ t) (lem1 Γ x) x₁ (lem3 Γ t)
--}
-
--- Huh I think the more natural thing to do for a "weak head normal form"
--- for arrow is to say that any term of arrow type is normal?
--- Maybe use CBPV to motivate? Function types are computation types.. need to thunk to turn into value types...
--- Or.. for weak normalization, could we just add "halts" to the definition of the logical predicate?
-
-{-
-yay1 : ∀ {M A}  -> ⊡ ⊢ M ∶ A -> normalizable M
-yay1 d = subst normalizable subeq4 (reify' {n = ⊡} (lem2 ⊡ d ⊡) (lem3' _ d ⊡))
--}
-
-{-
-mutual
- idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
- idΦ ⊡ = ⊡
- idΦ (d , x) with idΦ d | lem1 _ x (idφ d)
- ... | q1 | q2 = {!!} , {!!} -- TODO: Figure out how to do weakening... Hmm one way is to do it syntactically, then use lem1 with the weakened d
- 
- idφ : ∀ {n} {Γ : dctx n} (d : wfctx Γ) -> φs _ id-tsub (idΦ d)
- idφ ⊡ = ⊡
- idφ (d , x) = {!!} ,[ {!!} ] {!!}
-
-yay : ∀ {n M A} {Γ : dctx n} -> wfctx Γ -> Γ ⊢ M ∶ A -> normalizable M
-yay d0 d with reify' (lem2 _ d (idφ d0)) (lem3' _ d (idφ d0))
-... | q = {!!} -}
-
--- Do the corollary: type checking is decidable (i.e. define algorithmic typing, show it's complete)
--}

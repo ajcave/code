@@ -1,5 +1,5 @@
-module mltt-main where
-open import mltt
+module mltt-main-nat where
+open import mltt-nat
 
 φsubst : ∀ {n m} {A A' : tm n} (p : Φ A) (e : A ≡ A') {M} {w : vsubst n m} -> φ p w M -> φ (subst Φ e p) w M
 φsubst p refl t = t
@@ -37,6 +37,7 @@ open import mltt
 φwkn v (neut y) (t1 , (t2 , t3)) = ([ v ]r t1) , ((ren⟶* v t2) , (rename-neut t3))
 φwkn v (closed y y') t = φwkn v y' t
 φwkn v set t = Ψwkn v t
+φwkn v nat (t1 , (t2 , t3)) = ([ v ]r t1) , ((ren⟶* v t2) , rename-norm-nat t3)
 
 φwkn' : ∀ {m k} {A : tm m}  (v : vsubst m k) (p : Φ A) {M} -> φ p id-vsub M -> φ (Φwkn v p) id-vsub ([ v ]r M)
 φwkn' v p {M} t = φfunct'id v p (subst (λ α → φ p α ([ v ]r M)) (sym id-v-right) (φwkn v p t))
@@ -147,15 +148,18 @@ mutual
         f v b q | norm y' y0 = ψ-closed (y (v ∘v id-vsub) b q) (app2* y') (reflect (y (v ∘v id-vsub) b q) ((rename-neut r) · y0))
  reflect (neut y) r = _ , (refl , r)
  reflect (closed y y') r = reflect y' r
+ reflect nat r = , (refl , neut r)
 
  reify : ∀ {n} {A M : tm n} -> (p : Ψ A) -> ψ p id-vsub M -> normalizable M
  reify bool (t1 , (t2 , t3)) = norm t2 (normal-bool-normal t3)
  reify (Π p y) (h , _) = h
  reify (neut y) (t1 , (t2 , r)) = norm t2 (neut r)
  reify (closed y y') r = reify y' r
+ reify nat (t1 , (t2 , t3)) = norm t2 (normal-nat-normal t3)
 
 reifyt : ∀ {n} {A : tm n} -> Ψ A -> normalizable A
 reifyt bool = norm refl bool
+reifyt nat = norm refl nat
 reifyt (Π t x) with reifyt t | reifyt (x wkn-vsub (▹ top) (ψfunctid wkn-vsub t (reflect (Ψwkn wkn-vsub t) (▹ top))))
 reifyt (Π {A} {B} t x) | norm y y' | norm y0 y1 = norm (Π* y (⟶*cong2 subeq7 refl y0)) (Π y' y1)
 reifyt (neut x) = norm refl (neut x)
@@ -172,6 +176,7 @@ mutual
  reflect' (neut y) r = _ , (refl , r)
  reflect' (closed y y') r = reflect' y' r
  reflect' set r = neut r
+ reflect' nat r = , (refl , neut r)
 
  reify' : ∀ {n} {A M : tm n} -> (p : Φ A) -> φ p id-vsub M -> normalizable M
  reify' bool (t1 , (t2 , t3)) = norm t2 (normal-bool-normal t3)
@@ -179,6 +184,7 @@ mutual
  reify' (neut y) (t1 , (t2 , r)) = norm t2 (neut r)
  reify' (closed y y') r = reify' y' r
  reify' set r = reifyt r
+ reify' nat (t1 , (t2 , t3)) = norm t2 (normal-nat-normal t3)
 
 ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
 ƛ' A B M d1 d2 t {σ = σ} qs =
@@ -233,14 +239,17 @@ mutual
  prop1 (Π t x) = Π (prop1 t) (λ v a x₁ → prop1 (x v a (prop3' t x₁))) 
  prop1 (neut x) = neut x
  prop1 (closed x t) = closed x (prop1 t)
+ prop1 nat = nat
 
  prop3 : ∀ {n m} {v : vsubst n m} {M A} (p : Ψ A) -> ψ p v M -> φ (prop1 p) v M
  prop3 bool r = r
  prop3 {v = w} (Π t x) (r1 , r2) = r1 , (λ v b q → prop3 (x (v ∘v w) b (prop3' t q)) (r2 v b (prop3' t q)))
  prop3 (neut x) r = r
  prop3 (closed x t) r = prop3 t r
-
+ prop3 nat r = r
+ 
  prop3' : ∀ {n m} {v : vsubst n m} {M A} (p : Ψ A) -> φ (prop1 p) v M -> ψ p v M
+ prop3' nat r = r
  prop3' bool r = r
  prop3' {v = w} (Π t x) (r1 , r2) = r1 , (λ v b q → prop3' (x (v ∘v w) b q) (f v b q))
   where f : ∀ {k} (v : vsubst _ k) b q -> _
