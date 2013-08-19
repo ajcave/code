@@ -307,7 +307,7 @@ rec'' : ∀ {n} {Γ} C (N : tm n) M P
  -> Γ ⊨ (rec N M P) ∶' ([ N /x] C) [ ⊨subst nat C dc (κ nat) dn ]
 rec'' C N M P dc dn dm dp {σ = σ} qs with dn qs nat
 ... | (t1 , (t2 , t3)) with rec' C M P dc dm dp t1 qs t3
-... | z = {!!}
+... | z = φeq (subst Φ (subeq2 C) (dc _)) (subst Φ (subeq1 C) (dc _)) (⟶*cong2 (subeq1 C) (subeq2 C) (sub⟶*2 t2 C)) (rec1* t2) z
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type

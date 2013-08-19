@@ -129,6 +129,10 @@ suc* : ∀ {n} {M M' : tm n} -> M ⟶* M' -> (suc M) ⟶* (suc M')
 suc* refl = refl
 suc* (trans1 x t) = trans1 (suc x) (suc* t)
 
+rec1* : ∀ {n} {M M' : tm n} {N1 N2} -> M ⟶* M' -> (rec M N1 N2) ⟶* (rec M' N1 N2)
+rec1* refl = refl
+rec1* (trans1 x t) = trans1 (rec1 x) (rec1* t)
+
 mutual
  data neutral {n} : tm n -> Set where
   ▹ : ∀ x -> neutral (▹ x)
