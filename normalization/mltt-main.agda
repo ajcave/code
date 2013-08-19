@@ -4,6 +4,9 @@ open import mltt
 φsubst : ∀ {n m} {A A' : tm n} (p : Φ A) (e : A ≡ A') {M} {w : vsubst n m} -> φ p w M -> φ (subst Φ e p) w M
 φsubst p refl t = t
 
+φsubst' : ∀ {n m} {A A' : tm n} (p : Φ A) (e : A ≡ A') {M} {w : vsubst n m} -> φ (subst Φ e p) w M -> φ p w M
+φsubst' p refl t = t
+
 φeqdep' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ⟶ N -> φ p id-vsub N -> φ q id-vsub M
 φeqdep' p q refl s t = lemma3-3c' p q (φ-closed p (trans1 s refl) t)
 
@@ -236,6 +239,20 @@ mutual
  (t2 ((φswkn w x) ,[ (subst Φ (ren-sub-comp A) (Φwkn w (prop1 (t1 x set)))) ]
        φsubst (Φwkn w (prop1 (t1 x set))) (ren-sub-comp A) (φfunct'id w (prop1 (t1 x set)) (prop3 (t1 x set) x')))
      set))
+
+app' : ∀ {n} {Γ} (A : tm n) B M N (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) -> Γ ⊨ M ∶ (Π A B) -> (t : Γ ⊨ N ∶ A) -> Γ ⊨ (M · N) ∶' ([ N /x] B) [ ⊨subst A B d2 d1 t ]
+app' A B M N d1 d2 t1 t2 {σ = σ} qs with (t2 qs (d1 qs)) | t1 qs (Π' A B d1 d2 qs)
+app' A B M N d1 d2 t1 t2 {σ = σ} qs | q0 | q1 , q2 with q2 id-vsub ([ σ ]t N) (subst (λ α → φ (d1 qs) α ([ σ ]t N)) id-v-right q0)
+... | z2 = φeqdep2
+             (subst Φ (sub-ren-lem _ _ _ B) (d2 _))
+             (subst Φ (subeq1 B) (d2 _))
+             (trans
+                 (sym (sub-ren-lem _ _ _ B))
+                 (trans (cong (λ α → [ α , [ σ ]t N ]t B)
+                 (trans (cong (λ α → [ α ]rs σ) (sym id-v-right)) reneq4'))
+                 (subeq1 B)))
+             (cong₂ _·_ (sym reneq4) refl)
+             z2
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
