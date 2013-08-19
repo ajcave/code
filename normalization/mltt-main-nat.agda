@@ -300,10 +300,10 @@ mutual
  lem2 Γ (_·_ {A} {B} y y') = ⊨subst A B (Πinv2 A B (lem2 Γ y)) (lem2 Γ y') (lem3 Γ y')
  lem2 Γ (if {C} x t t₁ t₂) = ⊨subst bool C (lem1 (Γ , bool) x) (κ bool) (lem3 Γ t)
  lem2 Γ (conv y y' y0) = lem1 Γ y
- lem2 Γ nat = {!!}
- lem2 Γ zero = {!!}
- lem2 Γ (suc n) = {!!}
- lem2 Γ (rec c n m p) = {!!}
+ lem2 Γ nat = κ set
+ lem2 Γ zero = κ nat
+ lem2 Γ (suc n) = κ nat
+ lem2 Γ (rec {C} c n m p) = ⊨subst nat C (lem1 _ c) (κ nat) (lem3 Γ n)
 
  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
