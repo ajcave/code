@@ -346,7 +346,7 @@ mutual
  lem3' Γ nat = κ nat
  lem3' Γ zero = λ qs → zero , (refl , zero)
  lem3' Γ (suc {N} n) = suc' N (lem3 Γ n)
- lem3' Γ (rec c n m p) = {!!}
+ lem3' Γ (rec {C} {N} {M} {P} c n m p) = rec'' C N M P (lem1 _ c) (lem3 _ n) (lem3 _ m) (lem3 _ p)
 
 mutual
  idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
