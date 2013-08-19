@@ -298,7 +298,7 @@ rec' : ∀ {n} {Γ : dctx n} C M P
  -> ∀ {m} (N : tm m) {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> (p : normal-nat N) -> φ (subst Φ (subeq2 C {N = N}) (d (qs ,[ nat ] (, (refl , p))))) id-vsub (rec N ([ σ ]t M) ([ tsub-ext (tsub-ext σ) ]t P))
 rec' C M P d dm dp .zero qs zero with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ] (, refl , zero))))
 ... | z0 = φeqdep3 (d _) (subeq1 C) (subeq2 C) recβz z0
-rec' C M P d dm dp .(suc n₁) qs (suc {n₁} p) = {!!}
+rec' C M P d dm dp .(suc n₁) qs (suc {n₁} p) = φstep (subst Φ (subeq2 C) (d _)) recβsuc {!!}
 rec' C M P d dm dp N qs (neut x) = {!!}
 
 rec'' : ∀ {n} {Γ} C (N : tm n) M P
