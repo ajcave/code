@@ -133,6 +133,18 @@ rec1* : ∀ {n} {M M' : tm n} {N1 N2} -> M ⟶* M' -> (rec M N1 N2) ⟶* (rec M'
 rec1* refl = refl
 rec1* (trans1 x t) = trans1 (rec1 x) (rec1* t)
 
+rec2* : ∀ {n} {M : tm n} {N1 N1' N2} -> N1 ⟶* N1' -> (rec M N1 N2) ⟶* (rec M N1' N2)
+rec2* refl = refl
+rec2* (trans1 x t) = trans1 (rec2 x) (rec2* t)
+
+rec3* : ∀ {n} {M : tm n} {N1 N2 N2'} -> N2 ⟶* N2' -> (rec M N1 N2) ⟶* (rec M N1 N2')
+rec3* refl = refl
+rec3* (trans1 x t) = trans1 (rec3 x) (rec3* t)
+
+rec* : ∀ {n} {M M' : tm n} {N1 N1' N2 N2'} -> M ⟶* M' -> N1 ⟶* N1' -> N2 ⟶* N2'
+ -> (rec M N1 N2) ⟶* (rec M' N1' N2')
+rec* s1 s2 s3 = ⟶*-trans (rec1* s1) (⟶*-trans (rec2* s2) (rec3* s3))
+
 mutual
  data neutral {n} : tm n -> Set where
   ▹ : ∀ x -> neutral (▹ x)

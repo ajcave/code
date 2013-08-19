@@ -292,6 +292,8 @@ suc' : ∀ {n} {Γ : dctx n} M -> Γ ⊨ M ∶ nat -> Γ ⊨ (suc M) ∶' nat [ 
 suc' M d qs with d qs nat
 suc' M d qs | t1 , (t2 , t3) = (suc t1) , (suc* t2 , (suc t3))
 
+
+
 rec' : ∀ {n} {Γ : dctx n} C M P
  -> (d : (Γ , nat) ⊨ C type)  -> Γ ⊨ M ∶ ([ zero /x] C)
  -> ((Γ , nat) , C) ⊨ P ∶ ([ suc (▹ (pop top)) /x] ([ wkn-vsub ∘v wkn-vsub ]r C))
@@ -301,10 +303,11 @@ rec' C M P d dm dp .zero qs zero with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ]
 rec' C M P d dm dp .(suc n₁) qs (suc {n₁} p) with φsubst' (d _) (subeq2 C) (rec' C M P d dm dp n₁ qs p)
 ... | z0 with dp ((qs ,[ nat ] (, refl , p)) ,[ (d (qs ,[ nat ] (, refl , p))) ] z0) {!!}
 ... | z = φstep (subst Φ (subeq2 C) (d _)) recβsuc {!!}
-rec' C M P d dm dp N qs (neut x) with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ] (, refl , zero))))
+rec' C M P d dm dp N {σ = σ} qs (neut x) with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ] (, refl , zero))))
 ... | z with reify' (subst Φ (subeq1 C) (d _)) z
-... | z0 with dp (((φswkn (wkn-vsub ∘v wkn-vsub) qs) ,[ nat ] (, refl , neut (▹ (pop top)))) ,[ {!!} ] {!!}) {!!}
-... | z1 = {!!}
+... | z0 with dp (((φswkn (wkn-vsub ∘v wkn-vsub) qs) ,[ nat ] (, refl , neut (▹ (pop top)))) ,[ d ((φswkn _ qs) ,[ nat ] (, refl , neut (▹ (pop top)))) ] reflect' (d _) (▹ top)) (subst Φ {!!} (d ((φswkn (wkn-vsub ∘v wkn-vsub) qs) ,[ nat ] (, refl , suc (neut (▹ (pop top)))))))
+... | z1 with reify' {M = [ tsub-ext (tsub-ext σ) ]t P} (subst Φ {!!} (d ((φswkn (wkn-vsub ∘v wkn-vsub) qs) ,[ nat ] (, refl , suc (neut (▹ (pop top))))))) z1
+rec' C M P d dm dp N qs (neut x) | z | norm y1 y2 | z1 | norm x₁ x₂ = φ-closed (subst Φ (subeq2 C) (d _)) (rec* refl y1 x₁) (reflect' (subst Φ (subeq2 C) (d _)) (rec x y2 x₂))
 
 rec'' : ∀ {n} {Γ} C (N : tm n) M P
  -> (dc : (Γ , nat) ⊨ C type) -> (dn : Γ ⊨ N ∶ nat) -> Γ ⊨ M ∶ ([ zero /x] C)
