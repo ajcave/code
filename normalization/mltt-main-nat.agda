@@ -301,6 +301,14 @@ rec' C M P d dm dp .zero qs zero with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ]
 rec' C M P d dm dp .(suc n₁) qs (suc {n₁} p) = {!!}
 rec' C M P d dm dp N qs (neut x) = {!!}
 
+rec'' : ∀ {n} {Γ} C (N : tm n) M P
+ -> (dc : (Γ , nat) ⊨ C type) -> (dn : Γ ⊨ N ∶ nat) -> Γ ⊨ M ∶ ([ zero /x] C)
+ -> ((Γ , nat) , C) ⊨ P ∶ ([ suc (▹ (pop top)) /x] ([ wkn-vsub ∘v wkn-vsub ]r C))
+ -> Γ ⊨ (rec N M P) ∶' ([ N /x] C) [ ⊨subst nat C dc (κ nat) dn ]
+rec'' C N M P dc dn dm dp {σ = σ} qs with dn qs nat
+... | (t1 , (t2 , t3)) with rec' C M P dc dm dp t1 qs t3
+... | z = {!!}
+
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
