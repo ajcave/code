@@ -13,6 +13,10 @@ open import mltt-nat
 φeqdep2 : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> M ≡ N -> φ p id-vsub N -> φ q id-vsub M
 φeqdep2 p q refl refl t = lemma3-3c' p q t
 
+φeqdep3 : ∀ {n} {B B' B'' M N : tm n} (p : Φ B) (e1 : B ≡ B') (e2 : B ≡ B'')
+ -> M ⟶ N -> φ (subst Φ e1 p) id-vsub N -> φ (subst Φ e2 p) id-vsub M
+φeqdep3 p refl refl s t = φ-closed p (trans1 s refl) t
+
 φstep : ∀ {n} {B M N : tm n} (p : Φ B) -> M ⟶ N -> φ p id-vsub N -> φ p id-vsub M
 φstep p s t = φ-closed p (trans1 s refl) t
 
@@ -287,6 +291,15 @@ app' A B M N d1 d2 t1 t2 {σ = σ} qs | q0 | q1 , q2 with q2 id-vsub ([ σ ]t N)
 suc' : ∀ {n} {Γ : dctx n} M -> Γ ⊨ M ∶ nat -> Γ ⊨ (suc M) ∶' nat [ κ nat ]
 suc' M d qs with d qs nat
 suc' M d qs | t1 , (t2 , t3) = (suc t1) , (suc* t2 , (suc t3))
+
+rec' : ∀ {n} {Γ : dctx n} C M P
+ -> (d : (Γ , nat) ⊨ C type)  -> Γ ⊨ M ∶ ([ zero /x] C)
+ -> ((Γ , nat) , C) ⊨ P ∶ ([ suc (▹ (pop top)) /x] ([ wkn-vsub ∘v wkn-vsub ]r C))
+ -> ∀ {m} (N : tm m) {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> (p : normal-nat N) -> φ (subst Φ (subeq2 C {N = N}) (d (qs ,[ nat ] (, (refl , p))))) id-vsub (rec N ([ σ ]t M) ([ tsub-ext (tsub-ext σ) ]t P))
+rec' C M P d dm dp .zero qs zero with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ] (, refl , zero))))
+... | z0 = φeqdep3 (d _) (subeq1 C) (subeq2 C) recβz z0
+rec' C M P d dm dp .(suc n₁) qs (suc {n₁} p) = {!!}
+rec' C M P d dm dp N qs (neut x) = {!!}
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
