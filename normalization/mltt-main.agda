@@ -304,7 +304,7 @@ mutual
  idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
  idΦ ⊡ = ⊡
  idΦ (_,_ d {A} x) = Φswkn wkn-vsub (idΦ d) , subst Φ (ren-sub-comp A) (Φwkn wkn-vsub (lem1 _ x (idφ d))) 
- 
+
  idφ : ∀ {n} {Γ : dctx n} (d : wfctx Γ) -> φs _ id-tsub (idΦ d)
  idφ ⊡ = ⊡
  idφ (_,_ d {A} x) = φswkn wkn-vsub (idφ d) ,[ subst Φ (ren-sub-comp A) (Φwkn wkn-vsub (lem1 _ x (idφ d))) ]
