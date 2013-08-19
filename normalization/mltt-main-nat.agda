@@ -284,9 +284,9 @@ app' A B M N d1 d2 t1 t2 {σ = σ} qs | q0 | q1 , q2 with q2 id-vsub ([ σ ]t N)
              (cong₂ _·_ (sym reneq4) refl)
              z2
 
-suc' : ∀ {n} {Γ : dctx n} {M} -> Γ ⊨ M ∶ nat -> Γ ⊨ (suc M) ∶' nat [ κ nat ]
-suc' d qs with d qs nat
-suc' d qs | t1 , (t2 , t3) = (suc t1) , (suc* t2 , (suc t3))
+suc' : ∀ {n} {Γ : dctx n} M -> Γ ⊨ M ∶ nat -> Γ ⊨ (suc M) ∶' nat [ κ nat ]
+suc' M d qs with d qs nat
+suc' M d qs | t1 , (t2 , t3) = (suc t1) , (suc* t2 , (suc t3))
 
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
@@ -324,7 +324,7 @@ mutual
  lem3' Γ (conv {A} {B} {M} y y' y0) = ⊨conv M (lem2 Γ y0) (lem1 Γ y) y' (lem3 Γ y0) 
  lem3' Γ nat = κ nat
  lem3' Γ zero = λ qs → zero , (refl , zero)
- lem3' Γ (suc n) = suc' (lem3 Γ n)
+ lem3' Γ (suc {N} n) = suc' N (lem3 Γ n)
  lem3' Γ (rec c n m p) = {!!}
 
 mutual
