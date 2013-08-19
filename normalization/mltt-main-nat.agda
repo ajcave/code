@@ -62,8 +62,14 @@ mutual
 
  data _⊢_∶_ {n} (Γ : dctx n) : tm n -> tm n -> Set where
   bool : Γ ⊢ bool ∶ set
+  nat : Γ ⊢ nat ∶ set
   tt : Γ ⊢ tt ∶ bool
   ff : Γ ⊢ ff ∶ bool
+  zero : Γ ⊢ zero ∶ nat
+  suc : ∀ {M} -> Γ ⊢ M ∶ nat -> Γ ⊢ (suc M) ∶ nat
+  rec : ∀ {C N M P} -> (Γ , nat) ⊢ C type -> Γ ⊢ N ∶ nat -> Γ ⊢ M ∶ ([ zero /x] C)
+                    -> ((Γ , nat) , C) ⊢ P ∶ ([ suc (▹ (pop top)) /x] ([ wkn-vsub ∘v wkn-vsub ]r C))
+                    -> Γ ⊢ (rec N M P) ∶ ([ N /x] C)
   ▹ : ∀ {A x} -> Γ ⊢ A type -> Γ ∋ x ∶ A -> Γ ⊢ (▹ x) ∶ A
   Π : ∀ {A B} -> Γ ⊢ A ∶ set -> (Γ , A) ⊢ B ∶ set -> Γ ⊢ (Π A B) ∶ set
   ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
@@ -294,6 +300,10 @@ mutual
  lem2 Γ (_·_ {A} {B} y y') = ⊨subst A B (Πinv2 A B (lem2 Γ y)) (lem2 Γ y') (lem3 Γ y')
  lem2 Γ (if {C} x t t₁ t₂) = ⊨subst bool C (lem1 (Γ , bool) x) (κ bool) (lem3 Γ t)
  lem2 Γ (conv y y' y0) = lem1 Γ y
+ lem2 Γ nat = {!!}
+ lem2 Γ zero = {!!}
+ lem2 Γ (suc n) = {!!}
+ lem2 Γ (rec c n m p) = {!!}
 
  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
@@ -308,6 +318,10 @@ mutual
  lem3' Γ (_·_ {A} {B} {M} {N} t t₁) = app' A B M N (lem2 Γ t₁) (Πinv2 A B (lem2 Γ t)) (lem3 Γ t) (lem3 Γ t₁)
  lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
  lem3' Γ (conv {A} {B} {M} y y' y0) = ⊨conv M (lem2 Γ y0) (lem1 Γ y) y' (lem3 Γ y0) 
+ lem3' Γ nat = {!!}
+ lem3' Γ zero = {!!}
+ lem3' Γ (suc n) = {!!}
+ lem3' Γ (rec c n m p) = {!!}
 
 mutual
  idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
