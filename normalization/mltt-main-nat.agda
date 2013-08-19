@@ -301,7 +301,7 @@ rec' : ∀ {n} {Γ : dctx n} C M P
 rec' C M P d dm dp .zero qs zero with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ] (, refl , zero))))
 ... | z0 = φeqdep3 (d _) (subeq1 C) (subeq2 C) recβz z0
 rec' C M P d dm dp .(suc n₁) qs (suc {n₁} p) with φsubst' (d _) (subeq2 C) (rec' C M P d dm dp n₁ qs p)
-... | z0 with dp ((qs ,[ nat ] (, refl , p)) ,[ (d (qs ,[ nat ] (, refl , p))) ] z0) {!!}
+... | z0 with dp ((qs ,[ nat ] (, refl , p)) ,[ (d (qs ,[ nat ] (, refl , p))) ] z0) (subst Φ {!!} (d (qs ,[ nat ] (, refl , suc p))))
 ... | z = φstep (subst Φ (subeq2 C) (d _)) recβsuc {!!}
 rec' C M P d dm dp N {σ = σ} qs (neut x) with dm qs (subst Φ (subeq1 C) (d (qs ,[ nat ] (, refl , zero))))
 ... | z with reify' (subst Φ (subeq1 C) (d _)) z
