@@ -209,6 +209,27 @@ if' C M N1 N2 d t t1 t2 qs | .ff , (q1 , ff) = φeq (subst Φ (subeq1 C) (d (qs 
 if' C M N1 N2 d t t1 t2 qs | M' , (q1 , neut x) = {!!} --φ-closed (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if* q1) (reflect' (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if x))
 
 mutual
+ prop1 : ∀ {n} {A : tm n} -> Ψ A -> Φ A
+ prop1 bool = bool
+ prop1 (Π t x) = Π (prop1 t) (λ v a x₁ → prop1 (x v a (prop3' t x₁))) 
+ prop1 (neut x) = neut x
+ prop1 (closed x t) = closed x (prop1 t)
+
+ prop3 : ∀ {n m} {v : vsubst n m} {M A} (p : Ψ A) -> ψ p v M -> φ (prop1 p) v M
+ prop3 bool r = r
+ prop3 {v = w} (Π t x) (r1 , r2) = r1 , (λ v b q → prop3 (x (v ∘v w) b (prop3' t q)) (r2 v b (prop3' t q)))
+ prop3 (neut x) r = r
+ prop3 (closed x t) r = prop3 t r
+
+ prop3' : ∀ {n m} {v : vsubst n m} {M A} (p : Ψ A) -> φ (prop1 p) v M -> ψ p v M
+ prop3' bool r = r
+ prop3' {v = w} (Π t x) (r1 , r2) = r1 , (λ v b q → prop3' (x (v ∘v w) b q) (f v b q))
+  where f : ∀ {k} (v : vsubst _ k) b q -> _
+        f v b q = lemma3-3c' (prop1 (x (v ∘v w) b (prop3' t (prop3 t q)))) (prop1 (x (v ∘v w) b q)) (r2 v b (prop3 t q))
+ prop3' (neut x) r = r
+ prop3' (closed x t) r = prop3' t r
+
+mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
  lem1 Γ (Π {A} {B} y y') = Π' A B (lem1 Γ y) (lem1 _ y')
