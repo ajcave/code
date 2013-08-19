@@ -203,6 +203,17 @@ mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst
 ⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
 ⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
 
+if1* : ∀ {n} {M N1 N1' N2 : tm n} -> N1 ⟶* N1' -> (if M N1 N2) ⟶* (if M N1' N2)
+if1* refl = refl
+if1* (trans1 x t) = trans1 (ifc1 x) (if1* t)
+
+if2* : ∀ {n} {M N1 N2 N2' : tm n} -> N2 ⟶* N2' -> (if M N1 N2) ⟶* (if M N1 N2')
+if2* refl = refl
+if2* (trans1 x t) = trans1 (ifc2 x) (if2* t)
+
+if3* : ∀ {n} {M M' N1 N1' N2 N2' : tm n} -> M ⟶* M' -> N1 ⟶* N1' -> N2 ⟶* N2' -> (if M N1 N2) ⟶* (if M' N1' N2')
+if3* s1 s2 s3 = ⟶*-trans (if* s1) (⟶*-trans (if1* s2) (if2* s3))
+
 -- TODO: Try doing this in "premonoidal category" style
 if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
 if' C M N1 N2 d t t1 t2 qs with t qs bool
@@ -210,7 +221,11 @@ if' C M N1 N2 d t t1 t2 qs | .tt , (q1 , tt) = φeq (subst Φ (subeq1 C) (d (qs 
     (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if1 refl)) (t1 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , tt)))))
 if' C M N1 N2 d t t1 t2 qs | .ff , (q1 , ff) = φeq (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))) (subst Φ (subeq1 C) (d (qs ,[ bool ] (, q1 , ff))))
     (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if2 refl)) (t2 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))))
-if' C M N1 N2 d t t1 t2 qs | M' , (q1 , neut x) = {!!} --φ-closed (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if* q1) (reflect' (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if x))
+if' C M N1 N2 d t t1 t2 qs | M' , (q1 , neut x) with
+              subst Φ (subeq1 C {N = tt}) (d (qs ,[ bool ] (, refl , tt)))
+... | z1 with subst Φ (subeq1 C {N = ff}) (d (qs ,[ bool ] (, refl , ff)))
+... | z2 with reify' z1 (t1 qs z1) | reify' z2 (t2 qs z2)
+... | norm y y' | norm y2 y2' = φ-closed (subst Φ (subeq1 C) (d _)) (if3* q1 y y2) (reflect' (subst Φ (subeq1 C) (d _)) (if x y' y2'))
 
 mutual
  prop1 : ∀ {n} {A : tm n} -> Ψ A -> Φ A
