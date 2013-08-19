@@ -281,7 +281,7 @@ mutual
  lem3' Γ (▹ y y') = λ qs → mem _ y' qs (lem1 Γ y qs)
  lem3' Γ (Π {A} {B} y y') = Π'' A B (lem3 Γ y) (lem3 (Γ , A) y')
  lem3' Γ (ƛ {A} {B} {M} y y') = ƛ' A B M (lem1 Γ y) (lem2 (Γ , A) y') (lem3 (Γ , A) y')
- lem3' Γ (y · y') = {!!}
+ lem3' Γ (_·_ {A} {B} {M} {N} t t₁) = app' A B M N (lem2 Γ t₁) (Πinv2 A B (lem2 Γ t)) (lem3 Γ t) (lem3 Γ t₁)
  lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
  lem3' Γ (conv {A} {B} {M} y y' y0) = ⊨conv M (lem2 Γ y0) (lem1 Γ y) y' (lem3 Γ y0) 
 
