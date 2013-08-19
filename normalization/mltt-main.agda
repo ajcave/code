@@ -114,6 +114,7 @@ _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 κ : ∀ {A B : Set} -> B -> A -> B
 κ b = λ _ -> b
 
+
 mutual
  Πinv1' : ∀ {n} (A : tm n) B -> Φ (Π A B) -> Φ A
  Πinv1' A B (Π p x) = p
@@ -229,6 +230,13 @@ mutual
  prop3' (neut x) r = r
  prop3' (closed x t) r = prop3' t r
 
+
+Π'' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A ∶ set -> (Γ , A) ⊨ B ∶ set -> Γ ⊨ (Π A B) ∶' set [ κ set ]
+Π'' A B t1 t2 {σ = σ} x = Π (t1 x set) (λ w a x' → subst Ψ (sub-ren-lem σ w a B)
+ (t2 ((φswkn w x) ,[ (subst Φ (ren-sub-comp A) (Φwkn w (prop1 (t1 x set)))) ]
+       φsubst (Φwkn w (prop1 (t1 x set))) (ren-sub-comp A) (φfunct'id w (prop1 (t1 x set)) (prop3 (t1 x set) x')))
+     set))
+
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
@@ -254,7 +262,7 @@ mutual
  lem3' Γ tt = λ qs → tt , (refl , tt)
  lem3' Γ ff = λ qs → ff , (refl , ff)
  lem3' Γ (▹ y y') = λ qs → mem _ y' qs (lem1 Γ y qs)
- lem3' Γ (Π y y') = {!!}
+ lem3' Γ (Π {A} {B} y y') = Π'' A B (lem3 Γ y) (lem3 (Γ , A) y')
  lem3' Γ (ƛ {A} {B} {M} y y') = ƛ' A B M (lem1 Γ y) (lem2 (Γ , A) y') (lem3 (Γ , A) y')
  lem3' Γ (y · y') = {!!}
  lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
