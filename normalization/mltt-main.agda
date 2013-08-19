@@ -233,7 +233,7 @@ mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
  lem1 Γ (Π {A} {B} y y') = Π' A B (lem1 Γ y) (lem1 _ y')
- lem1 Γ (emb y) = {!!}
+ lem1 Γ (emb y) = λ x → prop1 (lem3 Γ y x set)
  
  lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
  lem2 Γ bool = κ set
