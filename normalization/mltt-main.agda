@@ -199,6 +199,15 @@ mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst
 ⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
 ⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
 
+-- TODO: Try doing this in "premonoidal category" style
+if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
+if' C M N1 N2 d t t1 t2 qs with t qs bool
+if' C M N1 N2 d t t1 t2 qs | .tt , (q1 , tt) = φeq (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , tt)))) (subst Φ (subeq1 C) (d (qs ,[ bool ] (, q1 , tt))))
+    (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if1 refl)) (t1 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , tt)))))
+if' C M N1 N2 d t t1 t2 qs | .ff , (q1 , ff) = φeq (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))) (subst Φ (subeq1 C) (d (qs ,[ bool ] (, q1 , ff))))
+    (⟶*cong2 (subeq1 C) (subeq1 C) (sub⟶*2 q1 C)) (⟶*-trans (if* q1) (trans1 if2 refl)) (t2 qs (subst Φ (subeq1 C) (d (qs ,[ bool ] (, refl , ff)))))
+if' C M N1 N2 d t t1 t2 qs | M' , (q1 , neut x) = {!!} --φ-closed (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if* q1) (reflect' (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if x))
+
 mutual
  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ set = κ set
@@ -227,7 +236,7 @@ mutual
  lem3' Γ (Π y y') = {!!}
  lem3' Γ (ƛ {A} {B} {M} y y') = ƛ' A B M (lem1 Γ y) (lem2 (Γ , A) y') (lem3 (Γ , A) y')
  lem3' Γ (y · y') = {!!}
- lem3' Γ (if y y' y0 y1) = {!!}
+ lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
  lem3' Γ (conv {A} {B} {M} y y' y0) = ⊨conv M (lem2 Γ y0) (lem1 Γ y) y' (lem3 Γ y0) 
 
 mutual
