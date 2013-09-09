@@ -133,9 +133,9 @@ sub-ext σ = (gmap [ wkn-vsub ]r σ) , (v top)
 []v-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]v-funct (vsub-ext σ1) (vsub-ext σ2) y) (cong (λ α → [ α ]r y) (sym (vsub-ext-funct σ2 σ1))))
 []v-funct σ1 σ2 c = refl
 
-vn-ext-funct : ∀ {n m k : ctx tp} {T : tp} (w : sub n m) (w' : vsubst m k)
- -> sub-ext {T = T} (gmap [ w' ]r w) ≡ gmap [ vsub-ext w' ]r (sub-ext w)
-vn-ext-funct w w' = cong (λ α → α , v top) (trans (gmap-funct w) (trans (gmap-cong (λ x → trans ([]v-funct _ _ x) (trans (cong (λ α → [ α ]r x) (trans {!!} (sym (gmap-funct id-vsub)))) (sym ([]v-funct _ _ x))))) (sym (gmap-funct w)))) --cong (λ α → α , top) (trans (gmap-funct w) (trans (gmap-cong (λ x → sym (lookup-gmap pop w' x))) (sym (gmap-funct w))))
+vn-ext-funct : ∀ {n m k : ctx tp} {T : tp} (σ : sub n m) (w' : vsubst m k)
+ -> sub-ext {T = T} (gmap [ w' ]r σ) ≡ gmap [ vsub-ext w' ]r (sub-ext σ)
+vn-ext-funct σ w' = cong (λ α → α , v top) (trans (gmap-funct σ) (trans (gmap-cong (λ x → trans ([]v-funct _ _ x) (trans (cong (λ α → [ α ]r x) (trans {!!} (sym (gmap-funct id-vsub)))) (sym ([]v-funct _ _ x))))) (sym (gmap-funct σ)))) --cong (λ α → α , top) (trans (gmap-funct w) (trans (gmap-cong (λ x → sym (lookup-gmap pop w' x))) (sym (gmap-funct w))))
 
 []vn-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]r ([ σ2 ] R) ≡ [ gmap [ σ1 ]r σ2 ] R
