@@ -25,6 +25,7 @@ mutual
   ♯_[_] : (p : tm n) (π : tm n) -> tm n
   top : tm n
   ▸ : (p : tm n) -> tm n
+  _,_ : (Ψ : tm n) (A : lftp n) -> tm n
 --  pop : (x : tm n) -> tm n
 
 data dctx : ctx Unitz -> Set where
@@ -34,6 +35,8 @@ data dctx : ctx Unitz -> Set where
 data _∋_∶_ : ∀ {n} -> dctx n -> var n * -> tp n -> Set where
  top : ∀ {n} {Γ : dctx n} {A} -> (Γ , A) ∋ top ∶ {!!}
  pop : ∀ {n} {Γ : dctx n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ {!!}
+
+-- Try separating out the special domain? Plug in e.g. nat with assoc?
 
 mutual
  data wfctx : ∀ {n} -> dctx n -> Set where
@@ -49,7 +52,7 @@ mutual
   _·_ : ∀ {T₁ T₂ E₁ E₂} -> Γ ⊢ E₁ ∶ (Π T₁ T₂) -> Γ ⊢ E₂ ∶ T₁ -> Γ ⊢ (E₁ · E₂) ∶ {!!} --([ N /x] B)
   _[_] : ∀ {P Ψ Φ E σ} -> Γ ⊢ E ∶ (P [ Ψ ]) -> Γ ⊢ σ ∶ ($ Ψ [ Φ ]) -> Γ ⊢ (E [ σ ]) ∶ ({!!} [ Φ ])
   ▸ : ∀ {p P Ψ} -> Γ ⊢ p ∶ (♯ P [ Ψ ]) -> Γ ⊢ (▸ p) ∶ (P [ Ψ ])
-  
+  top : ∀ {Ψ A} -> Γ ⊢ top ∶ ({!!} [ Ψ , A ])
 --  conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A 
   
   

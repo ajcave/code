@@ -121,3 +121,7 @@ lookup-id {a} {A} {ψ , T} {T'} {pop y} = trans (cong pop lookup-id) (sym (looku
 id-v-left : ∀ {a} {A : Set a} {n m : ctx A} {w : vsubst n m} -> w ≡ (id-vsub ∘v w)
 id-v-left {a} {A} {⊡} = refl
 id-v-left {a} {A} {ψ , T} = cong₂ _,_ id-v-left lookup-id
+
+vsub-ext-funct : ∀ {a} {A : Set a} {n m k : ctx A} {T : A} (w : vsubst n m) (w' : vsubst m k)
+ -> vsub-ext {T = T} (w' ∘v w) ≡ (vsub-ext w') ∘v (vsub-ext w)
+vsub-ext-funct w w' = cong (λ α → α , top) (trans (gmap-funct w) (trans (gmap-cong (λ x → sym (lookup-gmap pop w' x))) (sym (gmap-funct w))))
