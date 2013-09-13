@@ -113,7 +113,6 @@ eq, : ∀ {S G D} (σ1 σ2 : Arr Sub (G , S) D) -> (AEQ Sub (σ1 o pop) (σ2 o p
 eq, σ1 σ2 p1 p2 top = p2
 eq, σ1 σ2 p1 p2 (pop i) = p1 i
 
-
 renPopLem : ∀ {G D}(f : Arr Ren G D){S} ->
    (ren pop o ren f) === (ren (wkf Ren {S} f) o ren pop)
 renPopLem f t =
@@ -154,9 +153,9 @@ lemma : ∀ {Γ Δ T S} -> (σ : Arr Sub Γ Δ) -> ∀ (N : Δ !- T) (M : (Γ , 
 lemma σ N M = trans (apfE Sub (eq, (σ ,, N) (sub (va ,, N) o wkf Sub σ) (λ i → trans (sym (apfId Sub (σ i))) (apfRen Sub (va ,, N) pop (σ i))) refl) M) (sym (apfSub _ _ M))
 
 data _→*_ : ∀ {T} -> [] !- T -> [] !- T -> Set where
- →*-refl : ∀ {T} {M : [] !- T} -> M →* M
  ap1 : ∀ {T S} {M1 M2 : [] !- (T > S)} {N1 : _ !- T} -> M1 →* M2  -> (M1 $ N1) →* (M2 $ N1)
  β : ∀ {T S} (M : ([] , T) !- S) (N : [] !- T) -> ((la M) $ N) →* (sub (va ,, N) M)
+ →*-refl : ∀ {T} {M : [] !- T} -> M →* M
  →*-trans : ∀ {T} {M N P : _ !- T} -> M →* N -> N →* P -> M →* P
 
 data isNormal : ∀ {T} (t : [] !- T) -> Set where
