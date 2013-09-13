@@ -96,7 +96,7 @@ apfRen : ∀ {Im}(K : Kit Im){G D H}(f : Arr K D H)(r : Arr Ren G D) ->
 apfRen K f r c = refl
 apfRen K f r (va i) = refl
 apfRen K f r (m $ n) rewrite apfRen K f r m | apfRen K f r n = refl
-apfRen K f r (la m) = cong la (trans {-(apf K (wkf K f o wkf Ren r) m)-}
+apfRen K f r (la m) = cong la (trans
   (apfE K (wkfRen K f r) m) (apfRen K (wkf K f) (wkf Ren r) m))
 
 Sub : Kit _!-_
