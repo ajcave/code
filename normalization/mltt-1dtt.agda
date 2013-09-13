@@ -19,6 +19,8 @@ data tm (n : ctx Unit) : Set where
  ƛ : (M : tm (n , *)) -> tm n
  Π : (A : tm n) -> (B : tm (n , *)) -> tm n
  _·_ : (M N : tm n) -> tm n
+ Id : (A : tm n) (M N : tm n) -> tm n
+ subst : (A : tm n) (B : tm (n , *)) (M N : tm n) (P : tm n) 
 {- tt ff bool set : tm n
  if : (M N P : tm n) -> tm n -}
 
