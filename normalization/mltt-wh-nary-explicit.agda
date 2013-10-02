@@ -1,4 +1,4 @@
-module mltt-wh-nary where
+module mltt-wh-nary-explicit where
 open import FinMap
 open import Unit
 open import Data.Product hiding (_×_)
