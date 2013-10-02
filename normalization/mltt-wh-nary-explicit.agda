@@ -392,16 +392,17 @@ _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
 Γ ⊨ M ∶ A = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) l (p : Univ.U (Φ (suc l)) ([ σ ]t A))
              -> ψ (Φ l) p ([ σ ]t M)
 
-{-
-
 κ : ∀ {A B : Set} -> B -> A -> B
 κ b = λ _ -> b
 
-Πinv2 : ∀ {n} {Γ : dctx n} A B -> Γ ⊨ (Π A B) type -> (Γ , A) ⊨ B type
+
+Πinv2 : ∀ {n} {Γ : dctx n} A B {l} -> Γ ⊨ (Π A B) set (suc l) -> (Γ , A) ⊨ B set (suc l)
 Πinv2 A B t (x1 ,[ _ ] x2) with t x1
-Πinv2 A B t (x1 ,[ p ] x2) | Π q x = subst Φ (sym (subeq2 B)) (x _ (lemma3-3c' p q x2))
+Πinv2 A B {l} t (x1 ,[ p ] x2) | Π q x = subst (Univ.U (Φ (suc l))) (sym (subeq2 B)) (x _ {!!}) --(x _ (lemma3-3c p q x2))
 Πinv2 A B t (x1 ,[ p ] x2) | neut ()
 Πinv2 A B t (x1 ,[ p ] x2) | closed () q
+
+{-
 
 {-⊨type-cong : ∀ {n} {Γ : dctx n} {A B} -> A ≡ B -> Γ ⊨ A type -> Γ ⊨ B type
 ⊨type-cong refl t = t -}
