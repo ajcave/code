@@ -22,7 +22,7 @@ data tm (n : ctx Unit) : Set where
  _·_ : (M N : tm n) -> tm n
  tt ff bool : tm n
  if : (M N P : tm n) -> tm n
- set : tm n
+ set : (l : ℕ) -> tm n
 -- I guess we could still index set by an n indicating the level
 -- And then rule out the cases we don't want in the typing
 
@@ -34,7 +34,7 @@ data tm (n : ctx Unit) : Set where
 [_]r σ tt = tt
 [_]r σ ff = ff
 [_]r σ bool = bool
-[_]r σ (set) = set
+[_]r σ (set n) = set n
 [_]r σ (if M M₁ M₂) = if ([ σ ]r M) ([ σ ]r M₁) ([ σ ]r M₂)
 
 tsubst : ∀ (n m : ctx Unit) -> Set
@@ -55,7 +55,7 @@ id-tsub {n , T} = tsub-ext id-tsub
 [_]t σ tt = tt
 [_]t σ ff = ff
 [_]t σ bool = bool
-[_]t σ (set) = set
+[_]t σ (set n) = set n
 [_]t σ (if M M₁ M₂) = if ([ σ ]t M) ([ σ ]t M₁) ([ σ ]t M₂)
 
 [_/x] : ∀ {n} -> tm n -> tm (n , *) -> tm n
@@ -104,7 +104,7 @@ mutual
   tt : normal tt
   ff : normal ff
   bool : normal bool
-  set : normal (set)
+  set : ∀ {n} -> normal (set n)
   neut : ∀ {M} -> neutral M -> normal M
 
 data normal-bool {n} : tm n -> Set where
@@ -135,7 +135,7 @@ mutual
   Π : ∀ {A B} -> (p : Ψ P A) -> (∀ a -> ψ P p a -> Ψ P ([ a /x] B)) -> Ψ P (Π A B)
   neut : ∀ {A} -> neutral A -> Ψ P A
   closed : ∀ {A B} -> A ⟶ B -> Ψ P B -> Ψ P A
-  set : Ψ P set
+  set : ∀ {n} -> Ψ P (set n)
 
  ψ : ∀ {γ} (P : Univ) -> {A : tm γ} -> Ψ P A -> tm γ -> Set
  ψ P bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
@@ -246,7 +246,7 @@ bool-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> bool ≈ A -> C
 bool-≈-neutral t (common x x₁) with normal-step* bool x | neutral-step* t x₁
 bool-≈-neutral () (common x x₁) | refl | refl
 
-set-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> set ≈ A -> C
+set-≈-neutral : ∀ {n} {A : tm n} {C : Set} {l} -> neutral A -> (set l) ≈ A -> C
 set-≈-neutral t (common x x₁) with normal-step* set x | neutral-step* t x₁
 set-≈-neutral () (common x x₁) | refl | refl
 
@@ -258,11 +258,11 @@ bool≈Π (common x x₁) | refl | ()
 Π≈neutral t (common x x₁) with neutral-step* t x₁ | pi-inj1 x
 Π≈neutral () (common x x₁) | refl | yep x₂ x₃
 
-set≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> set ≈ (Π A B) -> C
+set≈Π : ∀ {n} {A : tm n} {B} {C : Set} {l} -> (set l) ≈ (Π A B) -> C
 set≈Π (common x x₁) with normal-step* set x | pi-inj1 x₁
 set≈Π (common x x₁) | refl | ()
 
-bool≈set : ∀ {n} {C : Set} -> _≈_ {n} bool set -> C
+bool≈set : ∀ {n} {C : Set} {l} -> _≈_ {n} bool (set l) -> C
 bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
 bool≈set (common x x₁) | refl | ()
 
@@ -336,6 +336,7 @@ data _∋_∶_ : ∀ {n} -> dctx n -> var n * -> tm n -> Set where
  pop : ∀ {n} {Γ : dctx n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ ([ wkn-vsub ]r B)
 
 
+{-
 mutual
  data wfctx : ∀ {n} -> dctx n -> Set where
   ⊡ : wfctx ⊡
@@ -355,7 +356,7 @@ mutual
   ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
   _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
-  conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
+  conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A -}
 {-
 
 data Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set where
