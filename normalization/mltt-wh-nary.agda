@@ -22,7 +22,7 @@ data tm (n : ctx Unit) : Set where
  _·_ : (M N : tm n) -> tm n
  tt ff bool : tm n
  if : (M N P : tm n) -> tm n
- set : ℕ -> tm n
+ set : tm n
 
 [_]r : ∀ {n m} -> vsubst n m -> tm n -> tm m
 [_]r σ (▹ x) = ▹ ([ σ ]v x)
@@ -32,7 +32,7 @@ data tm (n : ctx Unit) : Set where
 [_]r σ tt = tt
 [_]r σ ff = ff
 [_]r σ bool = bool
-[_]r σ (set n) = set n
+[_]r σ (set) = set
 [_]r σ (if M M₁ M₂) = if ([ σ ]r M) ([ σ ]r M₁) ([ σ ]r M₂)
 
 tsubst : ∀ (n m : ctx Unit) -> Set
@@ -53,7 +53,7 @@ id-tsub {n , T} = tsub-ext id-tsub
 [_]t σ tt = tt
 [_]t σ ff = ff
 [_]t σ bool = bool
-[_]t σ (set n) = set n
+[_]t σ (set) = set
 [_]t σ (if M M₁ M₂) = if ([ σ ]t M) ([ σ ]t M₁) ([ σ ]t M₂)
 
 [_/x] : ∀ {n} -> tm n -> tm (n , *) -> tm n
@@ -102,7 +102,7 @@ mutual
   tt : normal tt
   ff : normal ff
   bool : normal bool
-  set : ∀ {n} -> normal (set n)
+  set : normal (set)
   neut : ∀ {M} -> neutral M -> normal M
 
 data normal-bool {n} : tm n -> Set where
@@ -122,36 +122,44 @@ normal-bool-normal (neut x) = neut x
 normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
 normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
+record Univ : Set₁ where
+ field
+  U : ∀ {γ'} -> tm γ' -> Set
+  cl  : ∀ {γ} {M N : tm γ} -> M ⟶* N -> U N -> U M
+
 mutual
- data Ψ {γ} (P : ∀ {γ'} -> tm γ' -> Set) : tm γ -> Set where
+ data Ψ {γ} (P : Univ) : tm γ -> Set where
   bool : Ψ P bool
   Π : ∀ {A B} -> (p : Ψ P A) -> (∀ a -> ψ P p a -> Ψ P ([ a /x] B)) -> Ψ P (Π A B)
   neut : ∀ {A} -> neutral A -> Ψ P A
   closed : ∀ {A B} -> A ⟶ B -> Ψ P B -> Ψ P A
-  set : ∀ n -> Ψ P (set n)
+  set : Ψ P set
 
- ψ : ∀ {γ} (P : ∀ {γ'} -> tm γ' -> Set) -> {A : tm γ} -> Ψ P A -> tm γ -> Set
+ ψ : ∀ {γ} (P : Univ) -> {A : tm γ} -> Ψ P A -> tm γ -> Set
  ψ P bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
  ψ P (Π p f) a = (normalizable a) × (∀ b (q : ψ P p b) → ψ P (f b q) (a · b))
  ψ P (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ P (closed x p) a = ψ P p a
- ψ P (set n) a = P a
+ ψ P set a = Univ.U P a
 
-mutual
- Φ : ∀ {γ} (n : ℕ) -> tm γ -> Set
- Φ zero A = {!!}
- Φ (suc n) A = Ψ (Φ n) A
 
-{-
-Ψ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Ψ B -> Ψ A
+Ψ-closed⟶* : ∀ {n} {P : Univ} {A B : tm n} -> A ⟶* B -> Ψ P B -> Ψ P A
 Ψ-closed⟶* refl t = t
 Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
 
-ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
+-- We say that zero is an empty universe, unlike Larry. The real stuff starts at 1
+mutual
+ Φ : ∀ (n : ℕ) -> Univ
+ Φ zero = record { U = λ _ -> ⊥ ; cl = λ x () }
+ Φ (suc n) = record { U = Ψ (Φ n) ; cl = λ x x₁ → Ψ-closed⟶* x x₁ }
+
+ψ-closed : ∀ {n} {A : tm n} {M N} {P : Univ} -> (p : Ψ P A) -> M ⟶* N -> ψ P p N -> ψ P p M
 ψ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
 ψ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed (x b q) (app1* s) (t b q)
 ψ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
 ψ-closed (closed x p) s t = ψ-closed p s t
+ψ-closed {P = P} set s t = Univ.cl P s t
+
 
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
@@ -257,7 +265,7 @@ bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
 bool≈set (common x x₁) | refl | ()
 
 mutual
- lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
+ lemma3-3 : ∀ {n} {P : Univ} {A B M : tm n} (p : Ψ P A) (q : Ψ P B) -> A ≈ B -> ψ P p M -> ψ P q M
  lemma3-3 (closed x p) q t r = lemma3-3 p q (⟶≈trans' t x) r
  lemma3-3 p (closed x q) t r = lemma3-3 p q (⟶≈trans t x) r
  lemma3-3 bool bool t r = r
@@ -269,8 +277,15 @@ mutual
  lemma3-3 (neut x) bool t r = bool-≈-neutral x (≈-sym t)
  lemma3-3 (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
  lemma3-3 (neut x) (neut x₁) t r = r
+ lemma3-3 set bool t r = bool≈set (≈-sym t)
+ lemma3-3 set (Π q x) t r = set≈Π t
+ lemma3-3 set (neut x) t r = set-≈-neutral x t
+ lemma3-3 bool set t r = bool≈set t
+ lemma3-3 (Π q x) set t r = set≈Π (≈-sym t)
+ lemma3-3 (neut x) set t r = set-≈-neutral x (≈-sym t)
+ lemma3-3 set set t r = r
 
- lemma3-3b : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ q M -> ψ p M
+ lemma3-3b : ∀ {n} {P : Univ} {A B M : tm n} (p : Ψ P A) (q : Ψ P B) -> A ≈ B -> ψ P q M -> ψ P p M
  lemma3-3b (closed x p) q t r = lemma3-3b p q (⟶≈trans' t x) r 
  lemma3-3b p (closed x q) t r = lemma3-3b p q (⟶≈trans t x) r
  lemma3-3b bool bool t r = r
@@ -282,8 +297,15 @@ mutual
  lemma3-3b (neut x) bool t r = bool-≈-neutral x (≈-sym t)
  lemma3-3b (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
  lemma3-3b (neut x) (neut x₁) t r = r
+ lemma3-3b set bool t r = bool≈set (≈-sym t)
+ lemma3-3b set (Π q x) t r = set≈Π t
+ lemma3-3b set (neut x) t r = set-≈-neutral x t
+ lemma3-3b bool set t r = bool≈set t
+ lemma3-3b (Π q x) set t r = set≈Π (≈-sym t)
+ lemma3-3b (neut x) set t r = set-≈-neutral x (≈-sym t)
+ lemma3-3b set set t r = r
 
-lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
+lemma3-3c : ∀ {n} {P : Univ} {A M : tm n} (p q : Ψ P A) -> ψ P p M -> ψ P q M
 lemma3-3c p q t = lemma3-3 p q ≈-refl t
 
 -- I could use this technique directly for LF (i.e. MLTT without the universe)
@@ -299,76 +321,6 @@ lemma3-3c p q t = lemma3-3 p q ≈-refl t
    Require wh normal types most of the type or something?
    Bidirectional? Normal types vs neutral types vs "computation" types?
 -}
-mutual
- data Φ {n} : tm n -> Set where
-  bool : Φ bool
-  Π : ∀ {A B} -> (p : Φ A) -> (∀ a -> φ p a -> Φ ([ a /x] B)) -> Φ (Π A B)
-  neut : ∀ {A} -> neutral A -> Φ A
-  closed : ∀ {A B} -> A ⟶ B -> Φ B -> Φ A
-  set : Φ set
-
- φ : ∀ {n} -> {A : tm n} -> Φ A -> tm n -> Set
- φ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
- φ (Π p f) a = (normalizable a) × (∀ b (q : φ p b) → φ (f b q) (a · b))
- φ (neut x) a = ∃ (λ b → (a ⟶* b) × neutral b)
- φ (closed x p) a = φ p a
- φ set a = Ψ a
-
-Φ-closed⟶* : ∀ {n} {A B : tm n} -> A ⟶* B -> Φ B -> Φ A
-Φ-closed⟶* refl t = t
-Φ-closed⟶* (trans1 x s) t = closed x (Φ-closed⟶* s t)
-
-φ-closed : ∀ {n} {A : tm n} {M N} -> (p : Φ A) -> M ⟶* N -> φ p N -> φ p M
-φ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
-φ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → φ-closed (x b q) (app1* s) (t b q)
-φ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
-φ-closed (closed x p) s t = φ-closed p s t
-φ-closed set s t = Ψ-closed⟶* s t
-
-mutual
- lemma3-3' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ p M -> φ q M
- lemma3-3' bool bool t r = r
- lemma3-3' bool (Π q x) t r = bool≈Π t
- lemma3-3' bool (neut x) t r = bool-≈-neutral x t
- lemma3-3' (Π p x) bool t r = bool≈Π (≈-sym t)
- lemma3-3' (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3' (x b (lemma3-3b' p q (pi-inj2 t) q₁)) (x₁ b q₁) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3b' p q (pi-inj2 t) q₁)))
- lemma3-3' (Π p x) (neut x₁) t r = Π≈neutral x₁ t
- lemma3-3' (neut x) bool t r = bool-≈-neutral x (≈-sym t)
- lemma3-3' (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
- lemma3-3' (neut x) (neut x₁) t r = r
- lemma3-3' (neut x) set t r = set-≈-neutral x (≈-sym t)
- lemma3-3' (Π p x) set t r = set≈Π (≈-sym t)
- lemma3-3' bool set t r = bool≈set t
- lemma3-3' set bool t r = bool≈set (≈-sym t)
- lemma3-3' set (Π q x) t r = set≈Π t
- lemma3-3' set (neut x) t r = set-≈-neutral x t
- lemma3-3' set set t r = r
- lemma3-3' p (closed x q) t r = lemma3-3' p q (⟶≈trans t x) r
- lemma3-3' (closed x p) q t r = lemma3-3' p q (⟶≈trans' t x) r
-
- lemma3-3b' : ∀ {n} {A B M : tm n} (p : Φ A) (q : Φ B) -> A ≈ B -> φ q M -> φ p M
- lemma3-3b' (closed x p) q t r = lemma3-3b' p q (⟶≈trans' t x) r 
- lemma3-3b' p (closed x q) t r = lemma3-3b' p q (⟶≈trans t x) r
- lemma3-3b' bool bool t r = r
- lemma3-3b' bool (Π q x) t r = bool≈Π t
- lemma3-3b' bool (neut x) t r = bool-≈-neutral x t
- lemma3-3b' (Π p x) bool t r = bool≈Π (≈-sym t)
- lemma3-3b' (Π p x) (Π q x₁) t (r1 , r2) = r1 , (λ b q₁ → lemma3-3b' (x b q₁) (x₁ b (lemma3-3' p q (pi-inj2 t) q₁)) ([]-cong (pi-inj3 t)) (r2 b (lemma3-3' p q (pi-inj2 t) q₁)))
- lemma3-3b' (Π p x) (neut x₁) t r = Π≈neutral x₁ t
- lemma3-3b' (neut x) bool t r = bool-≈-neutral x (≈-sym t)
- lemma3-3b' (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
- lemma3-3b' (neut x) (neut x₁) t r = r
- lemma3-3b' (neut x) set t r = set-≈-neutral x (≈-sym t)
- lemma3-3b' (Π p x) set t r = set≈Π (≈-sym t)
- lemma3-3b' bool set t r = bool≈set t
- lemma3-3b' set bool t r = bool≈set (≈-sym t)
- lemma3-3b' set (Π q x) t r = set≈Π t
- lemma3-3b' set (neut x) t r = set-≈-neutral x t
- lemma3-3b' set set t r = r 
-
-lemma3-3c' : ∀ {n} {A M : tm n} (p q : Φ A) -> φ p M -> φ q M
-lemma3-3c' p q t = lemma3-3' p q ≈-refl t
-
 
 -- Huh, I haven't even had to use Set₁? I-R is powerful... 
 -- This proof might be easier in PTS style, where we don't need to duplicate things?
@@ -380,6 +332,7 @@ data dctx : ctx Unitz -> Set where
 data _∋_∶_ : ∀ {n} -> dctx n -> var n * -> tm n -> Set where
  top : ∀ {n} {Γ : dctx n} {A} -> (Γ , A) ∋ top ∶ ([ wkn-vsub ]r A)
  pop : ∀ {n} {Γ : dctx n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ ([ wkn-vsub ]r B)
+
 
 mutual
  data wfctx : ∀ {n} -> dctx n -> Set where
@@ -401,6 +354,7 @@ mutual
   _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
   conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
+{-
 
 data Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set where
  ⊡ : ∀ {m} -> Φs {m = m} ⊡ tt

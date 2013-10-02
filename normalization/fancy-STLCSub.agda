@@ -113,21 +113,16 @@ eq, : ∀ {S G D} (σ1 σ2 : Arr Sub (G , S) D) -> (AEQ Sub (σ1 o pop) (σ2 o p
 eq, σ1 σ2 p1 p2 top = p2
 eq, σ1 σ2 p1 p2 (pop i) = p1 i
 
--- Alternative 1
-{-renPopLem : ∀ {G D}(f : Arr Ren G D){S} ->
+renPopLem : ∀ {G D}(f : Arr Ren G D){S} ->
    (ren pop o ren f) === (ren (wkf Ren {S} f) o ren pop)
-renPopLem f t =
-  trans ((sym (apfRen Ren _ _ t))) (apfRen Ren _ _ t)
+renPopLem f t = trans ((sym (apfRen Ren _ _ t))) (apfRen Ren _ _ t)
 
 thinLem : ∀ {G D} H (f : Arr Sub G D) {S T} (i : T <: (G ++ H))->
       (shift Sub H (wkf Sub {S} f) o shift Ren H pop) i ≡
       (ren (shift Ren H pop) o shift Sub H f) i
 thinLem []      f i       = refl
 thinLem (H , R) f top     = refl
-thinLem (H , R) f (pop i) =
-  trans
-  (cong (ren pop) (thinLem H f i))
-  (renPopLem (shift Ren H pop) (shift Sub H f i))
+thinLem (H , R) f (pop i) = trans (cong (ren pop) (thinLem H f i)) (renPopLem (shift Ren H pop) (shift Sub H f i))
 
 shiftLem : ∀ {G D} H {S} (f : Arr Sub G D) ->
              (sub (shift Sub H (wkf Sub {S} f)) o ren (shift Ren H pop))
@@ -135,30 +130,12 @@ shiftLem : ∀ {G D} H {S} (f : Arr Sub G D) ->
 shiftLem H f c = refl
 shiftLem H f (va i) = thinLem H f i
 shiftLem H {S} f (m $ n) rewrite shiftLem H {S} f m | shiftLem H {S} f n = refl
-shiftLem H f (la m) = cong la (shiftLem (H , _) f m) -}
--- End Alternative 1
-
--- Alternative 2 {- 
--- Extra
-wkfRenSub : ∀ {G D H S}(s : Arr Ren D H)(f : Arr Sub G D) ->
-         AEQ Sub (ren (wkf Ren {S} s) o wkf Sub f) (wkf Sub (ren s o f))
-wkfRenSub s f top = refl
-wkfRenSub s f (pop i) = sym (trans (sym (apfRen Ren pop s (f i))) (apfRen _ _ _ (f i)))
-
--- Extra
-apfRenSub : ∀ {G D H}(w : Arr Ren D H)(s : Arr Sub G D) ->
-         (ren w o sub s) === sub (ren w o s)
-apfRenSub w s c = refl
-apfRenSub w s (va x) = refl
-apfRenSub w s (t $ t₁) rewrite apfRenSub w s t | apfRenSub w s t₁ = refl
-apfRenSub w s (la t) = cong la (trans (apfRenSub (wkf Ren w) (wkf Sub s) t) (apfE Sub (wkfRenSub w s) t))
--- End alternative 2-}
+shiftLem H f (la m) = cong la (shiftLem (H , _) f m)
 
 wkfSub : ∀ {G D H S}(s : Arr Sub D H)(f : Arr Sub G D) ->
          AEQ Sub (sub (wkf Sub {S} s) o wkf Sub f) (wkf Sub (sub s o f))
 wkfSub s f top = refl
-wkfSub s f (pop i) = sym (trans (apfRenSub pop s (f i)) (apfRen Sub _ _ (f i)))
---shiftLem [] s (f i)
+wkfSub s f (pop i) = shiftLem [] s (f i)
 
 apfSub : ∀ {G D H}(s : Arr Sub D H)(f : Arr Sub G D) ->
          (sub s o sub f) === sub (sub s o f)
