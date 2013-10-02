@@ -382,8 +382,8 @@ _⊨_set_ : ∀ {n} (Γ : dctx n) -> tm n -> ℕ -> Set
 Π'' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A set -> (Γ , A) ⊨ B set -> Γ ⊨ (Π A B) set
 Π'' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Ψ (subeq2 B) (t2 (x ,[ {!!} ] x₁))) -}
 
-{-Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
-Π' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁))) -}
+Π' : ∀ {n} {Γ} (A : tm n) B {l} -> Γ ⊨ A set (suc l) -> (Γ , A) ⊨ B set (suc l) -> Γ ⊨ (Π A B) set (suc l)
+Π' A B {l} t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst (Univ.U (Φ (suc l))) (subeq2 B) (t2 (_,[_]_ {l = l} x (t1 x) x₁))) 
 
 _⊨_∶'_[_/_] : ∀ {n} (Γ : dctx n) (M : tm n) A l -> Γ ⊨ A set (suc l) -> Set
 Γ ⊨ M ∶' A [ l / d ] = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> ψ (Φ l) (d qs) ([ σ ]t M)
