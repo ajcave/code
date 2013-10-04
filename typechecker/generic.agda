@@ -1,0 +1,2 @@
+module generic where
+
