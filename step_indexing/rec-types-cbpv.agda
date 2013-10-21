@@ -71,12 +71,34 @@ mutual
  data tm (Γ : ctx Unitz) : Set where
   ƛ : (e : tm (Γ , *)) -> tm Γ
   _·_ : (e1 : tm Γ) (v : val Γ) -> tm Γ
-  pm : ∀ (v : val Γ) (e : tm (Γ , *)) -> tm Γ
+  pm : ∀ (v : val Γ) (e : tm (Γ , *)) -> tm Γ -- aka let x = unfold y in ...
 --  letbe : ∀ (v : val Γ) (e : tm (Γ , *)) -> tm Γ
   produce : (v : val Γ) -> tm Γ 
   _to_ : (e1 : tm Γ) (e2 : tm (Γ , *)) -> tm Γ
   force : (v : val Γ) -> tm Γ
-  
+
+〈_〉 : ctx vtp -> ctx Unitz
+〈 ⊡ 〉 = ⊡
+〈 Γ , T 〉 = 〈 Γ 〉 , *
+
+〈_〉v : ∀ {Γ T} -> var Γ T -> var 〈 Γ 〉 *
+〈 top 〉v = top
+〈 pop x 〉v = pop 〈 x 〉v
+
+mutual
+ data _⊢v_∶_ (Γ : ctx vtp) : val 〈 Γ 〉 -> vtp -> Set where
+   ▹ : ∀ {A} (x : var Γ A) -> Γ ⊢v ▹ 〈 x 〉v ∶ A
+   roll : ∀ (A : vtpf (⊡ , *)) {e} -> Γ ⊢v e ∶ ([ μ A /X]v A) -> Γ ⊢v (roll e) ∶ (μ A)
+   thunk : ∀ {B} {e} -> Γ ⊢c e ∶ B -> Γ ⊢v (thunk e) ∶ (U B)
+ data _⊢c_∶_ (Γ : ctx vtp) : tm 〈 Γ 〉 -> ctp -> Set where
+   ƛ : ∀ {A B} {e} -> (Γ , A) ⊢c e ∶ B -> Γ ⊢c (ƛ e) ∶ (A ⇒ B)
+   _·_ : ∀ {A B} {e v} -> Γ ⊢c e ∶ (A ⇒ B) -> Γ ⊢v v ∶ A -> Γ ⊢c (e · v) ∶ B
+   pm : ∀ {A : vtpf (⊡ , *)} {B} {v e} -> Γ ⊢v v ∶ (μ A) -> (Γ , [ μ A /X]v A) ⊢c e ∶ B -> Γ ⊢c (pm v e) ∶ B
+   produce : ∀ {A v} -> Γ ⊢v v ∶ A -> Γ ⊢c (produce v) ∶ (F A)
+   _to_ : ∀ {A B e1 e2} -> Γ ⊢c e1 ∶ (F A) -> (Γ , A) ⊢c e2 ∶ B -> Γ ⊢c (e1 to e2) ∶ B
+   force : ∀ {B v} -> Γ ⊢v v ∶ (U B) -> Γ ⊢c (force v) ∶ B
+
+-- Maybe the more direct/easier thing to do is to do the logical relation for A-normal form?
 
 {-
 data tm (Γ : ctx tp) : tp -> Set where
