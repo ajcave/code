@@ -98,7 +98,8 @@ mutual
    _to_ : ∀ {A B e1 e2} -> Γ ⊢c e1 ∶ (F A) -> (Γ , A) ⊢c e2 ∶ B -> Γ ⊢c (e1 to e2) ∶ B
    force : ∀ {B v} -> Γ ⊢v v ∶ (U B) -> Γ ⊢c (force v) ∶ B
 
--- Maybe the more direct/easier thing to do is to do the logical relation for A-normal form?
+-- If all we care about is CBV, then is there a more direct CK machine way to do it?
+-- Something like A normal form?
 
 {-
 data tm (Γ : ctx tp) : tp -> Set where
