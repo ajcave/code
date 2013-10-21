@@ -164,6 +164,16 @@ data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
  force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
  · : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
 
+data _∣_↝*_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
+ refl : ∀ {e K} -> e ∣ K ↝* e ∣ K
+ trans1 : ∀ {e1 K1 e2 K2 e3 K3} ->
+      e1 ∣ K1 ↝  e2 ∣ K2
+   -> e2 ∣ K2 ↝* e3 ∣ K3
+   -> e1 ∣ K1 ↝* e3 ∣ K3
+
+_↝*_ : tm ⊡ -> tm ⊡ -> Set
+e1 ↝* e2 = e1 ∣ [] ↝* e2 ∣ []
+
 VRel : Set₁
 VRel = val ⊡ -> val ⊡ -> Set
 
@@ -176,6 +186,9 @@ relsubst Δ = gksubst Δ VRel
 data U⁺ (R : CRel) : VRel where
  con : ∀ {e1 e2} -> R e1 e2 -> U⁺ R (thunk e1) (thunk e2)
 
+data F⁺ (R : VRel) : CRel where
+ con : ∀ {e1 v1 e2 v2} -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R v1 v2 -> F⁺ R e1 e2
+
 mutual
  V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
  V (μ A) ρ = {!!}
@@ -184,7 +197,7 @@ mutual
 
  E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
  E (A ⇒ B) ρ = {!!}
- E (F A)    ρ = {!!}
+ E (F A)    ρ = F⁺ (V A ρ)
 
  
  
