@@ -135,20 +135,15 @@ mutual
  [_]cv w (e1 to e2) = ([ w ]cv e1) to ([ tsubst-ext w ]cv e2)
  [_]cv w (force v) = force ([ w ]vv v)
 
-{-
-[_]t : ∀ {Γ1 Γ2 T} -> tsubst Γ1 Γ2 -> tm Γ1 T -> tm Γ2 T
-[_]t σ (▹ x) = [ σ ]v x
-[_]t σ (ƛ e) = ƛ ([ tsubst-ext σ ]t e)
-[_]t σ (e · e₁) = [ σ ]t e · [ σ ]t e₁
-[_]t σ (roll T e) = roll T ([ σ ]t e)
-[_]t σ (unroll e) = unroll ([ σ ]t e)
 
-id-tsub : ∀ {Δ : ctx tp} -> tsubst Δ Δ
+id-tsub : ∀ {Δ : ctx Unitz} -> tsubst Δ Δ
 id-tsub {⊡} = tt
 id-tsub {Δ , T} = tsubst-ext id-tsub
 
-[_/x] : ∀ {Δ T S} -> tm Δ T -> tm (Δ , T) S -> tm Δ S
-[ e2 /x] e1 = [ id-tsub , e2 ]t e1
+[_/x] : ∀ {Δ T} -> val Δ -> tm (Δ , T) -> tm Δ
+[ e2 /x] e1 = [ id-tsub , e2 ]cv e1
+
+{-
 
 data _⟶_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
  β : ∀ {T S} {e1 : tm (⊡ , T) S} {e2 : tm ⊡ T} -> (ƛ e1 · e2) ⟶ [ e2 /x] e1
