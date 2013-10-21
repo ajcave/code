@@ -101,20 +101,21 @@ mutual
 -- If all we care about is CBV, then is there a more direct CK machine way to do it?
 -- Something like A normal form?
 
-{-
-data tm (Γ : ctx tp) : tp -> Set where
- ▹ : ∀ {T} (x : var Γ T) -> tm Γ T
- ƛ : ∀ {T S} (e : tm (Γ , T) S) -> tm Γ (T ⇒ S)
- _·_ : ∀ {T S} (e1 : tm Γ (T ⇒ S)) (e2 : tm Γ T) -> tm Γ S
- roll : ∀ (T : func (⊡ , *)) (e : tm Γ ([ μ T /X] T)) -> tm Γ (μ T)
- unroll : ∀ {T : func (⊡ , *)} (e : tm Γ (μ T)) -> tm Γ ([ μ T /X] T)
+mutual
+ [_]vr : ∀ {Γ1 Γ2} -> vsubst Γ1 Γ2 -> val Γ1 -> val Γ2
+ [_]vr w (▹ x) = ▹ ([ w ]v x)
+ [_]vr w (roll e) = roll ([ w ]vr e)
+ [_]vr w (thunk e) = thunk ([ w ]cr e)
+ 
+ [_]cr : ∀ {Γ1 Γ2} -> vsubst Γ1 Γ2 -> tm Γ1 -> tm Γ2
+ [_]cr w (ƛ e) = ƛ ([ vsub-ext w ]cr e)
+ [_]cr w (e · e₁) = ([ w ]cr e) · ([ w ]vr e₁)
+ [_]cr w (pm v e) = pm ([ w ]vr v) ([ vsub-ext w ]cr e)
+ [_]cr w (produce v) = produce ([ w ]vr v)
+ [_]cr w (e1 to e2) = ([ w ]cr e1) to ([ vsub-ext w ]cr e2)
+ [_]cr w (force v) = force ([ w ]vr v)
 
-[_]r : ∀ {Γ1 Γ2 T} -> vsubst Γ1 Γ2 -> tm Γ1 T -> tm Γ2 T
-[_]r w (▹ x) = ▹ ([ w ]v x)
-[_]r w (ƛ e) = ƛ ([ vsub-ext w ]r e)
-[_]r w (e · e₁) = ([ w ]r e) · ([ w ]r e₁)
-[_]r w (roll T e) = roll T ([ w ]r e)
-[_]r w (unroll e) = unroll ([ w ]r e)
+{-
 
 tsubst : ∀ (Δ1 Δ2 : ctx tp) -> Set
 tsubst Δ1 Δ2 = gsubst Δ1 (tm Δ2)
