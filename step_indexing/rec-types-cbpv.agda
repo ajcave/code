@@ -2,6 +2,7 @@ module rec-types-cbpv where
 open import FinMap
 open import Unit
 open import Product
+open import Data.List
 
 {- We want this if we want both computational rec types and value rec types
 data sort : Set where
@@ -143,8 +144,19 @@ id-tsub {Δ , T} = tsubst-ext id-tsub
 [_/x] : ∀ {Δ T} -> val Δ -> tm (Δ , T) -> tm Δ
 [ e2 /x] e1 = [ id-tsub , e2 ]cv e1
 
+data ε1 : Set where
+ · : val ⊡ -> ε1
+ []to : tm (⊡ , *) -> ε1
 
-{-data _↝_ : tm ⊡ -> tm ⊡ -> Set where
- β : ∀ {T S} {e1 : tm (⊡ , T) S} {e2 : tm ⊡ T} -> (ƛ e1 · e2) ⟶ [ e2 /x] e1
- βμ : ∀ {T : func (⊡ , *)} {e : tm ⊡ ([ μ T /X] T)} -> (unroll (roll T e)) ⟶ e -}
+-- Aka evaluation context
+Stack : Set
+Stack = List ε1
+
+
+data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
+ ƛ : ∀ {K e v} -> (ƛ e) ∣ (· v) ∷ K ↝ [ v /x] e ∣ K
+ pm : ∀ {K e v} -> (pm (roll v) e) ∣ K ↝ [ v /x] e ∣ K
+ to : ∀ {K e1 e2} -> (e1 to e2) ∣ K ↝ e1 ∣ (([]to e2) ∷ K)
+ produce : ∀ {K v e} -> (produce v) ∣ ([]to e) ∷ K ↝ [ v /x] e ∣ K
+ 
 
