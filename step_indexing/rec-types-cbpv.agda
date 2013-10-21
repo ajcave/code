@@ -115,14 +115,27 @@ mutual
  [_]cr w (e1 to e2) = ([ w ]cr e1) to ([ vsub-ext w ]cr e2)
  [_]cr w (force v) = force ([ w ]vr v)
 
-{-
-
-tsubst : ∀ (Δ1 Δ2 : ctx tp) -> Set
-tsubst Δ1 Δ2 = gsubst Δ1 (tm Δ2)
+tsubst : ∀ (Δ1 Δ2 : ctx Unitz) -> Set
+tsubst Δ1 Δ2 = gksubst Δ1 (val Δ2)
 
 tsubst-ext : ∀ {Δ1 Δ2 T} -> tsubst Δ1 Δ2 -> tsubst (Δ1 , T) (Δ2 , T)
-tsubst-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
+tsubst-ext σ = (gmap [ wkn-vsub ]vr σ) , (▹ top)
 
+mutual
+ [_]vv : ∀ {Γ1 Γ2} -> tsubst Γ1 Γ2 -> val Γ1 -> val Γ2
+ [_]vv w (▹ x) = [ w ]v x
+ [_]vv w (roll e) = roll ([ w ]vv e)
+ [_]vv w (thunk e) = thunk ([ w ]cv e)
+ 
+ [_]cv : ∀ {Γ1 Γ2} -> tsubst Γ1 Γ2 -> tm Γ1 -> tm Γ2
+ [_]cv w (ƛ e) = ƛ ([ tsubst-ext w ]cv e)
+ [_]cv w (e · e₁) = ([ w ]cv e) · ([ w ]vv e₁)
+ [_]cv w (pm v e) = pm ([ w ]vv v) ([ tsubst-ext w ]cv e)
+ [_]cv w (produce v) = produce ([ w ]vv v)
+ [_]cv w (e1 to e2) = ([ w ]cv e1) to ([ tsubst-ext w ]cv e2)
+ [_]cv w (force v) = force ([ w ]vv v)
+
+{-
 [_]t : ∀ {Γ1 Γ2 T} -> tsubst Γ1 Γ2 -> tm Γ1 T -> tm Γ2 T
 [_]t σ (▹ x) = [ σ ]v x
 [_]t σ (ƛ e) = ƛ ([ tsubst-ext σ ]t e)
