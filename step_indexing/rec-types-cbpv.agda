@@ -164,6 +164,24 @@ data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
  force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
  · : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
 
+VRel : Set₁
+VRel = val ⊡ -> val ⊡ -> Set
+
+CRel : Set₁
+CRel = tm ⊡ -> tm ⊡ -> Set
+
+relsubst : ctx Unitz -> Set₁
+relsubst Δ = gksubst Δ VRel
+
+mutual
+ V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
+ V (μ A) ρ = {!!}
+ V (▹ X) ρ = [ ρ ]v X
+ V (U B) ρ = {!!}
+
+ E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
+ E (A ⇒ B) ρ = {!!}
+ E (F A)    ρ = {!!}
 
  
  
