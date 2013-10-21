@@ -3,6 +3,7 @@ open import FinMap
 open import Unit
 open import Product
 open import Data.List
+open import Data.Nat
 
 {- We want this if we want both computational rec types and value rec types
 data sort : Set where
@@ -162,7 +163,7 @@ data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
  to : ∀ {K e1 e2} -> (e1 to e2) ∣ K ↝ e1 ∣ (([]to e2) ∷ K)
  produce : ∀ {K v e} -> (produce v) ∣ ([]to e) ∷ K ↝ [ v /x] e ∣ K
  force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
- · : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
+ app : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
 
 data _∣_↝*_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
  refl : ∀ {e K} -> e ∣ K ↝* e ∣ K
@@ -175,28 +176,39 @@ _↝*_ : tm ⊡ -> tm ⊡ -> Set
 e1 ↝* e2 = e1 ∣ [] ↝* e2 ∣ []
 
 VRel : Set₁
-VRel = val ⊡ -> val ⊡ -> Set
+VRel = ℕ -> val ⊡ -> val ⊡ -> Set
 
 CRel : Set₁
-CRel = tm ⊡ -> tm ⊡ -> Set
+CRel = ℕ -> tm ⊡ -> tm ⊡ -> Set
 
 relsubst : ctx Unitz -> Set₁
 relsubst Δ = gksubst Δ VRel
 
 data U⁺ (R : CRel) : VRel where
- con : ∀ {e1 e2} -> R e1 e2 -> U⁺ R (thunk e1) (thunk e2)
+ con : ∀ {n e1 e2} -> R n e1 e2 -> U⁺ R n (thunk e1) (thunk e2)
 
 data F⁺ (R : VRel) : CRel where
- con : ∀ {e1 v1 e2 v2} -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R v1 v2 -> F⁺ R e1 e2
+ con : ∀ {n e1 v1 e2 v2} -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R n v1 v2 -> F⁺ R n e1 e2
+   -- TODO: This is wrong. Do something LSLR-ish with a ▹ modality?
+
+data isRoll (R : val ⊡ -> val ⊡ -> Set) : val ⊡ -> val ⊡ -> Set where
+ con : ∀ {v1 v2} -> R v1 v2 -> isRoll R (roll v1) (roll v2)
+
+_⇒⁺_ : VRel -> CRel -> CRel
+(VR ⇒⁺ CR) n e1 e2 = {v1 v2 : _} → VR n v1 v2 → CR n (e1 · v1) (e2 · v2)  -- TODO: This will need to become Kripke-ish
+
+μ⁺ : (AF : VRel -> VRel) -> VRel
+μ⁺ AF zero v1 v2 = Unit
+μ⁺ AF (suc n) v1 v2 = isRoll (AF (μ⁺ {!AF!}) {!!}) v1 v2
 
 mutual
  V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
- V (μ A) ρ = {!!}
+ V (μ A) ρ = {!μ⁺!}
  V (▹ X) ρ = [ ρ ]v X
  V (U B) ρ = U⁺ (E B ρ)
 
  E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
- E (A ⇒ B) ρ = {!!}
+ E (A ⇒ B) ρ = V A ρ ⇒⁺ E B ρ
  E (F A)    ρ = F⁺ (V A ρ)
 
  
