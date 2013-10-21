@@ -143,9 +143,8 @@ id-tsub {Δ , T} = tsubst-ext id-tsub
 [_/x] : ∀ {Δ T} -> val Δ -> tm (Δ , T) -> tm Δ
 [ e2 /x] e1 = [ id-tsub , e2 ]cv e1
 
-{-
 
-data _⟶_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
+{-data _↝_ : tm ⊡ -> tm ⊡ -> Set where
  β : ∀ {T S} {e1 : tm (⊡ , T) S} {e2 : tm ⊡ T} -> (ƛ e1 · e2) ⟶ [ e2 /x] e1
- βμ : ∀ {T : func (⊡ , *)} {e : tm ⊡ ([ μ T /X] T)} -> (unroll (roll T e)) ⟶ e
- -}
+ βμ : ∀ {T : func (⊡ , *)} {e : tm ⊡ ([ μ T /X] T)} -> (unroll (roll T e)) ⟶ e -}
+
