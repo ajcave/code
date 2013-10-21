@@ -16,7 +16,7 @@ data sort : Set where
 mutual
  data ctpf (Δ : ctx Unitz) : Set where
   _⇒_ : (A : vtpf Δ) (B : ctpf Δ) -> ctpf Δ
-  F : (A : vtpf Δ) -> ctpf Δ  -- embedding/producer type
+  F : (A : vtpf Δ) -> ctpf Δ  -- embedding/producer/lift type
  data vtpf (Δ : ctx Unitz) : Set where
   μ : (T : vtpf (Δ , *)) -> vtpf Δ
   ▹ : (X : var Δ *) -> vtpf Δ
