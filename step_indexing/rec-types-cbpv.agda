@@ -153,8 +153,9 @@ Stack : Set
 Stack = List ε1
 
 
--- Could think of writing it using a ε [ M ] ↝ ε [ N ] kind of notation instead
+-- Could think of writing it using a ε [ M ] ↝ ε [ N ] kind of notation instead (just another way to view the stack)
 
+-- Nice: Each computational constructor has a rule, and that's it.
 data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
  ƛ : ∀ {K e v} -> (ƛ e) ∣ []· v ∷ K ↝ [ v /x] e ∣ K
  pm : ∀ {K e v} -> (pm (roll v) e) ∣ K ↝ [ v /x] e ∣ K
@@ -162,5 +163,8 @@ data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
  produce : ∀ {K v e} -> (produce v) ∣ ([]to e) ∷ K ↝ [ v /x] e ∣ K
  force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
  · : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
+
+
+ 
  
 
