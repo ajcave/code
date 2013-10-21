@@ -41,14 +41,14 @@ data tm (Γ : ctx tp) : tp -> Set where
  ▹ : ∀ {T} (x : var Γ T) -> tm Γ T
  ƛ : ∀ {T S} (e : tm (Γ , T) S) -> tm Γ (T ⇒ S)
  _·_ : ∀ {T S} (e1 : tm Γ (T ⇒ S)) (e2 : tm Γ T) -> tm Γ S
- roll : ∀ {T : func (⊡ , *)} (e : tm Γ ([ μ T /X] T)) -> tm Γ (μ T)
+ roll : ∀ (T : func (⊡ , *)) (e : tm Γ ([ μ T /X] T)) -> tm Γ (μ T)
  unroll : ∀ {T : func (⊡ , *)} (e : tm Γ (μ T)) -> tm Γ ([ μ T /X] T)
 
 [_]r : ∀ {Γ1 Γ2 T} -> vsubst Γ1 Γ2 -> tm Γ1 T -> tm Γ2 T
 [_]r w (▹ x) = ▹ ([ w ]v x)
 [_]r w (ƛ e) = ƛ ([ vsub-ext w ]r e)
 [_]r w (e · e₁) = ([ w ]r e) · ([ w ]r e₁)
-[_]r w (roll e) = roll ([ w ]r e)
+[_]r w (roll T e) = roll T ([ w ]r e)
 [_]r w (unroll e) = unroll ([ w ]r e)
 
 tsubst : ∀ (Δ1 Δ2 : ctx tp) -> Set
@@ -61,5 +61,16 @@ tsubst-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
 [_]t σ (▹ x) = [ σ ]v x
 [_]t σ (ƛ e) = ƛ ([ tsubst-ext σ ]t e)
 [_]t σ (e · e₁) = [ σ ]t e · [ σ ]t e₁
-[_]t σ (roll e) = roll ([ σ ]t e)
+[_]t σ (roll T e) = roll T ([ σ ]t e)
 [_]t σ (unroll e) = unroll ([ σ ]t e)
+
+id-tsub : ∀ {Δ : ctx tp} -> tsubst Δ Δ
+id-tsub {⊡} = tt
+id-tsub {Δ , T} = tsubst-ext id-tsub
+
+[_/x] : ∀ {Δ T S} -> tm Δ T -> tm (Δ , T) S -> tm Δ S
+[ e2 /x] e1 = [ id-tsub , e2 ]t e1
+
+data _⟶_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
+ β : ∀ {T S} {e1 : tm (⊡ , T) S} {e2 : tm ⊡ T} -> (ƛ e1 · e2) ⟶ [ e2 /x] e1
+ βμ : ∀ {T : func (⊡ , *)} {e : tm ⊡ ([ μ T /X] T)} -> (unroll (roll T e)) ⟶ e
