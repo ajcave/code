@@ -173,11 +173,14 @@ CRel = tm ⊡ -> tm ⊡ -> Set
 relsubst : ctx Unitz -> Set₁
 relsubst Δ = gksubst Δ VRel
 
+data U⁺ (R : CRel) : VRel where
+ con : ∀ {e1 e2} -> R e1 e2 -> U⁺ R (thunk e1) (thunk e2)
+
 mutual
  V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
  V (μ A) ρ = {!!}
  V (▹ X) ρ = [ ρ ]v X
- V (U B) ρ = {!!}
+ V (U B) ρ = U⁺ (E B ρ)
 
  E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
  E (A ⇒ B) ρ = {!!}
