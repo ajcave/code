@@ -145,7 +145,7 @@ id-tsub {Δ , T} = tsubst-ext id-tsub
 [ e2 /x] e1 = [ id-tsub , e2 ]cv e1
 
 data ε1 : Set where
- · : val ⊡ -> ε1
+ []· : val ⊡ -> ε1
  []to : tm (⊡ , *) -> ε1
 
 -- Aka evaluation context
@@ -153,10 +153,14 @@ Stack : Set
 Stack = List ε1
 
 
+-- Could think of writing it using a ε [ M ] ↝ ε [ N ] kind of notation instead
+
 data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
- ƛ : ∀ {K e v} -> (ƛ e) ∣ (· v) ∷ K ↝ [ v /x] e ∣ K
+ ƛ : ∀ {K e v} -> (ƛ e) ∣ []· v ∷ K ↝ [ v /x] e ∣ K
  pm : ∀ {K e v} -> (pm (roll v) e) ∣ K ↝ [ v /x] e ∣ K
  to : ∀ {K e1 e2} -> (e1 to e2) ∣ K ↝ e1 ∣ (([]to e2) ∷ K)
  produce : ∀ {K v e} -> (produce v) ∣ ([]to e) ∷ K ↝ [ v /x] e ∣ K
+ force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
+ · : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
  
 
