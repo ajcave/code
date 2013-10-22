@@ -191,13 +191,37 @@ data F⁺ (R : VRel) : CRel where
  con : ∀ {n e1 v1 e2 v2} -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R n v1 v2 -> F⁺ R n e1 e2
    -- TODO: This is wrong. Do something LSLR-ish with a ▹ modality?
 
+data F'⁺ (k : ℕ) (R : ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) : tm ⊡ -> tm ⊡ -> Set where
+ con : ∀ {j e1 v1 e2 v2} (p : j < k) -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R j p v1 v2 -> F'⁺ k R e1 e2
+
 data isRoll (R : val ⊡ -> val ⊡ -> Set) : val ⊡ -> val ⊡ -> Set where
  con : ∀ {v1 v2} -> R v1 v2 -> isRoll R (roll v1) (roll v2)
 
 _⇒⁺_ : VRel -> CRel -> CRel
 (VR ⇒⁺ CR) n e1 e2 = {v1 v2 : _} → VR n v1 v2 → CR n (e1 · v1) (e2 · v2)  -- TODO: This will need to become Kripke-ish
 
-μ⁺ : (AF : VRel -> VRel) -> VRel
+μ⁺ : (AF : (k : ℕ) -> (∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set) -> VRel
+μ⁺ AF zero v1 v2 = Unit
+μ⁺ AF (suc n) v1 v2 = isRoll (AF n (λ j x → μ⁺ AF j)) v1 v2
+
+extend : ∀ {Δ} -> (σ : var Δ * -> val ⊡ -> val ⊡ -> Set) -> (R : val ⊡ -> val ⊡ -> Set) -> var (Δ , *) * -> val ⊡ -> val ⊡ -> Set
+extend σ R top = R
+extend σ R (pop x) = σ x
+
+mutual
+ V : ∀ {Δ} -> vtpf Δ -> (k : ℕ) -> (∀ j -> j < k -> var Δ * -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set
+ V (μ A) k ρ = μ⁺ (λ k₁ x → V A k₁ (λ j x₁ → extend (ρ j {!!}) (x j x₁)) ) k
+ V (▹ X) zero ρ = λ x x₁ → Unit
+ V (▹ X) (suc k) ρ = ρ k {!!} X
+ V (U B) k ρ = {!!}
+
+ E : ∀ {Δ} -> ctpf Δ -> (k : ℕ) -> (∀ j -> j < k -> var Δ * -> val ⊡ -> val ⊡ -> Set) -> tm ⊡ -> tm ⊡ -> Set
+ E (A ⇒ B) k ρ = {!!}
+ E (F A) k ρ = F'⁺ k (λ j x → V A k ρ)
+
+ 
+
+{-μ⁺ : (AF : VRel -> VRel) -> VRel
 μ⁺ AF zero v1 v2 = Unit
 μ⁺ AF (suc n) v1 v2 = isRoll (AF (μ⁺ {!AF!}) {!!}) v1 v2
 
@@ -209,7 +233,7 @@ mutual
 
  E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
  E (A ⇒ B) ρ = V A ρ ⇒⁺ E B ρ
- E (F A)    ρ = F⁺ (V A ρ)
+ E (F A)    ρ = F⁺ (V A ρ) -}
 
  
  
