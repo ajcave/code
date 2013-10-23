@@ -191,8 +191,8 @@ data F⁺ (R : VRel) : CRel where
  con : ∀ {n e1 v1 e2 v2} -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R n v1 v2 -> F⁺ R n e1 e2
    -- TODO: This is wrong. Do something LSLR-ish with a ▹ modality?
 
-data F'⁺ (k : ℕ) (R : ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) : tm ⊡ -> tm ⊡ -> Set where
- con : ∀ {j e1 v1 e2 v2} (p : j < k) -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R j p v1 v2 -> F'⁺ k R e1 e2
+-- data F'⁺ (k : ℕ) (R : ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) : tm ⊡ -> tm ⊡ -> Set where
+--  con : ∀ {j e1 v1 e2 v2} (p : j < k) -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R j p v1 v2 -> F'⁺ k R e1 e2
 
 data isRoll (R : VRel) : VRel where
  con : ∀ {n v1 v2} -> R n v1 v2 -> isRoll R n (roll v1) (roll v2)
