@@ -246,8 +246,8 @@ _⇛_ : VRel -> VRel -> VRel
 CMap : (VRel -> VRel) -> Set₁
 CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
 
--- Map : (VRel -> VRel) -> Set₁
--- Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
+Map : (VRel -> VRel) -> Set₁
+Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
 
 -- inj : ∀ {C : VRel} -> C ⇾ ▸ C
 -- inj zero v1 v2 t = tt
@@ -261,6 +261,10 @@ CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
 ≤inc z≤n = z≤n
 ≤inc (s≤s p) = s≤s (≤inc p)
 
+≤trans : ∀ {n m k} -> n ≤ m -> m ≤ k -> n ≤ k
+≤trans z≤n p2 = z≤n
+≤trans (s≤s p1) (s≤s p2) = s≤s (≤trans p1 p2)
+
 -- G locally contractive means that:
 -- 1) (G X)(0) -> (G Y)(0) for any X and Y (they're irrelevant cause they occur under ▸)
 -- 2) If    ∀ k ≤ n.          X (k) ->    Y (k)
@@ -269,18 +273,19 @@ CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
 -- This looks like a more refined/restricted version of functoriality. Interesting
 -- It's an internalized, contractive map (above)
 
-foo : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (iter G 1⁺ n ⇛ μ⁺ G) n v1 v2
-foo G map zero v1 v2 = tt
-foo G map (suc n) v1 v2 = λ k x x₁ → map (iter G 1⁺ n) (iter G 1⁺ k) k v1 v2 {!foo G map k!} k (≤refl k) x₁
+mutual
+ bar' : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i < k -> k ≤ n -> (iter G 1⁺ n) i v1 v2 -> (iter G 1⁺ k) i v1 v2
+ bar' G map n zero i v1 v2 () k≤n x
+ bar' G map zero (suc k) i v1 v2 i≤k () x
+ bar' G map (suc n) (suc k) i v1 v2 (s≤s i≤k) (s≤s k≤n) x = map (iter G 1⁺ n) (iter G 1⁺ k) i v1 v2 (baz G map n k i v1 v2 i≤k k≤n) i (≤refl i) x
+ 
+ baz : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i ≤ k -> k ≤ n -> ▸ ((iter G 1⁺ n) ⇛ (iter G 1⁺ k)) i v1 v2
+ baz G map n k zero v1 v2 i<k k≤n = tt
+ baz G map n .(suc k) (suc i) v1 v2 (s≤s {.i} {k} i<k) k≤n = λ k₁ x x₁ → bar' G map n (suc k) k₁ v1 v2 (s≤s (≤trans x i<k)) k≤n x₁
 
-bar : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i ≤ k -> k ≤ n -> ▸ (iter G 1⁺ n ⇛ iter G 1⁺ k) i v1 v2
-bar G map n m zero v1 v2 i≤k k≤n = tt
-bar G map n zero (suc i) v1 v2 () k≤n
-bar G map zero (suc k) (suc i) v1 v2 i≤k ()
-bar G map (suc n) (suc k) (suc i) v1 v2 i≤k k≤n = λ k₁ x x₁ → map (iter G 1⁺ n) (iter G 1⁺ k) k₁ v1 v2 (bar G map n k k₁ v1 v2 {!!} {!!}) k₁ (≤refl k₁) x₁
-
-roll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
-roll⁺ G map n v1 v2 t = map (iter G 1⁺ n) (μ⁺ G) n v1 v2 {!!} n (≤refl n) t
+roll⁺' : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
+roll⁺' G map zero v1 v2 t = map 1⁺ (μ⁺ G) 0 v1 v2 tt zero z≤n t
+roll⁺' G map (suc n) v1 v2 t = map (iter G 1⁺ (suc n)) (μ⁺ G) (suc n) v1 v2 (λ k x x₁ → bar' G map (suc n) (suc k) k v1 v2 (≤refl _) (s≤s x) x₁) (suc n) (≤refl _) t
 
 fix : ∀ {A : VRel} -> ((▸ A) ⇛ A) ⇾ A
 fix zero v1 v2 f = f 0 z≤n tt
