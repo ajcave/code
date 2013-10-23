@@ -194,34 +194,11 @@ data F⁺ (R : VRel) : CRel where
 data F'⁺ (k : ℕ) (R : ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) : tm ⊡ -> tm ⊡ -> Set where
  con : ∀ {j e1 v1 e2 v2} (p : j < k) -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R j p v1 v2 -> F'⁺ k R e1 e2
 
-data isRoll (R : val ⊡ -> val ⊡ -> Set) : val ⊡ -> val ⊡ -> Set where
- con : ∀ {v1 v2} -> R v1 v2 -> isRoll R (roll v1) (roll v2)
-
-
+data isRoll (R : VRel) : VRel where
+ con : ∀ {n v1 v2} -> R n v1 v2 -> isRoll R n (roll v1) (roll v2)
 
 _⇒⁺_ : VRel -> CRel -> CRel
-(VR ⇒⁺ CR) n e1 e2 = {v1 v2 : _} → VR n v1 v2 → CR n (e1 · v1) (e2 · v2)  -- TODO: This will need to become Kripke-ish
-
-{-μ⁺ : (AF : (k : ℕ) -> (∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set) -> VRel
-μ⁺ AF zero v1 v2 = Unit
-μ⁺ AF (suc n) v1 v2 = isRoll (AF n (λ j x → μ⁺ AF j)) v1 v2
-
-extend : ∀ {Δ} {C : Set₁} -> (σ : var Δ * -> C) -> (R : C) -> var (Δ , *) * -> C
-extend σ R top = R
-extend σ R (pop x) = σ x 
-
-mutual
- V : ∀ {Δ} -> vtpf Δ -> (k : ℕ) -> (var Δ * -> ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set
- V (μ A) k ρ = μ⁺ (λ k₁ x → V A k (extend ρ {!!})) k --(λ k₁ x → V A k₁ (λ j x₁ → extend (ρ j {!!}) (x j x₁)) ) k
- V (▹ X) zero ρ = λ x x₁ → Unit
- V (▹ X) (suc k) ρ = ρ X k {!!}
- V (U B) k ρ = {!!}
-
- E : ∀ {Δ} -> ctpf Δ -> (k : ℕ) -> (var Δ * -> ∀ j -> j < k ->  val ⊡ -> val ⊡ -> Set) -> tm ⊡ -> tm ⊡ -> Set
- E (A ⇒ B) k ρ = {!!}
- E (F A) k ρ = F'⁺ k (λ j x → V A k ρ)-}
-
- 
+(VR ⇒⁺ CR) n e1 e2 = ∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k (e1 · v1) (e2 · v2)  -- TODO: This will need to become Kripke-ish
 
 iter : ∀ {C : Set₁} -> (AF : C -> C) -> C -> ℕ -> C
 iter AF b zero = b
@@ -309,7 +286,7 @@ fix' f (suc n) v1 v2 = f (suc n) v1 v2 (fix' f n v1 v2)
 
 mutual
  V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
- V (μ A) ρ = μ⁺ (λ R → V A (ρ , ▸ R))
+ V (μ A) ρ = μ⁺ (λ R → isRoll (V A (ρ , ▸ R)))
  V (▹ X) ρ = [ ρ ]v X
  V (U B) ρ = U⁺ (E B ρ)
 
