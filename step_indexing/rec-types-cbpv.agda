@@ -320,8 +320,8 @@ mutual
 
  E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
  E (A ⇒ B) ρ = V A ρ ⇒⁺ E B ρ
- E (F A)    ρ = μ⁺c (λ R n e1 e2 -> (∀ v1 → e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
-                                   (∀ e1' → e1 ↝ e1' → ▸c R n e1' e2))
+ E (F A)    ρ = μ⁺c (λ R n e1 e2 -> (∀ v1 -> e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
+                                   (∀ e1' -> e1 ↝ e1' → ▸c R n e1' e2))
    --F⁺ (V A ρ)
 
  
