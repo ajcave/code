@@ -246,6 +246,21 @@ _⇛_ : VRel -> VRel -> VRel
 CMap : (VRel -> VRel) -> Set₁
 CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
 
+Map : (VRel -> VRel) -> Set₁
+Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
+
+-- inj : ∀ {C : VRel} -> C ⇾ ▸ C
+-- inj zero v1 v2 t = tt
+-- inj (suc n) v1 v2 t = {!!}
+
+≤refl : ∀ n -> n ≤ n
+≤refl zero = z≤n
+≤refl (suc n) = s≤s (≤refl n)
+
+≤inc : ∀ {k n} -> k ≤ n -> k ≤ (suc n)
+≤inc z≤n = z≤n
+≤inc (s≤s p) = s≤s (≤inc p)
+
 -- G locally contractive means that:
 -- 1) (G X)(0) -> (G Y)(0) for any X and Y (they're irrelevant cause they occur under ▸)
 -- 2) If    ∀ k ≤ n.          X (k) ->    Y (k)
@@ -254,9 +269,20 @@ CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
 -- This looks like a more refined/restricted version of functoriality. Interesting
 -- It's an internalized, contractive map (above)
 
+foo : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (iter G 1⁺ n ⇛ μ⁺ G) n v1 v2
+foo G map zero v1 v2 = tt
+foo G map (suc n) v1 v2 = λ k x x₁ → map (iter G 1⁺ n) (iter G 1⁺ k) k v1 v2 {!foo G map k!} k (≤refl k) x₁
+
 roll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
-roll⁺ G map zero v1 v2 t = map 1⁺ (μ⁺ G) 0 v1 v2 tt 0 z≤n t
-roll⁺ G map (suc n) v1 v2 t = map (iter G 1⁺ (suc n)) (μ⁺ G) (suc n) v1 v2 {!!} (suc n) {!!} t
+roll⁺ G map n v1 v2 t = map (iter G 1⁺ n) (μ⁺ G) n v1 v2 {!!} n (≤refl n) t
+
+fix : ∀ {A : VRel} -> ((▸ A) ⇛ A) ⇾ A
+fix zero v1 v2 f = f 0 z≤n tt
+fix {A} (suc n) v1 v2 f = f (suc n) (≤refl (suc n)) (fix {A} n v1 v2 (λ k x x₁ → f k (≤inc x) x₁)) -- This reminds me of proving well-founded induction..
+
+fix' : ∀ {A : VRel} -> ((▸ A) ⇾ A) -> ∀ n v1 v2 -> A n v1 v2
+fix' f zero v1 v2 = f zero v1 v2 tt
+fix' f (suc n) v1 v2 = f (suc n) v1 v2 (fix' f n v1 v2)
 
 mutual
  V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
