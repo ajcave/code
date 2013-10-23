@@ -274,18 +274,30 @@ Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
 -- It's an internalized, contractive map (above)
 
 mutual
- bar' : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i < k -> k ≤ n -> (iter G 1⁺ n) i v1 v2 -> (iter G 1⁺ k) i v1 v2
+ bar' : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i < k -> i < n -> (iter G 1⁺ n) i v1 v2 -> (iter G 1⁺ k) i v1 v2
  bar' G map n zero i v1 v2 () k≤n x
  bar' G map zero (suc k) i v1 v2 i≤k () x
  bar' G map (suc n) (suc k) i v1 v2 (s≤s i≤k) (s≤s k≤n) x = map (iter G 1⁺ n) (iter G 1⁺ k) i v1 v2 (baz G map n k i v1 v2 i≤k k≤n) i (≤refl i) x
  
- baz : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i ≤ k -> k ≤ n -> ▸ ((iter G 1⁺ n) ⇛ (iter G 1⁺ k)) i v1 v2
+ baz : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i ≤ k -> i ≤ n -> ▸ ((iter G 1⁺ n) ⇛ (iter G 1⁺ k)) i v1 v2
  baz G map n k zero v1 v2 i<k k≤n = tt
- baz G map n .(suc k) (suc i) v1 v2 (s≤s {.i} {k} i<k) k≤n = λ k₁ x x₁ → bar' G map n (suc k) k₁ v1 v2 (s≤s (≤trans x i<k)) k≤n x₁
+ baz G map .(suc n) .(suc k) (suc i) v1 v2 (s≤s {.i} {k} i<k) (s≤s {.i} {n} k≤n) = λ k₁ x x₁ → bar' G map (suc n) (suc k) k₁ v1 v2 (s≤s (≤trans x i<k)) (s≤s (≤trans x k≤n)) x₁ 
 
-roll⁺' : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
-roll⁺' G map zero v1 v2 t = map 1⁺ (μ⁺ G) 0 v1 v2 tt zero z≤n t
-roll⁺' G map (suc n) v1 v2 t = map (iter G 1⁺ (suc n)) (μ⁺ G) (suc n) v1 v2 (λ k x x₁ → bar' G map (suc n) (suc k) k v1 v2 (≤refl _) (s≤s x) x₁) (suc n) (≤refl _) t
+mutual
+ roll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
+ roll⁺ G map n v1 v2 t = map (iter G 1⁺ n) (μ⁺ G) n v1 v2 (quux G map n v1 v2) n (≤refl _) t
+
+ quux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (iter G 1⁺ n ⇛ μ⁺ G) n v1 v2
+ quux G map zero v1 v2 = tt
+ quux G map (suc n) v1 v2 = λ k x x₁ → bar' G map (suc n) (suc k) k v1 v2 (≤refl _) (s≤s x) x₁
+
+mutual
+ unroll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (G (μ⁺ G)) ⇾ (μ⁺ G)
+ unroll⁺ G map n v1 v2 t = map (μ⁺ G) (iter G 1⁺ n) n v1 v2 (unquux G map n v1 v2) n (≤refl _) t
+
+ unquux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (μ⁺ G ⇛ iter G 1⁺ n) n v1 v2
+ unquux G map zero v1 v2 = tt
+ unquux G map (suc n) v1 v2 = λ k x x₁ → bar' G map (suc k) (suc n) k v1 v2 (s≤s x) (≤refl _) x₁
 
 fix : ∀ {A : VRel} -> ((▸ A) ⇛ A) ⇾ A
 fix zero v1 v2 f = f 0 z≤n tt
