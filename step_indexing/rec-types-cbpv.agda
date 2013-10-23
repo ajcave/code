@@ -197,43 +197,76 @@ data F'⁺ (k : ℕ) (R : ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) : tm ⊡ 
 data isRoll (R : val ⊡ -> val ⊡ -> Set) : val ⊡ -> val ⊡ -> Set where
  con : ∀ {v1 v2} -> R v1 v2 -> isRoll R (roll v1) (roll v2)
 
+
+
 _⇒⁺_ : VRel -> CRel -> CRel
 (VR ⇒⁺ CR) n e1 e2 = {v1 v2 : _} → VR n v1 v2 → CR n (e1 · v1) (e2 · v2)  -- TODO: This will need to become Kripke-ish
 
-μ⁺ : (AF : (k : ℕ) -> (∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set) -> VRel
+{-μ⁺ : (AF : (k : ℕ) -> (∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set) -> VRel
 μ⁺ AF zero v1 v2 = Unit
 μ⁺ AF (suc n) v1 v2 = isRoll (AF n (λ j x → μ⁺ AF j)) v1 v2
 
-extend : ∀ {Δ} -> (σ : var Δ * -> val ⊡ -> val ⊡ -> Set) -> (R : val ⊡ -> val ⊡ -> Set) -> var (Δ , *) * -> val ⊡ -> val ⊡ -> Set
+extend : ∀ {Δ} {C : Set₁} -> (σ : var Δ * -> C) -> (R : C) -> var (Δ , *) * -> C
 extend σ R top = R
-extend σ R (pop x) = σ x
+extend σ R (pop x) = σ x 
 
 mutual
- V : ∀ {Δ} -> vtpf Δ -> (k : ℕ) -> (∀ j -> j < k -> var Δ * -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set
- V (μ A) k ρ = μ⁺ (λ k₁ x → V A k₁ (λ j x₁ → extend (ρ j {!!}) (x j x₁)) ) k
+ V : ∀ {Δ} -> vtpf Δ -> (k : ℕ) -> (var Δ * -> ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) -> val ⊡ -> val ⊡ -> Set
+ V (μ A) k ρ = μ⁺ (λ k₁ x → V A k (extend ρ {!!})) k --(λ k₁ x → V A k₁ (λ j x₁ → extend (ρ j {!!}) (x j x₁)) ) k
  V (▹ X) zero ρ = λ x x₁ → Unit
- V (▹ X) (suc k) ρ = ρ k {!!} X
+ V (▹ X) (suc k) ρ = ρ X k {!!}
  V (U B) k ρ = {!!}
 
- E : ∀ {Δ} -> ctpf Δ -> (k : ℕ) -> (∀ j -> j < k -> var Δ * -> val ⊡ -> val ⊡ -> Set) -> tm ⊡ -> tm ⊡ -> Set
+ E : ∀ {Δ} -> ctpf Δ -> (k : ℕ) -> (var Δ * -> ∀ j -> j < k ->  val ⊡ -> val ⊡ -> Set) -> tm ⊡ -> tm ⊡ -> Set
  E (A ⇒ B) k ρ = {!!}
- E (F A) k ρ = F'⁺ k (λ j x → V A k ρ)
+ E (F A) k ρ = F'⁺ k (λ j x → V A k ρ)-}
 
  
 
-{-μ⁺ : (AF : VRel -> VRel) -> VRel
-μ⁺ AF zero v1 v2 = Unit
-μ⁺ AF (suc n) v1 v2 = isRoll (AF (μ⁺ {!AF!}) {!!}) v1 v2
+iter : ∀ {C : Set₁} -> (AF : C -> C) -> C -> ℕ -> C
+iter AF b zero = b
+iter AF b (suc n) = AF (iter AF b n)
+
+1⁺ : VRel
+1⁺ n v1 v2 = Unit
+
+μ⁺ : (VRel -> VRel) -> VRel
+μ⁺ AF n = iter AF 1⁺ (suc n) n
+
+▸ : VRel -> VRel
+▸ R zero v1 v2 = Unit
+▸ R (suc n) v1 v2 = R n v1 v2
+
+_⇾_ : VRel -> VRel -> Set
+T ⇾ S = ∀ n v₁ v₂ → T n v₁ v₂ → S n v₁ v₂
+
+_⇛_ : VRel -> VRel -> VRel
+(T ⇛ S) n v1 v2 = ∀ k -> k ≤ n -> T k v1 v2 -> S k v1 v2
+
+CMap : (VRel -> VRel) -> Set₁
+CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
+
+-- G locally contractive means that:
+-- 1) (G X)(0) -> (G Y)(0) for any X and Y (they're irrelevant cause they occur under ▸)
+-- 2) If    ∀ k ≤ n.          X (k) ->    Y (k)
+--    Then  ∀ k ≤ (suc n). (G X)(k) -> (G Y)(k)
+-- (For covariant G. mixed variance is more complicated..)
+-- This looks like a more refined/restricted version of functoriality. Interesting
+-- It's an internalized, contractive map (above)
+
+roll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
+roll⁺ G map zero v1 v2 t = map 1⁺ (μ⁺ G) 0 v1 v2 tt 0 z≤n t
+roll⁺ G map (suc n) v1 v2 t = map (iter G 1⁺ (suc n)) (μ⁺ G) (suc n) v1 v2 {!!} (suc n) {!!} t
 
 mutual
  V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
- V (μ A) ρ = {!μ⁺!}
+ V (μ A) ρ = μ⁺ (λ R → V A (ρ , ▸ R))
  V (▹ X) ρ = [ ρ ]v X
  V (U B) ρ = U⁺ (E B ρ)
 
  E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
  E (A ⇒ B) ρ = V A ρ ⇒⁺ E B ρ
- E (F A)    ρ = F⁺ (V A ρ) -}
+ E (F A)    ρ = F⁺ (V A ρ)
 
  
  
