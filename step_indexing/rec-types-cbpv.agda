@@ -246,8 +246,8 @@ _⇛_ : VRel -> VRel -> VRel
 CMap : (VRel -> VRel) -> Set₁
 CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
 
-Map : (VRel -> VRel) -> Set₁
-Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
+-- Map : (VRel -> VRel) -> Set₁
+-- Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
 
 -- inj : ∀ {C : VRel} -> C ⇾ ▸ C
 -- inj zero v1 v2 t = tt
@@ -272,6 +272,12 @@ Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
 foo : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (iter G 1⁺ n ⇛ μ⁺ G) n v1 v2
 foo G map zero v1 v2 = tt
 foo G map (suc n) v1 v2 = λ k x x₁ → map (iter G 1⁺ n) (iter G 1⁺ k) k v1 v2 {!foo G map k!} k (≤refl k) x₁
+
+bar : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i ≤ k -> k ≤ n -> ▸ (iter G 1⁺ n ⇛ iter G 1⁺ k) i v1 v2
+bar G map n m zero v1 v2 i≤k k≤n = tt
+bar G map n zero (suc i) v1 v2 () k≤n
+bar G map zero (suc k) (suc i) v1 v2 i≤k ()
+bar G map (suc n) (suc k) (suc i) v1 v2 i≤k k≤n = λ k₁ x x₁ → map (iter G 1⁺ n) (iter G 1⁺ k) k₁ v1 v2 (bar G map n k k₁ v1 v2 {!!} {!!}) k₁ (≤refl k₁) x₁
 
 roll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
 roll⁺ G map n v1 v2 t = map (iter G 1⁺ n) (μ⁺ G) n v1 v2 {!!} n (≤refl n) t
