@@ -1,9 +1,11 @@
 module rec-types-cbpv where
 open import FinMap
 open import Unit
-open import Product
+open import Product hiding (_×_)
 open import Data.List
 open import Data.Nat
+open import Relation.Binary.PropositionalEquality
+open import Data.Product hiding (map)
 
 {- We want this if we want both computational rec types and value rec types
 data sort : Set where
@@ -160,7 +162,7 @@ Stack = List ε1
 data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
  ƛ : ∀ {K e v} -> (ƛ e) ∣ []· v ∷ K ↝ [ v /x] e ∣ K
  pm : ∀ {K e v} -> (pm (roll v) e) ∣ K ↝ [ v /x] e ∣ K
- to : ∀ {K e1 e2} -> (e1 to e2) ∣ K ↝ e1 ∣ (([]to e2) ∷ K)
+ to-s : ∀ {K e1 e2} -> (e1 to e2) ∣ K ↝ e1 ∣ (([]to e2) ∷ K)
  produce : ∀ {K v e} -> (produce v) ∣ ([]to e) ∷ K ↝ [ v /x] e ∣ K
  force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
  app : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
@@ -171,6 +173,21 @@ data _∣_↝*_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
       e1 ∣ K1 ↝  e2 ∣ K2
    -> e2 ∣ K2 ↝* e3 ∣ K3
    -> e1 ∣ K1 ↝* e3 ∣ K3
+
+data _∣_↝[_]_∣_ : tm ⊡ -> Stack -> ℕ -> tm ⊡ -> Stack -> Set where
+ refl : ∀ {e K} -> e ∣ K ↝[ 0 ] e ∣ K
+ trans1 : ∀ {e1 K1 e2 K2 e3 K3 n} ->
+      e1 ∣ K1 ↝  e2 ∣ K2
+   -> e2 ∣ K2 ↝[ n ] e3 ∣ K3
+   -> e1 ∣ K1 ↝[ suc n ] e3 ∣ K3
+
+data _↝_ : tm ⊡ -> tm ⊡ -> Set where
+ β : ∀ {e v} -> (ƛ e · v) ↝ [ v /x] e
+ app1 : ∀ {e1 e2 v} -> e1 ↝ e2 -> (e1 · v) ↝ (e2 · v)
+ pm : ∀ {e v} -> pm (roll v) e ↝ [ v /x] e
+ to1 : ∀ {e1 e1' e2} -> e1 ↝ e1' -> (e1 to e2) ↝ (e1' to e2)
+ toβ : ∀ {v e2} -> (produce v to e2) ↝ [ v /x] e2
+ force : ∀ {e} -> force (thunk e) ↝ e
 
 _↝*_ : tm ⊡ -> tm ⊡ -> Set
 e1 ↝* e2 = e1 ∣ [] ↝* e2 ∣ []
@@ -198,7 +215,7 @@ data isRoll (R : VRel) : VRel where
  con : ∀ {n v1 v2} -> R n v1 v2 -> isRoll R n (roll v1) (roll v2)
 
 _⇒⁺_ : VRel -> CRel -> CRel
-(VR ⇒⁺ CR) n e1 e2 = ∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k (e1 · v1) (e2 · v2)  -- TODO: This will need to become Kripke-ish
+(VR ⇒⁺ CR) n e1 e2 = ∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k (e1 · v1) (e2 · v2)
 
 iter : ∀ {C : Set₁} -> (AF : C -> C) -> C -> ℕ -> C
 iter AF b zero = b
@@ -213,6 +230,17 @@ iter AF b (suc n) = AF (iter AF b n)
 ▸ : VRel -> VRel
 ▸ R zero v1 v2 = Unit
 ▸ R (suc n) v1 v2 = R n v1 v2
+
+-- TODO: Do this better
+1⁺c : CRel
+1⁺c n v1 v2 = Unit
+
+μ⁺c : (CRel -> CRel) -> CRel
+μ⁺c AF n = iter AF 1⁺c (suc n) n
+
+▸c : CRel -> CRel
+▸c R zero v1 v2 = Unit
+▸c R (suc n) v1 v2 = R n v1 v2
 
 _⇾_ : VRel -> VRel -> Set
 T ⇾ S = ∀ n v₁ v₂ → T n v₁ v₂ → S n v₁ v₂
@@ -292,7 +320,9 @@ mutual
 
  E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
  E (A ⇒ B) ρ = V A ρ ⇒⁺ E B ρ
- E (F A)    ρ = F⁺ (V A ρ)
+ E (F A)    ρ = μ⁺c (λ R n e1 e2 -> (∀ v1 → e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
+                                   (∀ e1' → e1 ↝ e1' → ▸c R n e1' e2))
+   --F⁺ (V A ρ)
 
  
  
