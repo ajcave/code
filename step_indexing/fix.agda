@@ -80,6 +80,7 @@ mutual
   produce : (v : val Γ) -> tm Γ 
   _to_ : (e1 : tm Γ) (e2 : tm (Γ , *)) -> tm Γ
   force : (v : val Γ) -> tm Γ
+  rec : (e : tm (Γ , *)) -> tm Γ
 
 〈_〉 : ctx vtp -> ctx Unitz
 〈 ⊡ 〉 = ⊡
@@ -101,6 +102,7 @@ mutual
    produce : ∀ {A v} -> Γ ⊢v v ∶ A -> Γ ⊢c (produce v) ∶ (F A)
    _to_ : ∀ {A B e1 e2} -> Γ ⊢c e1 ∶ (F A) -> (Γ , A) ⊢c e2 ∶ B -> Γ ⊢c (e1 to e2) ∶ B
    force : ∀ {B v} -> Γ ⊢v v ∶ (U B) -> Γ ⊢c (force v) ∶ B
+   rec : ∀ {B e} -> (Γ , U B) ⊢c e ∶ B -> Γ ⊢c (rec e) ∶ B
 
 -- If all we care about is CBV, then is there a more direct CK machine way to do it?
 -- Something like A normal form?
@@ -118,6 +120,7 @@ mutual
  [_]cr w (produce v) = produce ([ w ]vr v)
  [_]cr w (e1 to e2) = ([ w ]cr e1) to ([ vsub-ext w ]cr e2)
  [_]cr w (force v) = force ([ w ]vr v)
+ [_]cr w (rec e) = rec ([ vsub-ext w ]cr e)
 
 tsubst : ∀ (Δ1 Δ2 : ctx Unitz) -> Set
 tsubst Δ1 Δ2 = gksubst Δ1 (val Δ2)
@@ -138,6 +141,7 @@ mutual
  [_]cv w (produce v) = produce ([ w ]vv v)
  [_]cv w (e1 to e2) = ([ w ]cv e1) to ([ tsubst-ext w ]cv e2)
  [_]cv w (force v) = force ([ w ]vv v)
+ [_]cv w (rec e) = rec ([ tsubst-ext w ]cv e)
 
 
 id-tsub : ∀ {Δ : ctx Unitz} -> tsubst Δ Δ
@@ -159,27 +163,27 @@ Stack = List ε1
 -- Could think of writing it using a ε [ M ] ↝ ε [ N ] kind of notation instead (just another way to view the stack)
 
 -- Nice: Each computational constructor has a rule, and that's it.
-data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
- ƛ : ∀ {K e v} -> (ƛ e) ∣ []· v ∷ K ↝ [ v /x] e ∣ K
- pm : ∀ {K e v} -> (pm (roll v) e) ∣ K ↝ [ v /x] e ∣ K
- to-s : ∀ {K e1 e2} -> (e1 to e2) ∣ K ↝ e1 ∣ (([]to e2) ∷ K)
- produce : ∀ {K v e} -> (produce v) ∣ ([]to e) ∷ K ↝ [ v /x] e ∣ K
- force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
- app : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
+-- data _∣_↝_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
+--  ƛ : ∀ {K e v} -> (ƛ e) ∣ []· v ∷ K ↝ [ v /x] e ∣ K
+--  pm : ∀ {K e v} -> (pm (roll v) e) ∣ K ↝ [ v /x] e ∣ K
+--  to-s : ∀ {K e1 e2} -> (e1 to e2) ∣ K ↝ e1 ∣ (([]to e2) ∷ K)
+--  produce : ∀ {K v e} -> (produce v) ∣ ([]to e) ∷ K ↝ [ v /x] e ∣ K
+--  force : ∀ {K e} -> (force (thunk e)) ∣ K ↝ e ∣ K
+--  app : ∀ {K e v} -> (e · v) ∣ K ↝ e ∣ ([]· v ∷ K)
 
-data _∣_↝*_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
- refl : ∀ {e K} -> e ∣ K ↝* e ∣ K
- trans1 : ∀ {e1 K1 e2 K2 e3 K3} ->
-      e1 ∣ K1 ↝  e2 ∣ K2
-   -> e2 ∣ K2 ↝* e3 ∣ K3
-   -> e1 ∣ K1 ↝* e3 ∣ K3
+-- data _∣_↝*_∣_ : tm ⊡ -> Stack -> tm ⊡ -> Stack -> Set where
+--  refl : ∀ {e K} -> e ∣ K ↝* e ∣ K
+--  trans1 : ∀ {e1 K1 e2 K2 e3 K3} ->
+--       e1 ∣ K1 ↝  e2 ∣ K2
+--    -> e2 ∣ K2 ↝* e3 ∣ K3
+--    -> e1 ∣ K1 ↝* e3 ∣ K3
 
-data _∣_↝[_]_∣_ : tm ⊡ -> Stack -> ℕ -> tm ⊡ -> Stack -> Set where
- refl : ∀ {e K} -> e ∣ K ↝[ 0 ] e ∣ K
- trans1 : ∀ {e1 K1 e2 K2 e3 K3 n} ->
-      e1 ∣ K1 ↝  e2 ∣ K2
-   -> e2 ∣ K2 ↝[ n ] e3 ∣ K3
-   -> e1 ∣ K1 ↝[ suc n ] e3 ∣ K3
+-- data _∣_↝[_]_∣_ : tm ⊡ -> Stack -> ℕ -> tm ⊡ -> Stack -> Set where
+--  refl : ∀ {e K} -> e ∣ K ↝[ 0 ] e ∣ K
+--  trans1 : ∀ {e1 K1 e2 K2 e3 K3 n} ->
+--       e1 ∣ K1 ↝  e2 ∣ K2
+--    -> e2 ∣ K2 ↝[ n ] e3 ∣ K3
+--    -> e1 ∣ K1 ↝[ suc n ] e3 ∣ K3
 
 data _↝_ : tm ⊡ -> tm ⊡ -> Set where
  β : ∀ {e v} -> (ƛ e · v) ↝ [ v /x] e
@@ -188,6 +192,7 @@ data _↝_ : tm ⊡ -> tm ⊡ -> Set where
  to1 : ∀ {e1 e1' e2} -> e1 ↝ e1' -> (e1 to e2) ↝ (e1' to e2)
  toβ : ∀ {v e2} -> (produce v to e2) ↝ [ v /x] e2
  force : ∀ {e} -> force (thunk e) ↝ e
+ rec : ∀ {e} -> (rec e) ↝ [ thunk (rec e) /x] e
 
 data _↝[_]_ : tm ⊡ -> ℕ -> tm ⊡ -> Set where
  refl : ∀ {e} -> e  ↝[ 0 ] e
@@ -196,8 +201,12 @@ data _↝[_]_ : tm ⊡ -> ℕ -> tm ⊡ -> Set where
    -> e2 ↝[ n ] e3
    -> e1 ↝[ suc n ] e3
 
-_↝*_ : tm ⊡ -> tm ⊡ -> Set
-e1 ↝* e2 = e1 ∣ [] ↝* e2 ∣ []
+data _↝*_ : tm ⊡  -> tm ⊡ -> Set where
+ refl : ∀ {e} -> e  ↝* e
+ trans1 : ∀ {e1 e2 e3} ->
+      e1 ↝  e2 
+   -> e2 ↝* e3
+   -> e1 ↝* e3
 
 ARel : Set -> Set₁
 ARel A = ℕ -> A -> A -> Set
