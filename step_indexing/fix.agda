@@ -224,7 +224,7 @@ data U⁺ (R : CRel) : VRel where
  con : ∀ {n e1 e2} -> R n e1 e2 -> U⁺ R n (thunk e1) (thunk e2)
 
 data F⁺ (R : VRel) : CRel where
- con : ∀ {n e1 v1 e2 v2} -> e1 ↝* (produce v1) -> e2 ↝* (produce v2) -> R n v1 v2 -> F⁺ R n e1 e2
+ con : ∀ {n v1 v2} ->  R n v1 v2 -> F⁺ R n (produce v1) (produce v2)
    -- TODO: This is wrong. Do something LSLR-ish with a ▹ modality?
 
 -- data F'⁺ (k : ℕ) (R : ∀ j -> j < k -> val ⊡ -> val ⊡ -> Set) : tm ⊡ -> tm ⊡ -> Set where
@@ -235,6 +235,9 @@ data isRoll (R : VRel) : VRel where
 
 _⇒⁺_ : VRel -> CRel -> CRel
 (VR ⇒⁺ CR) n e1 e2 = ∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k (e1 · v1) (e2 · v2)
+
+data _⇒'_ (VR : VRel) (CR : CRel) : CRel where
+ con : ∀ n e1 e2 -> (∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k ([ v1 /x] e1) ([ v2 /x] e2)) -> (VR ⇒' CR) n (ƛ e1) (ƛ e2)
 
 -- iter : ∀ {C : Set₁} -> (AF : C -> C) -> C -> ℕ -> C
 -- iter AF b zero = b
@@ -352,15 +355,24 @@ fix' : ∀ {A : VRel} -> ((▸ A) ⇾ A) -> ∀ n v1 v2 -> A n v1 v2
 fix' f zero v1 v2 = f zero v1 v2 tt
 fix' f (suc n) v1 v2 = f (suc n) v1 v2 (fix' f n v1 v2)
 
+data irred : tm ⊡ -> Set where
+ ƛ : ∀ e -> irred (ƛ e)
+ produce : ∀ v -> irred (produce v)
+
 mutual
  V : vtp -> VRel
  --V (μ A) ρ = μ⁺ (λ R → isRoll (V A (ρ , ▸ R)))
  V (▹ ()) --[ ρ ]v X
  V (U B) = U⁺ (E B)
 
+ Te : ctp -> CRel
+ Te (A ⇒ B) = V A ⇒' E B
+ Te (F A) = F⁺ (V A) 
+
  E : ctp -> CRel
- E (A ⇒ B) = V A ⇒⁺ E B
- E (F A)    = λ k e₁ e₂ → ∀ j v₁ → j < k → e₁ ↝[ j ] produce v₁ → ∃ (λ v₂ → e₂ ↝* produce v₂ × V A (k ∸ j) v₁ v₂)
+ E B = λ k e₁ e₂ → ∀ j e₁' → j < k → e₁ ↝[ j ] e₁' -> irred e₁' → ∃ (λ e₂' → e₂ ↝* e₂' × Te B (k ∸ j) e₁' e₂')
+ -- Why is this necessary?
+
   --μ⁺c (λ R n e1 e2 -> (∀ v1 -> e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
   --                                 (∀ e1' -> e1 ↝ e1' → ▸c R n e1' e2))
    --F⁺ (V A ρ)
@@ -369,6 +381,16 @@ G : ∀ (Γ : ctx vtp) -> ARel (tsubst 〈 Γ 〉 ⊡)
 G ⊡ k σ1 σ2 = Unit
 G (Γ , T) k (σ1 , v1) (σ2 , v2) = G Γ k σ1 σ2 × V T k v1 v2
 
-_⊢_≤_∶_ : ∀ Γ (e1 e2 : tm 〈 Γ 〉) T -> Set
-Γ ⊢ e1 ≤ e2 ∶ T = ∀ k σ1 σ2 → G Γ k σ1 σ2 → E T k ([ σ1 ]cv e1) ([ σ2 ]cv e2)
+_⊢c_≪_∶_ : ∀ Γ (e1 e2 : tm 〈 Γ 〉) T -> Set
+Γ ⊢c e1 ≪ e2 ∶ T = ∀ k σ1 σ2 → G Γ k σ1 σ2 → E T k ([ σ1 ]cv e1) ([ σ2 ]cv e2)
 
+_⊢v_≪_∶_ : ∀ Γ (v1 v2 : val 〈 Γ 〉) T -> Set
+Γ ⊢v v1 ≪ v2 ∶ T = ∀ k σ1 σ2 → G Γ k σ1 σ2 → V T k ([ σ1 ]vv v1) ([ σ2 ]vv v2)
+
+mutual
+ mainv : ∀ {Γ v T} -> Γ ⊢v v ∶ T -> Γ ⊢v v ≪ v ∶ T
+ mainv (▹ x) k σ1 σ2 dσ = {!!}
+ mainv (thunk x) k σ1 σ2 dσ = con (mainc x k σ1 σ2 dσ)
+
+ mainc : ∀ {Γ e T} -> Γ ⊢c e ∶ T -> Γ ⊢c e ≪ e ∶ T
+ mainc d k σ1 σ2 dσ j e₁ j<k st ire₁ = {!!}
