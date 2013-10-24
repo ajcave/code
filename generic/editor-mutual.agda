@@ -55,6 +55,13 @@ data μ {Δ} (Ds : Defs Δ) : Δ -> Set where
 ⟦_⟧f : Labs -> Set
 ⟦ l ⟧f = μ FamF l
 
+mutual
+ conv1 : ⟦ `tree ⟧f -> Tree
+ conv1 (inj (`children , ts)) = children (conv2 ts)
+
+ conv2 : ⟦ `nodelist ⟧f -> NodeList
+ conv2 (inj (`nil , _)) = nil
+ conv2 (inj (`cons , ht)) = cons (conv1 (ht `fst)) (conv2 (ht `snd))
 
 
 {-
