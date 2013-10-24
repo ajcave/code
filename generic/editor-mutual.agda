@@ -26,11 +26,10 @@ data Labs : Set where `tree `nodelist : Labs
 data ListLab : Set where `nil `cons : ListLab
 data TreeLab : Set where `children : TreeLab
 
-Fam : Defs Labs
-Fam `tree = ⨁ (λ {`children → ▹ `nodelist})
-Fam `nodelist = ⨁ (λ {`nil  → `1;
+FamF : Defs Labs
+FamF `tree     = ⨁ (λ {`children → ▹ `nodelist})
+FamF `nodelist = ⨁ (λ {`nil  → `1;
                       `cons → ▹ `tree ⊗ ▹ `nodelist})
-
 
 mutual
  data Tree : Set where
@@ -39,24 +38,26 @@ mutual
   nil : NodeList
   cons : Tree -> NodeList -> NodeList
 
-{-Env : ∀ Δ -> Set₁
-Env Δ = Fin Δ -> Set
-
-Ext : ∀ {Δ} -> Env Δ -> Set -> Env (suc Δ)
-Ext ρ A zero = A
-Ext ρ A (suc x) = ρ x
+Env : Set -> Set₁
+Env Δ = Δ -> Set
 
 mutual
  ⟦_⟧ : ∀ {Δ} -> Func Δ -> Env Δ -> Set
  ⟦_⟧ (`Σ A f) ρ = Σ A (λ l → ⟦ f l ⟧ ρ)
  ⟦_⟧ (`Π A f) ρ = (l : A) → ⟦ f l ⟧ ρ
- ⟦_⟧ (`μ F) ρ = μ F ρ
  ⟦_⟧ (κ A) ρ = A
  ⟦_⟧ (▹ X) ρ = ρ X
 
- data μ {Δ} (F : Func (suc Δ)) (ρ : Env Δ) : Set where
-  inj : ⟦ F ⟧ (Ext ρ (μ F ρ)) -> μ F ρ
+-- Constructs them simultaneously using indexing?
+data μ {Δ} (Ds : Defs Δ) : Δ -> Set where
+ inj : ∀ {l} -> ⟦ Ds l ⟧ (μ Ds) -> μ Ds l
 
+⟦_⟧f : Labs -> Set
+⟦ l ⟧f = μ FamF l
+
+
+
+{-
 
 _⊗_ : ∀ {Δ} -> Func Δ -> Func Δ -> Func Δ
 F ⊗ G = `Π ProdLab (λ {`fst → F; `snd → G})
