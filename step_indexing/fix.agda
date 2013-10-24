@@ -372,6 +372,7 @@ mutual
  E : ctp -> CRel
  E B = λ k e₁ e₂ → ∀ j {e₁'} → j < k → e₁ ↝[ j ] e₁' -> irred e₁' → ∃ (λ e₂' → e₂ ↝* e₂' × Te B (k ∸ j) e₁' e₂')
  -- Why is this necessary?
+ -- Maybe if we phrase it using the stack, it's better?
 
   --μ⁺c (λ R n e1 e2 -> (∀ v1 -> e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
   --                                 (∀ e1' -> e1 ↝ e1' → ▸c R n e1' e2))
@@ -400,5 +401,8 @@ mutual
  mainc (produce x) k σ1 σ2 dσ 0 j<k refl ire₁ = _ , (refl , (con (mainv x k σ1 σ2 dσ)))
  mainc (produce x) k σ1 σ2 dσ (suc n) j<k (trans1 () st) ire₁
  mainc (d to d₁) k σ1 σ2 dσ j j<k st ire₁ = {!!}
- mainc (force x) k σ1 σ2 dσ j j<k st ire₁ = {!!}
- mainc (rec d) k σ1 σ2 dσ j j<k st ire₁ = {!!}
+ mainc (force x) k σ1 σ2 dσ zero j<k refl ()
+ mainc (force (▹ x)) k σ1 σ2 dσ (suc n) j<k (trans1 x₁ st) ire₁ = {!!}
+ mainc (force (thunk x)) k σ1 σ2 dσ (suc n) j<k (trans1 force st) ire₁ = {!!}
+ mainc (rec d) k σ1 σ2 dσ zero j<k refl ()
+ mainc (rec d) k σ1 σ2 dσ (suc n) j<k (trans1 rec st) ire₁ = {!!}
