@@ -237,7 +237,7 @@ _⇒⁺_ : VRel -> CRel -> CRel
 (VR ⇒⁺ CR) n e1 e2 = ∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k (e1 · v1) (e2 · v2)
 
 data _⇒'_ (VR : VRel) (CR : CRel) : CRel where
- con : ∀ n e1 e2 -> (∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k ([ v1 /x] e1) ([ v2 /x] e2)) -> (VR ⇒' CR) n (ƛ e1) (ƛ e2)
+ con : ∀ {n e1 e2} -> (∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k ([ v1 /x] e1) ([ v2 /x] e2)) -> (VR ⇒' CR) n (ƛ e1) (ƛ e2)
 
 -- iter : ∀ {C : Set₁} -> (AF : C -> C) -> C -> ℕ -> C
 -- iter AF b zero = b
@@ -370,7 +370,7 @@ mutual
  Te (F A) = F⁺ (V A) 
 
  E : ctp -> CRel
- E B = λ k e₁ e₂ → ∀ j e₁' → j < k → e₁ ↝[ j ] e₁' -> irred e₁' → ∃ (λ e₂' → e₂ ↝* e₂' × Te B (k ∸ j) e₁' e₂')
+ E B = λ k e₁ e₂ → ∀ j {e₁'} → j < k → e₁ ↝[ j ] e₁' -> irred e₁' → ∃ (λ e₂' → e₂ ↝* e₂' × Te B (k ∸ j) e₁' e₂')
  -- Why is this necessary?
 
   --μ⁺c (λ R n e1 e2 -> (∀ v1 -> e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
@@ -393,4 +393,12 @@ mutual
  mainv (thunk x) k σ1 σ2 dσ = con (mainc x k σ1 σ2 dσ)
 
  mainc : ∀ {Γ e T} -> Γ ⊢c e ∶ T -> Γ ⊢c e ≪ e ∶ T
- mainc d k σ1 σ2 dσ j e₁ j<k st ire₁ = {!!}
+ mainc (ƛ {A} {B} {e} d) k σ1 σ2 dσ 0 j<k refl ire₁ = _ , (refl , (con (λ k₁ x x₁ j x₂ x₃ x₄ → {!!} , ({!!} , {!!}))))
+ mainc (ƛ d) k σ1 σ2 dσ (suc n) j<k (trans1 () st) ire₁
+ mainc (d · x) k σ1 σ2 dσ j j<k st ire₁ with mainc d k σ1 σ2 dσ
+ ... | w = {!!}
+ mainc (produce x) k σ1 σ2 dσ 0 j<k refl ire₁ = _ , (refl , (con (mainv x k σ1 σ2 dσ)))
+ mainc (produce x) k σ1 σ2 dσ (suc n) j<k (trans1 () st) ire₁
+ mainc (d to d₁) k σ1 σ2 dσ j j<k st ire₁ = {!!}
+ mainc (force x) k σ1 σ2 dσ j j<k st ire₁ = {!!}
+ mainc (rec d) k σ1 σ2 dσ j j<k st ire₁ = {!!}
