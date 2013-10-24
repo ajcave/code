@@ -26,7 +26,8 @@ data ExpLab : Set where `lam `app `var : ExpLab
 ⨁ : {A : Set} -> (f : (l : A) -> Func) -> Func
 ⨁ f = `Σ _ f
 
-ExpF : Func
 ExpF = ⨁ (λ { `lam -> `X;
               `app -> `X ⊗ `X;
               `var -> ▹ ℕ })
+
+Exp = μ ExpF
