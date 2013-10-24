@@ -21,13 +21,24 @@ data ProdLab : Set where `fst `snd : ProdLab
 _⊗_ : Func -> Func -> Func
 F ⊗ G = `Π ProdLab (λ {`fst → F; `snd → G})
 
-data ExpLab : Set where `lam `app `var : ExpLab
-
 ⨁ : {A : Set} -> (f : (l : A) -> Func) -> Func
 ⨁ f = `Σ _ f
+
+
+data ExpLab : Set where `lam `app `var : ExpLab
 
 ExpF = ⨁ (λ { `lam -> `X;
               `app -> `X ⊗ `X;
               `var -> ▹ ℕ })
 
 Exp = μ ExpF
+
+data exp : Set where
+ lam : exp -> exp
+ app : exp -> exp -> exp
+ var : ℕ -> exp
+
+conv : Exp -> exp
+conv (inj (`lam , e)) = lam (conv e)
+conv (inj (`app , es)) = app (conv (es `fst)) (conv (es `snd))
+conv (inj (`var , x)) = var x
