@@ -1,4 +1,4 @@
-module rec-types-cbpv where
+module fix where
 open import FinMap
 open import Unit
 open import Product hiding (_×_)
@@ -21,7 +21,7 @@ mutual
   _⇒_ : (A : vtpf Δ) (B : ctpf Δ) -> ctpf Δ
   F : (A : vtpf Δ) -> ctpf Δ  -- embedding/producer/lift type
  data vtpf (Δ : ctx Unitz) : Set where
-  μ : (T : vtpf (Δ , *)) -> vtpf Δ
+  --μ : (T : vtpf (Δ , *)) -> vtpf Δ
   ▹ : (X : var Δ *) -> vtpf Δ
   U : (B : ctpf Δ) -> vtpf Δ -- thunk
 
@@ -32,7 +32,7 @@ mutual
 
  [_]vtr : ∀ {Δ1 Δ2} -> vsubst Δ1 Δ2 -> vtpf Δ1 -> vtpf Δ2
  [_]vtr σ (▹ X) = ▹ ([ σ ]v X)
- [_]vtr σ (μ T) = μ ([ vsub-ext σ ]vtr T)
+ --[_]vtr σ (μ T) = μ ([ vsub-ext σ ]vtr T)
  [_]vtr σ (U B) = U ([ σ ]ctr B)
 
 fsubst : ∀ (Δ1 Δ2 : ctx Unitz) -> Set
@@ -48,7 +48,7 @@ mutual
 
  [_]vt : ∀ {Δ1 Δ2} -> fsubst Δ1 Δ2 -> vtpf Δ1 -> vtpf Δ2
  [_]vt σ (▹ X) = [ σ ]v X
- [_]vt σ (μ T) = μ ([ fsubst-ext σ ]vt T)
+ --[_]vt σ (μ T) = μ ([ fsubst-ext σ ]vt T)
  [_]vt σ (U B) = U ([ σ ]ct B)
 
 id-fsub : ∀ {Δ : ctx Unitz} -> fsubst Δ Δ
@@ -92,12 +92,12 @@ mutual
 mutual
  data _⊢v_∶_ (Γ : ctx vtp) : val 〈 Γ 〉 -> vtp -> Set where
    ▹ : ∀ {A} (x : var Γ A) -> Γ ⊢v ▹ 〈 x 〉v ∶ A
-   roll : ∀ (A : vtpf (⊡ , *)) {e} -> Γ ⊢v e ∶ ([ μ A /X]v A) -> Γ ⊢v (roll e) ∶ (μ A)
+--   roll : ∀ (A : vtpf (⊡ , *)) {e} -> Γ ⊢v e ∶ ([ μ A /X]v A) -> Γ ⊢v (roll e) ∶ (μ A)
    thunk : ∀ {B} {e} -> Γ ⊢c e ∶ B -> Γ ⊢v (thunk e) ∶ (U B)
  data _⊢c_∶_ (Γ : ctx vtp) : tm 〈 Γ 〉 -> ctp -> Set where
    ƛ : ∀ {A B} {e} -> (Γ , A) ⊢c e ∶ B -> Γ ⊢c (ƛ e) ∶ (A ⇒ B)
    _·_ : ∀ {A B} {e v} -> Γ ⊢c e ∶ (A ⇒ B) -> Γ ⊢v v ∶ A -> Γ ⊢c (e · v) ∶ B
-   pm : ∀ {A : vtpf (⊡ , *)} {B} {v e} -> Γ ⊢v v ∶ (μ A) -> (Γ , [ μ A /X]v A) ⊢c e ∶ B -> Γ ⊢c (pm v e) ∶ B
+--   pm : ∀ {A : vtpf (⊡ , *)} {B} {v e} -> Γ ⊢v v ∶ (μ A) -> (Γ , [ μ A /X]v A) ⊢c e ∶ B -> Γ ⊢c (pm v e) ∶ B
    produce : ∀ {A v} -> Γ ⊢v v ∶ A -> Γ ⊢c (produce v) ∶ (F A)
    _to_ : ∀ {A B e1 e2} -> Γ ⊢c e1 ∶ (F A) -> (Γ , A) ⊢c e2 ∶ B -> Γ ⊢c (e1 to e2) ∶ B
    force : ∀ {B v} -> Γ ⊢v v ∶ (U B) -> Γ ⊢c (force v) ∶ B
@@ -189,8 +189,18 @@ data _↝_ : tm ⊡ -> tm ⊡ -> Set where
  toβ : ∀ {v e2} -> (produce v to e2) ↝ [ v /x] e2
  force : ∀ {e} -> force (thunk e) ↝ e
 
+data _↝[_]_ : tm ⊡ -> ℕ -> tm ⊡ -> Set where
+ refl : ∀ {e} -> e  ↝[ 0 ] e
+ trans1 : ∀ {e1 e2 e3 n} ->
+      e1 ↝  e2 
+   -> e2 ↝[ n ] e3
+   -> e1 ↝[ suc n ] e3
+
 _↝*_ : tm ⊡ -> tm ⊡ -> Set
 e1 ↝* e2 = e1 ∣ [] ↝* e2 ∣ []
+
+ARel : Set -> Set₁
+ARel A = ℕ -> A -> A -> Set
 
 VRel : Set₁
 VRel = ℕ -> val ⊡ -> val ⊡ -> Set
@@ -217,26 +227,26 @@ data isRoll (R : VRel) : VRel where
 _⇒⁺_ : VRel -> CRel -> CRel
 (VR ⇒⁺ CR) n e1 e2 = ∀ k {v1 v2 : _} -> k ≤ n → VR k v1 v2 → CR k (e1 · v1) (e2 · v2)
 
-iter : ∀ {C : Set₁} -> (AF : C -> C) -> C -> ℕ -> C
-iter AF b zero = b
-iter AF b (suc n) = AF (iter AF b n)
+-- iter : ∀ {C : Set₁} -> (AF : C -> C) -> C -> ℕ -> C
+-- iter AF b zero = b
+-- iter AF b (suc n) = AF (iter AF b n)
 
-1⁺ : VRel
-1⁺ n v1 v2 = Unit
+-- 1⁺ : VRel
+-- 1⁺ n v1 v2 = Unit
 
-μ⁺ : (VRel -> VRel) -> VRel
-μ⁺ AF n = iter AF 1⁺ (suc n) n
+-- μ⁺ : (VRel -> VRel) -> VRel
+-- μ⁺ AF n = iter AF 1⁺ (suc n) n
 
 ▸ : VRel -> VRel
 ▸ R zero v1 v2 = Unit
 ▸ R (suc n) v1 v2 = R n v1 v2
 
 -- TODO: Do this better
-1⁺c : CRel
-1⁺c n v1 v2 = Unit
+-- 1⁺c : CRel
+-- 1⁺c n v1 v2 = Unit
 
-μ⁺c : (CRel -> CRel) -> CRel
-μ⁺c AF n = iter AF 1⁺c (suc n) n
+-- μ⁺c : (CRel -> CRel) -> CRel
+-- μ⁺c AF n = iter AF 1⁺c (suc n) n
 
 ▸c : CRel -> CRel
 ▸c R zero v1 v2 = Unit
@@ -251,14 +261,14 @@ _⇛_ : VRel -> VRel -> VRel
 _⊗_ : VRel -> VRel -> VRel
 (T ⊗ S) n v1 v2 = T n v1 v2 × S n v1 v2
 
-CMap : (VRel -> VRel) -> Set₁
-CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
+-- CMap : (VRel -> VRel) -> Set₁
+-- CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
 
-CMap2 : (VRel -> VRel -> VRel) -> Set₁
-CMap2 G = (X Y Z W : VRel) → ((▸ (X ⇛ Y)) ⊗ (▸ (Z ⇛ W))) ⇾ (G X W ⇛ G Y Z)
+-- CMap2 : (VRel -> VRel -> VRel) -> Set₁
+-- CMap2 G = (X Y Z W : VRel) → ((▸ (X ⇛ Y)) ⊗ (▸ (Z ⇛ W))) ⇾ (G X W ⇛ G Y Z)
 
-Map : (VRel -> VRel) -> Set₁
-Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
+-- Map : (VRel -> VRel) -> Set₁
+-- Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
 
 -- inj : ∀ {C : VRel} -> C ⇾ ▸ C
 -- inj zero v1 v2 t = tt
@@ -284,46 +294,46 @@ Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
 -- This looks like a more refined/restricted version of functoriality. Interesting
 -- It's an internalized, contractive map (above)
 
-mutual
- bar : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i < k -> i < n -> (iter G 1⁺ n) i v1 v2 -> (iter G 1⁺ k) i v1 v2
- bar G map n zero i v1 v2 () k≤n x
- bar G map zero (suc k) i v1 v2 i≤k () x
- bar G map (suc n) (suc k) i v1 v2 (s≤s i≤k) (s≤s k≤n) x = map (iter G 1⁺ n) (iter G 1⁺ k) i v1 v2 (baz G map n k i v1 v2 i≤k k≤n) i (≤refl i) x
+-- mutual
+--  bar : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i < k -> i < n -> (iter G 1⁺ n) i v1 v2 -> (iter G 1⁺ k) i v1 v2
+--  bar G map n zero i v1 v2 () k≤n x
+--  bar G map zero (suc k) i v1 v2 i≤k () x
+--  bar G map (suc n) (suc k) i v1 v2 (s≤s i≤k) (s≤s k≤n) x = map (iter G 1⁺ n) (iter G 1⁺ k) i v1 v2 (baz G map n k i v1 v2 i≤k k≤n) i (≤refl i) x
  
- baz : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i ≤ k -> i ≤ n -> ▸ ((iter G 1⁺ n) ⇛ (iter G 1⁺ k)) i v1 v2
- baz G map n k zero v1 v2 i<k k≤n = tt
- baz G map .(suc n) .(suc k) (suc i) v1 v2 (s≤s {.i} {k} i<k) (s≤s {.i} {n} k≤n) = λ k₁ x x₁ → bar G map (suc n) (suc k) k₁ v1 v2 (s≤s (≤trans x i<k)) (s≤s (≤trans x k≤n)) x₁ 
+--  baz : ∀ (G : VRel -> VRel) (map : CMap G) n k i v1 v2 -> i ≤ k -> i ≤ n -> ▸ ((iter G 1⁺ n) ⇛ (iter G 1⁺ k)) i v1 v2
+--  baz G map n k zero v1 v2 i<k k≤n = tt
+--  baz G map .(suc n) .(suc k) (suc i) v1 v2 (s≤s {.i} {k} i<k) (s≤s {.i} {n} k≤n) = λ k₁ x x₁ → bar G map (suc n) (suc k) k₁ v1 v2 (s≤s (≤trans x i<k)) (s≤s (≤trans x k≤n)) x₁ 
 
-mutual
- roll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
- roll⁺ G map n v1 v2 t = map (iter G 1⁺ n) (μ⁺ G) n v1 v2 (quux G map n v1 v2) n (≤refl _) t
+-- mutual
+--  roll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (μ⁺ G) ⇾ (G (μ⁺ G))
+--  roll⁺ G map n v1 v2 t = map (iter G 1⁺ n) (μ⁺ G) n v1 v2 (quux G map n v1 v2) n (≤refl _) t
 
- quux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (iter G 1⁺ n ⇛ μ⁺ G) n v1 v2
- quux G map zero v1 v2 = tt
- quux G map (suc n) v1 v2 = λ k x x₁ → bar G map (suc n) (suc k) k v1 v2 (≤refl _) (s≤s x) x₁
+--  quux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (iter G 1⁺ n ⇛ μ⁺ G) n v1 v2
+--  quux G map zero v1 v2 = tt
+--  quux G map (suc n) v1 v2 = λ k x x₁ → bar G map (suc n) (suc k) k v1 v2 (≤refl _) (s≤s x) x₁
 
-mutual
- unroll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (G (μ⁺ G)) ⇾ (μ⁺ G)
- unroll⁺ G map n v1 v2 t = map (μ⁺ G) (iter G 1⁺ n) n v1 v2 (unquux G map n v1 v2) n (≤refl _) t
+-- mutual
+--  unroll⁺ : ∀ (G : VRel -> VRel) (map : CMap G) -> (G (μ⁺ G)) ⇾ (μ⁺ G)
+--  unroll⁺ G map n v1 v2 t = map (μ⁺ G) (iter G 1⁺ n) n v1 v2 (unquux G map n v1 v2) n (≤refl _) t
 
- unquux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (μ⁺ G ⇛ iter G 1⁺ n) n v1 v2
- unquux G map zero v1 v2 = tt
- unquux G map (suc n) v1 v2 = λ k x x₁ → bar G map (suc k) (suc n) k v1 v2 (s≤s x) (≤refl _) x₁
+--  unquux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (μ⁺ G ⇛ iter G 1⁺ n) n v1 v2
+--  unquux G map zero v1 v2 = tt
+--  unquux G map (suc n) v1 v2 = λ k x x₁ → bar G map (suc k) (suc n) k v1 v2 (s≤s x) (≤refl _) x₁
 
-Δ : (VRel -> VRel -> VRel) -> VRel -> VRel
-Δ G X = G X X
+-- Δ : (VRel -> VRel -> VRel) -> VRel -> VRel
+-- Δ G X = G X X
 
-mutual
- roll⁺' : ∀ (G : VRel -> VRel -> VRel) (map : CMap2 G) -> (μ⁺ (Δ G)) ⇾ (Δ G (μ⁺ (Δ G)))
- roll⁺' G map n v1 v2 t = map (iter (Δ G) 1⁺ n) (μ⁺ (Δ G)) (μ⁺ (Δ G)) (iter (Δ G) 1⁺ n) n v1 v2
-                            (quux' G map n v1 v2 , unquux' G map n v1 v2) n (≤refl _) t
+-- mutual
+--  roll⁺' : ∀ (G : VRel -> VRel -> VRel) (map : CMap2 G) -> (μ⁺ (Δ G)) ⇾ (Δ G (μ⁺ (Δ G)))
+--  roll⁺' G map n v1 v2 t = map (iter (Δ G) 1⁺ n) (μ⁺ (Δ G)) (μ⁺ (Δ G)) (iter (Δ G) 1⁺ n) n v1 v2
+--                             (quux' G map n v1 v2 , unquux' G map n v1 v2) n (≤refl _) t
 
- quux' : ∀ (G : VRel -> VRel -> VRel) (map : CMap2 G) n v1 v2 -> ▸ (iter (Δ G) 1⁺ n ⇛ μ⁺ (Δ G)) n v1 v2
- quux' G map zero v1 v2 = tt
- quux' G map (suc n) v1 v2 = λ k x x₁ → {!!}
+--  quux' : ∀ (G : VRel -> VRel -> VRel) (map : CMap2 G) n v1 v2 -> ▸ (iter (Δ G) 1⁺ n ⇛ μ⁺ (Δ G)) n v1 v2
+--  quux' G map zero v1 v2 = tt
+--  quux' G map (suc n) v1 v2 = λ k x x₁ → {!!}
 
- unquux' : ∀ (G : VRel -> VRel -> VRel) (map : CMap2 G) n v1 v2 -> ▸ (μ⁺ (Δ G) ⇛ iter (Δ G) 1⁺ n) n v1 v2
- unquux' G map n v1 v2 = {!!} 
+--  unquux' : ∀ (G : VRel -> VRel -> VRel) (map : CMap2 G) n v1 v2 -> ▸ (μ⁺ (Δ G) ⇛ iter (Δ G) 1⁺ n) n v1 v2
+--  unquux' G map n v1 v2 = {!!} 
 
 fix : ∀ {A : VRel} -> ((▸ A) ⇛ A) ⇾ A
 fix zero v1 v2 f = f 0 z≤n tt
@@ -334,17 +344,22 @@ fix' f zero v1 v2 = f zero v1 v2 tt
 fix' f (suc n) v1 v2 = f (suc n) v1 v2 (fix' f n v1 v2)
 
 mutual
- V : ∀ {Δ} -> vtpf Δ -> relsubst Δ -> VRel
- V (μ A) ρ = μ⁺ (λ R → isRoll (V A (ρ , ▸ R)))
- V (▹ X) ρ = [ ρ ]v X
- V (U B) ρ = U⁺ (E B ρ)
+ V : vtp -> VRel
+ --V (μ A) ρ = μ⁺ (λ R → isRoll (V A (ρ , ▸ R)))
+ V (▹ ()) --[ ρ ]v X
+ V (U B) = U⁺ (E B)
 
- E : ∀ {Δ} -> ctpf Δ -> relsubst Δ -> CRel
- E (A ⇒ B) ρ = V A ρ ⇒⁺ E B ρ
- E (F A)    ρ = μ⁺c (λ R n e1 e2 -> (∀ v1 -> e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
-                                   (∀ e1' -> e1 ↝ e1' → ▸c R n e1' e2))
+ E : ctp -> CRel
+ E (A ⇒ B) = V A ⇒⁺ E B
+ E (F A)    = λ k e₁ e₂ → ∀ j v₁ → j < k → e₁ ↝[ j ] produce v₁ → ∃ (λ v₂ → e₂ ↝* produce v₂ × V A (k ∸ j) v₁ v₂)
+  --μ⁺c (λ R n e1 e2 -> (∀ v1 -> e1 ≡ produce v1 → ∃ (λ v2 → e1 ↝* produce v2 × V A ρ n v1 v2)) ×
+  --                                 (∀ e1' -> e1 ↝ e1' → ▸c R n e1' e2))
    --F⁺ (V A ρ)
 
- 
- 
+G : ∀ (Γ : ctx vtp) -> ARel (tsubst 〈 Γ 〉 ⊡)
+G ⊡ k σ1 σ2 = Unit
+G (Γ , T) k (σ1 , v1) (σ2 , v2) = G Γ k σ1 σ2 × V T k v1 v2
+
+_⊢_≤_∶_ : ∀ Γ (e1 e2 : tm 〈 Γ 〉) T -> Set
+Γ ⊢ e1 ≤ e2 ∶ T = ∀ k σ1 σ2 → G Γ k σ1 σ2 → E T k ([ σ1 ]cv e1) ([ σ2 ]cv e2)
 
