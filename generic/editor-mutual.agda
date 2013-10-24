@@ -1,15 +1,45 @@
-module editor-multi where
+module editor-mutual where
 open import Data.Nat
 open import Data.Product
 open import Data.Fin
+open import Data.Empty
 
-data Func (Δ : ℕ) : Set₁ where
+data Func (Δ : Set) : Set₁ where
  `Σ `Π : (A : Set) -> (f : (l : A) -> Func Δ) -> Func Δ
- `μ : Func (suc Δ) -> Func Δ
  κ : Set -> Func Δ
- ▹ : Fin Δ -> Func Δ
+ ▹ : Δ -> Func Δ
 
-Env : ∀ Δ -> Set₁
+`1 : ∀ {Δ} -> Func Δ
+`1 = `Π ⊥ (λ ())
+
+data ProdLab : Set where `fst `snd : ProdLab
+_⊗_ : ∀ {Δ} -> Func Δ -> Func Δ -> Func Δ
+F ⊗ G = `Π ProdLab (λ {`fst → F; `snd → G})
+
+⨁ : ∀ {Δ} {A : Set} -> (f : (l : A) -> Func Δ) -> Func Δ
+⨁ f = `Σ _ f
+
+Defs : Set -> Set₁
+Defs Δ = Δ -> Func Δ
+
+data Labs : Set where `tree `nodelist : Labs
+data ListLab : Set where `nil `cons : ListLab
+data TreeLab : Set where `children : TreeLab
+
+Fam : Defs Labs
+Fam `tree = ⨁ (λ {`children → ▹ `nodelist})
+Fam `nodelist = ⨁ (λ {`nil  → `1;
+                      `cons → ▹ `tree ⊗ ▹ `nodelist})
+
+
+mutual
+ data Tree : Set where
+  children : NodeList -> Tree
+ data NodeList : Set where
+  nil : NodeList
+  cons : Tree -> NodeList -> NodeList
+
+{-Env : ∀ Δ -> Set₁
 Env Δ = Fin Δ -> Set
 
 Ext : ∀ {Δ} -> Env Δ -> Set -> Env (suc Δ)
@@ -27,13 +57,10 @@ mutual
  data μ {Δ} (F : Func (suc Δ)) (ρ : Env Δ) : Set where
   inj : ⟦ F ⟧ (Ext ρ (μ F ρ)) -> μ F ρ
 
-data ProdLab : Set where `fst `snd : ProdLab
 
 _⊗_ : ∀ {Δ} -> Func Δ -> Func Δ -> Func Δ
 F ⊗ G = `Π ProdLab (λ {`fst → F; `snd → G})
 
-⨁ : ∀ {Δ} {A : Set} -> (f : (l : A) -> Func Δ) -> Func Δ
-⨁ f = `Σ _ f
 
 data ExpLab : Set where `lam `app `var : ExpLab
 
@@ -42,7 +69,7 @@ ExpF = ⨁ (λ { `lam -> ▹ zero;
               `app -> ▹ zero ⊗ ▹ zero;
               `var -> κ ℕ })
 
-Exp = μ ExpF
+Exp = μ ExpF -}
 
 {-
 data exp : Set where
