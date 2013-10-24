@@ -318,6 +318,8 @@ mutual
  roll⁺' G map n v1 v2 t = map (iter (Δ G) 1⁺ n) (μ⁺ (Δ G)) (μ⁺ (Δ G)) (iter (Δ G) 1⁺ n) n v1 v2
                             ({!!} , {!!}) n (≤refl _) t
 
+ unquux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (μ⁺ G ⇛ iter G 1⁺ n) n v1 v2
+
 fix : ∀ {A : VRel} -> ((▸ A) ⇛ A) ⇾ A
 fix zero v1 v2 f = f 0 z≤n tt
 fix {A} (suc n) v1 v2 f = f (suc n) (≤refl (suc n)) (fix {A} n v1 v2 (λ k x x₁ → f k (≤inc x) x₁)) -- This reminds me of proving well-founded induction..
