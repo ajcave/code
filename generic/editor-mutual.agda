@@ -48,7 +48,7 @@ mutual
  ⟦_⟧ (κ A) ρ = A
  ⟦_⟧ (▹ X) ρ = ρ X
 
--- Constructs them simultaneously using indexing?
+-- Constructs them simultaneously using indexing
 data μ {Δ} (Ds : Defs Δ) : Δ -> Set where
  inj : ∀ {l} -> ⟦ Ds l ⟧ (μ Ds) -> μ Ds l
 
