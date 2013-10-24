@@ -248,8 +248,14 @@ T ⇾ S = ∀ n v₁ v₂ → T n v₁ v₂ → S n v₁ v₂
 _⇛_ : VRel -> VRel -> VRel
 (T ⇛ S) n v1 v2 = ∀ k -> k ≤ n -> T k v1 v2 -> S k v1 v2
 
+_⊗_ : VRel -> VRel -> VRel
+(T ⊗ S) n v1 v2 = T n v1 v2 × S n v1 v2
+
 CMap : (VRel -> VRel) -> Set₁
 CMap G = (X Y : VRel) → ▸ (X ⇛ Y) ⇾ (G X ⇛ G Y)
+
+CMap2 : (VRel -> VRel -> VRel) -> Set₁
+CMap2 G = (X Y Z W : VRel) → ((▸ (X ⇛ Y)) ⊗ (▸ (Z ⇛ W))) ⇾ (G X W ⇛ G Y Z)
 
 Map : (VRel -> VRel) -> Set₁
 Map G = (X Y : VRel) → (X ⇛ Y) ⇾ (G X ⇛ G Y)
@@ -303,6 +309,14 @@ mutual
  unquux : ∀ (G : VRel -> VRel) (map : CMap G) n v1 v2 -> ▸ (μ⁺ G ⇛ iter G 1⁺ n) n v1 v2
  unquux G map zero v1 v2 = tt
  unquux G map (suc n) v1 v2 = λ k x x₁ → bar G map (suc k) (suc n) k v1 v2 (s≤s x) (≤refl _) x₁
+
+Δ : (VRel -> VRel -> VRel) -> VRel -> VRel
+Δ G X = G X X
+
+mutual
+ roll⁺' : ∀ (G : VRel -> VRel -> VRel) (map : CMap2 G) -> (μ⁺ (Δ G)) ⇾ (Δ G (μ⁺ (Δ G)))
+ roll⁺' G map n v1 v2 t = map (iter (Δ G) 1⁺ n) (μ⁺ (Δ G)) (μ⁺ (Δ G)) (iter (Δ G) 1⁺ n) n v1 v2
+                            ({!!} , {!!}) n (≤refl _) t
 
 fix : ∀ {A : VRel} -> ((▸ A) ⇛ A) ⇾ A
 fix zero v1 v2 f = f 0 z≤n tt
