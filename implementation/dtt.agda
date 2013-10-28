@@ -179,6 +179,56 @@ mutual
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
   conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
 
-foo : tm ⊡ -> tm ⊡
-foo n = {!!}
+mutual
+  data synthable (n : ctx Unitz) : Set where
+   ▹  : var n * -> synthable n
+   _·_ : synthable n -> checkable n -> synthable n
+   rec : (C : checkable (n , *)) -> checkable n -> checkable n -> checkable ((n , *) , *) -> synthable n
+   if : (C : checkable (n , *)) -> checkable n -> checkable n -> checkable n -> synthable n -- if_(x. C) b then e1 else e2
+   annot : (M : checkable n) -> (T : checkable n) -> synthable n
 
+  data checkable (n : ctx Unitz) : Set where
+   tt ff zero bool nat : checkable n
+   suc : checkable n -> checkable n
+   ƛ : checkable (n , *) -> checkable n
+   Π : checkable n -> checkable (n , *) -> checkable n
+   ▸ : synthable n -> checkable n
+
+mutual
+ ⌊_⌋s : ∀ {n} -> synthable n -> tm n
+ ⌊ ▹ x ⌋s = {!!}
+ ⌊ S · x ⌋s = {!!}
+ ⌊ rec C x x₁ x₂ ⌋s = {!!}
+ ⌊ if C x x₁ x₂ ⌋s = {!!}
+ ⌊ annot M T ⌋s = {!!}
+
+ ⌊_⌋c : ∀ {n} -> checkable n -> tm n
+ ⌊ tt ⌋c = tt
+ ⌊ ff ⌋c = ff
+ ⌊ zero ⌋c = zero
+ ⌊ bool ⌋c = bool
+ ⌊ nat ⌋c = nat
+ ⌊ suc M ⌋c = suc ⌊ M ⌋c
+ ⌊ ƛ M ⌋c = ƛ ⌊ M ⌋c
+ ⌊ Π M M₁ ⌋c = Π ⌊ M ⌋c ⌊ M₁ ⌋c
+ ⌊ ▸ M ⌋c = ⌊ M ⌋s
+
+data _⊬_∶_ {n} (Γ : dctx n) : tm n -> tm n -> Set where
+
+data check-result {n} (Γ : dctx n) (M : checkable n) (T : tm n) : Set where
+ yes : Γ ⊢ ⌊ M ⌋c ∶ T -> check-result Γ M T
+ no : Γ ⊬ ⌊ M ⌋c ∶ T -> check-result Γ M T
+ 
+mutual
+ check : ∀ {n} (Γ : dctx n) (M : checkable n) (T : tm n) -> check-result Γ M T
+ check Γ tt T = {!!}
+ check Γ ff T = {!!}
+ check Γ zero T = {!!}
+ check Γ bool T = {!!}
+ check Γ nat T = {!!}
+ check Γ (suc M) T = {!!}
+ check Γ (ƛ M) T = {!!}
+ check Γ (Π M M₁) T = {!!}
+ check Γ (▸ x) T = {!!}
+
+ 
