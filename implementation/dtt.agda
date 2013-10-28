@@ -87,7 +87,7 @@ data _⟶_ {n} : ∀ (M N : tm n) -> Set where
 data _⟶*_ {n} : ∀ (M N : tm n) -> Set where
  refl : ∀ {M} -> M ⟶* M
  trans1 : ∀ {M N P} -> M ⟶ N -> N ⟶* P -> M ⟶* P
-{-
+
 ⟶*-trans : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶* P -> M ⟶* P
 ⟶*-trans refl s2 = s2
 ⟶*-trans (trans1 x s1) s2 = trans1 x (⟶*-trans s1 s2)
@@ -120,7 +120,7 @@ if* (trans1 x t) = trans1 (ifc x) (if* t)
 
 ƛ* : ∀ {n} {M M' : tm (n , *)} -> M ⟶* M' -> (ƛ M) ⟶* (ƛ M')
 ƛ* refl = refl
-ƛ* (trans1 x t) = trans1 (ƛ x) (ƛ* t) -}
+ƛ* (trans1 x t) = trans1 (ƛ x) (ƛ* t)
 
 mutual
  data neutral {n} : tm n -> Set where
@@ -143,6 +143,131 @@ mutual
 
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
+
+postulate
+ cr : ∀ {n} {a b c : tm n} -> a ⟶* b -> a ⟶* c -> b ≈ c
+
+data pi-inj1-res {n} (A : tm n) B : (C : tm n) -> Set where
+ yep : ∀ {A' B'} -> A ⟶* A' -> B ⟶* B' -> pi-inj1-res A B (Π A' B')
+
+pi-inj1 : ∀ {n} {A : tm n} {B C} -> (Π A B) ⟶* C -> pi-inj1-res A B C
+pi-inj1 refl = yep refl refl
+pi-inj1 (trans1 (Π1 t) s) with pi-inj1 s
+pi-inj1 (trans1 (Π1 t) s) | yep x x₁ = yep (trans1 t x) x₁
+pi-inj1 (trans1 (Π2 t) s) with pi-inj1 s
+pi-inj1 (trans1 (Π2 t) s) | yep x x₁ = yep x (trans1 t x₁)
+
+pi-inj2 : ∀ {n} {A A' : tm n} {B B'} -> (Π A B) ≈ (Π A' B') -> A ≈ A'
+pi-inj2 (common x x₁) with pi-inj1 x | pi-inj1 x₁
+pi-inj2 (common x x₁) | yep x₂ x₃ | yep x₄ x₅ = common x₂ x₄
+
+pi-inj3 : ∀ {n} {A A' : tm n} {B B'} -> (Π A B) ≈ (Π A' B') -> B ≈ B'
+pi-inj3 (common x x₁) with pi-inj1 x | pi-inj1 x₁
+... | yep t1 t2 | yep t3 t4 = common t2 t4
+
+{- []r-cong : ∀ {n m} {A B : tm n} {σ : vsubst n m} -> A ≈ B -> [ σ ]r A ≈ [ σ ]r B
+[]r-cong (common x x₁) = common (ren⟶* _ x) (ren⟶* _ x₁)
+
+[]-cong : ∀ {n m} {A B : tm n} {σ : tsubst n m} -> A ≈ B -> [ σ ]t A ≈ [ σ ]t B
+[]-cong (common x x₁) = common (sub⟶* _ x) (sub⟶* _ x₁) -}
+
+≈-trans : ∀ {n} {A B C : tm n} -> A ≈ B -> B ≈ C -> A ≈ C
+≈-trans (common t1 t2) (common t3 t4) with cr t2 t3
+... | common t5 t6 = common (⟶*-trans t1 t5) (⟶*-trans t4 t6)
+
+≈-sym : ∀ {n} {A B : tm n} -> A ≈ B -> B ≈ A
+≈-sym (common t1 t2) = common t2 t1
+
+≈-refl : ∀ {n} {A : tm n} -> A ≈ A
+≈-refl = common refl refl
+
+⟶-≈ : ∀ {n} {A B : tm n} -> A ⟶ B -> A ≈ B
+⟶-≈ t = common (trans1 t refl) refl
+
+⟶≈trans : ∀ {n} {A B C : tm n} -> A ≈ B -> B ⟶ C -> A ≈ C
+⟶≈trans t u = ≈-trans t (⟶-≈ u)
+
+⟶≈trans' : ∀ {n} {A B C : tm n} -> A ≈ B -> A ⟶ C -> C ≈ B
+⟶≈trans' t u = ≈-trans (≈-sym (⟶-≈ u)) t
+
+mutual
+ neutral-step : ∀ {n} {C : Set} {A B : tm n} -> neutral A -> A ⟶ B -> C
+ neutral-step (▹ x) ()
+ neutral-step (() · x) β
+ neutral-step (t · x) (app1 s) = neutral-step t s
+ neutral-step (t · x) (app2 s) = normal-step x s
+ neutral-step (if () x x₁) if1
+ neutral-step (if () x x₁) if2
+ neutral-step (if t x x₁) (ifc s) = neutral-step t s
+ neutral-step (if t x x₁) (ifc1 s) = normal-step x s
+ neutral-step (if t x x₁) (ifc2 s) = normal-step x₁ s
+ neutral-step (rec () x x₁) recβz
+ neutral-step (rec () x x₁) recβsuc
+ neutral-step (rec t x x₁) (rec1 s) = neutral-step t s
+ neutral-step (rec t x x₁) (rec2 s) = normal-step x s
+ neutral-step (rec t x x₁) (rec3 s) = normal-step x₁ s
+
+ normal-step : ∀ {n} {A B : tm n} {C : Set} -> normal A -> A ⟶ B -> C
+ normal-step (ƛ t) (ƛ s) = normal-step t s
+ normal-step (Π t t₁) (Π1 s) = normal-step t s
+ normal-step (Π t t₁) (Π2 s) = normal-step t₁ s
+ normal-step tt ()
+ normal-step ff ()
+ normal-step bool ()
+ normal-step set ()
+ normal-step nat ()
+ normal-step zero ()
+ normal-step (suc n₂) (suc s) = normal-step n₂ s
+ normal-step (neut x) s = neutral-step x s
+
+neutral-step* : ∀ {n} {A B : tm n} -> neutral A -> A ⟶* B -> A ≡ B
+neutral-step* t refl = refl
+neutral-step* t (trans1 x s) = neutral-step t x
+
+
+normal-step* : ∀ {n} {A B : tm n} -> normal A -> A ⟶* B -> A ≡ B
+normal-step* t refl = refl
+normal-step* t (trans1 x s) = normal-step t x
+
+bool-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> bool ≈ A -> C
+bool-≈-neutral t (common x x₁) with normal-step* bool x | neutral-step* t x₁
+bool-≈-neutral () (common x x₁) | refl | refl
+
+set-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> set ≈ A -> C
+set-≈-neutral t (common x x₁) with normal-step* set x | neutral-step* t x₁
+set-≈-neutral () (common x x₁) | refl | refl
+
+bool≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> bool ≈ (Π A B) -> C
+bool≈Π (common x x₁) with normal-step* bool x | pi-inj1 x₁
+bool≈Π (common x x₁) | refl | ()
+
+Π≈neutral : ∀ {n} {A : tm n} {B D} {C : Set} -> neutral A -> (Π B D) ≈ A -> C
+Π≈neutral t (common x x₁) with neutral-step* t x₁ | pi-inj1 x
+Π≈neutral () (common x x₁) | refl | yep x₂ x₃
+
+set≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> set ≈ (Π A B) -> C
+set≈Π (common x x₁) with normal-step* set x | pi-inj1 x₁
+set≈Π (common x x₁) | refl | ()
+
+bool≈set : ∀ {n} {C : Set} -> _≈_ {n} bool set -> C
+bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
+bool≈set (common x x₁) | refl | ()
+
+nat≈set : ∀ {n} {C : Set} -> _≈_ {n} nat set -> C
+nat≈set (common x x₁) with normal-step* nat x | normal-step* set x₁
+nat≈set (common x x₁) | refl | ()
+
+nat≈Π : ∀ {n} {A : tm n} {B} {C : Set} -> nat ≈ (Π A B) -> C
+nat≈Π (common x x₁) with normal-step* nat x | pi-inj1 x₁
+nat≈Π (common x x₁) | refl | ()
+
+bool≈nat : ∀ {n} {C : Set} -> _≈_ {n} bool nat -> C
+bool≈nat (common x x₁) with normal-step* bool x | normal-step* nat x₁
+bool≈nat (common x x₁) | refl | ()
+
+nat-≈-neutral : ∀ {n} {A : tm n} {C : Set} -> neutral A -> nat ≈ A -> C
+nat-≈-neutral t (common x x₁) with normal-step* nat x | neutral-step* t x₁
+nat-≈-neutral () (common x x₁) | refl | refl
 
 data dctx : ctx Unitz -> Set where
  ⊡ : dctx ⊡
@@ -213,7 +338,11 @@ mutual
  ⌊ Π M M₁ ⌋c = Π ⌊ M ⌋c ⌊ M₁ ⌋c
  ⌊ ▸ M ⌋c = ⌊ M ⌋s
 
+_≉_ : ∀ {n} -> tm n -> tm n -> Set
+M ≉ N = M ≈ N -> ⊥
+
 data _⊬_∶_ {n} (Γ : dctx n) : tm n -> tm n -> Set where
+ tt : ∀ {T} -> T ≉ bool -> Γ ⊬ tt ∶ T
 
 data check-result {n} (Γ : dctx n) (M : checkable n) (T : tm n) : Set where
  yes : Γ ⊢ ⌊ M ⌋c ∶ T -> check-result Γ M T
