@@ -36,8 +36,11 @@ data tm (n : ctx Unit) : Set where
 tsubst : ∀ (n m : ctx Unit) -> Set
 tsubst n m = gksubst n (tm m)
 
+wknt : ∀ {n m} -> tsubst n m -> tsubst n (m , *)
+wknt σ = gmap [ wkn-vsub ]r σ
+
 tsub-ext : ∀ {n m} -> tsubst n m -> tsubst (n , *) (m , *)
-tsub-ext σ = (gmap [ wkn-vsub ]r σ) , (▹ top)
+tsub-ext σ = (wknt σ) , (▹ top)
 
 id-tsub : ∀ {n} -> tsubst n n
 id-tsub {⊡} = tt
@@ -167,7 +170,7 @@ mutual
   zero : Γ ⊢ zero ∶ nat
   suc : ∀ {M} -> Γ ⊢ M ∶ nat -> Γ ⊢ (suc M) ∶ nat
   rec : ∀ {C N M P} -> (Γ , nat) ⊢ C type -> Γ ⊢ N ∶ nat -> Γ ⊢ M ∶ ([ zero /x] C)
-                    -> ((Γ , nat) , C) ⊢ P ∶ ([ suc (▹ (pop top)) /x] ([ wkn-vsub ∘v wkn-vsub ]r C))
+                    -> ((Γ , nat) , C) ⊢ P ∶ [ wknt (wknt id-tsub) , (suc (▹ (pop top))) ]t C
                     -> Γ ⊢ (rec N M P) ∶ ([ N /x] C)
   ▹ : ∀ {A x} -> Γ ⊢ A type -> Γ ∋ x ∶ A -> Γ ⊢ (▹ x) ∶ A
   Π : ∀ {A B} -> Γ ⊢ A ∶ set -> (Γ , A) ⊢ B ∶ set -> Γ ⊢ (Π A B) ∶ set
@@ -175,4 +178,7 @@ mutual
   _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x] B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x] C) -> Γ ⊢ N2 ∶ ([ ff /x] C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x] C)
   conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
+
+foo : tm ⊡ -> tm ⊡
+foo n = {!!}
 
