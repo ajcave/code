@@ -321,11 +321,11 @@ mutual
 
 mutual
  ⌊_⌋s : ∀ {n} -> synthable n -> tm n
- ⌊ ▹ x ⌋s = {!!}
- ⌊ S · x ⌋s = {!!}
- ⌊ rec C x x₁ x₂ ⌋s = {!!}
- ⌊ if C x x₁ x₂ ⌋s = {!!}
- ⌊ annot M T ⌋s = {!!}
+ ⌊ ▹ x ⌋s = ▹ x
+ ⌊ S · M ⌋s = ⌊ S ⌋s · ⌊ M ⌋c
+ ⌊ rec C M N₁ N₂ ⌋s = rec ⌊ M ⌋c ⌊ N₁ ⌋c ⌊ N₂ ⌋c
+ ⌊ if C M N₁ N₂ ⌋s = if ⌊ M ⌋c ⌊ N₁ ⌋c ⌊ N₂ ⌋c
+ ⌊ annot M T ⌋s = ⌊ M ⌋c
 
  ⌊_⌋c : ∀ {n} -> checkable n -> tm n
  ⌊ tt ⌋c = tt
