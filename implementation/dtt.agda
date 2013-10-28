@@ -141,6 +141,13 @@ mutual
   suc : ∀ {n} -> normal n -> normal (suc n)
   neut : ∀ {M} -> neutral M -> normal M
 
+data ntp {n} : tm n -> Set where
+ Π : ∀ {A B} -> ntp A -> ntp B  -> ntp (Π A B)
+ bool : ntp bool
+ set : ntp set
+ nat : ntp nat
+ neut : ∀ {M} -> neutral M -> ntp M
+
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
 
@@ -343,6 +350,7 @@ M ≉ N = M ≈ N -> ⊥
 
 data _⊬_∶_ {n} (Γ : dctx n) : tm n -> tm n -> Set where
  tt : ∀ {T} -> T ≉ bool -> Γ ⊬ tt ∶ T
+ 
 
 data check-result {n} (Γ : dctx n) (M : checkable n) (T : tm n) : Set where
  yes : Γ ⊢ ⌊ M ⌋c ∶ T -> check-result Γ M T
