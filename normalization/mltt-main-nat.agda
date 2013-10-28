@@ -54,6 +54,9 @@ data _∋_∶_ : ∀ {n} -> dctx n -> var n * -> tm n -> Set where
  top : ∀ {n} {Γ : dctx n} {A} -> (Γ , A) ∋ top ∶ ([ wkn-vsub ]r A)
  pop : ∀ {n} {Γ : dctx n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ ([ wkn-vsub ]r B)
 
+data _≈_ {n} (a b : tm n) : Set where
+ common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
+
 mutual
  data wfctx : ∀ {n} -> dctx n -> Set where
   ⊡ : wfctx ⊡
