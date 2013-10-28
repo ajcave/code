@@ -126,7 +126,7 @@ mutual
  data neutral {n} : tm n -> Set where
   ▹ : ∀ x -> neutral (▹ x)
   _·_ : ∀ {M N} -> neutral M  -> normal N  -> neutral (M · N)
-  if : ∀ {M N P} -> neutral M  -> normal N -> normal P  -> neutral (if M N P)
+  if : ∀ {M N P} -> neutral M  -> normal N -> normal P -> neutral (if M N P)
   rec : ∀ {N M P} -> neutral N -> normal M -> normal P -> neutral (rec N M P)
 
  data normal {n} : tm n -> Set where
@@ -141,12 +141,12 @@ mutual
   suc : ∀ {n} -> normal n -> normal (suc n)
   neut : ∀ {M} -> neutral M -> normal M
 
-data ntp {n} : tm n -> Set where
- Π : ∀ {A B} -> ntp A -> ntp B  -> ntp (Π A B)
- bool : ntp bool
- set : ntp set
- nat : ntp nat
- neut : ∀ {M} -> neutral M -> ntp M
+data ntp (n : ctx Unitz) : Set where
+ Π : ntp n -> ntp (n , *)  -> ntp n
+ bool : ntp n
+ set : ntp n
+ nat : ntp n
+ neut : ∀ {M : tm n} -> neutral M -> ntp n
 
 data _≈_ {n} (a b : tm n) : Set where
  common : ∀ {d} -> (a ⟶* d) -> (b ⟶* d) -> a ≈ b
@@ -357,7 +357,7 @@ data check-result {n} (Γ : dctx n) (M : checkable n) (T : tm n) : Set where
  no : Γ ⊬ ⌊ M ⌋c ∶ T -> check-result Γ M T
  
 mutual
- check : ∀ {n} (Γ : dctx n) (M : checkable n) (T : tm n) -> check-result Γ M T
+ check : ∀ {n} (Γ : dctx n) (M : checkable n) (T : ntp n) -> check-result Γ M {!!}
  check Γ tt T = {!!}
  check Γ ff T = {!!}
  check Γ zero T = {!!}
