@@ -12,9 +12,9 @@ data Func (Δ : Set) : Set₁ where
  ▹ : Δ -> Func Δ
  `1 : Func Δ
 
--- data ProdLab : Set where `fst `snd : ProdLab
+-- data ProdLbl : Set where `fst `snd : ProdLbl
 -- _⊗_ : ∀ {Δ} -> Func Δ -> Func Δ -> Func Δ
--- F ⊗ G = `Π ProdLab (λ {`fst → F; `snd → G})
+-- F ⊗ G = `Π ProdLbl (λ {`fst → F; `snd → G})
 
 ⨁ : ∀ {Δ} {A : Set} -> (f : (l : A) -> Func Δ) -> Func Δ
 ⨁ f = `Σ _ f
@@ -39,19 +39,26 @@ Env Δ = Δ -> Set
 data μ {Δ} (Ds : Defs Δ) : Δ -> Set where
  inj : ∀ {l} -> ⟦ Ds l ⟧ (μ Ds) -> μ Ds l
 
-data TypeLabs : Set where `tree `nodelist : TypeLabs
-data ListLab : Set where `nil `cons : ListLab
-data TreeLab : Set where `children : TreeLab
+data TypeLbls : Set where `tree `nodelist : TypeLbls
+data ListLbl : Set where `nil `cons : ListLbl
+data TreeLbl : Set where `children : TreeLbl
+data STpLbl : Set where `tp : STpLbl
+data TpLbl : Set where `base `arr : TpLbl
+data SExpLbl : Set where `exp : SExpLbl
+data ExpLbl : Set where `lam `app `var : ExpLbl
 
-data ExpLab : Set where `exp : ExpLab
+TpFam : Defs STpLbl
+TpFam `tp = ⨁ (λ {`base → `1; `arr → ▹ `tp ⊗ ▹ `tp})
 
-EFam : Defs ExpLab
-EFam `exp = κ ℕ
+EFam : Defs SExpLbl
+EFam `exp = ⨁ (λ {`lam → κ (μ TpFam `tp) ⊗ ▹ `exp;
+                  `app → ▹ `exp ⊗ ▹ `exp;
+                  `var → κ ℕ})
 
-⟦_⟧e : ExpLab -> Set
+⟦_⟧e : SExpLbl -> Set
 ⟦ l ⟧e = μ EFam l
 
-FamF : Defs TypeLabs
+FamF : Defs TypeLbls
 FamF `tree     = ⨁ (λ {`children → κ ⟦ `exp ⟧e ⊗ ▹ `nodelist})
 FamF `nodelist = ⨁ (λ {`nil  → `1;
                       `cons → ▹ `tree ⊗ ▹ `nodelist})
@@ -63,7 +70,7 @@ FamF `nodelist = ⨁ (λ {`nil  → `1;
 --   nil : NodeList
 --   cons : Tree -> NodeList -> NodeList
 
-⟦_⟧f : TypeLabs -> Set
+⟦_⟧f : TypeLbls -> Set
 ⟦ l ⟧f = μ FamF l
 
 
