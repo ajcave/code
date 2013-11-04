@@ -280,6 +280,15 @@ data dctx : ctx Unitz -> Set where
  ⊡ : dctx ⊡
  _,_ : ∀ {n} -> (Γ : dctx n) -> tm n -> dctx (n , *)
 
+-- mutual
+--  data Ctx : Set where
+--   ⊡ : Ctx
+--   _,_ : (Γ : Ctx) -> tm 〈 Γ 〉 -> Ctx
+
+--  〈_〉 : Ctx -> ctx Unit
+--  〈 ⊡ 〉 = ⊡
+--  〈 Γ , x 〉 = 〈 Γ 〉 , *
+
 data _∋_∶_ : ∀ {n} -> dctx n -> var n * -> tm n -> Set where
  top : ∀ {n} {Γ : dctx n} {A} -> (Γ , A) ∋ top ∶ ([ wkn-vsub ]r A)
  pop : ∀ {n} {Γ : dctx n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ ([ wkn-vsub ]r B)
@@ -353,19 +362,55 @@ data _⊬_∶_ {n} (Γ : dctx n) : tm n -> tm n -> Set where
  
 
 data check-result {n} (Γ : dctx n) (M : checkable n) (T : tm n) : Set where
- yes : Γ ⊢ ⌊ M ⌋c ∶ T -> check-result Γ M T
- no : Γ ⊬ ⌊ M ⌋c ∶ T -> check-result Γ M T
+ yes : {-Γ ⊢ ⌊ M ⌋c ∶ T -> -} check-result Γ M T
+ no : {- Γ ⊬ ⌊ M ⌋c ∶ T -> -} check-result Γ M T
  
+-- Could implement as returning a bool, and then proving it correct..
+-- Would be the same as doing this, plus type theory in color to forget the proof parts
 mutual
- check : ∀ {n} (Γ : dctx n) (M : checkable n) (T : ntp n) -> check-result Γ M {!!}
- check Γ tt T = {!!}
- check Γ ff T = {!!}
- check Γ zero T = {!!}
- check Γ bool T = {!!}
- check Γ nat T = {!!}
- check Γ (suc M) T = {!!}
- check Γ (ƛ M) T = {!!}
+ check : ∀ {n} (Γ : dctx n) (M : checkable n) (T : ntp n) -> check-result Γ M bool
+ check Γ tt (Π T T₁) = no
+ check Γ tt bool = yes
+ check Γ tt set = no
+ check Γ tt nat = no
+ check Γ tt (neut x) = no
+ check Γ ff (Π T T₁) = no
+ check Γ ff bool = yes
+ check Γ ff set = no
+ check Γ ff nat = no
+ check Γ ff (neut x) = no
+ check Γ zero (Π T T₁) = no
+ check Γ zero bool = no
+ check Γ zero set = no
+ check Γ zero nat = yes
+ check Γ zero (neut x) = no
+ check Γ bool (Π T T₁) = no
+ check Γ bool bool = no
+ check Γ bool set = yes
+ check Γ bool nat = no
+ check Γ bool (neut x) = no
+ check Γ nat (Π T T₁) = no
+ check Γ nat bool = no
+ check Γ nat set = yes
+ check Γ nat nat = no
+ check Γ nat (neut x) = no
+ check Γ (suc M) (Π T T₁) = no
+ check Γ (suc M) bool = no
+ check Γ (suc M) set = no
+ check Γ (suc M) nat with check Γ M nat
+ ... | yes = yes
+ ... | no = no
+ check Γ (suc M) (neut x) = no
+ check Γ (ƛ M) (Π T T₁) with check (Γ , {!!}) M T₁
+ check Γ (ƛ M) (Π T T₁) | yes = yes
+ check Γ (ƛ M) (Π T T₁) | no = yes
+ check Γ (ƛ M) bool = no
+ check Γ (ƛ M) set = no
+ check Γ (ƛ M) nat = no
+ check Γ (ƛ M) (neut x) = no
  check Γ (Π M M₁) T = {!!}
- check Γ (▸ x) T = {!!}
+ check Γ (▸ R) T = {!!}
+
+
 
  
