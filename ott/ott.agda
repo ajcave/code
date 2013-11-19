@@ -169,7 +169,7 @@ test0 P = λ f0 f1 g f0⋍f1 p0 → subst0 P (g ∘ f0) (g ∘ f1) (cong0 (λ f 
 test : ∀ {A B C} -> ⟨ `∀ (A ↝ B) (λ f₀ → `∀ (A ↝ B) (λ f₁ → `∀ (B ↝ C) (λ g ->
       ((A ↝ B) > f₀ ⋍ A ↝ B > f₁)
    ⇒ ((A ↝ C) > (g ∘ f₀) ⋍ (A ↝ C) > (g ∘ f₁))))) ⟩
-test = λ f0 f1 g f0⋍f1 → {!!}
+test = λ f0 f1 g f0⋍f1 → cong0 (λ f → g ∘ f) f0 f1 f0⋍f1
 
 
 
