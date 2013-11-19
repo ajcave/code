@@ -19,7 +19,7 @@ schema-ctx = ctx Unit
 
 data tp : Set where
  i : tp
- _⇒_ : (A B : tp) -> tp
+ _⇒_ _⊕_ : (A B : tp) -> tp
 
 data tctx-elt (Ω : schema-ctx) : Set where
  ▸ : (A : tp) -> tctx-elt Ω
@@ -54,13 +54,9 @@ _<<_ : tctx -> ctx tp -> tctx
 Ψ₁ << ⊡ = Ψ₁
 Ψ₁ << (Ψ , A) = (Ψ₁ << Ψ) , A
 
-_<<'_ : ctx tp -> ctx tp -> ctx tp
-Ψ <<' ⊡ = Ψ
-Ψ <<' (Φ , T) = (Ψ <<' Φ) , T
-
 infixl 10 _<<_
 
-<<-assoc : ∀ (Ψ₁ : tctx) Ψ₂ Ψ₃ -> (Ψ₁ << Ψ₂) << Ψ₃ ≡ Ψ₁ << (Ψ₂ <<' Ψ₃)
+<<-assoc : ∀ (Ψ₁ : tctx) Ψ₂ Ψ₃ -> (Ψ₁ << Ψ₂) << Ψ₃ ≡ Ψ₁ << (Ψ₂ << Ψ₃)
 <<-assoc Ψ₁ Ψ₂ ⊡ = refl
 <<-assoc Ψ₁ Ψ₂ (Ψ , A) = cong (λ α → α , A) (<<-assoc Ψ₁ Ψ₂ Ψ)
 
@@ -70,9 +66,15 @@ mutual
  data spine (Ψ : tctx) : tp -> tp -> Set where
   ε : ∀ {C} -> spine Ψ C C
   _,_ : ∀ {A B C} (N : ntm Ψ A) (S : spine Ψ B C) -> spine Ψ (A ⇒ B) C
- data ntm (Ψ : tctx) : tp -> Set where
-  ƛ : ∀ {A B} (N : ntm (Ψ , A) B) -> ntm Ψ (A ⇒ B)
-  _·_ : ∀ {A} (H : head Ψ A) (S : spine Ψ A i) -> ntm Ψ i
+ data ntm : (Ψ : tctx) -> tp -> Set where
+  ƛ : ∀ {A B Ψ} (N : ntm (Ψ , A) B) -> ntm Ψ (A ⇒ B)
+  _·_ : ∀ {A Ψ} (H : head Ψ A) (S : spine Ψ A i) -> ntm Ψ i
+  inl : ∀ {A B Ψ} (N : ntm Ψ A) -> ntm Ψ (A ⊕ B)
+  inr : ∀ {A B Ψ} (N : ntm Ψ B) -> ntm Ψ (A ⊕ B)
+  case : ∀ {Ψ₁ A B C} Ψ₂
+        -> (N₁ : ntm ((Ψ₁ , A) << Ψ₂) C)
+        -> (N₂ : ntm ((Ψ₁ , B) << Ψ₂) C)
+        -> ntm ((Ψ₁ , (A ⊕ B)) << Ψ₂) C
 
 
 <<tv : ∀ {Ψ₁ : tctx} {A} -> var Ψ₁ A -> ∀ Ψ₂ -> var (Ψ₁ << Ψ₂) A
@@ -121,8 +123,12 @@ mutual
  s-wkn Ψ₁ Ψ₂ Ψ₃ (N , S) = (n-wkn Ψ₁ Ψ₂ Ψ₃ N) , (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
 
  n-wkn : ∀ Ψ₁ Ψ₂ Ψ₃ {A} -> ntm (Ψ₁ << Ψ₃) A -> ntm (Ψ₁ << Ψ₂ << Ψ₃) A
- n-wkn Ψ₁ Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn Ψ₁ Ψ₂ (Ψ₃ , A) N)
+ n-wkn Ψ₁ Ψ₂ Ψ₃ N = {!!}
+ {-n-wkn Ψ₁ Ψ₂ Ψ₃ (ƛ {A} {B} N) = ƛ (n-wkn Ψ₁ Ψ₂ (Ψ₃ , A) N)
  n-wkn Ψ₁ Ψ₂ Ψ₃ (H · S) = (h-wkn Ψ₁ Ψ₂ Ψ₃ H) · (s-wkn Ψ₁ Ψ₂ Ψ₃ S)
+ n-wkn Ψ₁ Ψ₂ Ψ₃ (inl N) = {!!}
+ n-wkn Ψ₁ Ψ₂ Ψ₃ (inr N) = ?
+ n-wkn Ψ₁ Ψ₂ Ψ₃ (case Ψ N₁ N₂) = ? -}
 
 
 {-
@@ -170,18 +176,23 @@ decSplit {Ψ} (Φ , T) (pop .(var-to-tvar Ψ x)) | right x = right (pop x)
 -- Hereditary substitution
 mutual
  n-sub : ∀ {Ψ₁} {B} Ψ₂ {A} -> ntm ((Ψ₁ , B) << Ψ₂) A -> ntm Ψ₁ B -> ntm (Ψ₁ << Ψ₂) A
- n-sub Ψ (ƛ {A} {B} N) M = ƛ (n-sub (Ψ , A) N M)
+ n-sub Ψ N M = {!!}
+ {- n-sub Ψ (ƛ {A} {B} N) M = ƛ (n-sub (Ψ , A) N M)
+ n-sub Ψ (inl N) M = {!!}
+ n-sub Ψ (inr N) M = ?
+ n-sub Ψ _ = ?
  n-sub Ψ (▹ x · S) M with eq? Ψ x
  n-sub Ψ (▹ .(thatone Ψ) · S) M | same = (n-wkn _ Ψ ⊡ M) ◇ (s-sub Ψ S M)
- n-sub Ψ (▹ .(tvar-wkn1 Ψ x) · S) M | diff x = (▹ x) · s-sub Ψ S M
+ n-sub Ψ (▹ .(tvar-wkn1 Ψ x) · S) M | diff x = (▹ x) · s-sub Ψ S M -}
 
  s-sub : ∀ {Ψ₁} {B} Ψ₂ {A C} -> spine ((Ψ₁ , B) << Ψ₂) A C -> ntm Ψ₁ B -> spine (Ψ₁ << Ψ₂) A C
  s-sub Ψ ε N = ε
  s-sub Ψ (N , S) N' = (n-sub Ψ N N') , (s-sub Ψ S N')
 
  _◇_ : ∀ {Ψ} {A B} -> ntm Ψ A -> spine Ψ A B -> ntm Ψ B
- N ◇ ε = N
- (ƛ N) ◇ (N' , S) = (n-sub ⊡ N N') ◇ S
+ N ◇ S = {!!}
+{- N ◇ ε = N
+ (ƛ N) ◇ (N' , S) = (n-sub ⊡ N N') ◇ S -}
 
 {-
 
