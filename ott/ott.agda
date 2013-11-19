@@ -32,6 +32,9 @@ mutual
 
 infix 60 _`∧_
 
+_↝_ : set -> set -> set
+T ↝ S = `Π T (λ _ -> S)
+
 mutual 
   data prop : Set where
     `⊥ : prop
@@ -129,38 +132,44 @@ mutual
   -- first we can constructu a proof that the value and the coerced
   -- value are equal. (This one is in prop as it is a proof).
   coh : (S : set) (T : set) (Q : ⟨ S ⋍ T ⟩) (s : ⟦ S ⟧) -> ⟨ (S > s ⋍ T > (coe S T Q s)) ⟩
-  coh `1 `1 Q unit = unit
-  coh `2 `2 Q true = unit
-  coh `2 `2 Q false = unit
-  coh (`Π S₀ T₀) (`Π S₁ T₁) (S₁≃S₀ , T₀≃T₁) f = λ s₀ s₁ s₀≃s₁  → {!!} -- we don't need to fill this! you cheater!
-  coh (`Σ S₀ T₀) (`Σ S₁ T₁) (S₀⋍S₁ , T₀⋍T₁) (s₀ , t₀) =  q , coh (T₀ s₀) (T₁ s₁) (T₀⋍T₁ s₀ s₁ q) t₀
-    where
-      s₁ = (coe S₀ S₁ S₀⋍S₁ s₀)
-      q = (coh S₀ S₁ S₀⋍S₁ s₀)
+  coh S T Q s = {!!}
 
-  coh `0 `0 Q ()
-  coh `0 `1 () v
-  coh `0 `2 () v
-  coh `0 (`Π T x) () v
-  coh `0 (`Σ T x) () v
-  coh `1 `0 () v
-  coh `1 `2 () v
-  coh `1 (`Π T x) () v
-  coh `1 (`Σ T x) () v
-  coh `2 `0 () v 
-  coh `2 `1 () v 
-  coh `2 (`Π T x) () v
-  coh `2 (`Σ T x) () v
-  coh (`Π S x) `0 () v
-  coh (`Π S x) `1 () v
-  coh (`Π S x) `2 () v
-  coh (`Π S x) (`Σ T x₁) () v
-  coh (`Σ S x) `0 () v
-  coh (`Σ S x) `1 () v
-  coh (`Σ S x) `2 () v
-  coh (`Σ S x) (`Π T x₁) () v
+Resp : (S : set)(P : ⟦ S ⟧ -> set)
+       {s0 s1 : ⟦ S ⟧} -> ⟨ ((S > s0 ⋍ S > s1) ⇒ (P s0 ⋍ P s1)) ⟩
+Resp = {! !}
+
+[|_>_|] : (S : set)(s : ⟦ S ⟧) -> ⟨ (S > s ⋍ S > s) ⟩
+[| S > s |] = {! !}
+
+Sym : (S0 S1 : set) -> ⟨ ((S0 ⋍ S1) ⇒ (S1 ⋍ S0)) ⟩
+Sym = {! !}
+
+sym : (S0 : set)(s0 : ⟦ S0 ⟧)(S1 : set)(s1 : ⟦ S1 ⟧) ->
+      ⟨ ((S0 > s0 ⋍ S1 > s1) ⇒ (S1 > s1 ⋍ S0 > s0)) ⟩ 
+sym = {! !}
 
 
+
+_∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
+(f ∘ g) = λ x -> f (g x)
+
+subst0 : ∀ {A} (P : ⟦ A ⟧ -> set) -> ⟦ `Π A (λ x₀ → `Π A (λ x₁ ->
+      ⌈ A > x₀ ⋍ A > x₁ ⌉ ↝ ((P x₀) ↝ (P x₁)))) ⟧
+subst0 P = λ x y x⋍y px → coe (P x) (P y) (Resp _ P x⋍y) px
+
+cong0 : ∀ {A B} (f : ⟦ A ↝ B ⟧) -> ⟦ `Π A (λ x₀ → `Π A (λ x₁ ->
+      ⌈ A > x₀ ⋍ A > x₁ ⌉ ↝ ⌈ B > (f x₀) ⋍ B > (f x₁) ⌉)) ⟧
+cong0 {A} {B} f = λ x y x⋍y → subst0 (λ b → ⌈ B > f x ⋍ B > f b ⌉) x y x⋍y [| B > f x |]
+
+test0 : ∀ {A B C} (P : ⟦ A ↝ C ⟧ -> set) -> ⟦ `Π (A ↝ B) (λ f₀ → `Π (A ↝ B) (λ f₁ → `Π (B ↝ C) (λ g ->
+      ⌈ (A ↝ B) > f₀ ⋍ A ↝ B > f₁ ⌉ 
+   ↝ (P (g ∘ f₀) ↝ P (g ∘ f₁))))) ⟧
+test0 P = λ f0 f1 g f0⋍f1 p0 → subst0 P (g ∘ f0) (g ∘ f1) (cong0 (λ f → g ∘ f) f0 f1 f0⋍f1) p0
+
+test : ∀ {A B C} -> ⟨ `∀ (A ↝ B) (λ f₀ → `∀ (A ↝ B) (λ f₁ → `∀ (B ↝ C) (λ g ->
+      ((A ↝ B) > f₀ ⋍ A ↝ B > f₁)
+   ⇒ ((A ↝ C) > (g ∘ f₀) ⋍ (A ↝ C) > (g ∘ f₁))))) ⟩
+test = λ f0 f1 g f0⋍f1 → {!!}
 
 
 
