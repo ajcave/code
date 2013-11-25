@@ -1,6 +1,7 @@
 module algeq where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Product
+open import Function
 
 postulate
  funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
@@ -27,8 +28,11 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
 vsubst : ctx -> ctx -> Set 
 vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
 
-_∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
-(σ1 ∘ σ2) x = σ1 (σ2 x)
+↑ : ∀ {Γ T} -> vsubst Γ (Γ , T)
+↑ = s
+
+-- _∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
+-- (σ1 ∘ σ2) x = σ1 (σ2 x)
 
 _∘₁_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘₁ g) x = f (g x)
@@ -48,8 +52,8 @@ ext-funct : ∀ {Γ1 Γ2 Γ3 U S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) 
 ext-funct σ1 σ2 z = refl
 ext-funct σ1 σ2 (s y) = refl
 
-id : ∀ {Γ} -> vsubst Γ Γ
-id x = x
+-- id : ∀ {Γ} -> vsubst Γ Γ
+-- id x = x
 
 ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> ext id x ≡ x
 ext-id z = refl
@@ -73,9 +77,12 @@ data tm (Γ : ctx) : (T : tp) -> Set where
 sub : (Γ1 Γ2 : ctx) -> Set
 sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
 
+_,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
+(σ ,, M) z = M
+(σ ,, M) (s y) = σ y
+
 sub-ext : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> sub (Γ1 , T) (Γ2 , T)
-sub-ext σ z = v z
-sub-ext σ (s y) = [ s ]v (σ y)
+sub-ext σ = ([ ↑ ]v ∘ σ) ,, (v z)
 
 [_] : ∀ {Γ1 Γ2 T} (σ : sub Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
 [_] σ (v y) = σ y
@@ -83,9 +90,6 @@ sub-ext σ (s y) = [ s ]v (σ y)
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
 [ σ ] c = c
 
-_,,_ : ∀ {Γ1 Γ2 T} -> sub Γ1 Γ2 -> tm Γ2 T -> sub (Γ1 , T) Γ2
-(σ ,, M) z = M
-(σ ,, M) (s y) = σ y
 
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
@@ -135,18 +139,47 @@ sub-ext-id (s y) = refl
 []-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
 []-id {M = c} = refl
 
-data _→*_ : ∀ {T} -> tm ⊡ T -> tm ⊡ T -> Set where
- →*-refl : ∀ {T} {M : tm ⊡ T} -> M →* M
- ap1 : ∀ {T S} {M1 M2 : tm ⊡ (T ⇝ S)} {N1 : tm _ T} -> M1 →* M2  -> (M1 · N1) →* (M2 · N1)
- β : ∀ {T S} (M : tm (⊡ , T) S) (N : tm ⊡ T) -> ((ƛ M) · N) →* [ v ,, N ] M
- →*-trans : ∀ {T} {M N P : tm _ T} -> M →* N -> N →* P -> M →* P
+data _▹wh_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
+ ap1 : ∀ {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 : tm _ T} -> M1 ▹wh M2  -> (M1 · N1) ▹wh (M2 · N1)
+ β : ∀ {T S} (M : tm (Γ , T) S) (N : tm Γ T) -> ((ƛ M) · N) ▹wh [ v ,, N ] M
 
-data isNormal : ∀ {T} (t : tm ⊡ T) -> Set where
- ƛ : ∀ {T S} (t : tm (_ , T) S) -> isNormal (ƛ t)
+data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
+ →*-refl : ∀ {T} {M : tm Γ T} -> M →* M
+ →*-trans1 : ∀ {T} {M N P : tm _ T} -> M ▹wh N -> N →* P -> M →* P
+
+→*-trans : ∀ {Γ T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
+→*-trans →*-refl u = u
+→*-trans (→*-trans1 x t) u = →*-trans1 x (→*-trans t u)
+
+ap1* : ∀ {T S} {M1 M2 : tm ⊡ (T ⇝ S)} {N1 : tm _ T} -> M1 →* M2  -> (M1 · N1) →* (M2 · N1)
+ap1* →*-refl = →*-refl
+ap1* (→*-trans1 x x₁) = →*-trans1 (ap1 x) (ap1* x₁)
+
+β* : ∀ {T S} {M : tm (⊡ , T) S} {N : tm ⊡ T} -> ((ƛ M) · N) →* [ v ,, N ] M
+β* = →*-trans1 (β _ _) →*-refl
+
+data isNormal {Γ} : ∀ {T} (t : tm Γ T) -> Set where
+ ƛ : ∀ {T S} (t : tm (Γ , T) S) -> isNormal (ƛ t)
  c : isNormal c
+
+data _⇓_ {Γ T} (M : tm Γ T) : tm Γ T -> Set where
+ eval : ∀ {N} -> M →* N -> isNormal N -> M ⇓ N
 
 halts : ∀ {T} (t : tm ⊡ T) -> Set
 halts {T} t = ∃ (λ (n : tm _ T) → (t →* n) × isNormal n)
+
+mutual
+ data _⊢_>_⇔_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
+  qat-base : ∀ {M N P Q} -> M ⇓ P -> N ⇓ Q -> Γ ⊢ atom > P ↔ Q -> Γ ⊢ atom > M ⇔ N
+  qat-arrow : ∀ {T₁ T₂} {M N : tm Γ (T₁ ⇝ T₂)} -> (Γ , T₁) ⊢ T₂ > [ ↑ ]v M · (v z) ⇔ ([ ↑ ]v N · (v z))
+             -> Γ ⊢ (T₁ ⇝ T₂) > M ⇔ N
+ data _⊢_>_↔_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
+  qap-var : ∀ {T} {x : var Γ T} -> Γ ⊢ T > (v x) ↔ (v x)
+  qap-app : ∀ {T₁ T₂} {M₁ M₂ : tm Γ (T₁ ⇝ T₂)} {N₁ N₂ : tm Γ T₁}
+           -> Γ ⊢ (T₁ ⇝ T₂) > M₁ ↔ M₂
+           -> Γ ⊢ T₁ > N₁ ⇔ N₂
+           -> Γ ⊢ T₂ > (M₁ · N₁) ↔ (M₂ · N₂)
+  qap-const : Γ ⊢ atom > c ↔ c
 
 reduce : ∀ T -> tm ⊡ T -> Set
 reduce atom t = halts t
@@ -154,7 +187,7 @@ reduce (T ⇝ S) t = halts t × (∀ (x : tm _ T) -> reduce T x -> reduce S (t �
 
 reduce-closed : ∀ {T} {t t' : tm _ T} -> (t →* t') -> reduce T t' -> reduce T t
 reduce-closed {atom} p (N , (q1 , q2)) = N , ((→*-trans p q1) , q2)
-reduce-closed {T ⇝ S} p ((N , (q1 , q2)) , f) = (N , (→*-trans p q1 , q2)) , (λ x rx → reduce-closed (ap1 p) (f x rx))
+reduce-closed {T ⇝ S} p ((N , (q1 , q2)) , f) = (N , (→*-trans p q1 , q2)) , (λ x rx → reduce-closed (ap1* p) (f x rx))
 
 reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> tm _ U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : tm _ T} (w : reduce T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
@@ -168,7 +201,7 @@ thm : ∀ {Γ T} (σ : ∀ {U} (x : var Γ U) -> tm ⊡ U) (θ : ∀ {U} (x : va
 thm σ θ c = c , (→*-refl , c)
 thm σ θ (v y) = θ y
 thm σ θ (M · N) = proj₂ (thm σ θ M) ([ σ ] N) (thm σ θ N)
-thm σ θ (ƛ {T} {S} M) = (_ , (→*-refl , (ƛ _))) , (λ N redN → reduce-closed {S} (β _ _) (subst (reduce _) (lemma σ N M) (thm (σ ,, N) (reduce-ext θ redN) M)))
+thm σ θ (ƛ {T} {S} M) = (_ , (→*-refl , (ƛ _))) , (λ N redN → reduce-closed {S} β* (subst (reduce _) (lemma σ N M) (thm (σ ,, N) (reduce-ext θ redN) M)))
 
 reify : ∀ {T} (t : tm _ T) -> reduce T t -> halts t
 reify {atom} t p = p
