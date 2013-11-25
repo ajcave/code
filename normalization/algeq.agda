@@ -198,10 +198,14 @@ cong⊢>is refl refl p = p
 
 mutual
  ↔monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') {T} {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ↔ ([ w ]v M₂)
- ↔monotone w p = {!!}
+ ↔monotone w qap-var = qap-var
+ ↔monotone w (qap-app p x) = qap-app (↔monotone w p) (⇔monotone w x)
+ ↔monotone w qap-const = qap-const
 
  ⇔monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') {T} {M₁ M₂} -> Γ ⊢ T > M₁ ⇔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ⇔ ([ w ]v M₂)
- ⇔monotone w p = {!!}
+ ⇔monotone w (qat-base x x₁ x₂) = qat-base {!!} {!!} (↔monotone w x₂)
+ ⇔monotone w (qat-arrow p) with ⇔monotone (ext w) p
+ ... | q = qat-arrow {!!}
 
 monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ' ⊢ T > ([ w ]v M₁) is ([ w ]v M₂)
 monotone w atom p = ⇔monotone w p
