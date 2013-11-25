@@ -2,6 +2,7 @@ module algeq where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Product
 open import Function
+open import Data.Sum
 
 -- Based on Ch 6 of Advanced Topics in Types and Programming Languages
 
@@ -231,6 +232,91 @@ mutual
  reflect : ∀ {Γ} T {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ ⊢ T > M₁ is M₂
  reflect atom p = qat-base →*-refl →*-refl p
  reflect (T ⇝ T₁) p = λ w x → reflect T₁ (qap-app (↔monotone w p) (reify T x))
+
+_⊢s_>_is_ : ∀ Γ Γ' (σ1 σ2 : sub Γ' Γ) -> Set
+Γ ⊢s Γ' > σ1 is σ2 = ∀ {T} (x : var Γ' T) → Γ ⊢ T > (σ1 x) is (σ2 x)
+
+data _⊢_>_≡_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
+  qat-ext : ∀ {T₁ T₂} {M N : tm Γ (T₁ ⇝ T₂)} -> (Γ , T₁) ⊢ T₂ > [ ↑ ]v M · (v z) ≡ ([ ↑ ]v N · (v z))
+             -> Γ ⊢ (T₁ ⇝ T₂) > M ≡ N
+  qap-var : ∀ {T} {x : var Γ T} -> Γ ⊢ T > (v x) ≡ (v x)
+  qap-app : ∀ {T₁ T₂} {M₁ M₂ : tm Γ (T₁ ⇝ T₂)} {N₁ N₂ : tm Γ T₁}
+           -> Γ ⊢ (T₁ ⇝ T₂) > M₁ ≡ M₂
+           -> Γ ⊢ T₁ > N₁ ≡ N₂
+           -> Γ ⊢ T₂ > (M₁ · N₁) ≡ (M₂ · N₂)
+  qap-const : Γ ⊢ atom > c ≡ c
+  β : ∀ {T₁ T₂} {M₁ N₁ : tm Γ T₁} {M₂ N₂ : tm (Γ , T₁) T₂}
+           -> (Γ , T₁) ⊢ T₂ > M₂ ≡ N₂
+           -> Γ ⊢ T₁ > M₁ ≡ N₁
+           -> Γ ⊢ T₂ > ((ƛ M₂) · M₁) ≡ ([ v ,, N₁ ] N₂)
+  qap-sym : ∀ {T} {M N} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ M
+  qap-trans : ∀ {T} {M N O} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ O -> Γ ⊢ T > M ≡ O
+  ƛ : ∀ {T₁ T₂} {M₁ M₂} -> (Γ , T₁) ⊢ T₂ > M₁ ≡ M₂ -> Γ ⊢ (T₁ ⇝ T₂) > (ƛ M₁) ≡ (ƛ M₂)
+
+mutual
+ ⊢↔-sym : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> Γ ⊢ T > N ↔ M
+ ⊢↔-sym qap-var = qap-var
+ ⊢↔-sym (qap-app p x) = qap-app (⊢↔-sym p) (⊢⇔-sym x)
+ ⊢↔-sym qap-const = qap-const
+
+ ⊢⇔-sym : ∀ {Γ T M N} -> Γ ⊢ T > M ⇔ N -> Γ ⊢ T > N ⇔ M
+ ⊢⇔-sym (qat-base x x₁ x₂) = qat-base x₁ x (⊢↔-sym x₂)
+ ⊢⇔-sym (qat-arrow p) = qat-arrow (⊢⇔-sym p)
+
+⊢is-sym : ∀ {Γ} T {M N} -> Γ ⊢ T > M is N -> Γ ⊢ T > N is M
+⊢is-sym atom p = ⊢⇔-sym p
+⊢is-sym (T ⇝ T₁) p = λ w x → ⊢is-sym T₁ (p w (⊢is-sym T x))
+
+determinacy : ∀ {Γ T} {M N O : tm Γ T} -> M ▹wh N -> M ▹wh O -> N ≡ O
+determinacy (ap1 {N1 = N1} p1) (ap1 p2) = cong (λ α → α · N1) (determinacy p1 p2)
+determinacy (ap1 ()) (β M N1)
+determinacy (β M N) (ap1 ())
+determinacy (β M N) (β .M .N) = refl
+
+determinacy* : ∀ {Γ T} {M N O : tm Γ T} -> M →* N -> M →* O -> (N →* O) ⊎ (O →* N)
+determinacy* →*-refl p2 = inj₁ p2
+determinacy* (→*-trans1 x p1) →*-refl = inj₂ (→*-trans1 x p1)
+determinacy* (→*-trans1 x p1) (→*-trans1 x₁ p2) with determinacy x x₁
+... | refl = determinacy* p1 p2
+
+confluence : ∀ {Γ T} {M N O : tm Γ T} -> M →* N -> M →* O -> ∃ (λ P -> (N →* P) × (O →* P))
+confluence p1 p2 with determinacy* p1 p2
+... | inj₁ q = _ , q , →*-refl
+... | inj₂ q = _ , →*-refl , q
+
+neutralNoStep : ∀ {Γ T} {C : Set} {M N O : tm Γ T} -> M ▹wh N -> Γ ⊢ T > M ↔ O -> C
+neutralNoStep (ap1 p1) (qap-app p2 x) = neutralNoStep p1 p2
+neutralNoStep (β M N) (qap-app () x)
+
+neutralNoStep' : ∀ {Γ T} {C : Set} {M N O : tm Γ T} -> M ▹wh N -> Γ ⊢ T > O ↔ M -> C
+neutralNoStep' (ap1 p1) (qap-app p2 x) = neutralNoStep' p1 p2
+neutralNoStep' (β M N) (qap-app () x)
+
+neutralNoStep* : ∀ {Γ T} {M N O : tm Γ T} -> M →* N -> Γ ⊢ T > M ↔ O -> M ≡ N
+neutralNoStep* →*-refl p2 = refl
+neutralNoStep* (→*-trans1 x p1) p2 = neutralNoStep x p2
+
+neutralNoStep*' : ∀ {Γ T} {M N O : tm Γ T} -> M →* N -> Γ ⊢ T > O ↔ M -> M ≡ N
+neutralNoStep*' →*-refl p2 = refl
+neutralNoStep*' (→*-trans1 x p1) p2 = neutralNoStep' x p2
+
+mutual
+ ⊢↔-trans : ∀ {Γ T M N O} -> Γ ⊢ T > M ↔ N -> Γ ⊢ T > N ↔ O -> Γ ⊢ T > M ↔ O
+ ⊢↔-trans qap-var qap-var = qap-var
+ ⊢↔-trans (qap-app p1 x) (qap-app p2 x₁) = qap-app (⊢↔-trans p1 p2) (⊢⇔-trans x x₁)
+ ⊢↔-trans qap-const qap-const = qap-const
+ ⊢⇔-trans : ∀ {Γ T M N O} -> Γ ⊢ T > M ⇔ N -> Γ ⊢ T > N ⇔ O -> Γ ⊢ T > M ⇔ O
+ ⊢⇔-trans (qat-base x x₂ x₁) (qat-base x₃ x₄ x₅) with confluence x₂ x₃
+ ... | N , q0 , q1 with neutralNoStep* q1 x₅ | neutralNoStep*' q0 x₁
+ ... | refl | refl = qat-base x x₄ (⊢↔-trans x₁ x₅)
+ ⊢⇔-trans (qat-arrow p1) (qat-arrow p2) = qat-arrow (⊢⇔-trans p1 p2)
+
+-- interesting twist...
+⊢is-trans : ∀ {Γ} T {M N O} -> Γ ⊢ T > M is N -> Γ ⊢ T > N is O -> Γ ⊢ T > M is O
+⊢is-trans atom p1 p2 = ⊢⇔-trans p1 p2
+⊢is-trans (T ⇝ T₁) p1 p2 = λ w x → ⊢is-trans T₁ (p1 w x) (p2 w (⊢is-trans T (⊢is-sym T x) x))
+
+--thm : ∀ 
 
 -- reduce : ∀ T -> tm ⊡ T -> Set
 -- reduce atom t = halts t
