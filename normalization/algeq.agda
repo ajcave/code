@@ -150,6 +150,9 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  →*-refl : ∀ {T} {M : tm Γ T} -> M →* M
  →*-trans1 : ∀ {T} {M N P : tm _ T} -> M ▹wh N -> N →* P -> M →* P
 
+→*-refl' : ∀ {Γ T} {M N : tm Γ T} -> M ≡ N -> M →* N
+→*-refl' refl = →*-refl
+
 →*-trans : ∀ {Γ T} {M N P : tm Γ T} -> M →* N -> N →* P -> M →* P
 →*-trans →*-refl u = u
 →*-trans (→*-trans1 x t) u = →*-trans1 x (→*-trans t u)
@@ -196,6 +199,9 @@ _⊢_>_is_ : ∀ Γ T -> tm Γ T -> tm Γ T -> Set
 
 cong⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> M1 ≡ N1 -> M2 ≡ N2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
 cong⊢>is refl refl p = p
+
+closed⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> N1 →* M1 -> N2 →* M2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
+closed⊢>is t1 t2 p = {!!}
 
 mutual
  ↔monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') {T} {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ↔ ([ w ]v M₂)
@@ -337,13 +343,12 @@ data _⊢_>_≡_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
 thm : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ≡ M2 -> ∀ {Γ'} (σ1 σ2 : sub Γ Γ') -> Γ' ⊢s Γ > σ1 is σ2 -> Γ' ⊢ T > ([ σ1 ] M1) is ([ σ2 ] M2)
 thm {M1 = M1} {M2 = M2} (qat-ext {T₁} {T₂} p) σ1 σ2 σ1isσ2 = λ w {N1} {N2} p0 -> cong⊢>is {!!} {!!} (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn σ1isσ2) p0))
 thm qap-var σ1 σ2 σ1isσ2 = σ1isσ2 _
-thm (qap-app p p₁) σ1 σ2 σ1isσ2 with thm p σ1 σ2 σ1isσ2 id (thm p₁ σ1 σ2 σ1isσ2)
-... | q0 = {!!}
-thm qap-const σ1 σ2 σ1isσ2 = {!!}
+thm (qap-app p p₁) σ1 σ2 σ1isσ2 = cong⊢>is {!!} {!!} (thm p σ1 σ2 σ1isσ2 id (thm p₁ σ1 σ2 σ1isσ2))
+thm qap-const σ1 σ2 σ1isσ2 = qat-base →*-refl →*-refl qap-const
 thm (β p p₁) σ1 σ2 σ1isσ2 = {!!}
 thm (qap-sym p) σ1 σ2 σ1isσ2 = ⊢is-sym _ (thm p σ2 σ1 (⊢sis-sym σ1isσ2))
 thm (qap-trans p p₁) σ1 σ2 σ1isσ2 = ⊢is-trans _ (thm p σ1 σ2 σ1isσ2) (thm p₁ σ2 σ2 (⊢sis-trans (⊢sis-sym σ1isσ2) σ1isσ2)) -- again interesting twist
-thm (ƛ p) σ1 σ2 σ1isσ2 = {!!}
+thm (ƛ p) σ1 σ2 σ1isσ2 = λ w {N1} {N2} x → closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-trans1 (β _ _) (→*-refl' {!!})) (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn σ1isσ2) x))
 
 -- reduce : ∀ T -> tm ⊡ T -> Set
 -- reduce atom t = halts t
