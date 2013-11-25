@@ -379,6 +379,26 @@ corollary d = cong⊢>is []-id []-id (thm d v v id-rel)
 completeness : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ≡ M2 -> Γ ⊢ T > M1 ⇔ M2
 completeness d = reify _ (corollary d)
 
+▹wh-closed⊢>≡₁ : ∀ {Γ T} {M1 N1} -> N1 ▹wh M1 -> Γ ⊢ T > N1 ≡ M1
+▹wh-closed⊢>≡₁ (ap1 t) = qap-app (▹wh-closed⊢>≡₁ t) (⊢>≡-refl _) --qap-trans (qap-app {!!} (⊢>≡-refl _)) p
+▹wh-closed⊢>≡₁ (β M N) = β (⊢>≡-refl _) (⊢>≡-refl _)
+
+closed⊢>≡₁ : ∀ {Γ T} {M1 N1} -> N1 →* M1 -> Γ ⊢ T > N1 ≡ M1
+closed⊢>≡₁ →*-refl = ⊢>≡-refl _
+closed⊢>≡₁ (→*-trans1 x t1) = qap-trans (▹wh-closed⊢>≡₁ x) (closed⊢>≡₁ t1)
+
+mutual
+ soundness1 : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ⇔ M2 -> Γ ⊢ T > M1 ≡ M2
+ soundness1 (qat-base x x₁ x₂) = qap-trans (closed⊢>≡₁ x) (qap-trans (soundness2 x₂) (qap-sym (closed⊢>≡₁ x₁)))
+ soundness1 (qat-arrow p) = qat-ext (soundness1 p)
+ 
+ soundness2 : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ↔ M2 -> Γ ⊢ T > M1 ≡ M2
+ soundness2 qap-var = qap-var
+ soundness2 (qap-app p x) = qap-app (soundness2 p) (soundness1 x)
+ soundness2 qap-const = qap-const
+
 -- Could we derive an algorithm more directly by bypassing ⇔?
+-- Hmm. We could just prove weak head normalization (on open terms), and define ⇔. Then do implement conversion
+-- test by well-founded induction on ▹wh, lexicographic with type? Maybe some kind of spine-form induction?
 
 -- TODO: Add Unit type
