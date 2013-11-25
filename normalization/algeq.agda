@@ -236,22 +236,17 @@ mutual
 _⊢s_>_is_ : ∀ Γ Γ' (σ1 σ2 : sub Γ' Γ) -> Set
 Γ ⊢s Γ' > σ1 is σ2 = ∀ {T} (x : var Γ' T) → Γ ⊢ T > (σ1 x) is (σ2 x)
 
-data _⊢_>_≡_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
-  qat-ext : ∀ {T₁ T₂} {M N : tm Γ (T₁ ⇝ T₂)} -> (Γ , T₁) ⊢ T₂ > [ ↑ ]v M · (v z) ≡ ([ ↑ ]v N · (v z))
-             -> Γ ⊢ (T₁ ⇝ T₂) > M ≡ N
-  qap-var : ∀ {T} {x : var Γ T} -> Γ ⊢ T > (v x) ≡ (v x)
-  qap-app : ∀ {T₁ T₂} {M₁ M₂ : tm Γ (T₁ ⇝ T₂)} {N₁ N₂ : tm Γ T₁}
-           -> Γ ⊢ (T₁ ⇝ T₂) > M₁ ≡ M₂
-           -> Γ ⊢ T₁ > N₁ ≡ N₂
-           -> Γ ⊢ T₂ > (M₁ · N₁) ≡ (M₂ · N₂)
-  qap-const : Γ ⊢ atom > c ≡ c
-  β : ∀ {T₁ T₂} {M₁ N₁ : tm Γ T₁} {M₂ N₂ : tm (Γ , T₁) T₂}
-           -> (Γ , T₁) ⊢ T₂ > M₂ ≡ N₂
-           -> Γ ⊢ T₁ > M₁ ≡ N₁
-           -> Γ ⊢ T₂ > ((ƛ M₂) · M₁) ≡ ([ v ,, N₁ ] N₂)
-  qap-sym : ∀ {T} {M N} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ M
-  qap-trans : ∀ {T} {M N O} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ O -> Γ ⊢ T > M ≡ O
-  ƛ : ∀ {T₁ T₂} {M₁ M₂} -> (Γ , T₁) ⊢ T₂ > M₁ ≡ M₂ -> Γ ⊢ (T₁ ⇝ T₂) > (ƛ M₁) ≡ (ƛ M₂)
+⊢s-pair : ∀ {Γ Γ'} {σ1 σ2 : sub Γ' Γ} {T} {M N} -> Γ ⊢s Γ' > σ1 is σ2 -> Γ ⊢ T > M is N -> Γ ⊢s (Γ' , T) > (σ1 ,, M) is (σ2 ,, N)
+⊢s-pair p1 p2 z = p2
+⊢s-pair p1 p2 (s x) = p1 x
+
+⊢s-wkn : ∀ {Γ Γ' Γ''} {σ1 σ2 : sub Γ' Γ} {w : vsubst Γ Γ''} -> Γ ⊢s Γ' > σ1 is σ2 -> Γ'' ⊢s Γ' > ([ w ]v ∘ σ1) is ([ w ]v ∘ σ2)
+⊢s-wkn p x = monotone _ _ (p x)
+
+⊢s-ext : ∀ {Γ Γ'} {σ1 σ2 : sub Γ' Γ} {T} -> Γ ⊢s Γ' > σ1 is σ2 -> (Γ , T) ⊢s (Γ' , T) > (sub-ext σ1) is (sub-ext σ2)
+⊢s-ext p = ⊢s-pair (⊢s-wkn p) (reflect _ qap-var)
+
+
 
 mutual
  ⊢↔-sym : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> Γ ⊢ T > N ↔ M
@@ -316,7 +311,39 @@ mutual
 ⊢is-trans atom p1 p2 = ⊢⇔-trans p1 p2
 ⊢is-trans (T ⇝ T₁) p1 p2 = λ w x → ⊢is-trans T₁ (p1 w x) (p2 w (⊢is-trans T (⊢is-sym T x) x))
 
---thm : ∀ 
+⊢sis-sym : ∀ {Γ Γ'} {M N : sub Γ' Γ} -> Γ ⊢s Γ' > M is N -> Γ ⊢s Γ' > N is M
+⊢sis-sym p x = ⊢is-sym _ (p x)
+
+⊢sis-trans : ∀ {Γ Γ'} {M N O : sub Γ' Γ} -> Γ ⊢s Γ' > M is N -> Γ ⊢s Γ' > N is O -> Γ ⊢s Γ' > M is O
+⊢sis-trans p1 p2 x = ⊢is-trans _ (p1 x) (p2 x)
+
+data _⊢_>_≡_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
+  qat-ext : ∀ {T₁ T₂} {M N : tm Γ (T₁ ⇝ T₂)} -> (Γ , T₁) ⊢ T₂ > [ ↑ ]v M · (v z) ≡ ([ ↑ ]v N · (v z))
+             -> Γ ⊢ (T₁ ⇝ T₂) > M ≡ N
+  qap-var : ∀ {T} {x : var Γ T} -> Γ ⊢ T > (v x) ≡ (v x)
+  qap-app : ∀ {T₁ T₂} {M₁ M₂ : tm Γ (T₁ ⇝ T₂)} {N₁ N₂ : tm Γ T₁}
+           -> Γ ⊢ (T₁ ⇝ T₂) > M₁ ≡ M₂
+           -> Γ ⊢ T₁ > N₁ ≡ N₂
+           -> Γ ⊢ T₂ > (M₁ · N₁) ≡ (M₂ · N₂)
+  qap-const : Γ ⊢ atom > c ≡ c
+  β : ∀ {T₁ T₂} {M₁ N₁ : tm Γ T₁} {M₂ N₂ : tm (Γ , T₁) T₂}
+           -> (Γ , T₁) ⊢ T₂ > M₂ ≡ N₂
+           -> Γ ⊢ T₁ > M₁ ≡ N₁
+           -> Γ ⊢ T₂ > ((ƛ M₂) · M₁) ≡ ([ v ,, N₁ ] N₂)
+  qap-sym : ∀ {T} {M N} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ M
+  qap-trans : ∀ {T} {M N O} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ O -> Γ ⊢ T > M ≡ O
+  ƛ : ∀ {T₁ T₂} {M₁ M₂} -> (Γ , T₁) ⊢ T₂ > M₁ ≡ M₂ -> Γ ⊢ (T₁ ⇝ T₂) > (ƛ M₁) ≡ (ƛ M₂)
+
+thm : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ≡ M2 -> ∀ {Γ'} (σ1 σ2 : sub Γ Γ') -> Γ' ⊢s Γ > σ1 is σ2 -> Γ' ⊢ T > ([ σ1 ] M1) is ([ σ2 ] M2)
+thm {M1 = M1} {M2 = M2} (qat-ext {T₁} {T₂} p) σ1 σ2 σ1isσ2 = λ w {N1} {N2} p0 -> cong⊢>is {!!} {!!} (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn σ1isσ2) p0))
+thm qap-var σ1 σ2 σ1isσ2 = σ1isσ2 _
+thm (qap-app p p₁) σ1 σ2 σ1isσ2 with thm p σ1 σ2 σ1isσ2 id (thm p₁ σ1 σ2 σ1isσ2)
+... | q0 = {!!}
+thm qap-const σ1 σ2 σ1isσ2 = {!!}
+thm (β p p₁) σ1 σ2 σ1isσ2 = {!!}
+thm (qap-sym p) σ1 σ2 σ1isσ2 = ⊢is-sym _ (thm p σ2 σ1 (⊢sis-sym σ1isσ2))
+thm (qap-trans p p₁) σ1 σ2 σ1isσ2 = ⊢is-trans _ (thm p σ1 σ2 σ1isσ2) (thm p₁ σ2 σ2 (⊢sis-trans (⊢sis-sym σ1isσ2) σ1isσ2)) -- again interesting twist
+thm (ƛ p) σ1 σ2 σ1isσ2 = {!!}
 
 -- reduce : ∀ T -> tm ⊡ T -> Set
 -- reduce atom t = halts t
