@@ -3,6 +3,8 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Product
 open import Function
 
+-- Based on Ch 6 of Advanced Topics in Types and Programming Languages
+
 postulate
  funext : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> f ≡ g
  funext-imp : ∀ {A : Set} {B : A -> Set} {f g : (x : A) -> B x} -> (∀ x -> f x ≡ g x) -> _≡_ {_} { {x : A} -> B x} (λ {x} -> f x) (λ {x} -> g x)
@@ -181,31 +183,36 @@ mutual
            -> Γ ⊢ T₂ > (M₁ · N₁) ↔ (M₂ · N₂)
   qap-const : Γ ⊢ atom > c ↔ c
 
-reduce : ∀ T -> tm ⊡ T -> Set
-reduce atom t = halts t
-reduce (T ⇝ S) t = halts t × (∀ (x : tm _ T) -> reduce T x -> reduce S (t · x))
+_⊢_>_is_ : ∀ Γ T -> tm Γ T -> tm Γ T -> Set
+Γ ⊢ atom > M₁ is M₂ = Γ ⊢ atom > M₁ ⇔ M₂
+Γ ⊢ T₁ ⇝ T₂ > M₁ is M₂ = ∀ {Γ'} (w : vsubst Γ Γ') {N₁ N₂ : tm Γ' T₁} →
+                           Γ' ⊢ T₁ > N₁ is N₂ → Γ' ⊢ T₂ > [ w ]v M₁ · N₁ is ([ w ]v M₂ · N₂)
 
-reduce-closed : ∀ {T} {t t' : tm _ T} -> (t →* t') -> reduce T t' -> reduce T t
-reduce-closed {atom} p (N , (q1 , q2)) = N , ((→*-trans p q1) , q2)
-reduce-closed {T ⇝ S} p ((N , (q1 , q2)) , f) = (N , (→*-trans p q1 , q2)) , (λ x rx → reduce-closed (ap1* p) (f x rx))
+-- reduce : ∀ T -> tm ⊡ T -> Set
+-- reduce atom t = halts t
+-- reduce (T ⇝ S) t = halts t × (∀ (x : tm _ T) -> reduce T x -> reduce S (t · x))
 
-reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> tm _ U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : tm _ T} (w : reduce T t) ->
- ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
-reduce-ext θ w z = w
-reduce-ext θ w (s y) = θ y
+-- reduce-closed : ∀ {T} {t t' : tm _ T} -> (t →* t') -> reduce T t' -> reduce T t
+-- reduce-closed {atom} p (N , (q1 , q2)) = N , ((→*-trans p q1) , q2)
+-- reduce-closed {T ⇝ S} p ((N , (q1 , q2)) , f) = (N , (→*-trans p q1 , q2)) , (λ x rx → reduce-closed (ap1* p) (f x rx))
 
-lemma : ∀ {Γ Δ T S} -> (σ : sub Γ Δ) -> ∀ (N : tm Δ T) (M : tm (Γ , T) S) -> [ σ ,, N ] M ≡ [ v ,, N ] ([ sub-ext σ ] M)
-lemma σ N M = trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x → trans (sym []-id) (sym ([]nv-funct (v ,, N) s (σ x)))) refl)) (sym ([]-funct (v ,, N) (sub-ext σ) M))
+-- reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> tm _ U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : tm _ T} (w : reduce T t) ->
+--  ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
+-- reduce-ext θ w z = w
+-- reduce-ext θ w (s y) = θ y
 
-thm : ∀ {Γ T} (σ : ∀ {U} (x : var Γ U) -> tm ⊡ U) (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) (t : tm Γ T) -> reduce T ([ σ ] t)
-thm σ θ c = c , (→*-refl , c)
-thm σ θ (v y) = θ y
-thm σ θ (M · N) = proj₂ (thm σ θ M) ([ σ ] N) (thm σ θ N)
-thm σ θ (ƛ {T} {S} M) = (_ , (→*-refl , (ƛ _))) , (λ N redN → reduce-closed {S} β* (subst (reduce _) (lemma σ N M) (thm (σ ,, N) (reduce-ext θ redN) M)))
+-- lemma : ∀ {Γ Δ T S} -> (σ : sub Γ Δ) -> ∀ (N : tm Δ T) (M : tm (Γ , T) S) -> [ σ ,, N ] M ≡ [ v ,, N ] ([ sub-ext σ ] M)
+-- lemma σ N M = trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x → trans (sym []-id) (sym ([]nv-funct (v ,, N) s (σ x)))) refl)) (sym ([]-funct (v ,, N) (sub-ext σ) M))
 
-reify : ∀ {T} (t : tm _ T) -> reduce T t -> halts t
-reify {atom} t p = p
-reify {T ⇝ S} t (h , _) = h
+-- thm : ∀ {Γ T} (σ : ∀ {U} (x : var Γ U) -> tm ⊡ U) (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) (t : tm Γ T) -> reduce T ([ σ ] t)
+-- thm σ θ c = c , (→*-refl , c)
+-- thm σ θ (v y) = θ y
+-- thm σ θ (M · N) = proj₂ (thm σ θ M) ([ σ ] N) (thm σ θ N)
+-- thm σ θ (ƛ {T} {S} M) = (_ , (→*-refl , (ƛ _))) , (λ N redN → reduce-closed {S} β* (subst (reduce _) (lemma σ N M) (thm (σ ,, N) (reduce-ext θ redN) M)))
 
-done' : ∀ {T} (t : tm ⊡ T) -> halts t
-done' {T} t = reify _ (subst (reduce T) []-id (thm v (λ ()) t))
+-- reify : ∀ {T} (t : tm _ T) -> reduce T t -> halts t
+-- reify {atom} t p = p
+-- reify {T ⇝ S} t (h , _) = h
+
+-- done' : ∀ {T} (t : tm ⊡ T) -> halts t
+-- done' {T} t = reify _ (subst (reduce T) []-id (thm v (λ ()) t))
