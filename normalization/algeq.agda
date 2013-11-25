@@ -169,15 +169,15 @@ mutual
   ▹  : ∀ {T} {M : tm Γ T} -> isNeutral M -> isNormal M
   ƛ : ∀ {T S} (t : tm (Γ , T) S) -> isNormal (ƛ t)
 
-data _⇓_ {Γ T} (M : tm Γ T) : tm Γ T -> Set where
- eval : ∀ {N} -> M →* N -> isNormal N -> M ⇓ N
+-- data _⇓_ {Γ T} (M : tm Γ T) : tm Γ T -> Set where
+--  eval : ∀ {N} -> M →* N -> isNormal N -> M ⇓ N
 
 halts : ∀ {T} (t : tm ⊡ T) -> Set
 halts {T} t = ∃ (λ (n : tm _ T) → (t →* n) × isNormal n)
 
 mutual
  data _⊢_>_⇔_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
-  qat-base : ∀ {M N P Q} -> M ⇓ P -> N ⇓ Q -> Γ ⊢ atom > P ↔ Q -> Γ ⊢ atom > M ⇔ N
+  qat-base : ∀ {M N P Q} -> M →* P -> N →* Q -> Γ ⊢ atom > P ↔ Q -> Γ ⊢ atom > M ⇔ N
   qat-arrow : ∀ {T₁ T₂} {M N : tm Γ (T₁ ⇝ T₂)} -> (Γ , T₁) ⊢ T₂ > [ ↑ ]v M · (v z) ⇔ ([ ↑ ]v N · (v z))
              -> Γ ⊢ (T₁ ⇝ T₂) > M ⇔ N
  data _⊢_>_↔_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
@@ -213,15 +213,15 @@ monotone w (T₁ ⇝ T₂) {M₁} {M₂} p = λ w₁ {N₁ N₂} x → cong⊢>i
                                                           (cong (λ α → α · N₂) (sym ([]v-funct w₁ w M₂)))
                                                  (p (w₁ ∘ w) x)
 
-↔isNeutral₁ : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> isNeutral M
-↔isNeutral₁ qap-var = v _
-↔isNeutral₁ (qap-app p x) = ↔isNeutral₁ p · _
-↔isNeutral₁ qap-const = c
+-- ↔isNeutral₁ : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> isNeutral M
+-- ↔isNeutral₁ qap-var = v _
+-- ↔isNeutral₁ (qap-app p x) = ↔isNeutral₁ p · _
+-- ↔isNeutral₁ qap-const = c
 
-↔isNeutral₂ : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> isNeutral N
-↔isNeutral₂ qap-var = v _
-↔isNeutral₂ (qap-app p x) = ↔isNeutral₂ p · _
-↔isNeutral₂ qap-const = c
+-- ↔isNeutral₂ : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> isNeutral N
+-- ↔isNeutral₂ qap-var = v _
+-- ↔isNeutral₂ (qap-app p x) = ↔isNeutral₂ p · _
+-- ↔isNeutral₂ qap-const = c
 
 mutual
  reify : ∀ {Γ} T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ ⊢ T > M₁ ⇔ M₂
@@ -229,7 +229,7 @@ mutual
  reify (T ⇝ T₁) p = qat-arrow (reify T₁ (p ↑ (reflect T qap-var)))
 
  reflect : ∀ {Γ} T {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ ⊢ T > M₁ is M₂
- reflect atom p = qat-base (eval →*-refl (▹ (↔isNeutral₁ p))) (eval →*-refl (▹ (↔isNeutral₂ p))) p
+ reflect atom p = qat-base →*-refl →*-refl p
  reflect (T ⇝ T₁) p = λ w x → reflect T₁ (qap-app (↔monotone w p) (reify T x))
 
 -- reduce : ∀ T -> tm ⊡ T -> Set
