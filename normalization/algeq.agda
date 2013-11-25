@@ -351,6 +351,12 @@ data _⊢_>_≡_ Γ : ∀ T -> tm Γ T -> tm Γ T -> Set where
   qap-trans : ∀ {T} {M N O} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ O -> Γ ⊢ T > M ≡ O
   ƛ : ∀ {T₁ T₂} {M₁ M₂} -> (Γ , T₁) ⊢ T₂ > M₁ ≡ M₂ -> Γ ⊢ (T₁ ⇝ T₂) > (ƛ M₁) ≡ (ƛ M₂)
 
+⊢>≡-refl : ∀ {Γ T} (M : tm Γ T) -> Γ ⊢ T > M ≡ M
+⊢>≡-refl (v x) = qap-var
+⊢>≡-refl (M · M₁) = qap-app (⊢>≡-refl M) (⊢>≡-refl M₁)
+⊢>≡-refl (ƛ M) = ƛ (⊢>≡-refl M)
+⊢>≡-refl c = qap-const
+
 thm : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ≡ M2 -> ∀ {Γ'} (σ1 σ2 : sub Γ Γ') -> Γ' ⊢s Γ > σ1 is σ2 -> Γ' ⊢ T > ([ σ1 ] M1) is ([ σ2 ] M2)
 thm {M1 = M1} {M2 = M2} (qat-ext {T₁} {T₂} p) σ1 σ2 σ1isσ2 = λ w {N1} {N2} p0 -> cong⊢>is {!!} {!!} (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn σ1isσ2) p0))
 thm qap-var σ1 σ2 σ1isσ2 = σ1isσ2 _
@@ -362,9 +368,14 @@ thm (qap-sym p) σ1 σ2 σ1isσ2 = ⊢is-sym _ (thm p σ2 σ1 (⊢sis-sym σ1is�
 thm (qap-trans p p₁) σ1 σ2 σ1isσ2 = ⊢is-trans _ (thm p σ1 σ2 σ1isσ2) (thm p₁ σ2 σ2 (⊢sis-trans (⊢sis-sym σ1isσ2) σ1isσ2)) -- again interesting twist
 thm (ƛ p) σ1 σ2 σ1isσ2 = λ w {N1} {N2} x → closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-trans1 (β _ _) (→*-refl' {!!})) (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn σ1isσ2) x))
 
+id-rel : ∀ {Γ} -> Γ ⊢s Γ > v is v
+id-rel {⊡} ()
+id-rel {Γ , T} z = reflect T qap-var -- This could go by appealing to ⊢-ext if we had the equations we needed
+id-rel {Γ , T} (s x) = monotone ↑ _ (id-rel x)
+
+corollary : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ≡ M2 -> Γ ⊢ T > M1 is M2
+corollary d = cong⊢>is []-id []-id (thm d v v id-rel)
 
 -- Could we derive an algorithm more directly by bypassing ⇔?
-
-
 
 -- TODO: Add Unit type
