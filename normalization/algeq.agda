@@ -345,7 +345,8 @@ thm {M1 = M1} {M2 = M2} (qat-ext {T₁} {T₂} p) σ1 σ2 σ1isσ2 = λ w {N1} {
 thm qap-var σ1 σ2 σ1isσ2 = σ1isσ2 _
 thm (qap-app p p₁) σ1 σ2 σ1isσ2 = cong⊢>is {!!} {!!} (thm p σ1 σ2 σ1isσ2 id (thm p₁ σ1 σ2 σ1isσ2))
 thm qap-const σ1 σ2 σ1isσ2 = qat-base →*-refl →*-refl qap-const
-thm (β p p₁) σ1 σ2 σ1isσ2 = {!!}
+thm (β {T₁} {T₂} {M₁} {N₁} {M₂} {N₂} p p₁) σ1 σ2 σ1isσ2 with thm p (σ1 ,, ([ σ1 ] M₁)) (σ2 ,, ([ σ2 ] N₁)) (⊢s-pair σ1isσ2 (thm p₁ σ1 σ2 σ1isσ2))
+... | q = closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-refl' {!!}) q
 thm (qap-sym p) σ1 σ2 σ1isσ2 = ⊢is-sym _ (thm p σ2 σ1 (⊢sis-sym σ1isσ2))
 thm (qap-trans p p₁) σ1 σ2 σ1isσ2 = ⊢is-trans _ (thm p σ1 σ2 σ1isσ2) (thm p₁ σ2 σ2 (⊢sis-trans (⊢sis-sym σ1isσ2) σ1isσ2)) -- again interesting twist
 thm (ƛ p) σ1 σ2 σ1isσ2 = λ w {N1} {N2} x → closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-trans1 (β _ _) (→*-refl' {!!})) (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn σ1isσ2) x))
