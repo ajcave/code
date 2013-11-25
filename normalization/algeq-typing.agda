@@ -328,6 +328,8 @@ neutralNoStep*' : ∀ {Γ T} {M N O} -> M →* N -> Γ ⊢ T > O ↔ M -> M ≡ 
 neutralNoStep*' →*-refl p2 = refl
 neutralNoStep*' (→*-trans1 x p1) p2 = neutralNoStep' x p2
 
+-- I think this differs from lemma 3.3.(4) of HP05 because of a bug there? (in the appeal to 3.3.(4) in proof of transitivity)
+-- Think of this as a "synth" rule
 ↔≡tp : ∀ {Γ T T' M N O} -> Γ ⊢ T > M ↔ N -> Γ ⊢ T' > N ↔ O -> T ≡ T'
 ↔≡tp (qap-var x) (qap-var .x) = refl
 ↔≡tp (qap-app p1 x) (qap-app p2 x₁) with ↔≡tp p1 p2
@@ -439,8 +441,8 @@ open import Data.Empty
 -- dec-tp (T ⇝ T₁) (S ⇝ .T₁) | inj₂ y | inj₁ refl = inj₂ (λ x → y (⇝-inj1 x))
 -- dec-tp (T ⇝ T₁) (S ⇝ S₁) | inj₂ y | inj₂ y₁ = inj₂ (λ x → y (⇝-inj1 x))
 
--- This diverges a bit from the paper proofs because we used well-typed terms: we have to check that the types are equal first
--- mutual
+-- The first lemma has the form it does because it's a "synth" judgement
+--mutual
 --  dec1 : ∀ {Γ T} {M M' N N'} -> Γ ⊢ T > M ↔ M' -> Γ ⊢ T > N ↔ N' -> (Γ ⊢ T > M ↔ N) ⊎ (Γ ⊢ T > M ↔ N → ⊥)
 --  dec1 (qap-var x) (qap-var x) = {!!}
 --  dec1 qap-var (qap-app p2 x₁) = {!!}
@@ -462,3 +464,5 @@ open import Data.Empty
 -- test by well-founded induction on ▹wh, lexicographic with type? Maybe some kind of spine-form induction?
 
 -- TODO: Add Unit type
+-- This business with untyped terms and assuming that w is 'well-typed' looks tricky for Beluga (schemas)
+-- Maybe the intrinsically typed version is easier? How to repair it?
