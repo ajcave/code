@@ -188,6 +188,15 @@ _⊢_>_is_ : ∀ Γ T -> tm Γ T -> tm Γ T -> Set
 Γ ⊢ T₁ ⇝ T₂ > M₁ is M₂ = ∀ {Γ'} (w : vsubst Γ Γ') {N₁ N₂ : tm Γ' T₁} →
                            Γ' ⊢ T₁ > N₁ is N₂ → Γ' ⊢ T₂ > [ w ]v M₁ · N₁ is ([ w ]v M₂ · N₂)
 
+cong⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> M1 ≡ N1 -> M2 ≡ N2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
+cong⊢>is refl refl p = p
+
+monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ' ⊢ T > ([ w ]v M₁) is ([ w ]v M₂)
+monotone w atom p = {!!}
+monotone w (T₁ ⇝ T₂) {M₁} {M₂} p = λ w₁ {N₁ N₂} x → cong⊢>is (cong (λ α → α · N₁) (sym ([]v-funct w₁ w M₁)))
+                                                          (cong (λ α → α · N₂) (sym ([]v-funct w₁ w M₂)))
+                                                 (p (w₁ ∘ w) x)
+
 -- reduce : ∀ T -> tm ⊡ T -> Set
 -- reduce atom t = halts t
 -- reduce (T ⇝ S) t = halts t × (∀ (x : tm _ T) -> reduce T x -> reduce S (t · x))
