@@ -157,12 +157,20 @@ data _→*_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
 →*-trans →*-refl u = u
 →*-trans (→*-trans1 x t) u = →*-trans1 x (→*-trans t u)
 
-ap1* : ∀ {T S} {M1 M2 : tm ⊡ (T ⇝ S)} {N1 : tm _ T} -> M1 →* M2  -> (M1 · N1) →* (M2 · N1)
+ap1* : ∀ {Γ} {T S} {M1 M2 : tm Γ (T ⇝ S)} {N1 : tm Γ T} -> M1 →* M2  -> (M1 · N1) →* (M2 · N1)
 ap1* →*-refl = →*-refl
 ap1* (→*-trans1 x x₁) = →*-trans1 (ap1 x) (ap1* x₁)
 
 β* : ∀ {T S} {M : tm (⊡ , T) S} {N : tm ⊡ T} -> ((ƛ M) · N) →* [ v ,, N ] M
 β* = →*-trans1 (β _ _) →*-refl
+
+▹wh-wkn : ∀ {Γ} {T} {M N : tm Γ T} -> M ▹wh N -> ∀ {Γ'} {w : vsubst Γ Γ'} -> ([ w ]v M) ▹wh ([ w ]v N)
+▹wh-wkn (ap1 p) = ap1 (▹wh-wkn p)
+▹wh-wkn (β M N) = λ {Γ'} {w} -> subst₂ _▹wh_ refl {!!} (β ([ ext w ]v M) ([ w ]v N))
+
+→*-wkn : ∀ {Γ} {T} {M N : tm Γ T} -> M →* N -> ∀ {Γ'} {w : vsubst Γ Γ'} -> ([ w ]v M) →* ([ w ]v N)
+→*-wkn →*-refl = →*-refl
+→*-wkn (→*-trans1 x p) = →*-trans1 (▹wh-wkn x) (→*-wkn p)
 
 mutual
  data isNeutral {Γ} : ∀ {T} (t : tm Γ T) -> Set where
@@ -200,8 +208,12 @@ _⊢_>_is_ : ∀ Γ T -> tm Γ T -> tm Γ T -> Set
 cong⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> M1 ≡ N1 -> M2 ≡ N2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
 cong⊢>is refl refl p = p
 
+cong⊢>⇔ : ∀ {Γ T} {M1 M2 N1 N2} -> M1 ≡ N1 -> M2 ≡ N2 -> Γ ⊢ T > M1 ⇔ M2 -> Γ ⊢ T > N1 ⇔ N2
+cong⊢>⇔ refl refl p = p
+
 closed⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> N1 →* M1 -> N2 →* M2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
-closed⊢>is t1 t2 p = {!!}
+closed⊢>is {Γ} {atom} t1 t2 (qat-base x x₁ x₂) = qat-base (→*-trans t1 x) (→*-trans t2 x₁) x₂
+closed⊢>is {Γ} {T ⇝ T₁} t1 t2 p = λ w x → closed⊢>is (ap1* (→*-wkn t1)) (ap1* (→*-wkn t2)) (p w x)
 
 mutual
  ↔monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') {T} {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ↔ ([ w ]v M₂)
@@ -210,9 +222,8 @@ mutual
  ↔monotone w qap-const = qap-const
 
  ⇔monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') {T} {M₁ M₂} -> Γ ⊢ T > M₁ ⇔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ⇔ ([ w ]v M₂)
- ⇔monotone w (qat-base x x₁ x₂) = qat-base {!!} {!!} (↔monotone w x₂)
- ⇔monotone w (qat-arrow p) with ⇔monotone (ext w) p
- ... | q = qat-arrow {!!}
+ ⇔monotone w (qat-base x x₁ x₂) = qat-base (→*-wkn x) (→*-wkn x₁) (↔monotone w x₂)
+ ⇔monotone w (qat-arrow p) = qat-arrow (cong⊢>⇔ (cong₂ _·_ {!!} refl) (cong₂ _·_ {!!} refl) (⇔monotone (ext w) p))
 
 monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ' ⊢ T > ([ w ]v M₁) is ([ w ]v M₂)
 monotone w atom p = ⇔monotone w p
@@ -351,31 +362,9 @@ thm (qap-sym p) σ1 σ2 σ1isσ2 = ⊢is-sym _ (thm p σ2 σ1 (⊢sis-sym σ1is�
 thm (qap-trans p p₁) σ1 σ2 σ1isσ2 = ⊢is-trans _ (thm p σ1 σ2 σ1isσ2) (thm p₁ σ2 σ2 (⊢sis-trans (⊢sis-sym σ1isσ2) σ1isσ2)) -- again interesting twist
 thm (ƛ p) σ1 σ2 σ1isσ2 = λ w {N1} {N2} x → closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-trans1 (β _ _) (→*-refl' {!!})) (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn σ1isσ2) x))
 
--- reduce : ∀ T -> tm ⊡ T -> Set
--- reduce atom t = halts t
--- reduce (T ⇝ S) t = halts t × (∀ (x : tm _ T) -> reduce T x -> reduce S (t · x))
 
--- reduce-closed : ∀ {T} {t t' : tm _ T} -> (t →* t') -> reduce T t' -> reduce T t
--- reduce-closed {atom} p (N , (q1 , q2)) = N , ((→*-trans p q1) , q2)
--- reduce-closed {T ⇝ S} p ((N , (q1 , q2)) , f) = (N , (→*-trans p q1 , q2)) , (λ x rx → reduce-closed (ap1* p) (f x rx))
+-- Could we derive an algorithm more directly by bypassing ⇔?
 
--- reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> tm _ U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : tm _ T} (w : reduce T t) ->
---  ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
--- reduce-ext θ w z = w
--- reduce-ext θ w (s y) = θ y
 
--- lemma : ∀ {Γ Δ T S} -> (σ : sub Γ Δ) -> ∀ (N : tm Δ T) (M : tm (Γ , T) S) -> [ σ ,, N ] M ≡ [ v ,, N ] ([ sub-ext σ ] M)
--- lemma σ N M = trans (cong (λ (α : sub _ _) → [ α ] M) (var-dom-eq (λ x → trans (sym []-id) (sym ([]nv-funct (v ,, N) s (σ x)))) refl)) (sym ([]-funct (v ,, N) (sub-ext σ) M))
 
--- thm : ∀ {Γ T} (σ : ∀ {U} (x : var Γ U) -> tm ⊡ U) (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) (t : tm Γ T) -> reduce T ([ σ ] t)
--- thm σ θ c = c , (→*-refl , c)
--- thm σ θ (v y) = θ y
--- thm σ θ (M · N) = proj₂ (thm σ θ M) ([ σ ] N) (thm σ θ N)
--- thm σ θ (ƛ {T} {S} M) = (_ , (→*-refl , (ƛ _))) , (λ N redN → reduce-closed {S} β* (subst (reduce _) (lemma σ N M) (thm (σ ,, N) (reduce-ext θ redN) M)))
-
--- reify : ∀ {T} (t : tm _ T) -> reduce T t -> halts t
--- reify {atom} t p = p
--- reify {T ⇝ S} t (h , _) = h
-
--- done' : ∀ {T} (t : tm ⊡ T) -> halts t
--- done' {T} t = reify _ (subst (reduce T) []-id (thm v (λ ()) t))
+-- TODO: Add Unit type
