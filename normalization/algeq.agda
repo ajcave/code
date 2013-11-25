@@ -376,6 +376,9 @@ id-rel {Γ , T} (s x) = monotone ↑ _ (id-rel x)
 corollary : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ≡ M2 -> Γ ⊢ T > M1 is M2
 corollary d = cong⊢>is []-id []-id (thm d v v id-rel)
 
+completeness : ∀ {Γ T} {M1 M2 : tm Γ T} -> Γ ⊢ T > M1 ≡ M2 -> Γ ⊢ T > M1 ⇔ M2
+completeness d = reify _ (corollary d)
+
 -- Could we derive an algorithm more directly by bypassing ⇔?
 
 -- TODO: Add Unit type
