@@ -160,9 +160,14 @@ ap1* (→*-trans1 x x₁) = →*-trans1 (ap1 x) (ap1* x₁)
 β* : ∀ {T S} {M : tm (⊡ , T) S} {N : tm ⊡ T} -> ((ƛ M) · N) →* [ v ,, N ] M
 β* = →*-trans1 (β _ _) →*-refl
 
-data isNormal {Γ} : ∀ {T} (t : tm Γ T) -> Set where
- ƛ : ∀ {T S} (t : tm (Γ , T) S) -> isNormal (ƛ t)
- c : isNormal c
+mutual
+ data isNeutral {Γ} : ∀ {T} (t : tm Γ T) -> Set where
+  v : ∀ {T} (x : var Γ T) -> isNeutral (v x)
+  _·_ : ∀ {T S} {M : tm Γ (T ⇝ S)} -> isNeutral M -> (N : tm Γ T) -> isNeutral (M · N)
+  c : isNeutral c
+ data isNormal {Γ} : ∀ {T} (t : tm Γ T) -> Set where
+  ▹  : ∀ {T} {M : tm Γ T} -> isNeutral M -> isNormal M
+  ƛ : ∀ {T S} (t : tm (Γ , T) S) -> isNormal (ƛ t)
 
 data _⇓_ {Γ T} (M : tm Γ T) : tm Γ T -> Set where
  eval : ∀ {N} -> M →* N -> isNormal N -> M ⇓ N
@@ -191,11 +196,37 @@ _⊢_>_is_ : ∀ Γ T -> tm Γ T -> tm Γ T -> Set
 cong⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> M1 ≡ N1 -> M2 ≡ N2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
 cong⊢>is refl refl p = p
 
+mutual
+ ↔monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') {T} {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ↔ ([ w ]v M₂)
+ ↔monotone w p = {!!}
+
+ ⇔monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') {T} {M₁ M₂} -> Γ ⊢ T > M₁ ⇔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ⇔ ([ w ]v M₂)
+ ⇔monotone w p = {!!}
+
 monotone : ∀ {Γ Γ'} (w : vsubst Γ Γ') T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ' ⊢ T > ([ w ]v M₁) is ([ w ]v M₂)
-monotone w atom p = {!!}
+monotone w atom p = ⇔monotone w p
 monotone w (T₁ ⇝ T₂) {M₁} {M₂} p = λ w₁ {N₁ N₂} x → cong⊢>is (cong (λ α → α · N₁) (sym ([]v-funct w₁ w M₁)))
                                                           (cong (λ α → α · N₂) (sym ([]v-funct w₁ w M₂)))
                                                  (p (w₁ ∘ w) x)
+
+↔isNeutral₁ : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> isNeutral M
+↔isNeutral₁ qap-var = v _
+↔isNeutral₁ (qap-app p x) = ↔isNeutral₁ p · _
+↔isNeutral₁ qap-const = c
+
+↔isNeutral₂ : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> isNeutral N
+↔isNeutral₂ qap-var = v _
+↔isNeutral₂ (qap-app p x) = ↔isNeutral₂ p · _
+↔isNeutral₂ qap-const = c
+
+mutual
+ reify : ∀ {Γ} T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ ⊢ T > M₁ ⇔ M₂
+ reify atom p = p
+ reify (T ⇝ T₁) p = qat-arrow (reify T₁ (p ↑ (reflect T qap-var)))
+
+ reflect : ∀ {Γ} T {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ ⊢ T > M₁ is M₂
+ reflect atom p = qat-base (eval →*-refl (▹ (↔isNeutral₁ p))) (eval →*-refl (▹ (↔isNeutral₂ p))) p
+ reflect (T ⇝ T₁) p = λ w x → reflect T₁ (qap-app (↔monotone w p) (reify T x))
 
 -- reduce : ∀ T -> tm ⊡ T -> Set
 -- reduce atom t = halts t
