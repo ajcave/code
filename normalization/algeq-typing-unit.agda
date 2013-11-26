@@ -1,4 +1,4 @@
-module algeq-typing where
+module algeq-typing-unit where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Product
 open import Function
@@ -17,7 +17,7 @@ postulate
  atomic_tp : Set
 
 data tp : Set where
- atom : tp
+ atom unit : tp
  _⇝_ : (T : tp) -> (S : tp) -> tp
 
 data ctx (A : Set) : Set where
@@ -64,12 +64,14 @@ data tm (Γ : ctx Unit) : (T : Unit) -> Set where
  _·_ : tm Γ _ -> tm Γ _ -> tm Γ _
  ƛ : tm (Γ , _) _ -> tm Γ _
  c : tm Γ _
+ tt : tm Γ _
 
 [_]v : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
 [_]v σ (v y) = v (σ y)
 [_]v σ (M · N) = [ σ ]v M · [ σ ]v N
 [_]v σ (ƛ M) = ƛ ([ ext σ ]v M)
 [ σ ]v c = c
+[ σ ]v tt = tt
 
 sub : (Γ1 Γ2 : ctx Unit) -> Set
 sub Γ1 Γ2 = ∀ {T} -> var Γ1 T -> tm Γ2 T
@@ -86,7 +88,7 @@ sub-ext σ = ([ ↑ ]v ∘ σ) ,, (v z)
 [_] σ (M · N) = [ σ ] M · [ σ ] N
 [_] σ (ƛ M) = ƛ ([ sub-ext σ ] M)
 [ σ ] c = c
-
+[ σ ] tt = tt
 
 []v-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ]v R) ≡ [ σ1 ∘ σ2 ]v R
@@ -94,6 +96,7 @@ sub-ext σ = ([ ↑ ]v ∘ σ) ,, (v z)
 []v-funct σ1 σ2 (y · y') = cong₂ _·_ ([]v-funct σ1 σ2 y) ([]v-funct σ1 σ2 y')
 []v-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]v-funct (ext σ1) (ext σ2) y) (cong (λ (α : vsubst _ _) → [ α ]v y) (var-dom-eq (λ x → refl) refl)))
 []v-funct σ1 σ2 c = refl
+[]v-funct σ1 σ2 tt = refl
 
 []vn-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : vsubst Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ]v ([ σ2 ] R) ≡ [ [ σ1 ]v ∘₁ σ2 ] R
@@ -101,6 +104,7 @@ sub-ext σ = ([ ↑ ]v ∘ σ) ,, (v z)
 []vn-funct σ1 σ2 (y · y') = cong₂ _·_ ([]vn-funct σ1 σ2 y) ([]vn-funct σ1 σ2 y')
 []vn-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]vn-funct (ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]v-funct (ext σ1) s (σ2 x)) (sym ([]v-funct s σ1 (σ2 x)))) refl)))
 []vn-funct σ1 σ2 c = refl
+[]vn-funct σ1 σ2 tt = refl
 
 []nv-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : vsubst Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ] ([ σ2 ]v R) ≡ [ σ1 ∘₁ σ2 ] R
@@ -108,6 +112,7 @@ sub-ext σ = ([ ↑ ]v ∘ σ) ,, (v z)
 []nv-funct σ1 σ2 (y · y') = cong₂ _·_ ([]nv-funct σ1 σ2 y) ([]nv-funct σ1 σ2 y')
 []nv-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]nv-funct (sub-ext σ1) (ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → refl) refl)))
 []nv-funct σ1 σ2 c = refl
+[]nv-funct σ1 σ2 tt = refl
 
 []-funct : ∀ {Γ1 Γ2 Γ3 S} (σ1 : sub Γ2 Γ3) (σ2 : sub Γ1 Γ2) (R : tm Γ1 S)
   -> [ σ1 ] ([ σ2 ] R) ≡ [ [ σ1 ] ∘₁ σ2 ] R
@@ -115,6 +120,7 @@ sub-ext σ = ([ ↑ ]v ∘ σ) ,, (v z)
 []-funct σ1 σ2 (y · y') = cong₂ _·_ ([]-funct σ1 σ2 y) ([]-funct σ1 σ2 y')
 []-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]-funct (sub-ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]nv-funct (sub-ext σ1) s (σ2 x)) (sym ([]vn-funct s σ1 (σ2 x)))) refl)))
 []-funct σ1 σ2 c = refl
+[]-funct σ1 σ2 tt = refl
 
 sub-ext-idv : ∀ {A : Set} {Γ T} {U : A} (x : var (Γ , T) U) -> (ext id) x ≡ x
 sub-ext-idv z = refl
@@ -125,6 +131,7 @@ sub-ext-idv (s y) = refl
 []v-id {M = M · N} = cong₂ _·_ []v-id []v-id
 []v-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : vsubst _ _) → [ α ]v M) (funext-imp (λ x → funext (λ x' → sub-ext-idv x')))) []v-id)
 []v-id {M = c} = refl
+[]v-id {M = tt} = refl
 
 sub-ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> (sub-ext v) x ≡ v x
 sub-ext-id z = refl
@@ -135,6 +142,7 @@ sub-ext-id (s y) = refl
 []-id {M = M · N} = cong₂ _·_ []-id []-id
 []-id {M = ƛ M} = cong ƛ (trans (cong (λ (α : sub _ _) → [ α ] M) (funext-imp (λ x → funext (λ x' → sub-ext-id x')))) []-id)
 []-id {M = c} = refl
+[]-id {M = tt} = refl
 
 data _▹wh_ {Γ} : ∀ {T} -> tm Γ T -> tm Γ T -> Set where
  ap1 : ∀ {M1 M2 : tm Γ _} {N1 : tm _ _} -> M1 ▹wh M2  -> (M1 · N1) ▹wh (M2 · N1)
@@ -180,6 +188,7 @@ mutual
   qat-base : ∀ {M N P Q} -> M →* P -> N →* Q -> Γ ⊢ atom > P ↔ Q -> Γ ⊢ atom > M ⇔ N
   qat-arrow : ∀ {T₁ T₂} {M N} -> (Γ , T₁) ⊢ T₂ > [ ↑ ]v M · (v z) ⇔ ([ ↑ ]v N · (v z))
              -> Γ ⊢ (T₁ ⇝ T₂) > M ⇔ N
+  qat-unit : ∀ {M N} -> Γ ⊢ unit > M ⇔ N
  data _⊢_>_↔_ Γ : ∀ (T : tp) -> tm ⌊ Γ ⌋ _ -> tm ⌊ Γ ⌋ _ -> Set where
   qap-var : ∀ x -> Γ ⊢ (lookup Γ x) > (v x) ↔ (v x)
   qap-app : ∀ {T₁ T₂} {M₁ M₂ N₁ N₂}
@@ -196,6 +205,7 @@ _⊢_>_is_ : ∀ Γ T -> tm ⌊ Γ ⌋ _ -> tm ⌊ Γ ⌋ _ -> Set
 Γ ⊢ atom > M₁ is M₂ = Γ ⊢ atom > M₁ ⇔ M₂
 Γ ⊢ T₁ ⇝ T₂ > M₁ is M₂ = ∀ {Γ'} {w : vsubst ⌊ Γ ⌋ ⌊ Γ' ⌋} (W : Γ' ⊢w Γ > w) {N₁ N₂} →
                            Γ' ⊢ T₁ > N₁ is N₂ → Γ' ⊢ T₂ > [ w ]v M₁ · N₁ is ([ w ]v M₂ · N₂)
+Γ ⊢ unit > M₁ is M₂ = Unit
 
 cong⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> M1 ≡ N1 -> M2 ≡ N2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
 cong⊢>is refl refl p = p
@@ -206,6 +216,7 @@ cong⊢>⇔ refl refl p = p
 closed⊢>is : ∀ {Γ T} {M1 M2 N1 N2} -> N1 →* M1 -> N2 →* M2 -> Γ ⊢ T > M1 is M2 -> Γ ⊢ T > N1 is N2
 closed⊢>is {Γ} {atom} t1 t2 (qat-base x x₁ x₂) = qat-base (→*-trans t1 x) (→*-trans t2 x₁) x₂
 closed⊢>is {Γ} {T ⇝ T₁} t1 t2 p = λ w x → closed⊢>is (ap1* (→*-wkn t1)) (ap1* (→*-wkn t2)) (p w x)
+closed⊢>is {Γ} {unit} t1 t2 p = tt
 
 ⊢w-ext : ∀ {Γ' Γ T} {w : vsubst ⌊ Γ ⌋ ⌊ Γ' ⌋} -> Γ' ⊢w Γ > w -> (Γ' , T) ⊢w (Γ , T) > (ext w)
 ⊢w-ext d z = refl
@@ -229,21 +240,25 @@ mutual
  ⇔monotone' : ∀ {Γ Γ'} {w : vsubst _ _} (W : Γ' ⊢w Γ > w) {T} {M₁ M₂} -> Γ ⊢ T > M₁ ⇔ M₂ -> Γ' ⊢ T > ([ w ]v M₁) ⇔ ([ w ]v M₂)
  ⇔monotone' w (qat-base x x₁ x₂) = qat-base (→*-wkn x) (→*-wkn x₁) (↔monotone' w x₂)
  ⇔monotone' {w = w} W (qat-arrow {T} {S} p) = qat-arrow (cong⊢>⇔ (cong₂ _·_ {!!} refl) (cong₂ _·_ {!!} refl) (⇔monotone' {w = ext w} (⊢w-ext W) p))
+ ⇔monotone' w qat-unit = qat-unit
 
 monotone' : ∀ {Γ Γ'} {w : vsubst _ _} (W : Γ' ⊢w Γ > w) T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ' ⊢ T > ([ w ]v M₁) is ([ w ]v M₂)
 monotone' w atom p = ⇔monotone' w p
 monotone' {w = ww} w (T₁ ⇝ T₂) {M₁} {M₂} p = λ {Γ''} {w₁w} w₁ {N₁ N₂} x → cong⊢>is (cong (λ α → α · N₁) (sym ([]v-funct _ _ M₁)))
                                                           (cong (λ α → α · N₂) (sym ([]v-funct _ _ M₂)))
                                                  (p (⊢w∘ {w = ww} {w' = w₁w} w₁ w) x)
+monotone' w unit p = tt
 
 mutual
  reify : ∀ {Γ} T {M₁ M₂} -> Γ ⊢ T > M₁ is M₂ -> Γ ⊢ T > M₁ ⇔ M₂
  reify atom p = p
  reify (T ⇝ T₁) p = qat-arrow (reify T₁ (p ⊢wid (reflect T (qap-var z))))
+ reify unit p = qat-unit
 
  reflect : ∀ {Γ} T {M₁ M₂} -> Γ ⊢ T > M₁ ↔ M₂ -> Γ ⊢ T > M₁ is M₂
  reflect atom p = qat-base →*-refl →*-refl p
  reflect (T ⇝ T₁) p = λ w x → reflect T₁ (qap-app (↔monotone' w p) (reify T x))
+ reflect unit p = tt
 
 
 _⊢s_>_is_ : ∀ Γ Γ' (σ1 σ2 : sub ⌊ Γ' ⌋  ⌊ Γ ⌋) -> Set
@@ -268,10 +283,12 @@ mutual
  ⊢⇔-sym : ∀ {Γ T M N} -> Γ ⊢ T > M ⇔ N -> Γ ⊢ T > N ⇔ M
  ⊢⇔-sym (qat-base x x₁ x₂) = qat-base x₁ x (⊢↔-sym x₂)
  ⊢⇔-sym (qat-arrow p) = qat-arrow (⊢⇔-sym p)
+ ⊢⇔-sym qat-unit = qat-unit
 
 ⊢is-sym : ∀ {Γ} T {M N} -> Γ ⊢ T > M is N -> Γ ⊢ T > N is M
 ⊢is-sym atom p = ⊢⇔-sym p
 ⊢is-sym (T ⇝ T₁) p = λ w x → ⊢is-sym T₁ (p w (⊢is-sym T x))
+⊢is-sym unit p = tt
 
 determinacy : ∀ {Γ T} {M N O : tm Γ T} -> M ▹wh N -> M ▹wh O -> N ≡ O
 determinacy (ap1 {N1 = N1} p1) (ap1 p2) = cong (λ α → α · N1) (determinacy p1 p2)
@@ -335,17 +352,26 @@ mutual
  ⊢⇔-trans (qat-base x x₂ x₁) (qat-base x₃ x₄ x₅) with lem1 x₂ x₃ x₁ x₅
  ⊢⇔-trans (qat-base x x₂ x₁) (qat-base x₃ x₄ x₅) | refl = qat-base x x₄ (⊢↔-trans x₁ x₅)
  ⊢⇔-trans (qat-arrow p1) (qat-arrow p2) = qat-arrow (⊢⇔-trans p1 p2)
+ ⊢⇔-trans qat-unit qat-unit = qat-unit
 
 -- interesting twist...
 ⊢is-trans : ∀ {Γ} T {M N O} -> Γ ⊢ T > M is N -> Γ ⊢ T > N is O -> Γ ⊢ T > M is O
 ⊢is-trans atom p1 p2 = ⊢⇔-trans p1 p2
 ⊢is-trans (T ⇝ T₁) p1 p2 = λ w x → ⊢is-trans T₁ (p1 w x) (p2 w (⊢is-trans T (⊢is-sym T x) x))
+⊢is-trans unit p1 p2 = tt
 
 ⊢sis-sym : ∀ {Γ Γ'} {M N : sub ⌊ Γ' ⌋ ⌊ Γ ⌋} -> Γ ⊢s Γ' > M is N -> Γ ⊢s Γ' > N is M
 ⊢sis-sym p x = ⊢is-sym _ (p x)
 
 ⊢sis-trans : ∀ {Γ Γ'} {M N O : sub ⌊ Γ' ⌋ ⌊ Γ ⌋} -> Γ ⊢s Γ' > M is N -> Γ ⊢s Γ' > N is O -> Γ ⊢s Γ' > M is O
 ⊢sis-trans p1 p2 x = ⊢is-trans _ (p1 x) (p2 x)
+
+data _⊢_∶_ (Γ : ctx tp) : (M : tm ⌊ Γ ⌋ _) (T : tp) -> Set where
+ v : ∀ x -> Γ ⊢ (v x) ∶ (lookup Γ x)
+ _·_ : ∀ {T S M N} -> Γ ⊢ M ∶ (T ⇝ S) -> Γ ⊢ N ∶ T -> Γ ⊢ (M · N) ∶ S
+ ƛ : ∀ {T S M} -> (Γ , T) ⊢ M ∶ S -> Γ ⊢ (ƛ M) ∶ (T ⇝ S)
+ c : Γ ⊢ c ∶ atom
+ tt : Γ ⊢ tt ∶ unit
 
 data _⊢_>_≡_ Γ : ∀ T -> tm ⌊ Γ ⌋ _ -> tm ⌊ Γ ⌋ _ -> Set where
   qat-ext : ∀ {T₁ T₂} {M N} -> (Γ , T₁) ⊢ T₂ > [ ↑ ]v M · (v z) ≡ ([ ↑ ]v N · (v z))
@@ -363,6 +389,7 @@ data _⊢_>_≡_ Γ : ∀ T -> tm ⌊ Γ ⌋ _ -> tm ⌊ Γ ⌋ _ -> Set where
   qap-sym : ∀ {T} {M N} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ M
   qap-trans : ∀ {T} {M N O} -> Γ ⊢ T > M ≡ N -> Γ ⊢ T > N ≡ O -> Γ ⊢ T > M ≡ O
   ƛ : ∀ {T₁ T₂} {M₁ M₂} -> (Γ , T₁) ⊢ T₂ > M₁ ≡ M₂ -> Γ ⊢ (T₁ ⇝ T₂) > (ƛ M₁) ≡ (ƛ M₂)
+  qap-unit : ∀ {M N} -> Γ ⊢ M ∶ unit -> Γ ⊢ N ∶ unit -> Γ ⊢ unit > M ≡ N
 
 thm : ∀ {Γ T} {M1 M2} -> Γ ⊢ T > M1 ≡ M2 -> ∀ {Γ'} (σ1 σ2 : sub ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Γ' ⊢s Γ > σ1 is σ2 -> Γ' ⊢ T > ([ σ1 ] M1) is ([ σ2 ] M2)
 thm {M1 = M1} {M2 = M2} (qat-ext {T₁} {T₂} p) σ1 σ2 σ1isσ2 = λ {Γ''} {w} W {N1} {N2} p0 -> cong⊢>is {!!} {!!} (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-is-pair (⊢s-wkn W σ1isσ2) p0))
@@ -374,6 +401,7 @@ thm (β {T₁} {T₂} {M₁} {N₁} {M₂} {N₂} p p₁) σ1 σ2 σ1isσ2 with 
 thm (qap-sym p) σ1 σ2 σ1isσ2 = ⊢is-sym _ (thm p σ2 σ1 (⊢sis-sym σ1isσ2))
 thm (qap-trans p p₁) σ1 σ2 σ1isσ2 = ⊢is-trans _ (thm p σ1 σ2 σ1isσ2) (thm p₁ σ2 σ2 (⊢sis-trans (⊢sis-sym σ1isσ2) σ1isσ2)) -- again interesting twist
 thm (ƛ p) σ1 σ2 σ1isσ2 = λ {Γ''} {w} W {N1} {N2} x → closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-trans1 (β _ _) (→*-refl' {!!})) (thm p (([ _ ]v ∘ σ1) ,, N1) (([ _ ]v ∘ σ2) ,, N2) (⊢s-is-pair (⊢s-wkn W σ1isσ2) x))
+thm (qap-unit d1 d2) σ1 σ2 σ1isσ2 = tt
 
 id-rel : ∀ {Γ} -> Γ ⊢s Γ > v is v
 id-rel {⊡} ()
@@ -386,11 +414,6 @@ corollary d = cong⊢>is []-id []-id (thm d v v id-rel)
 completeness : ∀ {Γ T} {M1 M2} -> Γ ⊢ T > M1 ≡ M2 -> Γ ⊢ T > M1 ⇔ M2
 completeness d = reify _ (corollary d)
 
-data _⊢_∶_ (Γ : ctx tp) : (M : tm ⌊ Γ ⌋ _) (T : tp) -> Set where
- v : ∀ x -> Γ ⊢ (v x) ∶ (lookup Γ x)
- _·_ : ∀ {T S M N} -> Γ ⊢ M ∶ (T ⇝ S) -> Γ ⊢ N ∶ T -> Γ ⊢ (M · N) ∶ S
- ƛ : ∀ {T S M} -> (Γ , T) ⊢ M ∶ S -> Γ ⊢ (ƛ M) ∶ (T ⇝ S)
- c : Γ ⊢ c ∶ atom
 
 _⊢s_>_ : ∀ Γ' Γ (w : sub ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Set
 Γ' ⊢s Γ > σ = ∀ x -> Γ' ⊢ (σ x) ∶ (lookup Γ x)
@@ -402,12 +425,14 @@ _⊢s_>_ : ∀ Γ' Γ (w : sub ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Set
 ⊢>≡-refl (M · M₁) = qap-app (⊢>≡-refl M) (⊢>≡-refl M₁)
 ⊢>≡-refl (ƛ M) = ƛ (⊢>≡-refl M)
 ⊢>≡-refl c = qap-const
+⊢>≡-refl tt = qap-unit tt tt
 
 []v-typing : ∀ {Γ Γ' T M} (σ : vsubst ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Γ' ⊢w Γ > σ -> Γ ⊢ M ∶ T -> Γ' ⊢ ([ σ ]v M) ∶ T
 []v-typing σ d1 (v x) = subst (λ α → _ ⊢ v (σ x) ∶ α) (sym (d1 x)) (v (σ x))
 []v-typing σ d1 (d2 · d3) = ([]v-typing σ d1 d2) · ([]v-typing σ d1 d3)
 []v-typing σ d1 (ƛ d2) = ƛ ([]v-typing (ext σ) (⊢w-ext d1) d2)
 []v-typing σ d1 c = c
+[]v-typing σ1 d1 tt = tt
 
 
 ⊢sid : ∀ {Γ} -> Γ ⊢s Γ > v
@@ -426,6 +451,7 @@ _⊢s_>_ : ∀ Γ' Γ (w : sub ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Set
 []s-typing σ d1 (d2 · d3) = ([]s-typing σ d1 d2) · ([]s-typing σ d1 d3)
 []s-typing σ d1 (ƛ d2) = ƛ ([]s-typing (sub-ext σ) (⊢s-ext d1) d2)
 []s-typing σ d1 c = c
+[]s-typing σ d1 tt = tt
 
 ▹wh-tp-preserve : ∀ {Γ T M N} -> Γ ⊢ M ∶ T -> M ▹wh N -> Γ ⊢ N ∶ T
 ▹wh-tp-preserve (p₁ · p) (ap1 q) = ▹wh-tp-preserve p₁ q · p
@@ -447,6 +473,7 @@ mutual
  soundness1 : ∀ {Γ T} {M1 M2} -> Γ ⊢ M1 ∶ T -> Γ ⊢ M2 ∶ T -> Γ ⊢ T > M1 ⇔ M2 -> Γ ⊢ T > M1 ≡ M2
  soundness1 p1 p2 (qat-base x x₁ x₂) = qap-trans (closed⊢>≡₁ p1 x) (qap-trans (soundness2 (→*-tp-preserve p1 x) (→*-tp-preserve p2 x₁) x₂) (qap-sym (closed⊢>≡₁ p2 x₁)))
  soundness1 p1 p2 (qat-arrow {T} {S} p) = qat-ext (soundness1 ([]v-typing ↑ (⊢w↑ {T = T}) p1 · (v z)) ([]v-typing ↑ (⊢w↑ {T = T}) p2 · (v z)) p)
+ soundness1 p1 p2 qat-unit = qap-unit p1 p2
  
  soundness2 : ∀ {Γ T S U} {M1 M2} -> Γ ⊢ M1 ∶ T -> Γ ⊢ M2 ∶ S -> Γ ⊢ U > M1 ↔ M2 -> Γ ⊢ T > M1 ≡ M2
  soundness2 (v .x) (v x) (qap-var .x) = qap-var x
@@ -510,6 +537,7 @@ mutual
  dec2 (qat-arrow p1) (qat-arrow p2) with dec2 p1 p2
  dec2 (qat-arrow p1) (qat-arrow p2) | yes p = yes (qat-arrow p)
  dec2 (qat-arrow p1) (qat-arrow p2) | no ¬p = no (λ {(qat-arrow p3) → ¬p p3})
+ dec2 qat-unit qat-unit = yes qat-unit
 
 ⇔-dec : ∀ {Γ T} {M N} -> Γ ⊢ M ∶ T -> Γ ⊢ N ∶ T -> Dec (Γ ⊢ T > M ⇔ N)
 ⇔-dec d1 d2 = dec2 (completeness (⊢>≡-refl d1)) (completeness (⊢>≡-refl d2))
