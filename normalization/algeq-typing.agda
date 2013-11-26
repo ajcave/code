@@ -122,7 +122,7 @@ sub-ext σ = ([ ↑ ]v ∘ σ) ,, (v z)
 []-funct σ1 σ2 (ƛ y) = cong ƛ (trans ([]-funct (sub-ext σ1) (sub-ext σ2) y) (cong (λ (α : sub _ _) → [ α ] y) (var-dom-eq (λ x → trans ([]nv-funct (sub-ext σ1) s (σ2 x)) (sym ([]vn-funct s σ1 (σ2 x)))) refl)))
 []-funct σ1 σ2 c = refl
 
-sub-ext-idv : ∀ {Γ T U} (x : var (Γ , T) U) -> (ext id) x ≡ x
+sub-ext-idv : ∀ {A : Set} {Γ T} {U : A} (x : var (Γ , T) U) -> (ext id) x ≡ x
 sub-ext-idv z = refl
 sub-ext-idv (s y) = refl
 
@@ -423,13 +423,13 @@ completeness d = reify _ (corollary d)
 --  soundness2 (qap-app p x) = qap-app (soundness2 p) (soundness1 x)
 --  soundness2 qap-const = qap-const
 
-open import Data.Empty
+open import Relation.Nullary
 
-⇝-inj1 : ∀ {T1 T2 S1 S2} -> (T1 ⇝ S1) ≡ (T2 ⇝ S2) -> T1 ≡ T2
-⇝-inj1 refl = refl
+-- ⇝-inj1 : ∀ {T1 T2 S1 S2} -> (T1 ⇝ S1) ≡ (T2 ⇝ S2) -> T1 ≡ T2
+-- ⇝-inj1 refl = refl
 
-⇝-inj2 : ∀ {T1 T2 S1 S2} -> (S1 ⇝ T1) ≡ (S2 ⇝ T2) -> T1 ≡ T2
-⇝-inj2 refl = refl
+-- ⇝-inj2 : ∀ {T1 T2 S1 S2} -> (S1 ⇝ T1) ≡ (S2 ⇝ T2) -> T1 ≡ T2
+-- ⇝-inj2 refl = refl
 
 -- dec-tp : ∀ (T S : tp) -> (T ≡ S) ⊎ ((T ≡ S) -> ⊥)
 -- dec-tp atom atom = inj₁ refl
@@ -442,22 +442,49 @@ open import Data.Empty
 -- dec-tp (T ⇝ T₁) (S ⇝ S₁) | inj₂ y | inj₂ y₁ = inj₂ (λ x → y (⇝-inj1 x))
 
 -- The first lemma has the form it does because it's a "synth" judgement
---mutual
---  dec1 : ∀ {Γ T} {M M' N N'} -> Γ ⊢ T > M ↔ M' -> Γ ⊢ T > N ↔ N' -> (Γ ⊢ T > M ↔ N) ⊎ (Γ ⊢ T > M ↔ N → ⊥)
---  dec1 (qap-var x) (qap-var x) = {!!}
---  dec1 qap-var (qap-app p2 x₁) = {!!}
---  dec1 qap-var qap-const = {!!}
---  dec1 (qap-app p1 x) qap-var = {!!}
---  dec1 (qap-app {T1} p1 x) (qap-app {S1} p2 x₁) with dec-tp T1 S1
---  dec1 (qap-app p1 x₁) (qap-app p2 x₂) | inj₁ refl = {!!}
---  dec1 (qap-app p1 x) (qap-app p2 x₁) | inj₂ y = {!!}
---  dec1 (qap-app p1 x) qap-const = {!!}
---  dec1 qap-const qap-var = {!!}
---  dec1 qap-const (qap-app p2 x) = {!!}
---  dec1 qap-const qap-const = inj₁ qap-const
+--open import Decidable
 
---  dec2 : ∀ {Γ T} {M M' N N'} -> Γ ⊢ T > M ⇔ M' -> Γ ⊢ T > N ⇔ N' -> (Γ ⊢ T > M ⇔ N) ⊎ {!!}
---  dec2 p1 p2 = {!!}
+suc-inj : ∀ {A : Set} {Γ : ctx A} {T} {U} {x y : var Γ T} -> (s {A} {Γ} {T} {U} x) ≡ (s y) -> x ≡ y
+suc-inj refl = refl
+
+var-dec : ∀ {A : Set} {Γ : ctx A} {T} (x y : var Γ T) -> Dec (x ≡ y)
+var-dec z z = yes refl
+var-dec z (s y) = no (λ ())
+var-dec (s x) z = no (λ ())
+var-dec (s x) (s y) with var-dec x y
+var-dec (s x) (s .x) | yes refl = yes refl
+var-dec (s x) (s y) | no ¬p = no (λ x₁ → ¬p (suc-inj x₁))
+
+↔v-inj : ∀ {Γ T x y} -> Γ ⊢ T > (v x) ↔ (v y) -> x ≡ y
+↔v-inj (qap-var x) = refl
+
+mutual
+ dec1 : ∀ {Γ T T'} {M M' N N'} -> Γ ⊢ T > M ↔ M' -> Γ ⊢ T' > N ↔ N' -> Dec (∃ (λ S -> (Γ ⊢ S > M ↔ N)))
+ dec1 (qap-var x) (qap-var x₁) with var-dec x x₁
+ dec1 (qap-var x) (qap-var .x) | yes refl = yes (_ , qap-var x)
+ dec1 (qap-var x) (qap-var x₁) | no ¬p = no (λ {(S , y) → ¬p (↔v-inj y)})
+ dec1 (qap-var x) (qap-app p2 x₁) = no (λ {(S , ())})
+ dec1 (qap-var x) qap-const = no (λ {(S , ())})
+ dec1 (qap-app p1 x) (qap-var x₁) = no (λ {(S , ())})
+ dec1 (qap-app p1 x) (qap-app p2 x₁) with dec1 p1 p2
+ dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (S , p) with ↔≡tp p p2 | ↔≡tp (⊢↔-sym p) p1
+ dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (T₁ ⇝ T , p) | refl | refl with dec2 x x₁
+ dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (T₁ ⇝ T , p) | refl | refl | yes q = yes (T , qap-app p q)
+ dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (T₁ ⇝ T , p) | refl | refl | no ¬q = no (λ {(T' , qap-app q0 q1)  → ¬q {!use q0 and q1 to say .T1 = T1...!}})
+ dec1 (qap-app p1 x) (qap-app p2 x₁) | no ¬p = no (λ {(S , qap-app q0 q1) → ¬p (_ , q0)})
+ dec1 (qap-app p1 x) qap-const = no (λ {(S , ())})
+ dec1 qap-const (qap-var x) = no (λ {(S , ())})
+ dec1 qap-const (qap-app p2 x) = no (λ {(S , ())})
+ dec1 qap-const qap-const = yes (atom , qap-const)
+
+ dec2 : ∀ {Γ T} {M M' N N'} -> Γ ⊢ T > M ⇔ M' -> Γ ⊢ T > N ⇔ N' -> Dec (Γ ⊢ T > M ⇔ N)
+ dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) with dec1 x₂ x₅
+ dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) | yes (S , q) with ↔≡tp q x₅
+ dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) | yes (.atom , q) | refl = yes (qat-base x x₃ q)
+ dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) | no ¬p = no (λ {(qat-base q0 q1 q2) → ¬p (atom , {!confluence blah blah!})})
+ dec2 (qat-arrow p1) (qat-arrow p2) with dec2 p1 p2
+ dec2 (qat-arrow p1) (qat-arrow p2) | yes p = yes (qat-arrow p)
+ dec2 (qat-arrow p1) (qat-arrow p2) | no ¬p = no (λ {(qat-arrow p3) → ¬p p3})
 
 -- Could we derive an algorithm more directly by bypassing ⇔?
 -- Hmm. We could just prove weak head normalization (on open terms), and define ⇔. Then do implement conversion
