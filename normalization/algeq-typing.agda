@@ -212,6 +212,7 @@ mutual
 _⊢w_>_ : ∀ Γ' Γ (w : vsubst ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Set
 Γ' ⊢w Γ > w = ∀ x -> lookup Γ x ≡ (lookup Γ' (w x))
 
+
 _⊢_>_is_ : ∀ Γ T -> tm ⌊ Γ ⌋ _ -> tm ⌊ Γ ⌋ _ -> Set
 Γ ⊢ atom > M₁ is M₂ = Γ ⊢ atom > M₁ ⇔ M₂
 Γ ⊢ T₁ ⇝ T₂ > M₁ is M₂ = ∀ {Γ'} {w : vsubst ⌊ Γ ⌋ ⌊ Γ' ⌋} (W : Γ' ⊢w Γ > w) {N₁ N₂} →
@@ -269,15 +270,15 @@ mutual
 _⊢s_>_is_ : ∀ Γ Γ' (σ1 σ2 : sub ⌊ Γ' ⌋  ⌊ Γ ⌋) -> Set
 Γ ⊢s Γ' > σ1 is σ2 = ∀ x → Γ ⊢ (lookup Γ' x) > (σ1 x) is (σ2 x)
 
-⊢s-pair : ∀ {Γ Γ'} {σ1 σ2} {T} {M N} -> Γ ⊢s Γ' > σ1 is σ2 -> Γ ⊢ T > M is N -> Γ ⊢s (Γ' , T) > (σ1 ,, M) is (σ2 ,, N)
-⊢s-pair p1 p2 z = p2
-⊢s-pair p1 p2 (s x) = p1 x
+⊢s-is-pair : ∀ {Γ Γ'} {σ1 σ2} {T} {M N} -> Γ ⊢s Γ' > σ1 is σ2 -> Γ ⊢ T > M is N -> Γ ⊢s (Γ' , T) > (σ1 ,, M) is (σ2 ,, N)
+⊢s-is-pair p1 p2 z = p2
+⊢s-is-pair p1 p2 (s x) = p1 x
 
 ⊢s-wkn : ∀ {Γ Γ' Γ''} {σ1 σ2 : sub ⌊ Γ' ⌋ ⌊ Γ ⌋} {w} (W : Γ'' ⊢w Γ > w) -> Γ ⊢s Γ' > σ1 is σ2 -> Γ'' ⊢s Γ' > ([ w ]v ∘ σ1) is ([ w ]v ∘ σ2)
 ⊢s-wkn W p x = monotone' W _ (p x)
 
-⊢s-ext : ∀ {Γ Γ'} {σ1 σ2 : sub ⌊ Γ' ⌋ ⌊ Γ ⌋} {T} -> Γ ⊢s Γ' > σ1 is σ2 -> (Γ , T) ⊢s (Γ' , T) > (sub-ext σ1) is (sub-ext σ2)
-⊢s-ext {T = T} p = ⊢s-pair (⊢s-wkn (⊢w↑ {T = T}) p) (reflect _ (qap-var z))
+⊢s-is-ext : ∀ {Γ Γ'} {σ1 σ2 : sub ⌊ Γ' ⌋ ⌊ Γ ⌋} {T} -> Γ ⊢s Γ' > σ1 is σ2 -> (Γ , T) ⊢s (Γ' , T) > (sub-ext σ1) is (sub-ext σ2)
+⊢s-is-ext {T = T} p = ⊢s-is-pair (⊢s-wkn (⊢w↑ {T = T}) p) (reflect _ (qap-var z))
 
 
 
@@ -387,15 +388,15 @@ data _⊢_>_≡_ Γ : ∀ T -> tm ⌊ Γ ⌋ _ -> tm ⌊ Γ ⌋ _ -> Set where
   ƛ : ∀ {T₁ T₂} {M₁ M₂} -> (Γ , T₁) ⊢ T₂ > M₁ ≡ M₂ -> Γ ⊢ (T₁ ⇝ T₂) > (ƛ M₁) ≡ (ƛ M₂)
 
 thm : ∀ {Γ T} {M1 M2} -> Γ ⊢ T > M1 ≡ M2 -> ∀ {Γ'} (σ1 σ2 : sub ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Γ' ⊢s Γ > σ1 is σ2 -> Γ' ⊢ T > ([ σ1 ] M1) is ([ σ2 ] M2)
-thm {M1 = M1} {M2 = M2} (qat-ext {T₁} {T₂} p) σ1 σ2 σ1isσ2 = λ {Γ''} {w} W {N1} {N2} p0 -> cong⊢>is {!!} {!!} (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn W σ1isσ2) p0))
+thm {M1 = M1} {M2 = M2} (qat-ext {T₁} {T₂} p) σ1 σ2 σ1isσ2 = λ {Γ''} {w} W {N1} {N2} p0 -> cong⊢>is {!!} {!!} (thm p (([ w ]v ∘ σ1) ,, N1) (([ w ]v ∘ σ2) ,, N2) (⊢s-is-pair (⊢s-wkn W σ1isσ2) p0))
 thm (qap-var x) σ1 σ2 σ1isσ2 = σ1isσ2 x
 thm (qap-app p p₁) σ1 σ2 σ1isσ2 = cong⊢>is {!!} {!!} (thm p σ1 σ2 σ1isσ2 (λ x → refl) (thm p₁ σ1 σ2 σ1isσ2))
 thm qap-const σ1 σ2 σ1isσ2 = qat-base →*-refl →*-refl qap-const
-thm (β {T₁} {T₂} {M₁} {N₁} {M₂} {N₂} p p₁) σ1 σ2 σ1isσ2 with thm p (σ1 ,, ([ σ1 ] M₁)) (σ2 ,, ([ σ2 ] N₁)) (⊢s-pair σ1isσ2 (thm p₁ σ1 σ2 σ1isσ2))
+thm (β {T₁} {T₂} {M₁} {N₁} {M₂} {N₂} p p₁) σ1 σ2 σ1isσ2 with thm p (σ1 ,, ([ σ1 ] M₁)) (σ2 ,, ([ σ2 ] N₁)) (⊢s-is-pair σ1isσ2 (thm p₁ σ1 σ2 σ1isσ2))
 ... | q = closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-refl' {!!}) q
 thm (qap-sym p) σ1 σ2 σ1isσ2 = ⊢is-sym _ (thm p σ2 σ1 (⊢sis-sym σ1isσ2))
 thm (qap-trans p p₁) σ1 σ2 σ1isσ2 = ⊢is-trans _ (thm p σ1 σ2 σ1isσ2) (thm p₁ σ2 σ2 (⊢sis-trans (⊢sis-sym σ1isσ2) σ1isσ2)) -- again interesting twist
-thm (ƛ p) σ1 σ2 σ1isσ2 = λ {Γ''} {w} W {N1} {N2} x → closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-trans1 (β _ _) (→*-refl' {!!})) (thm p (([ _ ]v ∘ σ1) ,, N1) (([ _ ]v ∘ σ2) ,, N2) (⊢s-pair (⊢s-wkn W σ1isσ2) x))
+thm (ƛ p) σ1 σ2 σ1isσ2 = λ {Γ''} {w} W {N1} {N2} x → closed⊢>is (→*-trans1 (β _ _) (→*-refl' {!!})) (→*-trans1 (β _ _) (→*-refl' {!!})) (thm p (([ _ ]v ∘ σ1) ,, N1) (([ _ ]v ∘ σ2) ,, N2) (⊢s-is-pair (⊢s-wkn W σ1isσ2) x))
 
 id-rel : ∀ {Γ} -> Γ ⊢s Γ > v is v
 id-rel {⊡} ()
@@ -414,6 +415,10 @@ data _⊢_∶_ (Γ : ctx tp) : (M : tm ⌊ Γ ⌋ _) (T : tp) -> Set where
  ƛ : ∀ {T S M} -> (Γ , T) ⊢ M ∶ S -> Γ ⊢ (ƛ M) ∶ (T ⇝ S)
  c : Γ ⊢ c ∶ atom
 
+_⊢s_>_ : ∀ Γ' Γ (w : sub ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Set
+Γ' ⊢s Γ > σ = ∀ x -> Γ' ⊢ (σ x) ∶ (lookup Γ x)
+
+
 -- Only reflexive on well-typed terms
 ⊢>≡-refl : ∀ {Γ T M} -> Γ ⊢ M ∶ T -> Γ ⊢ T > M ≡ M
 ⊢>≡-refl (v x) = qap-var x
@@ -421,9 +426,33 @@ data _⊢_∶_ (Γ : ctx tp) : (M : tm ⌊ Γ ⌋ _) (T : tp) -> Set where
 ⊢>≡-refl (ƛ M) = ƛ (⊢>≡-refl M)
 ⊢>≡-refl c = qap-const
 
+[]v-typing : ∀ {Γ Γ' T M} (σ : vsubst ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Γ' ⊢w Γ > σ -> Γ ⊢ M ∶ T -> Γ' ⊢ ([ σ ]v M) ∶ T
+[]v-typing σ d1 (v x) = subst (λ α → _ ⊢ v (σ x) ∶ α) (sym (d1 x)) (v (σ x))
+[]v-typing σ d1 (d2 · d3) = ([]v-typing σ d1 d2) · ([]v-typing σ d1 d3)
+[]v-typing σ d1 (ƛ d2) = ƛ ([]v-typing (ext σ) (⊢w-ext d1) d2)
+[]v-typing σ d1 c = c
+
+
+⊢sid : ∀ {Γ} -> Γ ⊢s Γ > v
+⊢sid x = v x
+
+⊢s-pair : ∀ {Γ' Γ M T} {σ : sub ⌊ Γ ⌋ ⌊ Γ' ⌋} -> Γ' ⊢s Γ > σ -> Γ' ⊢ M ∶ T -> Γ' ⊢s (Γ , T) > (σ ,, M)
+⊢s-pair d1 d2 z = d2
+⊢s-pair d1 d2 (s x) = d1 x
+
+⊢s-ext : ∀ {Γ' Γ T} {σ : sub ⌊ Γ ⌋ ⌊ Γ' ⌋} -> Γ' ⊢s Γ > σ -> (Γ' , T) ⊢s (Γ , T) > (sub-ext σ)
+⊢s-ext d z = v z
+⊢s-ext {T = T} d (s x) = []v-typing ↑ (⊢w↑ {T = T}) (d x)
+
+[]s-typing : ∀ {Γ Γ' T M} (σ : sub ⌊ Γ ⌋ ⌊ Γ' ⌋) -> Γ' ⊢s Γ > σ -> Γ ⊢ M ∶ T -> Γ' ⊢ ([ σ ] M) ∶ T
+[]s-typing σ d1 (v x) = d1 x
+[]s-typing σ d1 (d2 · d3) = ([]s-typing σ d1 d2) · ([]s-typing σ d1 d3)
+[]s-typing σ d1 (ƛ d2) = ƛ ([]s-typing (sub-ext σ) (⊢s-ext d1) d2)
+[]s-typing σ d1 c = c
+
 ▹wh-tp-preserve : ∀ {Γ T M N} -> Γ ⊢ M ∶ T -> M ▹wh N -> Γ ⊢ N ∶ T
 ▹wh-tp-preserve (p₁ · p) (ap1 q) = ▹wh-tp-preserve p₁ q · p
-▹wh-tp-preserve (p · p₁) (β M N) = {!--todo substitution lemma!}
+▹wh-tp-preserve ((ƛ p) · p₁) (β M N) = []s-typing (v ,, N) (⊢s-pair v p₁) p
 
 ▹wh-closed⊢>≡₁ : ∀ {Γ T} {M1 N1} -> Γ ⊢ N1 ∶ T -> N1 ▹wh M1 -> Γ ⊢ T > N1 ≡ M1
 ▹wh-closed⊢>≡₁ (p · q) (ap1 t) = qap-app (▹wh-closed⊢>≡₁ p t) (⊢>≡-refl q)
@@ -440,7 +469,7 @@ closed⊢>≡₁ p (→*-trans1 x t1) = qap-trans (▹wh-closed⊢>≡₁ p x) (
 mutual
  soundness1 : ∀ {Γ T} {M1 M2} -> Γ ⊢ M1 ∶ T -> Γ ⊢ M2 ∶ T -> Γ ⊢ T > M1 ⇔ M2 -> Γ ⊢ T > M1 ≡ M2
  soundness1 p1 p2 (qat-base x x₁ x₂) = qap-trans (closed⊢>≡₁ p1 x) (qap-trans (soundness2 (→*-tp-preserve p1 x) (→*-tp-preserve p2 x₁) x₂) (qap-sym (closed⊢>≡₁ p2 x₁)))
- soundness1 p1 p2 (qat-arrow p) = qat-ext (soundness1 ({!!} · (v z)) ({!!} · (v z)) p)
+ soundness1 p1 p2 (qat-arrow {T} {S} p) = qat-ext (soundness1 ([]v-typing ↑ (⊢w↑ {T = T}) p1 · (v z)) ([]v-typing ↑ (⊢w↑ {T = T}) p2 · (v z)) p)
  
  soundness2 : ∀ {Γ T S U} {M1 M2} -> Γ ⊢ M1 ∶ T -> Γ ⊢ M2 ∶ S -> Γ ⊢ U > M1 ↔ M2 -> Γ ⊢ T > M1 ≡ M2
  soundness2 (v .x) (v x) (qap-var .x) = qap-var x
