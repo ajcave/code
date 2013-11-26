@@ -280,8 +280,6 @@ _⊢s_>_is_ : ∀ Γ Γ' (σ1 σ2 : sub ⌊ Γ' ⌋  ⌊ Γ ⌋) -> Set
 ⊢s-is-ext : ∀ {Γ Γ'} {σ1 σ2 : sub ⌊ Γ' ⌋ ⌊ Γ ⌋} {T} -> Γ ⊢s Γ' > σ1 is σ2 -> (Γ , T) ⊢s (Γ' , T) > (sub-ext σ1) is (sub-ext σ2)
 ⊢s-is-ext {T = T} p = ⊢s-is-pair (⊢s-wkn (⊢w↑ {T = T}) p) (reflect _ (qap-var z))
 
-
-
 mutual
  ⊢↔-sym : ∀ {Γ T M N} -> Γ ⊢ T > M ↔ N -> Γ ⊢ T > N ↔ M
  ⊢↔-sym (qap-var x) = qap-var x
@@ -533,6 +531,14 @@ mutual
  dec2 (qat-arrow p1) (qat-arrow p2) with dec2 p1 p2
  dec2 (qat-arrow p1) (qat-arrow p2) | yes p = yes (qat-arrow p)
  dec2 (qat-arrow p1) (qat-arrow p2) | no ¬p = no (λ {(qat-arrow p3) → ¬p p3})
+
+⇔-dec : ∀ {Γ T} {M N} -> Γ ⊢ M ∶ T -> Γ ⊢ N ∶ T -> Dec (Γ ⊢ T > M ⇔ N)
+⇔-dec d1 d2 = dec2 (completeness (⊢>≡-refl d1)) (completeness (⊢>≡-refl d2))
+
+≡-dec : ∀ {Γ T} {M N} -> Γ ⊢ M ∶ T -> Γ ⊢ N ∶ T -> Dec (Γ ⊢ T > M ≡ N)
+≡-dec d1 d2 with ⇔-dec d1 d2
+≡-dec d1 d2 | yes p = yes (soundness1 d1 d2 p)
+≡-dec d1 d2 | no ¬p = no (λ x → ¬p (completeness x))
 
 -- Could we derive an algorithm more directly by bypassing ⇔?
 -- Hmm. We could just prove weak head normalization (on open terms), and define ⇔. Then do implement conversion
