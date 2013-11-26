@@ -408,30 +408,51 @@ corollary d = cong⊢>is []-id []-id (thm d v v id-rel)
 completeness : ∀ {Γ T} {M1 M2} -> Γ ⊢ T > M1 ≡ M2 -> Γ ⊢ T > M1 ⇔ M2
 completeness d = reify _ (corollary d)
 
+data _⊢_∶_ (Γ : ctx tp) : (M : tm ⌊ Γ ⌋ _) (T : tp) -> Set where
+ v : ∀ x -> Γ ⊢ (v x) ∶ (lookup Γ x)
+ _·_ : ∀ {T S M N} -> Γ ⊢ M ∶ (T ⇝ S) -> Γ ⊢ N ∶ T -> Γ ⊢ (M · N) ∶ S
+ ƛ : ∀ {T S M} -> (Γ , T) ⊢ M ∶ S -> Γ ⊢ (ƛ M) ∶ (T ⇝ S)
+ c : Γ ⊢ c ∶ atom
+
 -- Only reflexive on well-typed terms
--- ⊢>≡-refl : ∀ {Γ T} M -> Γ ⊢ T > M ≡ M
--- ⊢>≡-refl (v x) = {!!} --qap-var
--- ⊢>≡-refl (M · M₁) = qap-app (⊢>≡-refl M) (⊢>≡-refl M₁)
--- ⊢>≡-refl (ƛ M) = {!!} --ƛ (⊢>≡-refl M)
--- ⊢>≡-refl c = {!!} --qap-const
+⊢>≡-refl : ∀ {Γ T M} -> Γ ⊢ M ∶ T -> Γ ⊢ T > M ≡ M
+⊢>≡-refl (v x) = qap-var x
+⊢>≡-refl (M · M₁) = qap-app (⊢>≡-refl M) (⊢>≡-refl M₁)
+⊢>≡-refl (ƛ M) = ƛ (⊢>≡-refl M)
+⊢>≡-refl c = qap-const
 
--- ▹wh-closed⊢>≡₁ : ∀ {Γ T} {M1 N1} -> N1 ▹wh M1 -> Γ ⊢ T > N1 ≡ M1
--- ▹wh-closed⊢>≡₁ (ap1 t) = qap-app (▹wh-closed⊢>≡₁ t) (⊢>≡-refl _) --qap-trans (qap-app {!!} (⊢>≡-refl _)) p
--- ▹wh-closed⊢>≡₁ (β M N) = β (⊢>≡-refl _) (⊢>≡-refl _)
+▹wh-tp-preserve : ∀ {Γ T M N} -> Γ ⊢ M ∶ T -> M ▹wh N -> Γ ⊢ N ∶ T
+▹wh-tp-preserve (p₁ · p) (ap1 q) = ▹wh-tp-preserve p₁ q · p
+▹wh-tp-preserve (p · p₁) (β M N) = {!--todo substitution lemma!}
 
--- closed⊢>≡₁ : ∀ {Γ T} {M1 N1} -> N1 →* M1 -> Γ ⊢ T > N1 ≡ M1
--- closed⊢>≡₁ →*-refl = ⊢>≡-refl _
--- closed⊢>≡₁ (→*-trans1 x t1) = qap-trans (▹wh-closed⊢>≡₁ x) (closed⊢>≡₁ t1)
+▹wh-closed⊢>≡₁ : ∀ {Γ T} {M1 N1} -> Γ ⊢ N1 ∶ T -> N1 ▹wh M1 -> Γ ⊢ T > N1 ≡ M1
+▹wh-closed⊢>≡₁ (p · q) (ap1 t) = qap-app (▹wh-closed⊢>≡₁ p t) (⊢>≡-refl q)
+▹wh-closed⊢>≡₁ ((ƛ p) · q) (β M N) = β (⊢>≡-refl p) (⊢>≡-refl q)
 
--- mutual
---  soundness1 : ∀ {Γ T} {M1 M2} -> Γ ⊢ T > M1 ⇔ M2 -> Γ ⊢ T > M1 ≡ M2
---  soundness1 (qat-base x x₁ x₂) = qap-trans (closed⊢>≡₁ x) (qap-trans (soundness2 x₂) (qap-sym (closed⊢>≡₁ x₁)))
---  soundness1 (qat-arrow p) = qat-ext (soundness1 p)
+→*-tp-preserve : ∀ {Γ T M N} -> Γ ⊢ M ∶ T -> M →* N -> Γ ⊢ N ∶ T
+→*-tp-preserve d →*-refl = d
+→*-tp-preserve d (→*-trans1 x q) = →*-tp-preserve (▹wh-tp-preserve d x) q
+
+closed⊢>≡₁ : ∀ {Γ T} {M1 N1} -> Γ ⊢ N1 ∶ T -> N1 →* M1 -> Γ ⊢ T > N1 ≡ M1
+closed⊢>≡₁ p →*-refl = ⊢>≡-refl p
+closed⊢>≡₁ p (→*-trans1 x t1) = qap-trans (▹wh-closed⊢>≡₁ p x) (closed⊢>≡₁ (▹wh-tp-preserve p x) t1)
+
+mutual
+ soundness1 : ∀ {Γ T} {M1 M2} -> Γ ⊢ M1 ∶ T -> Γ ⊢ M2 ∶ T -> Γ ⊢ T > M1 ⇔ M2 -> Γ ⊢ T > M1 ≡ M2
+ soundness1 p1 p2 (qat-base x x₁ x₂) = qap-trans (closed⊢>≡₁ p1 x) (qap-trans (soundness2 (→*-tp-preserve p1 x) (→*-tp-preserve p2 x₁) x₂) (qap-sym (closed⊢>≡₁ p2 x₁)))
+ soundness1 p1 p2 (qat-arrow p) = qat-ext (soundness1 ({!!} · (v z)) ({!!} · (v z)) p)
  
---  soundness2 : ∀ {Γ T} {M1 M2} -> Γ ⊢ T > M1 ↔ M2 -> Γ ⊢ T > M1 ≡ M2
---  soundness2 (qap-var x) = qap-var x
---  soundness2 (qap-app p x) = qap-app (soundness2 p) (soundness1 x)
---  soundness2 qap-const = qap-const
+ soundness2 : ∀ {Γ T S U} {M1 M2} -> Γ ⊢ M1 ∶ T -> Γ ⊢ M2 ∶ S -> Γ ⊢ U > M1 ↔ M2 -> Γ ⊢ T > M1 ≡ M2
+ soundness2 (v .x) (v x) (qap-var .x) = qap-var x
+ soundness2 (p0 · p1) (q0 · q1) (qap-app p x) with soundness2' p0 q0 p
+ ... | (refl , refl) = qap-app (soundness2 p0 q0 p) (soundness1 p1 q1 x)
+ soundness2 c c qap-const = qap-const
+
+ soundness2' : ∀ {Γ T S U} {M1 M2} -> Γ ⊢ M1 ∶ T -> Γ ⊢ M2 ∶ S -> Γ ⊢ U > M1 ↔ M2 -> (T ≡ U) × (S ≡ U)
+ soundness2' (v .x) (v x) (qap-var .x) = refl , refl
+ soundness2' (p1 · p2) (p3 · p4) (qap-app d x) with soundness2' p1 p3 d
+ ... | (refl , refl) = refl , refl
+ soundness2' c c qap-const = refl , refl
 
 open import Relation.Nullary
 
