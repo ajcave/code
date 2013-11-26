@@ -336,6 +336,17 @@ neutralNoStep*' (→*-trans1 x p1) p2 = neutralNoStep' x p2
 ↔≡tp (qap-app p1 x) (qap-app p2 x₁) | refl = refl
 ↔≡tp qap-const qap-const = refl
 
+
+lem0 : ∀ {Γ T} {M M1' M2' N1' N2'} -> M →* M1' -> M →* M2' -- -> N →* N1' -> N →* N2'
+ -> Γ ⊢ T > M1' ↔ N1' -> Γ ⊢ T > M2' ↔ N2' -> M1' ≡ M2'
+lem0 p1 p2 p5 p6 with confluence p1 p2
+lem0 p1 p2 p5 p6 | M'' , (s1 , s2) with neutralNoStep* s1 p5 | neutralNoStep* s2 p6
+lem0 p1 p2 p5 p6 | M'' , s1 , s2 | refl | refl = refl
+
+lem1 : ∀ {Γ T} {M M1' M2' N1' N2'} -> M →* M1' -> M →* M2' 
+ -> Γ ⊢ T > N1' ↔ M1' -> Γ ⊢ T > M2' ↔ N2' -> M1' ≡ M2'
+lem1 p1 p2 p5 p6 = lem0 p1 p2 (⊢↔-sym p5) p6
+
 mutual
  ⊢↔-trans : ∀ {Γ T M N O} -> Γ ⊢ T > M ↔ N -> Γ ⊢ T > N ↔ O -> Γ ⊢ T > M ↔ O
  ⊢↔-trans (qap-var x) (qap-var .x) = qap-var x
@@ -343,9 +354,8 @@ mutual
  ... | refl = qap-app (⊢↔-trans p1 p2) (⊢⇔-trans x x₁)
  ⊢↔-trans qap-const qap-const = qap-const
  ⊢⇔-trans : ∀ {Γ T M N O} -> Γ ⊢ T > M ⇔ N -> Γ ⊢ T > N ⇔ O -> Γ ⊢ T > M ⇔ O
- ⊢⇔-trans (qat-base x x₂ x₁) (qat-base x₃ x₄ x₅) with confluence x₂ x₃
- ... | N , q0 , q1 with neutralNoStep* q1 x₅ | neutralNoStep*' q0 x₁
- ... | refl | refl = qat-base x x₄ (⊢↔-trans x₁ x₅)
+ ⊢⇔-trans (qat-base x x₂ x₁) (qat-base x₃ x₄ x₅) with lem1 x₂ x₃ x₁ x₅
+ ⊢⇔-trans (qat-base x x₂ x₁) (qat-base x₃ x₄ x₅) | refl = qat-base x x₄ (⊢↔-trans x₁ x₅)
  ⊢⇔-trans (qat-arrow p1) (qat-arrow p2) = qat-arrow (⊢⇔-trans p1 p2)
 
 -- interesting twist...
@@ -425,24 +435,11 @@ completeness d = reify _ (corollary d)
 
 open import Relation.Nullary
 
--- ⇝-inj1 : ∀ {T1 T2 S1 S2} -> (T1 ⇝ S1) ≡ (T2 ⇝ S2) -> T1 ≡ T2
--- ⇝-inj1 refl = refl
+⇝-inj1 : ∀ {T1 T2 S1 S2} -> (T1 ⇝ S1) ≡ (T2 ⇝ S2) -> T1 ≡ T2
+⇝-inj1 refl = refl
 
--- ⇝-inj2 : ∀ {T1 T2 S1 S2} -> (S1 ⇝ T1) ≡ (S2 ⇝ T2) -> T1 ≡ T2
--- ⇝-inj2 refl = refl
-
--- dec-tp : ∀ (T S : tp) -> (T ≡ S) ⊎ ((T ≡ S) -> ⊥)
--- dec-tp atom atom = inj₁ refl
--- dec-tp atom (S ⇝ S₁) = inj₂ (λ ())
--- dec-tp (T ⇝ T₁) atom = inj₂ (λ ())
--- dec-tp (T ⇝ T₁) (S ⇝ S₁) with dec-tp T S | dec-tp T₁ S₁
--- dec-tp (T ⇝ T₁) (.T ⇝ .T₁) | inj₁ refl | inj₁ refl = inj₁ refl
--- dec-tp (T ⇝ T₁) (.T ⇝ S₁) | inj₁ refl | inj₂ y = inj₂ (λ x -> y (⇝-inj2 x)) -- would be a nice application of explicit injectivity proofs
--- dec-tp (T ⇝ T₁) (S ⇝ .T₁) | inj₂ y | inj₁ refl = inj₂ (λ x → y (⇝-inj1 x))
--- dec-tp (T ⇝ T₁) (S ⇝ S₁) | inj₂ y | inj₂ y₁ = inj₂ (λ x → y (⇝-inj1 x))
-
--- The first lemma has the form it does because it's a "synth" judgement
---open import Decidable
+⇝-inj2 : ∀ {T1 T2 S1 S2} -> (S1 ⇝ T1) ≡ (S2 ⇝ T2) -> T1 ≡ T2
+⇝-inj2 refl = refl
 
 suc-inj : ∀ {A : Set} {Γ : ctx A} {T} {U} {x y : var Γ T} -> (s {A} {Γ} {T} {U} x) ≡ (s y) -> x ≡ y
 suc-inj refl = refl
@@ -458,6 +455,7 @@ var-dec (s x) (s y) | no ¬p = no (λ x₁ → ¬p (suc-inj x₁))
 ↔v-inj : ∀ {Γ T x y} -> Γ ⊢ T > (v x) ↔ (v y) -> x ≡ y
 ↔v-inj (qap-var x) = refl
 
+
 mutual
  dec1 : ∀ {Γ T T'} {M M' N N'} -> Γ ⊢ T > M ↔ M' -> Γ ⊢ T' > N ↔ N' -> Dec (∃ (λ S -> (Γ ⊢ S > M ↔ N)))
  dec1 (qap-var x) (qap-var x₁) with var-dec x x₁
@@ -470,7 +468,7 @@ mutual
  dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (S , p) with ↔≡tp p p2 | ↔≡tp (⊢↔-sym p) p1
  dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (T₁ ⇝ T , p) | refl | refl with dec2 x x₁
  dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (T₁ ⇝ T , p) | refl | refl | yes q = yes (T , qap-app p q)
- dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (T₁ ⇝ T , p) | refl | refl | no ¬q = no (λ {(T' , qap-app q0 q1)  → ¬q {!use q0 and q1 to say .T1 = T1...!}})
+ dec1 (qap-app p1 x) (qap-app p2 x₁) | yes (T₁ ⇝ T , p) | refl | refl | no ¬q = no (λ {(T' , qap-app q0 q1)  → ¬q (subst (λ α → _ ⊢ α > _ ⇔ _) (⇝-inj1 (↔≡tp q0 p2)) q1)})
  dec1 (qap-app p1 x) (qap-app p2 x₁) | no ¬p = no (λ {(S , qap-app q0 q1) → ¬p (_ , q0)})
  dec1 (qap-app p1 x) qap-const = no (λ {(S , ())})
  dec1 qap-const (qap-var x) = no (λ {(S , ())})
@@ -481,7 +479,7 @@ mutual
  dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) with dec1 x₂ x₅
  dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) | yes (S , q) with ↔≡tp q x₅
  dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) | yes (.atom , q) | refl = yes (qat-base x x₃ q)
- dec2 (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) | no ¬p = no (λ {(qat-base q0 q1 q2) → ¬p (atom , {!confluence blah blah!})})
+ dec2 {Γ} (qat-base x x₁ x₂) (qat-base x₃ x₄ x₅) | no ¬p = no (λ {(qat-base q0 q1 q2) → ¬p (atom , subst₂ (λ α β₁ → Γ ⊢ atom > α ↔ β₁) (lem0 q0 x q2 x₂) (lem1 q1 x₃ q2 x₅) q2)})
  dec2 (qat-arrow p1) (qat-arrow p2) with dec2 p1 p2
  dec2 (qat-arrow p1) (qat-arrow p2) | yes p = yes (qat-arrow p)
  dec2 (qat-arrow p1) (qat-arrow p2) | no ¬p = no (λ {(qat-arrow p3) → ¬p p3})
