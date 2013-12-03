@@ -125,7 +125,7 @@ mutual
 
  data normal n : Set where
   ƛ : normal (n , *)  -> normal n
-  Π : normal n -> normal n  -> normal n
+  Π : normal n -> normal (n , *)  -> normal n
   tt : normal n
   ff : normal n
   bool : normal n
@@ -573,13 +573,10 @@ mutual
  reify (Π t x) w r = ƛ (reify (x (pop ∘ w) (reflect t (pop ∘ w) (▹ top))) id (r pop (reflect t (pop ∘ w) (▹ top))))
  reify (neut A) w r = neut r
 
--- reifyt : ∀ {n} {A : tm n} -> Ψ A -> normalizable A
--- reifyt bool = norm refl bool
--- reifyt (Π t x) with reifyt t | reifyt (x wkn-vsub (▹ top) (ψfunctid wkn-vsub t (reflect (Ψwkn wkn-vsub t) (▹ top))))
--- reifyt (Π {A} {B} t x) | norm y y' | norm y0 y1 = norm (Π* y (⟶*cong2 subeq7 refl y0)) (Π y' y1)
--- reifyt (neut x) = norm refl (neut x)
--- reifyt (closed x t) with reifyt t
--- reifyt (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁
+reifyt : ∀ {n} -> Ψ n -> normal n
+reifyt bool = bool
+reifyt (Π t x) = Π (reifyt t) (reifyt (x pop (reflect t pop (▹ top))))
+reifyt (neut A) = neut A
 
 
 -- data Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set where
