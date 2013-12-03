@@ -296,16 +296,11 @@ determinacy (ap1 ()) (β M N1)
 determinacy (β M N) (ap1 ())
 determinacy (β M N) (β .M .N) = refl
 
-determinacy* : ∀ {Γ T} {M N O : tm Γ T} -> M →* N -> M →* O -> (N →* O) ⊎ (O →* N)
-determinacy* →*-refl p2 = inj₁ p2
-determinacy* (→*-trans1 x p1) →*-refl = inj₂ (→*-trans1 x p1)
-determinacy* (→*-trans1 x p1) (→*-trans1 x₁ p2) with determinacy x x₁
-... | refl = determinacy* p1 p2
-
 confluence : ∀ {Γ T} {M N O : tm Γ T} -> M →* N -> M →* O -> ∃ (λ P -> (N →* P) × (O →* P))
-confluence p1 p2 with determinacy* p1 p2
-... | inj₁ q = _ , q , →*-refl
-... | inj₂ q = _ , →*-refl , q
+confluence {Γ} {tt} →*-refl s2 = _ , s2 , →*-refl
+confluence {Γ} {tt} s1 →*-refl = _ , →*-refl , s1
+confluence {Γ} {tt} (→*-trans1 x p1) (→*-trans1 x₁ p2) with determinacy x x₁
+confluence {Γ} {tt} (→*-trans1 {tt} x p1) (→*-trans1 {tt} x₁ p2) | refl = confluence p1 p2
 
 neutralNoStep : ∀ {Γ T} {C : Set} {M N O} -> M ▹wh N -> Γ ⊢ T > M ↔ O -> C
 neutralNoStep (ap1 p1) (qap-app p2 x) = neutralNoStep p1 p2
@@ -550,6 +545,7 @@ mutual
 -- Could we derive an algorithm more directly by bypassing ⇔?
 -- Hmm. We could just prove weak head normalization (on open terms), and define ⇔. Then do implement conversion
 -- test by well-founded induction on ▹wh, lexicographic with type? Maybe some kind of spine-form induction?
+-- Is it simpler to use a unary version of ⇔ and ↔ for parts of the proof?
 
 -- TODO: Add Unit type
 -- This business with untyped terms and assuming that w is 'well-typed' looks tricky for Beluga (schemas)

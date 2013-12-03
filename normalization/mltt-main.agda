@@ -142,7 +142,7 @@ mutual
  reflect : ∀ {n} {A M : tm n} -> (p : Ψ A) -> neutral M -> ψ p id-vsub M
  reflect bool r = _ , (refl , neut r)
  reflect (Π p y) r = (norm refl (neut r)) , f
-  where f : ∀ {k} (v : vsubst _ k) b q -> _
+  where f : ∀ {k} (v : vsubst _ k) b q -> ψ (y (v ∘v id-vsub) b q) id-vsub ([ v ]r _ · b)
         f v b q with reify (Ψwkn v p) (ψfunct'id v p (subst (λ α → ψ p α b) (sym id-v-right) q))
         f v b q | norm y' y0 = ψ-closed (y (v ∘v id-vsub) b q) (app2* y') (reflect (y (v ∘v id-vsub) b q) ((rename-neut r) · y0))
  reflect (neut y) r = _ , (refl , r)
@@ -166,8 +166,8 @@ mutual
  reflect' : ∀ {n} {A M : tm n} -> (p : Φ A) -> neutral M -> φ p id-vsub M
  reflect' bool r = _ , (refl , neut r)
  reflect' (Π p y) r = (norm refl (neut r)) , f
-  where f : ∀ {k} (v : vsubst _ k) b q -> _
-        f v b q with reify' (Φwkn v p) (φfunct'id v p (subst (λ α → φ p α b) (sym id-v-right) q))
+  where f : ∀ {k} (v : vsubst _ k) b q -> φ (y (v ∘v id-vsub) b q) id-vsub ([ v ]r _ · b)
+        f v b q  with reify' (Φwkn v p) (φfunct'id v p (subst (λ α → φ p α b) (sym id-v-right) q))
         f v b q | norm y' y0 = φ-closed (y (v ∘v id-vsub) b q) (app2* y') (reflect' (y (v ∘v id-vsub) b q) ((rename-neut r) · y0))
  reflect' (neut y) r = _ , (refl , r)
  reflect' (closed y y') r = reflect' y' r

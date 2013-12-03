@@ -306,6 +306,7 @@ mutual
   neut : ∀ {A} -> neutral A -> Ψ A
   closed : ∀ {A B} -> A ⟶ B -> Ψ B -> Ψ A
 
+ 
  {- ψ : ∀ {n} -> {A : tm n} -> Ψ A -> tm n -> Set
  ψ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
  ψ (Π p f) a = ?{- (normalizable a) × (∀ {m} (w : vsubst _ m) b (q : ψ (Ψwkn w p) b) →
@@ -319,6 +320,10 @@ mutual
  ψ (neut y) w a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ (closed y y') w a = ψ y' w a
 
+ 
+ Πc : ∀ {n} {A B} -> (p : Ψ A) -> (∀ {m} (w : vsubst n m) (a : tm m) -> ψ p w a -> Ψ ([ a /x] ([ vsub-ext w ]r B))) -> Ψ (Π A B)
+ Πc p y = Π p y
+
  Ψwkn : ∀ {n m} (w : vsubst n m) {A} -> Ψ A -> Ψ ([ w ]r A)
  Ψwkn w bool = bool
  Ψwkn w (Π {A} {B} t x) = Π (Ψwkn w t) (λ w' a x' → subst Ψ (cong [ a /x] (ren-ext-comp B)) (x (w' ∘v w) a (ψfunct w w' t x')))
@@ -327,14 +332,15 @@ mutual
 
  ψfunct : ∀ {n m k} {A} (w : vsubst n m) (w' : vsubst m k) (t : Ψ A) {a} -> ψ (Ψwkn w t) w' a -> ψ t (w' ∘v w) a
  ψfunct w w' bool r = r
- ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
+ ψfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , f 
   where f : ∀ {k'} (v : vsubst _ k') b q -> _
-        f v b q with (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q)) 
-        ... | z0 = let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
+        f v b q = let z0 = (ψfunct' w (v ∘v w') p (subst (λ α → ψ p α b) (ren-assoc w) q)) in
+                  let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
                     in ψeqdep (subst Ψ q1 (y ((v ∘v w') ∘v w) b (ψfunct w (v ∘v w') p z0)))
                               (y (v ∘v (w' ∘v w)) b q)
                               (sym (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) q1))
                               (r2 v b z0)
+
  ψfunct w w' (neut y) r = r
  ψfunct w w' (closed y y') r = ψfunct w w' y' r
 
@@ -342,12 +348,13 @@ mutual
  ψfunct' w w' bool r = r
  ψfunct' w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
   where f : ∀ {k'} (v : vsubst _ k') b q -> _
-        f v b q with ψfunct w (v ∘v w') p q
-        ... | z0 with r2 v b (subst (λ α → ψ p α b) (sym (ren-assoc w)) z0)
-        ... | z1 = ψeqdep (y (v ∘v (w' ∘v w)) b (subst (λ α -> ψ p α b) (sym (ren-assoc w)) z0))
+        f v b q = let z0 = ψfunct w (v ∘v w') p q in
+                  let z1 = r2 v b (subst (λ α → ψ p α b) (sym (ren-assoc w)) z0) in
+                    ψeqdep (y (v ∘v (w' ∘v w)) b (subst (λ α -> ψ p α b) (sym (ren-assoc w)) z0))
                           (subst Ψ (cong [ b /x] (ren-ext-comp B)) (y ((v ∘v w') ∘v w) b (ψfunct w (v ∘v w') p q)))
                           (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) (cong [ b /x] (ren-ext-comp B)))
                           z1
+
  ψfunct' w w' (neut y) r = r
  ψfunct' w w' (closed y y') r = ψfunct' w w' y' r
 
@@ -443,8 +450,8 @@ mutual
  φfunct w w' bool r = r
  φfunct w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
   where f : ∀ {k'} (v : vsubst _ k') b q -> _
-        f v b q with (φfunct' w (v ∘v w') p (subst (λ α → φ p α b) (ren-assoc w) q)) 
-        ... | z0 = let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
+        f v b q = let z0 = (φfunct' w (v ∘v w') p (subst (λ α → φ p α b) (ren-assoc w) q)) in
+                  let q1 = cong [ b /x] (ren-ext-comp {w = w} {w' = (v ∘v w')} B)
                     in φeqdep (subst Φ q1 (y ((v ∘v w') ∘v w) b (φfunct w (v ∘v w') p z0)))
                               (y (v ∘v (w' ∘v w)) b q)
                               (sym (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) q1))
@@ -457,9 +464,9 @@ mutual
  φfunct' w w' bool r = r
  φfunct' w w' (Π {A} {B} p y) (r1 , r2) = r1 , f
   where f : ∀ {k'} (v : vsubst _ k') b q -> _
-        f v b q with φfunct w (v ∘v w') p q
-        ... | z0 with r2 v b (subst (λ α → φ p α b) (sym (ren-assoc w)) z0)
-        ... | z1 = φeqdep (y (v ∘v (w' ∘v w)) b (subst (λ α -> φ p α b) (sym (ren-assoc w)) z0))
+        f v b q = let z0 = φfunct w (v ∘v w') p q in
+                  let z1 = r2 v b (subst (λ α → φ p α b) (sym (ren-assoc w)) z0) in
+                       φeqdep (y (v ∘v (w' ∘v w)) b (subst (λ α -> φ p α b) (sym (ren-assoc w)) z0))
                           (subst Φ (cong [ b /x] (ren-ext-comp B)) (y ((v ∘v w') ∘v w) b (φfunct w (v ∘v w') p q)))
                           (trans (cong (λ α → [ b /x] ([ vsub-ext α ]r B)) (ren-assoc w)) (cong [ b /x] (ren-ext-comp B)))
                           z1
