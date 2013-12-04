@@ -344,6 +344,47 @@ mutual
  inv1 w v (Π t x) q = {!!}
  inv1 w v (neut A) q = refl
 
+mutual
+ data Φ n : Set where
+  bool : Φ n
+  Π : (p : Φ n) -> (∀ {m} (w : vsubst n m) -> φ p m w -> Φ m) -> Φ n
+  neut : (A : neutral n) -> Φ n
+  set : Φ n
+  --closed : ∀ {A B} -> A ⟶ B -> Φ -> Φ
+
+ φ : ∀ {n} -> Φ n -> ∀ m (w : vsubst n m) -> Set
+ φ bool m w = normal m
+ φ (Π p f) m w = ∀ {k} (v : vsubst m k) (q : φ p k (v ∘ w)) → φ (f (v ∘ w) q) k id
+ φ (neut y) m w  = neutral m
+ φ set m w = Ψ m
+
+-- TODO: If I'm interested in type preservation, the appropriate thing seems to be to normalize typing derivations directly?
+
+mutual
+ Φwkn : ∀ {n m} (w : vsubst n m) -> Φ n -> Φ m
+ Φwkn w bool = bool
+ Φwkn w (Π t x) = Π (Φwkn w t) (λ w₁ x₁ → x (w₁ ∘ w) (φfunct w w₁ t x₁))
+ Φwkn w (neut x) = neut ([ w ]neut x)
+ Φwkn w set = set
+
+ φfunct : ∀ {n m k} (w : vsubst n m) (w' : vsubst m k) (t : Φ n) -> φ (Φwkn w t) k w' -> φ t k (w' ∘ w)
+ φfunct w w' bool r = r
+ φfunct w w' (Π t y) r = λ v q → subst (λ α → φ (y (v ∘ w' ∘ w) α) _ id) (φinv1 w (v ∘ w') t q) (r v (φfunct' w (v ∘ w') t q))
+ φfunct w w' (neut A) r = r
+ φfunct w w' set r = r
+
+ φfunct' : ∀ {n m k} (w : vsubst n m) (w' : vsubst m k) (t : Φ n)  -> φ t k (w' ∘ w) -> φ (Φwkn w t) k w'
+ φfunct' w w' bool r = r
+ φfunct' w w' (Π t x) r = λ v q → r v (φfunct w (v ∘ w') t q)
+ φfunct' w w' (neut A) r = r
+ φfunct' w w' set r = r
+
+ φinv1 : ∀ {n m k} (w : vsubst n m) (v : vsubst m k) (t : Φ n) (q : φ t k (v ∘ w)) -> φfunct w v t (φfunct' w v t q) ≡ q
+ φinv1 w v bool q = refl
+ φinv1 w v (Π t x) q = {!!}
+ φinv1 w v (neut A) q = refl
+ φinv1 w v set q = refl
+
 
 
 --  ψfunct w w' (closed y y') r = ψfunct w w' y' r
@@ -576,38 +617,91 @@ mutual
 reifyt : ∀ {n} -> Ψ n -> normal n
 reifyt bool = bool
 reifyt (Π t x) = Π (reifyt t) (reifyt (x pop (reflect t pop (▹ top))))
-reifyt (neut A) = neut A
+reifyt (neut A) = neut A 
+
+mutual
+ reflect' : ∀ {n m} (p : Φ n) (w : vsubst n m) -> neutral m -> φ p m w
+ reflect' bool w r = neut r
+ reflect' (Π t x) w r = λ v q → reflect' (x (v ∘ w) q) id ([ v ]neut r · (reify' t (v ∘ w) q))
+ reflect' (neut A) w r = r
+ reflect' set w r = neut r
+
+ reify' : ∀ {n m} (p : Φ n) (w : vsubst n m) -> φ p m w -> normal m
+ reify' bool w r = r
+ reify' (Π t x) w r = ƛ (reify' (x (pop ∘ w) (reflect' t (pop ∘ w) (▹ top))) id (r pop (reflect' t (pop ∘ w) (▹ top))))
+ reify' (neut A) w r = neut r
+ reify' set w r = reifyt r
+
+--reifyt : ∀ {n} -> Ψ n -> normal n
+--reifyt bool = bool
+--reifyt (Π t x) = Π (reifyt t) (reifyt (x pop (reflect t pop (▹ top))))
+--reifyt (neut A) = neut A 
+
+data Φs m : ∀ (n : ctx Unit) -> Set where
+ ⊡ : Φs m ⊡
+ _,_ : ∀ {n} -> Φs m n -> Φ m -> Φs m (n , *)
+
+data φs {m} : ∀ {n} -> Φs m n -> Set where
+ ⊡ : φs ⊡
+ _,[_]_ : ∀ {n} {ps : Φs m n} -> φs ps -> ∀ p -> φ p _ id -> φs (ps , p)
+
+_⊨type : ∀ n -> Set
+n ⊨type = ∀ {m} (ps : Φs m n) -> φs ps -> Φ m
+
+_⊨_ : ∀ n -> n ⊨type -> Set
+n ⊨ d = ∀ {m} {ps : Φs m n} (qs : φs ps) -> φ (d ps qs) _ id
+
+--_⊨ : ∀ n -> Set
+--n ⊨ = ∀ {m} {ps : Φs n m} (qs : φs ps) (p : Φ m) -> φ p _ id
+
+Φswkn : ∀ {n m k} (w : vsubst m k) -> Φs m n -> Φs k n
+Φswkn w ⊡ = ⊡
+Φswkn w (y , y') = (Φswkn w y) , (Φwkn w y')
+
+φwkn : ∀ {n m k} {w : vsubst n m} (v : vsubst m k) (p : Φ n) -> φ p _ w -> φ p _ (v ∘ w)
+φwkn v bool x = {!!}
+φwkn v (Π p y) x = λ v₁ q → x (v₁ ∘ v) q
+φwkn v (neut A) x = [ v ]neut x
+φwkn v set x = Ψwkn v x
 
 
--- data Φs : ∀ {n m} -> dctx n -> tsubst n m -> Set where
---  ⊡ : ∀ {m} -> Φs {m = m} ⊡ tt
---  _,_ : ∀ {n m} {Γ} {σ : tsubst n m} {A} {a} -> Φs Γ σ -> Φ ([ σ ]t A) -> Φs (Γ , A) (σ , a)
+φswkn : ∀ {n m k} (w : vsubst m k) {ps : Φs m n} -> φs ps -> φs (Φswkn w ps)
+φswkn w ⊡ = ⊡
+φswkn w (y ,[ p ] y') = (φswkn w y) ,[ (Φwkn w p) ] φfunct' w id p (φwkn w p y')
 
--- data φs : ∀ {n m} -> (Γ : dctx n) -> (σ : tsubst n m) -> Φs Γ σ -> Set where
---  ⊡ : ∀ {m} -> φs {m = m} ⊡ tt ⊡
---  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> φs Γ σ ps -> ∀ p -> φ p id-vsub a -> φs (Γ , A) (σ , a) (ps , p)
 
--- _⊨_type : ∀ {n} (Γ : dctx n) -> tm n -> Set
--- Γ ⊨ A type = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Φ ([ σ ]t A)
-
--- _⊨_∶'_[_] : ∀ {n} (Γ : dctx n) (M : tm n) A -> Γ ⊨ A type -> Set
--- Γ ⊨ M ∶' A [ d ] = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) -> φ (d qs) id-vsub ([ σ ]t M)
-
--- _⊨_∶_ : ∀ {n} (Γ : dctx n) (M : tm n) A -> Set
--- Γ ⊨ M ∶ A = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} (qs : φs Γ σ ps) (p : Φ ([ σ ]t A)) -> φ p id-vsub ([ σ ]t M)
-
--- mutual
---  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> Γ ⊨ A type
---  lem1 Γ t = ?
+mutual
+  lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> n ⊨type
+  lem1 Γ set = λ ps x → set
+  lem1 Γ (Π {A} {B} t t₁) = λ ps x → Π (lem1 Γ t ps x)
+    (λ w x₁ → lem1 (Γ , A) t₁ _ (φswkn w x ,[ Φwkn w (lem1 Γ t ps x) ] φfunct' w id (lem1 Γ t ps x) x₁))
+  lem1 Γ (emb x) = λ ps x₁ → {!!}
  
---  lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
---  lem2 Γ t = ?
+  lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> n ⊨type
+  lem2 Γ bool ps x = set
+  lem2 Γ tt ps x = bool
+  lem2 Γ ff ps x = bool
+  lem2 Γ (▹ x₁ x₂) ps x = lem1 Γ x₁ ps x
+  lem2 Γ (Π t t₁) ps x = set
+  lem2 Γ (ƛ x t) ps x₁ = Π (lem1 Γ x ps x₁) (λ w x₂ → lem2 (Γ , _) t _ (φswkn w x₁ ,[ Φwkn w (lem1 Γ x ps x₁) ] φfunct' w id (lem1 Γ x ps x₁) x₂))
+  lem2 Γ (t · t₁) ps x with lem2 Γ t₁ ps x
+  ... | q = {!!}
+  lem2 Γ (if x1 t t₁ t₂) ps x = lem1 (Γ , bool) x1 _ (x ,[ bool ] {!!})
+  lem2 Γ (conv x1 x₁ t) ps x = {!!}
 
 --  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
 --  lem3 Γ t = ?
 
---  lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
---  lem3' Γ t = ?
+  lem3' : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> n ⊨ (lem2 Γ d)
+  lem3' Γ bool = λ qs → bool
+  lem3' Γ tt = λ qs → tt
+  lem3' Γ ff = λ qs → ff
+  lem3' Γ (▹ x₁ x₂) = λ qs → {!!}
+  lem3' Γ (Π t t₁) = λ qs → Π {!!} {!!}
+  lem3' Γ (ƛ x t) = λ qs v q → {!!}
+  lem3' Γ (t · t₁) = {!!}
+  lem3' Γ (if x t t₁ t₂) = {!!}
+  lem3' Γ (conv x x₁ t) = {!!}
 
 -- mutual
 --  idΦ : ∀ {n} {Γ : dctx n} -> wfctx Γ -> Φs Γ id-tsub
