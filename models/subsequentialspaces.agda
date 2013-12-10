@@ -56,6 +56,9 @@ inr⁺ = inj₂ , inr
 _∘⁺_ : ∀ {A B C} -> Arr B C -> Arr A B -> Arr A C
 (f , contf) ∘⁺ (g , contg)  = (f ∘ g) , contf ∘ contg
 
+id⁺ : ∀ {A} -> Arr A A
+id⁺ = id , id
+
 fst⁺ : ∀ {A B} -> Arr (A ×⁺ B) A
 fst⁺ = proj₁ , proj₁
 
