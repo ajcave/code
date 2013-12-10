@@ -80,11 +80,19 @@ snd⁺ = proj₂ , proj₂
 eval⁺ : ∀ {A B} -> Arr ((A ⇒⁺ B) ×⁺ A) B
 eval⁺ = (λ { ((f , cont1) , x)  → f x }) , (λ { (fconv , xconv) → fconv xconv })
 
-record convℕ (ns : ℕ -> ℕ) (n : ℕ) : Set where
+record ↝ℕ (ns : ℕ -> ℕ) (n : ℕ) : Set where
  field 
   bound : ℕ -- Can make irrelevant...
   prop : ∀ m → m ≥ bound → ns m ≡ n
 
+constConvℕ : (n : ℕ) -> ↝ℕ (λ _ -> n) n
+constConvℕ n = record { bound = 0; prop = λ m x → refl }
+
 ℕ⁺ : SubSeq
-ℕ⁺ = subseq ℕ convℕ (λ x → record { bound = 0; prop = λ m x₁ → refl })
+ℕ⁺ = subseq ℕ ↝ℕ constConvℕ
+
+0⁺ : ∀ {Γ} -> Arr Γ ℕ⁺
+0⁺ {subseq UΓ ↝γ idγ} = (λ _ → 0) , (λ _ → constConvℕ 0)
+
+
  
