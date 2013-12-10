@@ -72,4 +72,7 @@ snd⁺ = proj₂ , proj₂
 
 λ⁺ : ∀ {A B C} -> Arr (A ×⁺ B) C -> Arr A (B ⇒⁺ C)
 λ⁺ {subseq UA _↝₁_ ida} (f , cont) = (λ x → (λ x₁ → f (x , x₁)) , (λ x₂ → cont (ida x , x₂))) , (λ x₁ x₃ → cont (x₁ , x₃))
+
+eval⁺ : ∀ {A B} -> Arr ((A ⇒⁺ B) ×⁺ A) B
+eval⁺ = (λ { ((f , cont1) , x)  → f x }) , (λ { (fconv , xconv) → fconv xconv })
  
