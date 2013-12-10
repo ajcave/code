@@ -56,4 +56,5 @@ fst⁺ = proj₁ , proj₁
 snd⁺ : ∀ {A B} -> Arr (A ×⁺ B) B
 snd⁺ = proj₂ , proj₂
 
-
+_,⁺_ : ∀ {A B C} -> Arr C A -> Arr C B -> Arr C (A ×⁺ B)
+(f , contf) ,⁺ (g , contg) = < f , g > , < contf , contg >
