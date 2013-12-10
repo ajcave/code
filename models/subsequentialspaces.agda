@@ -4,6 +4,7 @@ open import Data.Nat
 open import Data.Unit
 open import Data.Sum
 open import Function
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 record SubSeq : Set₁ where
  constructor subseq
@@ -75,4 +76,12 @@ snd⁺ = proj₂ , proj₂
 
 eval⁺ : ∀ {A B} -> Arr ((A ⇒⁺ B) ×⁺ A) B
 eval⁺ = (λ { ((f , cont1) , x)  → f x }) , (λ { (fconv , xconv) → fconv xconv })
+
+record convℕ (ns : ℕ -> ℕ) (n : ℕ) : Set where
+ field 
+  bound : ℕ -- Can make irrelevant...
+  prop : ∀ m → m ≥ bound → ns m ≡ n
+
+ℕ⁺ : SubSeq
+ℕ⁺ = subseq ℕ convℕ (λ x → record { bound = 0; prop = λ m x₁ → refl })
  
