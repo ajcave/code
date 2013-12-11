@@ -61,7 +61,7 @@ mutual
             (SubDrop β (apply d (stutter (subDrop p) (x ∷ xs)))) ×
             (SubDrop β (x ∷ xs)))
  lemma2 p x xs (subDrop d) = lemma1 p (x ∷ xs) d
- lemma2 p x xs (subKeep x₁) = {!!}
+ lemma2 p x xs (subKeep d) = ?
 
  lemma3 : ∀ {A} p (x : A) (xs : ∞ (Stream A)) d →
          Σ (Stream A)
