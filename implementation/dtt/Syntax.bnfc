@@ -1,0 +1,7 @@
+TPi.  Type ::= "(" Ident ":" Type ")" "->" Type ;
+TNat. Type ::= "Nat" ;
+
+Lam. Exp ::= "\\" Ident "->" Exp;
+App. Exp ::= Exp Exp;
+VarConst. Exp ::= Ident;
+Zero. Exp ::= "0";
