@@ -94,11 +94,17 @@ t [ f ]tm = record {
   trans = _
  }
 
+
+Σ-cong : ∀ {a b} {A : Set a} {P : A -> Set b} {x y : Σ A P} (p : (proj₁ x) ≡ (proj₁ y))
+ -> (Eq.subst P p (proj₂ x)) ≡ (proj₂ y)
+ -> x ≡ y
+Σ-cong {a} {b} {A} {P} {.j , x} {j , y} Eq.refl d = {!!}
+
 _·_ : (X : Con) -> (A : Ty X) -> Con
 X · A = record {
   set = Σ (Con.set X) (λ x → Con.set (Ty.fm A x));
   eq = λ x y → Σ (Con.eq X (proj₁ x) (proj₁ y)) (λ p → Con.eq (Ty.fm A (proj₁ y)) (Ty.subst A p (proj₂ x)) (proj₂ y));
-  irr = {!!};
+  irr = λ p q → Σ-cong (Con.irr X (proj₁ p) (proj₁ q)) {!!};
   refl = λ x → (Con.refl X _) , (Ty.refl* A _);
   sym = λ x' → (Con.sym X (proj₁ x')) , (Ty.sym* A (proj₁ x') _ _ (proj₂ x'));
   trans = λ {x} {y} {z} x' x0 → (Con.trans X (proj₁ x') (proj₁ x0)) ,
