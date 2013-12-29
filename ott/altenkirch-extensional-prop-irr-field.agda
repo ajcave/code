@@ -100,7 +100,7 @@ X · A = record {
   eq = λ x y → Σ (Con.eq X (proj₁ x) (proj₁ y)) (λ p → Con.eq (Ty.fm A (proj₁ y)) (Ty.subst A p (proj₂ x)) (proj₂ y));
   irr = {!!};
   refl = λ x → (Con.refl X _) , (Ty.refl* A _);
-  sym = λ x' → (Con.sym X (proj₁ x')) , {!Con.sym*!};
+  sym = λ x' → (Con.sym X (proj₁ x')) , (Ty.sym* A (proj₁ x') _ _ (proj₂ x'));
   trans = λ {x} {y} {z} x' x0 → (Con.trans X (proj₁ x') (proj₁ x0)) ,
             Con.trans (Ty.fm A (proj₁ z))
              (Con.sym (Ty.fm A (proj₁ z)) (Ty.trans* A (proj₁ x') (proj₁ x0) _))
