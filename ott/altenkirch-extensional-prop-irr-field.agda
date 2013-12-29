@@ -70,3 +70,23 @@ t [ f ]tm = record {
   tm = λ x → Tm.tm t (Morph.fn f x);
   resp = (λ {x} {y} {p} → Tm.resp t) -- Wow. Irrelevance lets it do fancy things with implicit arg instantiation?
  }
+
+• : Con
+• = record {
+  set = ⊤;
+  eq = λ x x' → ⊤;
+  irr = Eq.refl;
+  refl = _;
+  sym = _;
+  trans = _
+ }
+
+_·_ : (X : Con) -> (A : Ty X) -> Con
+X · A = record {
+  set = Σ (Con.set X) (λ x → Con.set (Ty.fm A x));
+  eq = λ x y → Σ (Con.eq X (proj₁ x) (proj₁ y)) (λ p → Con.eq (Ty.fm A (proj₁ y)) (Ty.subst A p (proj₂ x)) (proj₂ y));
+  irr = {!!};
+  refl = λ x → (Con.refl X _) , ?; --(Ty.refl* A ? ?);
+  sym = {!!};
+  trans = {!!}
+ }
