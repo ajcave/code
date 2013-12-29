@@ -68,5 +68,5 @@ record Tm (X : Con) (A : Ty X) : Set where
 _[_]tm : ∀ {X Y} {A : Ty X} (t : Tm X A) (f : Morph Y X) -> Tm Y (A [ f ])
 t [ f ]tm = record {
   tm = λ x → Tm.tm t (Morph.fn f x);
-  resp = (λ {x} {y} {p} → Tm.resp t) -- Wow
+  resp = (λ {x} {y} {p} → Tm.resp t) -- Wow. Irrelevance lets it do fancy things with implicit arg instantiation?
  }
