@@ -1,5 +1,5 @@
 {-# OPTIONS --type-in-type #-}
-module nbe-sums-pnf where
+module nbe-sums-simple where
 
 record _*_ (A B : Set) : Set where
  constructor _,_

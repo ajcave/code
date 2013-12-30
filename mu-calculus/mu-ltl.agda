@@ -505,3 +505,36 @@ map3 F ρ t = map2' F (⊡ , ρ) t
                 -> step (snd < M , N >) N
 -}
 
+stream : functor (⊡ , #prop)
+stream = ν ((▹ (pop top)) ∧ (○ (▹ top)))
+
+□ : prop -> prop
+□ A = [ A /x]p stream
+
+□map : ∀ {A B θ Γ} -> ⊡ , ⊡ , A ⊢ B - true -> θ , Γ ⊢ □ A - true -> θ , Γ ⊢ □ B - true
+□map f x = map3 stream f x
+
+Nat : ∀ {ζ} -> functor ζ
+Nat = μ (⊤ ∨ ▹ top)
+
+fcons : ∀ {θ Γ} -> θ , Γ ⊢ (Nat ⊃ (□ (○ Nat) ⊃ □ Nat)) - true
+fcons = ƛ (ƛ (unfold (Nat ∧ ○ (▹ top)) < (▹ (pop top)) , (▹ top) >
+                < (fst (▹ top)) ,
+                  (let-◦ (fst (out (snd (▹ top))))
+                  (let-◦ (snd (out (snd (▹ top))))
+                         (◦ < ▹ (pop top) , ▹ top >))) >))
+
+sflip : ∀ {θ Γ} -> θ , Γ ⊢ (□ (○ Nat) ⊃ ○ (□ Nat)) - true
+sflip = ƛ (let-◦ (fst (out (▹ top)))
+          (let-◦ (snd (out (▹ top)))
+          (◦ ((fcons · (▹ (pop top))) · (▹ top)))))
+
+nimport : ∀ {θ Γ} -> θ , Γ ⊢ (Nat ⊃ ○ Nat) - true
+nimport = ƛ (rec (⊤ ∨ ▹ top) (▹ top)
+               (case (▹ top)
+                (◦ (inj (inl unit)))
+                (let-◦ (▹ top) (◦ (inj (inr (▹ top)))))))
+
+simport : ∀ {θ Γ} -> θ , Γ ⊢ (□ Nat ⊃ ○ (□ Nat)) - true
+simport = ƛ (sflip · (□map (nimport · (▹ top)) (▹ top)))
+

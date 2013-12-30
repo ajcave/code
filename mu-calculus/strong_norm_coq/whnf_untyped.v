@@ -286,6 +286,15 @@ Inductive step (G : ctx scope) : tm G -> tm G -> Prop :=
     step (tout (tmap (nu F) M η)) (tmap F (tout M) (gsnoc η (tmap (nu F) (tv top) η)))
 .
 Hint Constructors step.
+(* Could we somehow incorporate η laws? If we were intrinsically typed?
+   Obviously only η laws for arrow, times, and unit. The rest would be
+   beta only, and hence only (very) weakly normalizing (i.e. not under constructors).
+   The ones without η need to be very weakly normalizing *)
+(* Why do we use Kripke if we don't go under binders? (we still need _something_ reducible to stick in)*)
+(* Seems like 2 choices for each type former:
+   a) have η laws
+   b) do very weakly normalizing (not under constructor) *)
+
 Inductive step_star G : tm G -> tm G -> Prop :=
 | step_refl : forall M, step_star M M (* Build in refl and trans for convenience *)
 | step_trans1 : forall M1 M2 M3, step M1 M2 -> step_star M2 M3 -> step_star M1 M3.
@@ -480,14 +489,7 @@ eauto.
 Qed.
 
 Lemma lub_cand (Pred : Rel -> Prop) (Hy : forall C, Pred C -> candidate C) : candidate (lub Pred).
-unfold lub.
-split.
-(* CR1 *)
-eapply adjunction_closure; eauto. firstorder.
-(* CR2 *)
-intros G t' Hy0 t s.
-eapply CR2; eauto. eapply closure_cand. firstorder.
-(* CR3 *)
+eapply closure_cand.
 firstorder.
 Qed.
 
@@ -508,6 +510,8 @@ Lemma gfp_candidate (F : Rel -> Rel) : candidate (gfp F).
 eapply lub_cand. firstorder.
 Qed.
 Hint Resolve lfp_candidate gfp_candidate.
+
+(* This is simply a special case of Knaster-Tarski *)
 
 Lemma lfp_inj (FR : Rel -> Rel) (H : monotone FR) (Hy : forall C, candidate C -> candidate (FR C))
   : Rarrow (FR (lfp FR)) (lfp FR).
