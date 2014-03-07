@@ -145,31 +145,74 @@ mutual
   coe (`Π T x) `ℕ () v
   coe (`Σ T x) `ℕ () v
   
+  trans : (S0 : set)(s0 : ⟦ S0 ⟧)(S1 : set)(s1 : ⟦ S1 ⟧)(S2 : set)(s2 : ⟦ S2 ⟧) ->
+      ⟨ (S0 > s0 ⋍ S1 > s1) ⇒ ((S1 > s1 ⋍ S2 > s2)  ⇒ (S0 > s0 ⋍ S2 > s2)) ⟩
+  trans S0 s0 S1 s1 S2 s2 Q1 Q2 = {!!}
+
   -- if we have a proof that two types are equivalent, a value of the
   -- first we can constructu a proof that the value and the coerced
   -- value are equal. (This one is in prop as it is a proof).
   coh : (S : set) (T : set) (Q : ⟨ S ⋍ T ⟩) (s : ⟦ S ⟧) -> ⟨ (S > s ⋍ T > (coe S T Q s)) ⟩
-  coh S T Q s = {!!}
+  coh `0 `0 Q s = {!!}
+  coh `0 `1 Q s = {!!}
+  coh `0 `2 Q s = {!!}
+  coh `0 (`Π S y) Q s = {!!}
+  coh `0 (`Σ S y) Q s = {!!}
+  coh `0 `ℕ Q s = {!!}
+  coh `1 T Q s = {!!}
+  coh `2 T Q s = {!!}
+  coh (`Π S y) `0 Q s = {!!}
+  coh (`Π S y) `1 Q s = {!!}
+  coh (`Π S y) `2 Q s = {!!}
+  coh (`Π S y) (`Π S' y') (Q1 , Q2) s = f
+   where f :  (x : ⟦ S ⟧) (x' : ⟦ S' ⟧) (x0 : ⟦ ⌈ S > x ⋍ S' > x' ⌉ ⟧) → _
+         f x x' x0 with coh (y (coe S' S Q1 x')) (y' x') (Q2 x' (coe S' S Q1 x') (coh S' S Q1 x')) (s (coe S' S Q1 x'))
+         ... | q  = trans (y x) _ (y (coe S' S Q1 x')) _ (y' x') _ {!!} q
+  coh (`Π S y) (`Σ S' y') Q s = {!!}
+  coh (`Π S y) `ℕ Q s = {!!}
+  coh (`Σ S y) `0 Q s = {!!}
+  coh (`Σ S y) `1 Q s = {!!}
+  coh (`Σ S y) `2 Q s = {!!}
+  coh (`Σ S y) (`Π S' y') Q s = {!!}
+  coh (`Σ S y) (`Σ S' y') (Q1 , Q2) (s1 , s2) = (coh S S' Q1 s1) , coh (y s1) (y' (coe S S' Q1 s1)) (Q2 s1 (coe S S' Q1 s1) (coh S S' Q1 s1)) s2
+  coh (`Σ S y) `ℕ Q s = {!!}
+  coh `ℕ T Q s = {!!}
 
-postulate
- Resp : (S : set)(P : ⟦ S ⟧ -> set)
-       {s0 s1 : ⟦ S ⟧} -> ⟨ ((S > s0 ⋍ S > s1) ⇒ (P s0 ⋍ P s1)) ⟩
- [|_>_|] : (S : set)(s : ⟦ S ⟧) -> ⟨ (S > s ⋍ S > s) ⟩
- Sym : (S0 S1 : set) -> ⟨ ((S0 ⋍ S1) ⇒ (S1 ⋍ S0)) ⟩
- sym : (S0 : set)(s0 : ⟦ S0 ⟧)(S1 : set)(s1 : ⟦ S1 ⟧) ->
-      ⟨ ((S0 > s0 ⋍ S1 > s1) ⇒ (S1 > s1 ⋍ S0 > s0)) ⟩
+  reflexivity : (S : set)(s : ⟦ S ⟧) -> ⟨ (S > s ⋍ S > s) ⟩
+  reflexivity S s = {!!}
 
+  [|_>_|] : (S : set)(s : ⟦ S ⟧) -> ⟨ (S > s ⋍ S > s) ⟩
+  [| S > s |] = {!!}
 
-_∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
-(f ∘ g) = λ x -> f (g x)
+  Resp : (S : set)(P : ⟦ S ⟧ -> set)
+        {s0 s1 : ⟦ S ⟧} -> ⟨ ((S > s0 ⋍ S > s1) ⇒ (P s0 ⋍ P s1)) ⟩
+  Resp = {!!}
 
-subst0 : ∀ {A} (P : ⟦ A ⟧ -> set) -> ⟦ `Π A (λ x₀ → `Π A (λ x₁ ->
-      ⌈ A > x₀ ⋍ A > x₁ ⌉ ↝ ((P x₀) ↝ (P x₁)))) ⟧
-subst0 P = λ x y x⋍y px → coe (P x) (P y) (Resp _ P x⋍y) px
+  Sym : (S0 S1 : set) -> ⟨ ((S0 ⋍ S1) ⇒ (S1 ⋍ S0)) ⟩
+  Sym = {!!}
+  sym : (S0 : set)(s0 : ⟦ S0 ⟧)(S1 : set)(s1 : ⟦ S1 ⟧) ->
+       ⟨ ((S0 > s0 ⋍ S1 > s1) ⇒ (S1 > s1 ⋍ S0 > s0)) ⟩
+  sym = {!!}
 
-cong0 : ∀ {A B} (f : ⟦ A ↝ B ⟧) -> ⟦ `Π A (λ x₀ → `Π A (λ x₁ ->
-      ⌈ A > x₀ ⋍ A > x₁ ⌉ ↝ ⌈ B > (f x₀) ⋍ B > (f x₁) ⌉)) ⟧
-cong0 {A} {B} f = λ x y x⋍y → subst0 (λ b → ⌈ B > f x ⋍ B > f b ⌉) x y x⋍y [| B > f x |]
+  _∘_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
+  (f ∘ g) = λ x -> f (g x)
+
+  subst0 : ∀ {A} (P : ⟦ A ⟧ -> set) -> ⟦ `Π A (λ x₀ → `Π A (λ x₁ ->
+        ⌈ A > x₀ ⋍ A > x₁ ⌉ ↝ ((P x₀) ↝ (P x₁)))) ⟧
+  subst0 P = λ x y x⋍y px → coe (P x) (P y) (Resp _ P x⋍y) px
+
+  cong0 : ∀ {A B} (f : ⟦ A ↝ B ⟧) -> ⟦ `Π A (λ x₀ → `Π A (λ x₁ ->
+        ⌈ A > x₀ ⋍ A > x₁ ⌉ ↝ ⌈ B > (f x₀) ⋍ B > (f x₁) ⌉)) ⟧
+  cong0 {A} {B} f = λ x y x⋍y → subst0 (λ b → ⌈ B > f x ⋍ B > f b ⌉) x y x⋍y [| B > f x |]
+
+  cong1 : ∀ {A B} (f : ⟦ A ↝ B ⟧) -> ⟦ `Π A (λ x₀ → `Π A (λ x₁ ->
+        ⌈ A > x₀ ⋍ A > x₁ ⌉ ↝ ⌈ B > (f x₀) ⋍ B > (f x₁) ⌉)) ⟧
+  cong1 {A} {`0} f x x' d = unit
+  cong1 {A} {`1} f x x' d = unit
+  cong1 {A} {`2} f x x' d = {!!}
+  cong1 {A} {`Π S y} f x x' d = {!!}
+  cong1 {A} {`Σ S y} f x x' d = {!!}
+  cong1 {A} {`ℕ} f x x' d = {!!} 
 
 test0 : ∀ {A B C} (P : ⟦ A ↝ C ⟧ -> set) -> ⟦ `Π (A ↝ B) (λ f₀ → `Π (A ↝ B) (λ f₁ → `Π (B ↝ C) (λ g ->
       ⌈ (A ↝ B) > f₀ ⋍ A ↝ B > f₁ ⌉ 
