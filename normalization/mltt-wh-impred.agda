@@ -486,7 +486,7 @@ _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
 norm-is-cand : isCand normalizable
 norm-is-cand = record {
   cr1 = λ z → z;
-  cr2 = λ x z → normalizable-closed x z ;
+  cr2 = normalizable-closed;
   cr3 = λ x → norm refl (neut x)
  }
 
