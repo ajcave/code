@@ -156,6 +156,9 @@ mutual
  data normalδ {δ n} : tp δ n -> Set where
   bool : normalδ bool
   Π : ∀ {A B} -> normalδ (Π A B)
+  ∩ : ∀ {B} -> normalδ (∩ B)
+  ▹ : ∀ {X} -> normalδ (▹ X)
+  if : ∀ {M T1 T2} -> neutral M -> normalδ (if M T1 T2)
   -- ƛ : ∀ {M} {- -> normal M -} -> normal (ƛ M)
   -- tt : normal tt
   -- ff : normal ff
@@ -173,10 +176,10 @@ data normalizableδ {δ n} (M : tp δ n) : Set where
  norm : ∀ {N} -> M ⟶δ* N -> normalδ N -> normalizableδ M
 
 -- -- Can I just use "normal" and get rid of normal-bool?
--- normal-bool-normal : ∀ {n} {M : tm n} -> normal-bool M -> normal M
--- normal-bool-normal tt = tt
--- normal-bool-normal ff = ff
--- normal-bool-normal (neut x) = neut x
+normal-bool-normal : ∀ {n} {M : tm n} -> normal-bool M -> normal M
+normal-bool-normal tt = tt
+normal-bool-normal ff = ff
+normal-bool-normal (neut x) = neut x
 
 -- normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
 -- normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
@@ -184,9 +187,11 @@ data normalizableδ {δ n} (M : tp δ n) : Set where
 cand : Set₁
 cand = ∀{n} -> tm n -> Set
 
-record isCand (R : cand) : Set₁ where
+record isCand (R : cand) : Set where
  field
-  yep : Unit
+  cr1 : ∀ {n} {M : tm n} -> R M -> normalizable M
+  cr2 : ∀ {n} {M N : tm n} -> M ⟶ N -> R N -> R M
+  cr3 : ∀ {n} {M : tm n} -> neutral M -> R M
 
 csub : ∀ δ -> Set₁
 csub δ = var δ * -> cand
@@ -194,6 +199,13 @@ csub δ = var δ * -> cand
 _,,_ : ∀ {δ} -> csub δ -> cand -> csub (δ , *)
 _,,_ ρ R top = R
 _,,_ ρ R (pop x) = ρ x
+
+areCands : ∀ {δ} (ρ : csub δ) -> Set
+areCands ρ = ∀ x -> isCand (ρ x)
+
+_,,c_ : ∀ {δ} {ρ : csub δ} {C : cand} -> areCands ρ -> isCand C -> areCands (ρ ,, C)
+_,,c_ w p top = p
+_,,c_ w p (pop x) = w x
 
 -- * I guess that we could uniformly have a substitution for type variables and term variables instead of applying them one at a time
 -- * Remember that type-in-type is unsound in Agda for simpler reasons than Hurkens: e.g. it is incompatible with the termination checker in a simple way
@@ -473,31 +485,41 @@ _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
 -- ⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
 -- ⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
 
-mutual
- reflect : ∀ {δ n} {A : tp δ n} {M : tm n} ρ -> (p : Ψ ρ A) -> neutral M -> ψ ρ p M
- reflect ρ bool r = _ , (refl , (neut r))
- reflect ρ (Π p x) r = norm refl (neut r) , λ b q → reflect ρ (x b q) (_·_ r)
- reflect ρ (if x x1 x2) r = _ , (refl , r)
- reflect ρ (closed x p) r = reflect ρ p r
- reflect ρ (∩ b) r = {!!}
- reflect ρ (▹ X) r = {!!}
+norm-is-cand : isCand normalizable
+norm-is-cand = record {
+  cr1 = λ z → z;
+  cr2 = λ x → λ { (norm p1 p2) -> norm (trans1 x p1) p2} ;
+  cr3 = λ x → norm refl (neut x)
+ }
 
- reify : ∀ {δ n} {A : tp δ n} {M : tm n} ρ -> (p : Ψ ρ A) -> ψ ρ p M -> normalizable M
- reify ρ bool (x₁ , (x₂ , x₃)) = norm  x₂ {!!} --(normal-bool-normal x₃)
- reify ρ (Π p x) (h , _) = h
- reify ρ (if x x1 x2) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
- reify ρ (closed x p) r = reify ρ p r
- reify ρ (∩ b) r = {!!}
- reify ρ (▹ X) r = {!!} --IMPORTANT: Need that ρ contains *candidates* here (in Werner's terminology, it is a "candidate intepretation")
+mutual
+ reflect : ∀ {δ n} {A : tp δ n} {M : tm n} ρ -> areCands ρ -> (p : Ψ ρ A) -> neutral M -> ψ ρ p M
+ reflect ρ w bool r = _ , (refl , (neut r))
+ reflect ρ w (Π p x) r = norm refl (neut r) , λ b q → reflect ρ w (x b q) (_·_ r)
+ reflect ρ w (if x x1 x2) r = _ , (refl , r)
+ reflect ρ w (closed x p) r = reflect ρ w p r
+ reflect ρ w (∩ b) r = λ R pr → reflect (ρ ,, R) (w ,,c pr) (b R pr) r
+ reflect ρ w (▹ X) r = isCand.cr3 (w X) r
+
+ reify : ∀ {δ n} {A : tp δ n} {M : tm n} ρ -> areCands ρ -> (p : Ψ ρ A) -> ψ ρ p M -> normalizable M
+ reify ρ w bool (x₁ , (x₂ , x₃)) = norm x₂ (normal-bool-normal x₃)
+ reify ρ w (Π p x) (h , _) = h
+ reify ρ w (if x x1 x2) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
+ reify ρ w (closed x p) r = reify ρ w p r
+ reify ρ w (∩ b) r = reify (ρ ,, normalizable)
+                            (w ,,c norm-is-cand)
+                            (b normalizable norm-is-cand)
+                            (r normalizable norm-is-cand)
+ reify ρ w (▹ X) r = isCand.cr1 (w X) r
 
 reifyt : ∀ {δ n} {A : tp δ n} ρ -> Ψ ρ A -> normalizableδ A
 reifyt ρ bool = norm refl bool
 reifyt ρ (Π t x) = norm refl Π
-reifyt ρ (if x x1 x2) = norm refl {!!} --(neut x)
+reifyt ρ (if x x1 x2) = norm refl (if x) --(neut x)
 reifyt ρ (closed x t) with reifyt ρ t
 reifyt ρ (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁
-reifyt ρ (∩ b) = {!!}
-reifyt ρ (▹ X) = {!!}
+reifyt ρ (∩ b) = norm refl ∩
+reifyt ρ (▹ X) = norm refl ▹
 
 -- -- TODO: Try doing this in "premonoidal category" style
 -- if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
