@@ -396,6 +396,9 @@ data _∋_∶_ {δ} : ∀ {n} -> dctx δ n -> var n * -> tp δ n -> Set where
  top : ∀ {n} {Γ : dctx δ n} {A} -> (Γ , A) ∋ top ∶ ([ wkn-vsub ]rδ A)
  pop : ∀ {n} {Γ : dctx δ n} {x} {A B} -> Γ ∋ x ∶ B -> (Γ , A) ∋ (pop x) ∶ ([ wkn-vsub ]rδ B)
 
+↑ : ∀ {δ n} -> dctx δ n -> dctx (δ , *) n
+↑ = map-dctx [ wkn-vsub ]rδt
+
 mutual
  data wfctx {δ} : ∀ {n} -> dctx δ n -> Set where
   ⊡ : wfctx ⊡
@@ -405,7 +408,7 @@ mutual
   Π : ∀ {A B} -> Γ ⊢ A type -> (Γ , A) ⊢ B type -> Γ ⊢ (Π A B) type
   bool : Γ ⊢ bool type
   if : ∀ {M C1 C2} -> Γ ⊢ M ∶ bool -> Γ ⊢ C1 type -> Γ ⊢ C2 type -> Γ ⊢ (if M C1 C2) type
-  ∩ : ∀ {B} -> map-dctx [ wkn-vsub ]rδt Γ ⊢ B type -> Γ ⊢ (∩ B) type
+  ∩ : ∀ {B} -> ↑ Γ ⊢ B type -> Γ ⊢ (∩ B) type
  
  data _⊢_∶_ {δ} {n} (Γ : dctx δ n) : tm n -> tp δ n -> Set where
   tt : Γ ⊢ tt ∶ bool
@@ -414,7 +417,7 @@ mutual
   ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
   _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x]δ B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x]δ C) -> Γ ⊢ N2 ∶ ([ ff /x]δ C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x]δ C)
-  ∩I : ∀ {M B} -> map-dctx [ wkn-vsub ]rδt Γ ⊢ M ∶ B -> Γ ⊢ M ∶ (∩ B)
+  ∩I : ∀ {M B} -> (↑ Γ) ⊢ M ∶ B -> Γ ⊢ M ∶ (∩ B)
   ∩E : ∀ {M B C} -> Γ ⊢ M ∶ (∩ B) -> Γ ⊢ C type -> Γ ⊢ M ∶ [ C /X]δtp B
   conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈δ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
   -- Remember this is a "dumbed down" system where we don't check convertible under lambdas, etc.
@@ -424,9 +427,17 @@ data Ψs {δ} ρ : ∀ {n m} -> dctx δ n -> tsubst n m -> Set where
  ⊡ : ∀ {m} -> Ψs ρ {m = m} ⊡ tt
  _,_ : ∀ {n m} {Γ} {σ : tsubst n m} {A} {a} -> Ψs ρ Γ σ -> Ψ ρ ([ σ ]tδ A) -> Ψs ρ (Γ , A) (σ , a)
 
+Ψs-wknδ : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {R : cand} -> Ψs ρ Γ σ -> Ψs (ρ ,, R) (↑ Γ) σ
+Ψs-wknδ ⊡ = ⊡
+Ψs-wknδ (d , x) = (Ψs-wknδ d) , {!!}
+
 data ψs {δ} ρ : ∀ {n m} -> (Γ : dctx δ n) -> (σ : tsubst n m) -> Ψs ρ Γ σ -> Set where
  ⊡ : ∀ {m} -> ψs ρ {m = m} ⊡ tt ⊡
  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> ψs ρ Γ σ ps -> ∀ p -> ψ ρ p a -> ψs ρ (Γ , A) (σ , a) (ps , p)
+
+ψs-wknδ : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {ps : Ψs ρ Γ σ} {R : cand} -> ψs ρ Γ σ ps -> ψs (ρ ,, R) (↑ Γ) σ (Ψs-wknδ ps)
+ψs-wknδ ⊡ = ⊡
+ψs-wknδ (d ,[ p ] x) = (ψs-wknδ d) ,[ {!!} ] {!!}
 
 _⊨_type : ∀ {δ n} (Γ : dctx δ n) -> tp δ n -> Set
 Γ ⊨ A type = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} -> ψs ρ Γ σ ps -> Ψ ρ ([ σ ]tδ A)
@@ -539,7 +550,7 @@ mutual
  lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
  lem1 Γ bool = λ _ _ → bool
  lem1 Γ (if x t t₁) = {!!}
- lem1 Γ (∩ t) = λ w x → ∩ (λ R x₁ → lem1 _ t (w ,,c x₁) {!!})
+ lem1 Γ (∩ t) = λ w x → ∩ (λ R x₁ → lem1 _ t (w ,,c x₁) (ψs-wknδ x))
  
 --   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
 --  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
@@ -550,7 +561,7 @@ mutual
  lem2 Γ (ƛ {A} {B} x d) = Π' A B (lem1 Γ x) (lem2 (Γ , A) d)
  lem2 Γ (_·_ {A} {B} d d₁) = ⊨subst A B (Πinv2 A B (lem2 Γ d)) (lem2 Γ d₁) (lem3 Γ d₁)
  lem2 Γ (if {C} x d d₁ d₂) = ⊨subst bool C (lem1 (Γ , bool) x) (λ _ _ → bool) (lem3 Γ d)
- lem2 Γ (∩I d) = λ w x → ∩ (λ R x₁ → lem2 _ d (w ,,c x₁) {!!})
+ lem2 Γ (∩I d) = λ w x → ∩ (λ R x₁ → lem2 _ d (w ,,c x₁) (ψs-wknδ x))
  lem2 Γ (∩E d x) = {!!}
  lem2 Γ (conv x x₁ d) = lem1 Γ x
 --  lem2 Γ bool = κ set
