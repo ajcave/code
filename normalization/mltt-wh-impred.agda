@@ -423,6 +423,9 @@ mutual
   -- Remember this is a "dumbed down" system where we don't check convertible under lambdas, etc.
   -- We "should" consider weak normalization, not just weak head?
 
+_∘_ : ∀ {A B C} (f : B -> C) (g : A -> B) -> A -> C
+(f ∘ g) x = f (g x)
+
 data Ψs {δ} ρ : ∀ {n m} -> dctx δ n -> tsubst n m -> Set where
  ⊡ : ∀ {m} -> Ψs ρ {m = m} ⊡ tt
  _,_ : ∀ {n m} {Γ} {σ : tsubst n m} {A} {a} -> Ψs ρ Γ σ -> Ψ ρ ([ σ ]tδ A) -> Ψs ρ (Γ , A) (σ , a)
@@ -431,6 +434,10 @@ data Ψs {δ} ρ : ∀ {n m} -> dctx δ n -> tsubst n m -> Set where
 Ψs-wknδ ⊡ = ⊡
 Ψs-wknδ (d , x) = (Ψs-wknδ d) , {!lemma that composes ρ with a (weakening) substitution π !}
 
+Ψs-wknδ' : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} -> Ψs ρ (↑ Γ) σ -> Ψs (ρ ∘ pop) Γ σ
+Ψs-wknδ' {Γ = ⊡} {tt} ⊡ = ⊡
+Ψs-wknδ' {Γ = Γ , A} {σ , M} (d , x₁) = (Ψs-wknδ' d) , {!!}
+
 data ψs {δ} ρ : ∀ {n m} -> (Γ : dctx δ n) -> (σ : tsubst n m) -> Ψs ρ Γ σ -> Set where
  ⊡ : ∀ {m} -> ψs ρ {m = m} ⊡ tt ⊡
  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> ψs ρ Γ σ ps -> ∀ p -> ψ ρ p a -> ψs ρ (Γ , A) (σ , a) (ps , p)
@@ -438,6 +445,10 @@ data ψs {δ} ρ : ∀ {n m} -> (Γ : dctx δ n) -> (σ : tsubst n m) -> Ψs ρ 
 ψs-wknδ : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {ps : Ψs ρ Γ σ} {R : cand} -> ψs ρ Γ σ ps -> ψs (ρ ,, R) (↑ Γ) σ (Ψs-wknδ ps)
 ψs-wknδ ⊡ = ⊡
 ψs-wknδ (d ,[ p ] x) = (ψs-wknδ d) ,[ {!!} ] {!!}
+
+ψs-wknδ' : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {ps : Ψs ρ (↑ Γ) σ} -> ψs ρ (↑ Γ) σ ps -> ψs (ρ ∘ pop) Γ σ (Ψs-wknδ' ps)
+ψs-wknδ' {Γ = ⊡} {tt} ⊡ = ⊡
+ψs-wknδ' {Γ = Γ , A} (d ,[ p ] x) = (ψs-wknδ' d) ,[ {!!} ] {!!}
 
 _⊨_type : ∀ {δ n} (Γ : dctx δ n) -> tp δ n -> Set
 Γ ⊨ A type = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} -> ψs ρ Γ σ ps -> Ψ ρ ([ σ ]tδ A)
@@ -530,6 +541,9 @@ reifyt ρ (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁
 reifyt ρ (∩ b) = norm refl ∩
 reifyt ρ (▹ X) = norm refl ▹
 
+ψ-cand : ∀ {δ n} {ρ} {A : tp δ n} (p : Ψ ρ A) -> areCands ρ -> isCand (ψ ρ p)
+ψ-cand p w = ?
+
 -- -- TODO: Try doing this in "premonoidal category" style
 -- if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
 -- if' C M N1 N2 d t t1 t2 qs with t qs bool
@@ -544,6 +558,15 @@ mem .top (top {_} {_} {A}) p1 (p2 ,[ p ] x) p3 = {!φeqdep p p3!}
 mem .(pop x) (pop {n} {Γ} {x} d) p1 p2 p3 = {!!}
 -- mem .top (top {_} {_} {A}) (qs ,[ p ] x) p₁ = φeqdep p p₁ (subeq3 A) x
 -- mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst Φ (sym (subeq3 B)) p₁) p₁ (subeq3 B) (mem x d qs (subst Φ (sym (subeq3 B)) p₁))
+
+∩inv : ∀ {δ n} {Γ} (B : tp (δ , *) n) -> Γ ⊨ (∩ B) type -> ↑ Γ ⊨ B type
+∩inv B d w qs with d (λ x -> w (pop x)) (ψs-wknδ' qs)
+∩inv B d w qs | ∩ x = {!apply x with ρ top, using η laws..!}
+∩inv B d w qs | closed () q
+
+⊨substδ : ∀ {δ n} {Γ : dctx δ n} A B -> (↑ Γ) ⊨ B type -> (p : Γ ⊨ A type) -> Γ ⊨ ([ A /X]δtp B) type
+⊨substδ A B t p w x with t (w ,,c {!!}) (ψs-wknδ x)
+... | q = {!!}
 
 mutual
  lem1 : ∀ {δ n A} (Γ : dctx δ n) -> Γ ⊢ A type -> Γ ⊨ A type
@@ -562,7 +585,7 @@ mutual
  lem2 Γ (_·_ {A} {B} d d₁) = ⊨subst A B (Πinv2 A B (lem2 Γ d)) (lem2 Γ d₁) (lem3 Γ d₁)
  lem2 Γ (if {C} x d d₁ d₂) = ⊨subst bool C (lem1 (Γ , bool) x) (λ _ _ → bool) (lem3 Γ d)
  lem2 Γ (∩I d) = λ w x → ∩ (λ R x₁ → lem2 _ d (w ,,c x₁) (ψs-wknδ x))
- lem2 Γ (∩E d x) = {!!}
+ lem2 Γ (∩E {M} {B} {C} d x) = ⊨substδ C B (∩inv B (lem2 Γ d)) (lem1 Γ x)
  lem2 Γ (conv x x₁ d) = lem1 Γ x
 --  lem2 Γ bool = κ set
 --  lem2 Γ tt = κ bool
