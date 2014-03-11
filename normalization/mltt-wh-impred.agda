@@ -257,7 +257,7 @@ postulate
  subeq1 : ∀ {δ n m} {σ : tsubst n m} (M : tp δ _) {N} -> [ σ , ([ σ ]t N) ]tδ M ≡ [ σ ]tδ ([ N /x]δ M) 
  --subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
  subeq2δ : ∀ {δ n m} {σ : tsubst n m} (M : tp δ _) {N} -> [ σ , N ]tδ M ≡ [ id-tsub , N ]tδ ([ tsub-ext σ ]tδ M)
---  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
+ subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
 
 -- ⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
 -- ⟶*cong2 refl refl t = t
@@ -586,8 +586,8 @@ mutual
 -- -- Maybe use CBPV to motivate? Function types are computation types.. need to thunk to turn into value types...
 -- -- Or.. for weak normalization, could we just add "halts" to the definition of the logical predicate?
 
--- yay1 : ∀ {M A}  -> ⊡ ⊢ M ∶ A -> normalizable M
--- yay1 d = subst normalizable subeq4 (reify' {n = ⊡} (lem2 ⊡ d ⊡) (lem3' _ d ⊡))
+yay1 : ∀ {M} {A : tp ⊡ ⊡}  -> ⊡ ⊢ M ∶ A -> normalizable M
+yay1 d = subst normalizable subeq4 (reify {n = ⊡} (λ ()) (λ ()) (lem2 ⊡ d (λ ()) ⊡) (lem3' _ d (λ ()) ⊡))
 
 -- {-
 -- mutual
