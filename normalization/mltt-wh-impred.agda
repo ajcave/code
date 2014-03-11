@@ -30,21 +30,48 @@ mutual
   tt ff : tm n
   if : (M N P : tm n) -> tm n
 
-mutual
- [_]rδ : ∀ {δ n m} -> vsubst n m -> tp δ n -> tp δ m
- [_]rδ σ (▹ X) = ▹ X
- [_]rδ σ (Π T T₁) = Π ([ σ ]rδ T) ([ vsub-ext σ ]rδ T₁)
- [_]rδ σ (∩ T) = ∩ ([ σ ]rδ T)
- [_]rδ σ (if M T T₁) = if ([ σ ]r M) ([ σ ]rδ T) ([ σ ]rδ T₁)
- [_]rδ σ bool = bool
 
- [_]r : ∀ {n m} -> vsubst n m -> tm n -> tm m
- [_]r σ (▹ x) = ▹ ([ σ ]v x)
- [_]r σ (ƛ M) = ƛ ([ vsub-ext σ ]r M)
- [_]r σ (M · M₁) = ([ σ ]r M) · ([ σ ]r M₁)
- [_]r σ tt = tt
- [_]r σ ff = ff
- [_]r σ (if M M₁ M₂) = if ([ σ ]r M) ([ σ ]r M₁) ([ σ ]r M₂)
+[_]r : ∀ {n m} -> vsubst n m -> tm n -> tm m
+[_]r σ (▹ x) = ▹ ([ σ ]v x)
+[_]r σ (ƛ M) = ƛ ([ vsub-ext σ ]r M)
+[_]r σ (M · M₁) = ([ σ ]r M) · ([ σ ]r M₁)
+[_]r σ tt = tt
+[_]r σ ff = ff
+[_]r σ (if M M₁ M₂) = if ([ σ ]r M) ([ σ ]r M₁) ([ σ ]r M₂)
+
+[_]rδ : ∀ {δ n m} -> vsubst n m -> tp δ n -> tp δ m
+[_]rδ σ (▹ X) = ▹ X
+[_]rδ σ (Π T T₁) = Π ([ σ ]rδ T) ([ vsub-ext σ ]rδ T₁)
+[_]rδ σ (∩ T) = ∩ ([ σ ]rδ T)
+[_]rδ σ (if M T T₁) = if ([ σ ]r M) ([ σ ]rδ T) ([ σ ]rδ T₁)
+[_]rδ σ bool = bool
+
+[_]rδt : ∀ {δ1 δ2 n} -> vsubst δ1 δ2 -> tp δ1 n -> tp δ2 n
+[_]rδt σ (▹ X) = ▹ ([ σ ]v X)
+[_]rδt σ (Π T T₁) = Π ([ σ ]rδt T) ([ σ ]rδt T₁)
+[_]rδt σ (∩ T) = ∩ ([ vsub-ext σ ]rδt T)
+[_]rδt σ (if M T T₁) = if M ([ σ ]rδt T) ([ σ ]rδt T₁)
+[_]rδt σ bool = bool
+
+tpsubst : ∀ (n δ1 δ2 : ctx Unit) -> Set
+tpsubst n δ1 δ2 = gksubst δ1 (tp δ2 n)
+
+tpsub-ext : ∀ {n δ1 δ2} -> tpsubst n δ1 δ2 -> tpsubst n (δ1 , *) (δ2 , *)
+tpsub-ext σ = (gmap [ wkn-vsub ]rδt σ) , (▹ top)
+
+id-tpsub : ∀ {δ n} -> tpsubst n δ δ
+id-tpsub {⊡} = tt
+id-tpsub {δ , T} = tpsub-ext id-tpsub
+
+[_]δtp : ∀ {δ1 δ2 n} -> tpsubst n δ1 δ2 -> tp δ1 n -> tp δ2 n
+[_]δtp σ (▹ X) = [ σ ]v X
+[_]δtp σ (Π T T₁) = Π ([ σ ]δtp T) ([ gmap [ wkn-vsub ]rδ σ ]δtp T₁)
+[_]δtp σ (∩ T) = ∩ ([ tpsub-ext σ ]δtp T)
+[_]δtp σ (if M T T₁) = if M ([ σ ]δtp T) ([ σ ]δtp T₁)
+[_]δtp σ bool = bool
+
+[_/X]δtp : ∀ {δ n} -> tp δ n -> tp (δ , *) n  -> tp δ n
+[ C /X]δtp T = [ id-tpsub , C ]δtp T
 
 tsubst : ∀ (n m : ctx Unit) -> Set
 tsubst n m = gksubst n (tm m)
@@ -361,7 +388,7 @@ mutual
   Π : ∀ {A B} -> Γ ⊢ A type -> (Γ , A) ⊢ B type -> Γ ⊢ (Π A B) type
   bool : Γ ⊢ bool type
   if : ∀ {M C1 C2} -> Γ ⊢ M ∶ bool -> Γ ⊢ C1 type -> Γ ⊢ C2 type -> Γ ⊢ (if M C1 C2) type
-  ∩ : ∀ {B} -> map-dctx {!!} Γ ⊢ B type -> Γ ⊢ (∩ B) type
+  ∩ : ∀ {B} -> map-dctx [ wkn-vsub ]rδt Γ ⊢ B type -> Γ ⊢ (∩ B) type
  
  data _⊢_∶_ {δ} {n} (Γ : dctx δ n) : tm n -> tp δ n -> Set where
   tt : Γ ⊢ tt ∶ bool
@@ -370,8 +397,8 @@ mutual
   ƛ : ∀ {A B M} -> Γ ⊢ A type -> (Γ , A) ⊢ M ∶ B -> Γ ⊢ (ƛ M) ∶ (Π A B)
   _·_ : ∀ {A B M N} -> Γ ⊢ M ∶ (Π A B) -> Γ ⊢ N ∶ A -> Γ ⊢ (M · N) ∶ ([ N /x]δ B)
   if : ∀ {C M N1 N2} -> (Γ , bool) ⊢ C type -> Γ ⊢ M ∶ bool -> Γ ⊢ N1 ∶ ([ tt /x]δ C) -> Γ ⊢ N2 ∶ ([ ff /x]δ C) -> Γ ⊢ (if M N1 N2) ∶ ([ M /x]δ C)
-  ∩I : ∀ {M B} -> {!!} ⊢ M ∶ B -> Γ ⊢ M ∶ (∩ B)
-  ∩E : ∀ {M B C} -> Γ ⊢ M ∶ (∩ B) -> Γ ⊢ C type -> Γ ⊢ M ∶ {!!}
+  ∩I : ∀ {M B} -> map-dctx [ wkn-vsub ]rδt Γ ⊢ M ∶ B -> Γ ⊢ M ∶ (∩ B)
+  ∩E : ∀ {M B C} -> Γ ⊢ M ∶ (∩ B) -> Γ ⊢ C type -> Γ ⊢ M ∶ [ C /X]δtp B
   conv : ∀ {A B} {M} -> Γ ⊢ A type -> B ≈δ A -> Γ ⊢ M ∶ B -> Γ ⊢ M ∶ A
   -- Remember this is a "dumbed down" system where we don't check convertible under lambdas, etc.
   -- We "should" consider weak normalization, not just weak head?
