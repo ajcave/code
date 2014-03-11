@@ -369,7 +369,7 @@ postulate
 
 mutual
  lemma3-3 : ∀ {δ} {A B : tp δ ⊡} {ρ} {M : tm ⊡} (p : Ψ ρ A) (q : Ψ ρ B) -> A ≈δ B -> ψ ρ p M -> ψ ρ q M
- lemma3-3 = {!!}
+ lemma3-3 p q t r = {!!}
 --  lemma3-3 (closed x p) q t r = lemma3-3 p q (⟶≈trans' t x) r
 --  lemma3-3 p (closed x q) t r = lemma3-3 p q (⟶≈trans t x) r
 --  lemma3-3 bool bool t r = r
@@ -595,12 +595,18 @@ ifδ M N1 N2 t d1 d2 w qs | .tt , (proj₂ , tt) = Ψ-closed⟶* (trans1rδ (if*
 ifδ M N1 N2 t d1 d2 w qs | .ff , (proj₂ , ff) = Ψ-closed⟶* (trans1rδ (if*δ proj₂) if2) (d2 w qs)
 ifδ M N1 N2 t d1 d2 w qs | proj₁ , (proj₂ , neut x) = neut-closed x
 
+∩' : ∀ {δ n Γ} {B : tp (δ , *) n} -> ↑ Γ ⊨ B type -> Γ ⊨ (∩ B) type
+∩' d w qs = ∩ (λ R x → d (w ,,c x) (ψs-wknδ qs))
+
+∩I' : ∀ {n δ} {Γ} M (B : tp (δ , *) n) -> (↑ Γ) ⊨ M ∶ B -> (d : ↑ Γ ⊨ B type) -> Γ ⊨ M ∶' (∩ B) [ ∩' d ]
+∩I' M B d1 d w qs R pr = d1 (w ,,c pr) (ψs-wknδ qs) (d (w ,,c pr) (ψs-wknδ qs))
+
 mutual
  lem1 : ∀ {δ n A} (Γ : dctx δ n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
  lem1 Γ bool = λ _ _ → bool
  lem1 Γ (if {M} {N1} {N2} x t t₁) = ifδ M N1 N2 (lem3 Γ x) (lem1 Γ t) (lem1 Γ t₁)
- lem1 Γ (∩ t) = λ w x → ∩ (λ R x₁ → lem1 _ t (w ,,c x₁) (ψs-wknδ x))
+ lem1 Γ (∩ t) = ∩' (lem1 _ t)
  
  lem2 : ∀ {δ n M A} (Γ : dctx δ n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
  lem2 Γ tt = λ _ _ → bool
@@ -609,7 +615,7 @@ mutual
  lem2 Γ (ƛ {A} {B} x d) = Π' A B (lem1 Γ x) (lem2 (Γ , A) d)
  lem2 Γ (_·_ {A} {B} d d₁) = ⊨subst A B (Πinv2 A B (lem2 Γ d)) (lem2 Γ d₁) (lem3 Γ d₁)
  lem2 Γ (if {C} x d d₁ d₂) = ⊨subst bool C (lem1 (Γ , bool) x) (λ _ _ → bool) (lem3 Γ d)
- lem2 Γ (∩I d) = λ w x → ∩ (λ R x₁ → lem2 _ d (w ,,c x₁) (ψs-wknδ x))
+ lem2 Γ (∩I d) = ∩' (lem2 _ d)
  lem2 Γ (∩E {M} {B} {C} d x) = ⊨substδ C B (∩inv B (lem2 Γ d)) (lem1 Γ x)
  lem2 Γ (conv x x₁ d) = lem1 Γ x
 
@@ -623,7 +629,7 @@ mutual
  lem3' Γ (ƛ x d) = {!!}
  lem3' Γ (d · d₁) = {!!}
  lem3' Γ (if x d d₁ d₂) = {!!}
- lem3' Γ (∩I d) = {!!}
+ lem3' Γ (∩I {M} {B} d) = ∩I' M B (lem3 (↑ Γ) d) (lem2 (↑ Γ) d)
  lem3' Γ (∩E d x) = {!!}
  lem3' Γ (conv {A} {B} {M} x x₁ d) = ⊨conv M (lem2 Γ d) (lem1 Γ x) x₁ (lem3 Γ d)
 --  lem3' Γ (ƛ {A} {B} {M} x t) = ƛ' A B M (lem1 Γ x) (lem2 (Γ , A) t) (lem3 (Γ , A) t)
