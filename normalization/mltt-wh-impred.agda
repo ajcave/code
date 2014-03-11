@@ -122,16 +122,16 @@ data _⟶δ*_ {δ n} : ∀ (M N : tp δ n) -> Set where
  refl : ∀ {M} -> M ⟶δ* M
  trans1 : ∀ {M N P} -> M ⟶δ N -> N ⟶δ* P -> M ⟶δ* P
 
--- ⟶*-trans : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶* P -> M ⟶* P
--- ⟶*-trans refl s2 = s2
--- ⟶*-trans (trans1 x s1) s2 = trans1 x (⟶*-trans s1 s2)
+⟶*-trans : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶* P -> M ⟶* P
+⟶*-trans refl s2 = s2
+⟶*-trans (trans1 x s1) s2 = trans1 x (⟶*-trans s1 s2)
 
 -- trans1r : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶ P -> M ⟶* P
 -- trans1r s t = ⟶*-trans s (trans1 t refl)
 
--- app1* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (M · N) ⟶* (M' · N)
--- app1* refl = refl
--- app1* (trans1 x s) = trans1 (app1 x) (app1* s)
+app1* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (M · N) ⟶* (M' · N)
+app1* refl = refl
+app1* (trans1 x s) = trans1 (app1 x) (app1* s)
 
 -- {-app2* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (N · M) ⟶* (N · M')
 -- app2* refl = refl
@@ -181,8 +181,8 @@ normal-bool-normal tt = tt
 normal-bool-normal ff = ff
 normal-bool-normal (neut x) = neut x
 
--- normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
--- normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
+normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> normalizable M
+normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
 cand : Set₁
 cand = ∀{n} -> tm n -> Set
@@ -190,7 +190,7 @@ cand = ∀{n} -> tm n -> Set
 record isCand (R : cand) : Set where
  field
   cr1 : ∀ {n} {M : tm n} -> R M -> normalizable M
-  cr2 : ∀ {n} {M N : tm n} -> M ⟶ N -> R N -> R M
+  cr2 : ∀ {n} {M N : tm n} -> M ⟶* N -> R N -> R M
   cr3 : ∀ {n} {M : tm n} -> neutral M -> R M
 
 csub : ∀ δ -> Set₁
@@ -238,11 +238,14 @@ mutual
 Ψ-closed⟶* refl t = t
 Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
 
--- ψ-closed : ∀ {n} {A : tm n} {M N} -> (p : Ψ A) -> M ⟶* N -> ψ p N -> ψ p M
--- ψ-closed bool s (t1 , (s2 , n)) = t1 , ((⟶*-trans s s2) , n)
--- ψ-closed (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed (x b q) (app1* s) (t b q)
--- ψ-closed (neut x) s (t1 , (s2 , neu)) = t1 , ((⟶*-trans s s2) , neu)
--- ψ-closed (closed x p) s t = ψ-closed p s t
+ψ-closed : ∀ {δ n} {ρ : csub δ} (w : areCands ρ) {A : tp δ n} {M N}
+ -> (p : Ψ ρ A) -> M ⟶* N -> ψ ρ p N -> ψ ρ p M
+ψ-closed w bool s (t₁ , (t₂ , t₃)) = t₁ , ((⟶*-trans s t₂) , t₃)
+ψ-closed w (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed w (x b q) (app1* s) (t b q)
+ψ-closed w (closed x p) s t = ψ-closed w p s t
+ψ-closed w (∩ b) s t = λ R pr → ψ-closed (w ,,c pr) (b R pr) s (t R pr)
+ψ-closed w (if M₂ T1 T2) s (t₁ , (t₂ , t₃)) = t₁ , ((⟶*-trans s t₂) , t₃)
+ψ-closed w (▹ X) s t = isCand.cr2 (w X) s t
 
 data _≈δ_ {δ n} (a b : tp δ n) : Set where
  common : ∀ {d} -> (a ⟶δ* d) -> (b ⟶δ* d) -> a ≈δ b
@@ -488,7 +491,7 @@ _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
 norm-is-cand : isCand normalizable
 norm-is-cand = record {
   cr1 = λ z → z;
-  cr2 = λ x → λ { (norm p1 p2) -> norm (trans1 x p1) p2} ;
+  cr2 = λ x z → normalizable-closed x z ;
   cr3 = λ x → norm refl (neut x)
  }
 
