@@ -251,7 +251,7 @@ data _≈δ_ {δ n} (a b : tp δ n) : Set where
  common : ∀ {d} -> (a ⟶δ* d) -> (b ⟶δ* d) -> a ≈δ b
 
 postulate
---  sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
+ sub⟶* : ∀ {δ n m} (σ : tsubst n m) {M N : tp δ _} -> M ⟶δ* N -> [ σ ]tδ M ⟶δ* [ σ ]tδ N
 --  sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
 --  subeq3 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ ]t M ≡ [ σ , N ]t ([ wkn-vsub ]r M)
  subeq1 : ∀ {δ n m} {σ : tsubst n m} (M : tp δ _) {N} -> [ σ , ([ σ ]t N) ]tδ M ≡ [ σ ]tδ ([ N /x]δ M) 
@@ -280,8 +280,8 @@ postulate
 -- pi-inj3 (common x x₁) with pi-inj1 x | pi-inj1 x₁
 -- ... | yep t1 t2 | yep t3 t4 = common t2 t4
 
--- []-cong : ∀ {n m} {A B : tm n} {σ : tsubst n m} -> A ≈ B -> [ σ ]t A ≈ [ σ ]t B
--- []-cong (common x x₁) = common (sub⟶* _ x) (sub⟶* _ x₁)
+[]-cong : ∀ {δ n m} {A B : tp δ n} {σ : tsubst n m} -> A ≈δ B -> [ σ ]tδ A ≈δ [ σ ]tδ B
+[]-cong (common x x₁) = common (sub⟶* _ x) (sub⟶* _ x₁)
 
 -- ≈-trans : ∀ {n} {A B C : tm n} -> A ≈ B -> B ≈ C -> A ≈ C
 -- ≈-trans (common t1 t2) (common t3 t4) with cr t2 t3
@@ -290,8 +290,8 @@ postulate
 -- ≈-sym : ∀ {n} {A B : tm n} -> A ≈ B -> B ≈ A
 -- ≈-sym (common t1 t2) = common t2 t1
 
--- ≈-refl : ∀ {n} {A : tm n} -> A ≈ A
--- ≈-refl = common refl refl
+≈-refl : ∀ {δ n} {A : tp δ n} -> A ≈δ A
+≈-refl = common refl refl
 
 -- ⟶-≈ : ∀ {n} {A B : tm n} -> A ⟶ B -> A ≈ B
 -- ⟶-≈ t = common (trans1 t refl) refl
@@ -351,8 +351,9 @@ postulate
 -- bool≈set (common x x₁) with normal-step* bool x | normal-step* set x₁
 -- bool≈set (common x x₁) | refl | ()
 
--- mutual
---  lemma3-3 : ∀ {n} {A B M : tm n} (p : Ψ A) (q : Ψ B) -> A ≈ B -> ψ p M -> ψ q M
+mutual
+ lemma3-3 : ∀ {δ n} {A B : tp δ n} {ρ} {M : tm n} (p : Ψ ρ A) (q : Ψ ρ B) -> A ≈δ B -> ψ ρ p M -> ψ ρ q M
+ lemma3-3 = {!!}
 --  lemma3-3 (closed x p) q t r = lemma3-3 p q (⟶≈trans' t x) r
 --  lemma3-3 p (closed x q) t r = lemma3-3 p q (⟶≈trans t x) r
 --  lemma3-3 bool bool t r = r
@@ -379,7 +380,7 @@ postulate
 --  lemma3-3b (neut x) (neut x₁) t r = r
 
 lemma3-3c : ∀ {δ n} {ρ} {A : tp δ n} {M : tm n} (p q : Ψ ρ A) -> ψ ρ p M -> ψ ρ q M
-lemma3-3c p q t = {!!} --lemma3-3 p q ≈-refl t
+lemma3-3c p q t = lemma3-3 p q ≈-refl t
 
 
 
@@ -462,8 +463,8 @@ _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
 -- φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p N -> φ q M
 -- φeq p q s1 s t = lemma3-3' p q (common refl s1) (φ-closed p s t)
 
--- φeq' : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B ≈ B' -> M ⟶* N -> φ p N -> φ q M
--- φeq' p q s1 s t = lemma3-3' p q s1 (φ-closed p s t)
+φeq' : ∀ {δ n} {B B' : tp δ n} {M N : tm n} {ρ} (w : areCands ρ) (p : Ψ ρ B) (q : Ψ ρ B') -> B ≈δ B' -> M ⟶* N -> ψ ρ p N -> ψ ρ q M
+φeq' w p q s1 s t = lemma3-3 p q s1 (ψ-closed w p s t)
 
 -- ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
 -- ƛ' A B M d1 d2 t {σ = σ} qs = (norm refl ƛ) , (λ b q ->
@@ -479,8 +480,8 @@ _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
 -- ... | z2 = φeqdep (subst Φ (subeq2 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs))))
 --              (subst Φ (subeq1 B) (d2 (qs ,[ d1 qs ] t2 qs (d1 qs)))) (trans (sym (subeq2 B)) (subeq1 B)) z2
 
--- ⊨conv : ∀ {n} {Γ} {A B : tm n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
--- ⊨conv M p q s t qs = φeq' (p qs) (q qs) ([]-cong s) refl (t qs (p qs))
+⊨conv : ∀ {δ n} {Γ} {A B : tp δ n} M (p : Γ ⊨ B type) (q : Γ ⊨ A type) -> B ≈δ A -> Γ ⊨ M ∶ B -> Γ ⊨ M ∶' A [ q ]
+⊨conv M p q s t w qs = φeq' w (p w qs) (q w qs) ([]-cong s) refl (t w qs (p w qs))
 
 norm-is-cand : isCand normalizable
 norm-is-cand = record {
@@ -574,16 +575,10 @@ mutual
  lem3' Γ (if x d d₁ d₂) = {!!}
  lem3' Γ (∩I d) = {!!}
  lem3' Γ (∩E d x) = {!!}
- lem3' Γ (conv x x₁ d) = {!!}
---  lem3' Γ bool = κ bool
---  lem3' Γ tt = κ (tt , (refl , tt))
---  lem3' Γ ff = κ (ff , (refl , ff))
---  lem3' Γ (▹ {A} {x} x₁ x₂) = λ qs → mem x x₂ qs (lem1 Γ x₁ qs)
---  lem3' Γ (Π {A} {B} t t₁) = λ qs -> Π (lem3 Γ t qs set) (λ a x → subst Ψ (subeq2 B) (lem3 (Γ , A) t₁ (qs ,[ prop1 (lem3 Γ t qs set) ] prop3 (lem3 Γ t qs set) x) set)) -- TODO: Clean up this case somehow?
+ lem3' Γ (conv {A} {B} {M} x x₁ d) = ⊨conv M (lem2 Γ d) (lem1 Γ x) x₁ (lem3 Γ d)
 --  lem3' Γ (ƛ {A} {B} {M} x t) = ƛ' A B M (lem1 Γ x) (lem2 (Γ , A) t) (lem3 (Γ , A) t)
 --  lem3' Γ (_·_ {A} {B} {M} {N} t t₁) = app' A B M N (lem2 Γ t₁) (Πinv2 A B (lem2 Γ t)) (lem3 Γ t) (lem3 Γ t₁)
 --  lem3' Γ (if {C} {M} {N1} {N2} x t t₁ t₂) = if' C M N1 N2 (lem1 (Γ , bool) x) (lem3 Γ t) (lem3 Γ t₁) (lem3 Γ t₂)
---  lem3' Γ (conv {A} {B} {M} x x₁ t) = ⊨conv M (lem2 Γ t) (lem1 Γ x) x₁ (lem3 Γ t)
 
 
 -- -- Huh I think the more natural thing to do for a "weak head normal form"
