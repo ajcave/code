@@ -424,7 +424,7 @@ data ψs {δ} ρ : ∀ {n m} -> (Γ : dctx δ n) -> (σ : tsubst n m) -> Ψs ρ 
  _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> ψs ρ Γ σ ps -> ∀ p -> ψ ρ p a -> ψs ρ (Γ , A) (σ , a) (ps , p)
 
 _⊨_type : ∀ {δ n} (Γ : dctx δ n) -> tp δ n -> Set
-Γ ⊨ A type = ∀ {ρ} {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} -> ψs ρ Γ σ ps -> Ψ ρ ([ σ ]tδ A)
+Γ ⊨ A type = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} -> ψs ρ Γ σ ps -> Ψ ρ ([ σ ]tδ A)
 
 -- {-_⊨_set : ∀ {n} (Γ : dctx n) -> tm n -> Set
 -- Γ ⊨ A set = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Ψ ([ σ ]t A)
@@ -436,10 +436,10 @@ _⊨_type : ∀ {δ n} (Γ : dctx δ n) -> tp δ n -> Set
 -- Π' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
 
 _⊨_∶'_[_] : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Γ ⊨ A type -> Set
-Γ ⊨ M ∶' A [ d ] = ∀ {ρ} {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) -> ψ ρ (d qs) ([ σ ]t M)
+Γ ⊨ M ∶' A [ d ] = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) -> ψ ρ (d w qs) ([ σ ]t M)
 
 _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
-Γ ⊨ M ∶ A = ∀ {ρ} {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) (p : Ψ ρ ([ σ ]tδ A)) -> ψ ρ p ([ σ ]t M)
+Γ ⊨ M ∶ A = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) (p : Ψ ρ ([ σ ]tδ A)) -> ψ ρ p ([ σ ]t M)
 
 κ : ∀ {A B : Set} -> B -> A -> B
 κ b = λ _ -> b
@@ -538,7 +538,7 @@ mem x d = {!!}
 mutual
  lem1 : ∀ {δ n A} (Γ : dctx δ n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ (Π t t₁) = {!!}
- lem1 Γ bool = κ bool
+ lem1 Γ bool = λ _ _ → bool
  lem1 Γ (if x t t₁) = {!!}
  lem1 Γ (∩ t) = {!!}
 --  lem1 Γ set = κ set
@@ -548,8 +548,8 @@ mutual
 --   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
 --  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
  lem2 : ∀ {δ n M A} (Γ : dctx δ n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
- lem2 Γ tt = κ bool
- lem2 Γ ff = κ bool
+ lem2 Γ tt = λ _ _ → bool
+ lem2 Γ ff = λ _ _ → bool
  lem2 Γ (▹ x₁ x₂) = lem1 Γ x₁
  lem2 Γ (ƛ x d) = {!!}
  lem2 Γ (d · d₁) = {!!}
@@ -572,9 +572,9 @@ mutual
 --  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
 
  lem3' : ∀ {δ n M A} (Γ : dctx δ n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
- lem3' Γ tt = κ (tt , (refl , tt))
- lem3' Γ ff = κ (ff , (refl , ff))
- lem3' Γ (▹ {A} {x} x₁ x₂) = λ qs → mem x x₂ qs (lem1 Γ x₁ qs)
+ lem3' Γ tt = λ _ _ -> (tt , (refl , tt))
+ lem3' Γ ff = λ _ _ -> (ff , (refl , ff))
+ lem3' Γ (▹ {A} {x} x₁ x₂) = {!!} --λ w qs → mem x x₂ qs (lem1 Γ x₁ qs)
  lem3' Γ (ƛ x d) = {!!}
  lem3' Γ (d · d₁) = {!!}
  lem3' Γ (if x d d₁ d₂) = {!!}
