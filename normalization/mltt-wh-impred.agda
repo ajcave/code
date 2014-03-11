@@ -429,7 +429,7 @@ data Ψs {δ} ρ : ∀ {n m} -> dctx δ n -> tsubst n m -> Set where
 
 Ψs-wknδ : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {R : cand} -> Ψs ρ Γ σ -> Ψs (ρ ,, R) (↑ Γ) σ
 Ψs-wknδ ⊡ = ⊡
-Ψs-wknδ (d , x) = (Ψs-wknδ d) , {!!}
+Ψs-wknδ (d , x) = (Ψs-wknδ d) , {!lemma that composes ρ with a (weakening) substitution π !}
 
 data ψs {δ} ρ : ∀ {n m} -> (Γ : dctx δ n) -> (σ : tsubst n m) -> Ψs ρ Γ σ -> Set where
  ⊡ : ∀ {m} -> ψs ρ {m = m} ⊡ tt ⊡
