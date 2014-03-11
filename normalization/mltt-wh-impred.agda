@@ -113,6 +113,9 @@ data _⟶_ {n} : ∀ (M N : tm n) -> Set where
  ifc : ∀ {M M' N1 N2} -> M ⟶ M' -> if M N1 N2 ⟶ if M' N1 N2
 
 data _⟶δ_ {δ n} : ∀ (M N : tp δ n) -> Set where
+ ifc : ∀ {M M' N1 N2} -> M ⟶ M' -> if M N1 N2 ⟶δ if M' N1 N2
+ if1 : ∀ {M N} -> if tt M N ⟶δ M
+ if2 : ∀ {M N} -> if ff M N ⟶δ N
 
 data _⟶*_ {n} : ∀ (M N : tm n) -> Set where
  refl : ∀ {M} -> M ⟶* M
@@ -126,8 +129,15 @@ data _⟶δ*_ {δ n} : ∀ (M N : tp δ n) -> Set where
 ⟶*-trans refl s2 = s2
 ⟶*-trans (trans1 x s1) s2 = trans1 x (⟶*-trans s1 s2)
 
--- trans1r : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶ P -> M ⟶* P
--- trans1r s t = ⟶*-trans s (trans1 t refl)
+⟶δ*-trans : ∀ {δ n} {M N P : tp δ n} -> M ⟶δ* N -> N ⟶δ* P -> M ⟶δ* P
+⟶δ*-trans refl s2 = s2
+⟶δ*-trans (trans1 x s1) s2 = trans1 x (⟶δ*-trans s1 s2)
+
+trans1r : ∀ {n} {M N P : tm n} -> M ⟶* N -> N ⟶ P -> M ⟶* P
+trans1r s t = ⟶*-trans s (trans1 t refl)
+
+trans1rδ : ∀ {δ n} {M N P : tp δ n} -> M ⟶δ* N -> N ⟶δ P -> M ⟶δ* P
+trans1rδ s t = ⟶δ*-trans s (trans1 t refl)
 
 app1* : ∀ {n} {M M' N : tm n} -> M ⟶* M' -> (M · N) ⟶* (M' · N)
 app1* refl = refl
@@ -137,9 +147,13 @@ app1* (trans1 x s) = trans1 (app1 x) (app1* s)
 -- app2* refl = refl
 -- app2* (trans1 x s) = trans1 (app2 x) (app2* s) -}
 
--- if* : ∀ {n} {M M' N1 N2 : tm n} -> M ⟶* M' -> (if M N1 N2) ⟶* (if M' N1 N2)
--- if* refl = refl
--- if* (trans1 x t) = trans1 (ifc x) (if* t)
+if* : ∀ {n} {M M' N1 N2 : tm n} -> M ⟶* M' -> (if M N1 N2) ⟶* (if M' N1 N2)
+if* refl = refl
+if* (trans1 x t) = trans1 (ifc x) (if* t)
+
+if*δ : ∀ {δ n} {M M' : tm n} {N1 N2 : tp δ n} -> M ⟶* M' -> (if M N1 N2) ⟶δ* (if M' N1 N2)
+if*δ refl = refl
+if*δ (trans1 x t) = trans1 (ifc x) (if*δ t)
 
 mutual
  data neutral {n} : tm n -> Set where
@@ -185,13 +199,15 @@ normalizable-closed : ∀ {n} {M N : tm n} -> M ⟶* N -> normalizable N -> norm
 normalizable-closed p (norm q r) = norm (⟶*-trans p q) r
 
 cand : Set₁
-cand = ∀{n} -> tm n -> Set
+cand = tm ⊡ -> Set
+-- I think for going under binders, we want something like:
+-- cand n = ∀ {m} (w : vsubst n m) -> tm m -> Set?
 
 record isCand (R : cand) : Set where
  field
-  cr1 : ∀ {n} {M : tm n} -> R M -> normalizable M
-  cr2 : ∀ {n} {M N : tm n} -> M ⟶* N -> R N -> R M
-  cr3 : ∀ {n} {M : tm n} -> neutral M -> R M
+  cr1 : ∀ {M : tm _} -> R M -> normalizable M
+  cr2 : ∀ {M N : tm _} -> M ⟶* N -> R N -> R M
+  cr3 : ∀ {M : tm _} -> neutral M -> R M
 
 csub : ∀ δ -> Set₁
 csub δ = var δ * -> cand
@@ -218,33 +234,33 @@ _,,c_ w p (pop x) = w x
 --   Is this "going up a universe level" a show-stopper?
 --    Hopefully it's just the manifestation of Godel's incompleteness theorem
 mutual
- data Ψ {δ n} (ρ : csub δ) : tp δ n -> Set where
+ data Ψ {δ} (ρ : csub δ) : tp δ ⊡ -> Set where
   bool : Ψ ρ bool
   Π : ∀ {A B} -> (p : Ψ ρ A) -> (∀ a -> ψ ρ p a -> Ψ ρ ([ a /x]δ B)) -> Ψ ρ (Π A B)
   ∩ : ∀ {B} -> (∀ (R : cand) -> isCand R -> Ψ (ρ ,, R) B) -> Ψ ρ (∩ B)
-  if : ∀ {M} -> neutral M -> ∀ B1 B2 -> Ψ ρ (if M B1 B2)
+  --if : ∀ {M} -> neutral M -> ∀ B1 B2 -> Ψ ρ (if M B1 B2)
   ▹ : (X : var δ *) -> Ψ ρ (▹ X)
   closed : ∀ {A B} -> A ⟶δ B -> Ψ ρ B -> Ψ ρ A
 
- ψ : ∀ {δ n} -> {A : tp δ n} -> (ρ : csub δ) -> Ψ ρ A -> tm n -> Set
+ ψ : ∀ {δ} -> {A : tp δ ⊡} -> (ρ : csub δ) -> Ψ ρ A -> tm ⊡ -> Set
  ψ ρ bool a = ∃ (λ b → (a ⟶* b) × normal-bool b)
  ψ ρ (Π p f) a = (normalizable a) × (∀ b (q : ψ ρ p b) → ψ ρ (f b q) (a · b))
  ψ ρ (∩ b) t = ∀ (R : cand) (pr : isCand R) → ψ (ρ ,, R) (b R pr) t
  ψ ρ (▹ X) t = ρ X t
- ψ ρ (if m B1 B2) a = ∃ (λ b → (a ⟶* b) × neutral b)
+-- ψ ρ (if m B1 B2) a = ∃ (λ b → (a ⟶* b) × neutral b)
  ψ ρ (closed x p) a = ψ ρ p a
 
-Ψ-closed⟶* : ∀ {δ n} {A B : tp δ n} {ρ} -> A ⟶δ* B -> Ψ ρ B -> Ψ ρ A
+Ψ-closed⟶* : ∀ {δ} {A B : tp δ ⊡} {ρ} -> A ⟶δ* B -> Ψ ρ B -> Ψ ρ A
 Ψ-closed⟶* refl t = t
 Ψ-closed⟶* (trans1 x s) t = closed x (Ψ-closed⟶* s t)
 
-ψ-closed : ∀ {δ n} {ρ : csub δ} (w : areCands ρ) {A : tp δ n} {M N}
+ψ-closed : ∀ {δ} {ρ : csub δ} (w : areCands ρ) {A : tp δ ⊡} {M N}
  -> (p : Ψ ρ A) -> M ⟶* N -> ψ ρ p N -> ψ ρ p M
 ψ-closed w bool s (t₁ , (t₂ , t₃)) = t₁ , ((⟶*-trans s t₂) , t₃)
 ψ-closed w (Π p x) s (h , t) = normalizable-closed s h , λ b q → ψ-closed w (x b q) (app1* s) (t b q)
 ψ-closed w (closed x p) s t = ψ-closed w p s t
 ψ-closed w (∩ b) s t = λ R pr → ψ-closed (w ,,c pr) (b R pr) s (t R pr)
-ψ-closed w (if M₂ T1 T2) s (t₁ , (t₂ , t₃)) = t₁ , ((⟶*-trans s t₂) , t₃)
+--ψ-closed w (if M₂ T1 T2) s (t₁ , (t₂ , t₃)) = t₁ , ((⟶*-trans s t₂) , t₃)
 ψ-closed w (▹ X) s t = isCand.cr2 (w X) s t
 
 data _≈δ_ {δ n} (a b : tp δ n) : Set where
@@ -352,7 +368,7 @@ postulate
 -- bool≈set (common x x₁) | refl | ()
 
 mutual
- lemma3-3 : ∀ {δ n} {A B : tp δ n} {ρ} {M : tm n} (p : Ψ ρ A) (q : Ψ ρ B) -> A ≈δ B -> ψ ρ p M -> ψ ρ q M
+ lemma3-3 : ∀ {δ} {A B : tp δ ⊡} {ρ} {M : tm ⊡} (p : Ψ ρ A) (q : Ψ ρ B) -> A ≈δ B -> ψ ρ p M -> ψ ρ q M
  lemma3-3 = {!!}
 --  lemma3-3 (closed x p) q t r = lemma3-3 p q (⟶≈trans' t x) r
 --  lemma3-3 p (closed x q) t r = lemma3-3 p q (⟶≈trans t x) r
@@ -379,7 +395,7 @@ mutual
 --  lemma3-3b (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
 --  lemma3-3b (neut x) (neut x₁) t r = r
 
-lemma3-3c : ∀ {δ n} {ρ} {A : tp δ n} {M : tm n} (p q : Ψ ρ A) -> ψ ρ p M -> ψ ρ q M
+lemma3-3c : ∀ {δ} {ρ} {A : tp δ ⊡} {M : tm ⊡} (p q : Ψ ρ A) -> ψ ρ p M -> ψ ρ q M
 lemma3-3c p q t = lemma3-3 p q ≈-refl t
 
 
@@ -426,41 +442,41 @@ mutual
 _∘_ : ∀ {A B C} (f : B -> C) (g : A -> B) -> A -> C
 (f ∘ g) x = f (g x)
 
-data Ψs {δ} ρ : ∀ {n m} -> dctx δ n -> tsubst n m -> Set where
- ⊡ : ∀ {m} -> Ψs ρ {m = m} ⊡ tt
- _,_ : ∀ {n m} {Γ} {σ : tsubst n m} {A} {a} -> Ψs ρ Γ σ -> Ψ ρ ([ σ ]tδ A) -> Ψs ρ (Γ , A) (σ , a)
+data Ψs {δ} ρ : ∀ {n} -> dctx δ n -> tsubst n ⊡ -> Set where
+ ⊡ : Ψs ρ ⊡ tt
+ _,_ : ∀ {n} {Γ} {σ : tsubst n ⊡} {A} {a} -> Ψs ρ Γ σ -> Ψ ρ ([ σ ]tδ A) -> Ψs ρ (Γ , A) (σ , a)
 
-Ψs-wknδ : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {R : cand} -> Ψs ρ Γ σ -> Ψs (ρ ,, R) (↑ Γ) σ
+Ψs-wknδ : ∀ {δ} {ρ} {n} {Γ : dctx δ n} {σ : tsubst n ⊡} {R : cand} -> Ψs ρ Γ σ -> Ψs (ρ ,, R) (↑ Γ) σ
 Ψs-wknδ ⊡ = ⊡
 Ψs-wknδ (d , x) = (Ψs-wknδ d) , {!lemma that composes ρ with a (weakening) substitution π !}
 
-Ψs-wknδ' : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} -> Ψs ρ (↑ Γ) σ -> Ψs (ρ ∘ pop) Γ σ
+Ψs-wknδ' : ∀ {δ} {ρ} {n} {Γ : dctx δ n} {σ : tsubst n ⊡} -> Ψs ρ (↑ Γ) σ -> Ψs (ρ ∘ pop) Γ σ
 Ψs-wknδ' {Γ = ⊡} {tt} ⊡ = ⊡
 Ψs-wknδ' {Γ = Γ , A} {σ , M} (d , x₁) = (Ψs-wknδ' d) , {!!}
 
-data ψs {δ} ρ : ∀ {n m} -> (Γ : dctx δ n) -> (σ : tsubst n m) -> Ψs ρ Γ σ -> Set where
- ⊡ : ∀ {m} -> ψs ρ {m = m} ⊡ tt ⊡
- _,[_]_ : ∀ {n m} {Γ} {σ : tsubst n m} {ps} {A} {a} -> ψs ρ Γ σ ps -> ∀ p -> ψ ρ p a -> ψs ρ (Γ , A) (σ , a) (ps , p)
+data ψs {δ} ρ : ∀ {n} -> (Γ : dctx δ n) -> (σ : tsubst n ⊡) -> Ψs ρ Γ σ -> Set where
+ ⊡ : ψs ρ ⊡ tt ⊡
+ _,[_]_ : ∀ {n} {Γ} {σ : tsubst n ⊡} {ps} {A} {a} -> ψs ρ Γ σ ps -> ∀ p -> ψ ρ p a -> ψs ρ (Γ , A) (σ , a) (ps , p)
 
-ψs-wknδ : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {ps : Ψs ρ Γ σ} {R : cand} -> ψs ρ Γ σ ps -> ψs (ρ ,, R) (↑ Γ) σ (Ψs-wknδ ps)
+ψs-wknδ : ∀ {δ} {ρ} {n} {Γ : dctx δ n} {σ : tsubst n ⊡} {ps : Ψs ρ Γ σ} {R : cand} -> ψs ρ Γ σ ps -> ψs (ρ ,, R) (↑ Γ) σ (Ψs-wknδ ps)
 ψs-wknδ ⊡ = ⊡
 ψs-wknδ (d ,[ p ] x) = (ψs-wknδ d) ,[ {!!} ] {!!}
 
-ψs-wknδ' : ∀ {δ} {ρ} {n m} {Γ : dctx δ n} {σ : tsubst n m} {ps : Ψs ρ (↑ Γ) σ} -> ψs ρ (↑ Γ) σ ps -> ψs (ρ ∘ pop) Γ σ (Ψs-wknδ' ps)
+ψs-wknδ' : ∀ {δ} {ρ} {n} {Γ : dctx δ n} {σ : tsubst n ⊡} {ps : Ψs ρ (↑ Γ) σ} -> ψs ρ (↑ Γ) σ ps -> ψs (ρ ∘ pop) Γ σ (Ψs-wknδ' ps)
 ψs-wknδ' {Γ = ⊡} {tt} ⊡ = ⊡
 ψs-wknδ' {Γ = Γ , A} (d ,[ p ] x) = (ψs-wknδ' d) ,[ {!!} ] {!!}
 
 _⊨_type : ∀ {δ n} (Γ : dctx δ n) -> tp δ n -> Set
-Γ ⊨ A type = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} -> ψs ρ Γ σ ps -> Ψ ρ ([ σ ]tδ A)
+Γ ⊨ A type = ∀ {ρ} (w : areCands ρ) {σ : tsubst _ ⊡} {ps : Ψs ρ Γ σ} -> ψs ρ Γ σ ps -> Ψ ρ ([ σ ]tδ A)
 
 Π' : ∀ {δ n} {Γ} (A : tp δ n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
 Π' A B t1 t2 = λ {ρ} w x → Π (t1 w x) (λ a x₁ → subst (Ψ ρ) (subeq2δ B) (t2 w (x ,[ t1 w x ] x₁)))
 
 _⊨_∶'_[_] : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Γ ⊨ A type -> Set
-Γ ⊨ M ∶' A [ d ] = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) -> ψ ρ (d w qs) ([ σ ]t M)
+Γ ⊨ M ∶' A [ d ] = ∀ {ρ} (w : areCands ρ) {σ : tsubst _ ⊡} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) -> ψ ρ (d w qs) ([ σ ]t M)
 
 _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
-Γ ⊨ M ∶ A = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) (p : Ψ ρ ([ σ ]tδ A)) -> ψ ρ p ([ σ ]t M)
+Γ ⊨ M ∶ A = ∀ {ρ} (w : areCands ρ) {σ : tsubst _ ⊡} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) (p : Ψ ρ ([ σ ]tδ A)) -> ψ ρ p ([ σ ]t M)
 
 κ : ∀ {A B : Set} -> B -> A -> B
 κ b = λ _ -> b
@@ -485,7 +501,7 @@ _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
 -- φeq : ∀ {n} {B B' M N : tm n} (p : Φ B) (q : Φ B') -> B' ⟶* B -> M ⟶* N -> φ p N -> φ q M
 -- φeq p q s1 s t = lemma3-3' p q (common refl s1) (φ-closed p s t)
 
-φeq' : ∀ {δ n} {B B' : tp δ n} {M N : tm n} {ρ} (w : areCands ρ) (p : Ψ ρ B) (q : Ψ ρ B') -> B ≈δ B' -> M ⟶* N -> ψ ρ p N -> ψ ρ q M
+φeq' : ∀ {δ} {B B' : tp δ ⊡} {M N : tm ⊡} {ρ} (w : areCands ρ) (p : Ψ ρ B) (q : Ψ ρ B') -> B ≈δ B' -> M ⟶* N -> ψ ρ p N -> ψ ρ q M
 φeq' w p q s1 s t = lemma3-3 p q s1 (ψ-closed w p s t)
 
 -- ƛ' : ∀ {n} {Γ} (A : tm n) B M (d1 : Γ ⊨ A type) (d2 : (Γ , A) ⊨ B type) ->  (Γ , A) ⊨ M ∶ B -> Γ ⊨ (ƛ M) ∶' (Π A B) [ Π' A B d1 d2 ]
@@ -513,18 +529,18 @@ norm-is-cand = record {
  }
 
 mutual
- reflect : ∀ {δ n} {A : tp δ n} {M : tm n} ρ -> areCands ρ -> (p : Ψ ρ A) -> neutral M -> ψ ρ p M
+ reflect : ∀ {δ} {A : tp δ ⊡} {M : tm ⊡} ρ -> areCands ρ -> (p : Ψ ρ A) -> neutral M -> ψ ρ p M
  reflect ρ w bool r = _ , (refl , (neut r))
  reflect ρ w (Π p x) r = norm refl (neut r) , λ b q → reflect ρ w (x b q) (_·_ r)
- reflect ρ w (if x x1 x2) r = _ , (refl , r)
+-- reflect ρ w (if x x1 x2) r = _ , (refl , r)
  reflect ρ w (closed x p) r = reflect ρ w p r
  reflect ρ w (∩ b) r = λ R pr → reflect (ρ ,, R) (w ,,c pr) (b R pr) r
  reflect ρ w (▹ X) r = isCand.cr3 (w X) r
 
- reify : ∀ {δ n} {A : tp δ n} {M : tm n} ρ -> areCands ρ -> (p : Ψ ρ A) -> ψ ρ p M -> normalizable M
+ reify : ∀ {δ} {A : tp δ ⊡} {M : tm ⊡} ρ -> areCands ρ -> (p : Ψ ρ A) -> ψ ρ p M -> normalizable M
  reify ρ w bool (x₁ , (x₂ , x₃)) = norm x₂ (normal-bool-normal x₃)
  reify ρ w (Π p x) (h , _) = h
- reify ρ w (if x x1 x2) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
+-- reify ρ w (if x x1 x2) (x₁ , (x₂ , x₃)) = norm x₂ (neut x₃)
  reify ρ w (closed x p) r = reify ρ w p r
  reify ρ w (∩ b) r = reify (ρ ,, normalizable)
                             (w ,,c norm-is-cand)
@@ -532,17 +548,17 @@ mutual
                             (r normalizable norm-is-cand)
  reify ρ w (▹ X) r = isCand.cr1 (w X) r
 
-reifyt : ∀ {δ n} {A : tp δ n} ρ -> Ψ ρ A -> normalizableδ A
+reifyt : ∀ {δ} {A : tp δ ⊡} ρ -> Ψ ρ A -> normalizableδ A
 reifyt ρ bool = norm refl bool
 reifyt ρ (Π t x) = norm refl Π
-reifyt ρ (if x x1 x2) = norm refl (if x) --(neut x)
+--reifyt ρ (if x x1 x2) = norm refl (if x) --(neut x)
 reifyt ρ (closed x t) with reifyt ρ t
 reifyt ρ (closed x₂ t) | norm x x₁ = norm (trans1 x₂ x) x₁
 reifyt ρ (∩ b) = norm refl ∩
 reifyt ρ (▹ X) = norm refl ▹
 
-ψ-cand : ∀ {δ n} {ρ} {A : tp δ n} (p : Ψ ρ A) -> areCands ρ -> isCand (ψ ρ p)
-ψ-cand p w = ?
+ψ-cand : ∀ {δ} {ρ} {A : tp δ ⊡} (p : Ψ ρ A) -> areCands ρ -> isCand (ψ ρ p)
+ψ-cand p w = record { cr1 = reify _ w p; cr2 = ψ-closed w p; cr3 = reflect _ w p }
 
 -- -- TODO: Try doing this in "premonoidal category" style
 -- if' : ∀ {n} {Γ} (C : tm (n , *)) M N1 N2 (d : (Γ , bool) ⊨ C type) -> (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 ∶ ([ tt /x] C) -> Γ ⊨ N2 ∶ ([ ff /x] C) -> Γ ⊨ (if M N1 N2) ∶' ([ M /x] C) [ ⊨subst bool C d (κ bool) t ]
@@ -565,14 +581,25 @@ mem .(pop x) (pop {n} {Γ} {x} d) p1 p2 p3 = {!!}
 ∩inv B d w qs | closed () q
 
 ⊨substδ : ∀ {δ n} {Γ : dctx δ n} A B -> (↑ Γ) ⊨ B type -> (p : Γ ⊨ A type) -> Γ ⊨ ([ A /X]δtp B) type
-⊨substδ A B t p w x with t (w ,,c {!!}) (ψs-wknδ x)
-... | q = {!!}
+⊨substδ A B t p w x with t (w ,,c ψ-cand (p w x) w) (ψs-wknδ x)
+... | q = {!painful lemmas!}
+
+neut-closed : ∀ {C} {M : tm ⊡} -> neutral M -> C
+neut-closed (▹ ())
+neut-closed (_·_ d) = neut-closed d
+neut-closed (if d) = neut-closed d
+
+ifδ : ∀ {δ n} {Γ : dctx δ n} M N1 N2 (t : Γ ⊨ M ∶ bool) -> Γ ⊨ N1 type -> Γ ⊨ N2 type -> Γ ⊨ (if M N1 N2) type
+ifδ M N1 N2 t d1 d2 w qs with t w qs bool
+ifδ M N1 N2 t d1 d2 w qs | .tt , (proj₂ , tt) = Ψ-closed⟶* (trans1rδ (if*δ proj₂) if1) (d1 w qs)
+ifδ M N1 N2 t d1 d2 w qs | .ff , (proj₂ , ff) = Ψ-closed⟶* (trans1rδ (if*δ proj₂) if2) (d2 w qs)
+ifδ M N1 N2 t d1 d2 w qs | proj₁ , (proj₂ , neut x) = neut-closed x
 
 mutual
  lem1 : ∀ {δ n A} (Γ : dctx δ n) -> Γ ⊢ A type -> Γ ⊨ A type
  lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
  lem1 Γ bool = λ _ _ → bool
- lem1 Γ (if x t t₁) = {!!}
+ lem1 Γ (if {M} {N1} {N2} x t t₁) = ifδ M N1 N2 (lem3 Γ x) (lem1 Γ t) (lem1 Γ t₁)
  lem1 Γ (∩ t) = λ w x → ∩ (λ R x₁ → lem1 _ t (w ,,c x₁) (ψs-wknδ x))
  
 --   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
@@ -621,7 +648,7 @@ mutual
 -- -- Or.. for weak normalization, could we just add "halts" to the definition of the logical predicate?
 
 yay1 : ∀ {M} {A : tp ⊡ ⊡}  -> ⊡ ⊢ M ∶ A -> normalizable M
-yay1 d = subst normalizable subeq4 (reify {n = ⊡} (λ ()) (λ ()) (lem2 ⊡ d (λ ()) ⊡) (lem3' _ d (λ ()) ⊡))
+yay1 d = subst normalizable subeq4 (reify (λ ()) (λ ()) (lem2 ⊡ d (λ ()) ⊡) (lem3' _ d (λ ()) ⊡))
 
 -- {-
 -- mutual
