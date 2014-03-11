@@ -602,8 +602,6 @@ mutual
  lem1 Γ (if {M} {N1} {N2} x t t₁) = ifδ M N1 N2 (lem3 Γ x) (lem1 Γ t) (lem1 Γ t₁)
  lem1 Γ (∩ t) = λ w x → ∩ (λ R x₁ → lem1 _ t (w ,,c x₁) (ψs-wknδ x))
  
---   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
---  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
  lem2 : ∀ {δ n M A} (Γ : dctx δ n)  -> Γ ⊢ M ∶ A -> Γ ⊨ A type
  lem2 Γ tt = λ _ _ → bool
  lem2 Γ ff = λ _ _ → bool
@@ -614,15 +612,6 @@ mutual
  lem2 Γ (∩I d) = λ w x → ∩ (λ R x₁ → lem2 _ d (w ,,c x₁) (ψs-wknδ x))
  lem2 Γ (∩E {M} {B} {C} d x) = ⊨substδ C B (∩inv B (lem2 Γ d)) (lem1 Γ x)
  lem2 Γ (conv x x₁ d) = lem1 Γ x
---  lem2 Γ bool = κ set
---  lem2 Γ tt = κ bool
---  lem2 Γ ff = κ bool
---  lem2 Γ (▹ x₁ x₂) = lem1 Γ x₁
---  lem2 Γ (Π t t₁) = κ set
---  lem2 Γ (ƛ {A} {B} x t) = Π' A B (lem1 Γ x) (lem2 (Γ , A) t)
---  lem2 Γ (_·_ {A} {B} t t₁) = ⊨subst A B (Πinv2 A B (lem2 Γ t)) (lem2 Γ t₁) (lem3 Γ t₁)
---  lem2 Γ (if {C} x t t₁ t₂) = ⊨subst bool C (lem1 (Γ , bool) x) (κ bool) (lem3 Γ t)
---  lem2 Γ (conv x x₁ t) = lem1 Γ x
 
  lem3 : ∀ {δ n M A} (Γ : dctx δ n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
  lem3 Γ t qs w p = lemma3-3c (lem2 Γ t qs w) p (lem3' Γ t qs w)
