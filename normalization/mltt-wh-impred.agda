@@ -250,12 +250,13 @@ mutual
 data _≈δ_ {δ n} (a b : tp δ n) : Set where
  common : ∀ {d} -> (a ⟶δ* d) -> (b ⟶δ* d) -> a ≈δ b
 
--- postulate
+postulate
 --  sub⟶* : ∀ {n m} (σ : tsubst n m) {M N} -> M ⟶* N -> [ σ ]t M ⟶* [ σ ]t N
 --  sub⟶*2 : ∀ {n m} {M N : tm m} {σ : tsubst n m} -> M ⟶* N -> ∀ (P : tm (n , *)) -> [ σ , M ]t P ⟶* [ σ , N ]t P
 --  subeq3 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ ]t M ≡ [ σ , N ]t ([ wkn-vsub ]r M)
---  subeq1 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , ([ σ ]t N) ]t M ≡ [ σ ]t ([ N /x] M) 
---  subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
+ subeq1 : ∀ {δ n m} {σ : tsubst n m} (M : tp δ _) {N} -> [ σ , ([ σ ]t N) ]tδ M ≡ [ σ ]tδ ([ N /x]δ M) 
+ --subeq2 : ∀ {n m} {σ : tsubst n m} M {N} -> [ σ , N ]t M ≡ [ id-tsub , N ]t ([ tsub-ext σ ]t M)
+ subeq2δ : ∀ {δ n m} {σ : tsubst n m} (M : tp δ _) {N} -> [ σ , N ]tδ M ≡ [ id-tsub , N ]tδ ([ tsub-ext σ ]tδ M)
 --  subeq4 : ∀ {n} {M : tm n} -> [ id-tsub ]t M ≡ M
 
 -- ⟶*cong2 : ∀ {n} {M1 M2 N1 N2 : tm n} -> M1 ≡ M2 -> N1 ≡ N2 -> M1 ⟶* N1 -> M2 ⟶* N2
@@ -377,8 +378,8 @@ data _≈δ_ {δ n} (a b : tp δ n) : Set where
 --  lemma3-3b (neut x) (Π q x₁) t r = Π≈neutral x (≈-sym t)
 --  lemma3-3b (neut x) (neut x₁) t r = r
 
--- lemma3-3c : ∀ {n} {A M : tm n} (p q : Ψ A) -> ψ p M -> ψ q M
--- lemma3-3c p q t = lemma3-3 p q ≈-refl t
+lemma3-3c : ∀ {δ n} {ρ} {A : tp δ n} {M : tm n} (p q : Ψ ρ A) -> ψ ρ p M -> ψ ρ q M
+lemma3-3c p q t = {!!} --lemma3-3 p q ≈-refl t
 
 
 
@@ -429,14 +430,8 @@ data ψs {δ} ρ : ∀ {n m} -> (Γ : dctx δ n) -> (σ : tsubst n m) -> Ψs ρ 
 _⊨_type : ∀ {δ n} (Γ : dctx δ n) -> tp δ n -> Set
 Γ ⊨ A type = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} -> ψs ρ Γ σ ps -> Ψ ρ ([ σ ]tδ A)
 
--- {-_⊨_set : ∀ {n} (Γ : dctx n) -> tm n -> Set
--- Γ ⊨ A set = ∀ {m} {σ : tsubst _ m} {ps : Φs Γ σ} -> φs Γ σ ps -> Ψ ([ σ ]t A)
-
--- Π'' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A set -> (Γ , A) ⊨ B set -> Γ ⊨ (Π A B) set
--- Π'' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Ψ (subeq2 B) (t2 (x ,[ {!!} ] x₁))) -}
-
--- Π' : ∀ {n} {Γ} (A : tm n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
--- Π' A B t1 t2 = λ x → Π (t1 x) (λ a x₁ → subst Φ (subeq2 B) (t2 (x ,[ t1 x ] x₁)))
+Π' : ∀ {δ n} {Γ} (A : tp δ n) B -> Γ ⊨ A type -> (Γ , A) ⊨ B type -> Γ ⊨ (Π A B) type
+Π' A B t1 t2 = λ {ρ} w x → Π (t1 w x) (λ a x₁ → subst (Ψ ρ) (subeq2δ B) (t2 w (x ,[ t1 w x ] x₁)))
 
 _⊨_∶'_[_] : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Γ ⊨ A type -> Set
 Γ ⊨ M ∶' A [ d ] = ∀ {ρ} (w : areCands ρ) {m} {σ : tsubst _ m} {ps : Ψs ρ Γ σ} (qs : ψs ρ Γ σ ps) -> ψ ρ (d w qs) ([ σ ]t M)
@@ -447,17 +442,16 @@ _⊨_∶_ : ∀ {δ n} (Γ : dctx δ n) (M : tm n) A -> Set
 κ : ∀ {A B : Set} -> B -> A -> B
 κ b = λ _ -> b
 
--- Πinv2 : ∀ {n} {Γ : dctx n} A B -> Γ ⊨ (Π A B) type -> (Γ , A) ⊨ B type
--- Πinv2 A B t (x1 ,[ _ ] x2) with t x1
--- Πinv2 A B t (x1 ,[ p ] x2) | Π q x = subst Φ (sym (subeq2 B)) (x _ (lemma3-3c' p q x2))
--- Πinv2 A B t (x1 ,[ p ] x2) | neut ()
--- Πinv2 A B t (x1 ,[ p ] x2) | closed () q
+Πinv2 : ∀ {δ n} {Γ : dctx δ n} A B -> Γ ⊨ (Π A B) type -> (Γ , A) ⊨ B type
+Πinv2 A B t w (x1 ,[ _ ] x2) with t w x1
+Πinv2 A B t w (x1 ,[ p ] x2) | Π q x = subst (Ψ _) (sym (subeq2δ B)) (x _ (lemma3-3c p q x2))
+Πinv2 A B t w (x1 ,[ p ] x2) | closed () q
 
 -- {-⊨type-cong : ∀ {n} {Γ : dctx n} {A B} -> A ≡ B -> Γ ⊨ A type -> Γ ⊨ B type
 -- ⊨type-cong refl t = t -}
 
--- ⊨subst : ∀ {n} {Γ : dctx n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x] B) type
--- ⊨subst A B t p n x = subst Φ (subeq1 B) (t (x ,[ p x ] n x (p x)))
+⊨subst : ∀ {δ n} {Γ : dctx δ n} A B -> (Γ , A) ⊨ B type -> (p : Γ ⊨ A type) -> ∀ {N} -> Γ ⊨ N ∶ A -> Γ ⊨ ([ N /x]δ B) type
+⊨subst A B t p n w x = subst (Ψ _) (subeq1 B) (t w (x ,[ p w x ] n w x (p w x)))
 
 -- φeqdep : ∀ {n} {B B' M : tm n} (p : Φ B) (q : Φ B') -> B ≡ B' -> φ p M -> φ q M
 -- φeqdep p q refl t = lemma3-3c' p q t
@@ -534,19 +528,17 @@ reifyt ρ (▹ X) = norm refl ▹
 -- if' C M N1 N2 d t t1 t2 qs | M' , (q1 , neut x) = φ-closed (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if* q1) (reflect' (subst Φ (subeq1 C) (d (qs ,[ bool ] (M' , (q1 , neut x))))) (if x))
 
 mem : ∀ {δ n} {Γ} {A : tp δ n} x -> Γ ∋ x ∶ A -> Γ ⊨ (▹ x) ∶ A
-mem x d = {!!}
+mem .top (top {_} {_} {A}) p1 (p2 ,[ p ] x) p3 = {!φeqdep p p3!}
+mem .(pop x) (pop {n} {Γ} {x} d) p1 p2 p3 = {!!}
 -- mem .top (top {_} {_} {A}) (qs ,[ p ] x) p₁ = φeqdep p p₁ (subeq3 A) x
 -- mem .(pop x) (pop {n} {Γ} {x} {A} {B} d) (qs ,[ p ] x₁) p₁ = φeqdep (subst Φ (sym (subeq3 B)) p₁) p₁ (subeq3 B) (mem x d qs (subst Φ (sym (subeq3 B)) p₁))
 
 mutual
  lem1 : ∀ {δ n A} (Γ : dctx δ n) -> Γ ⊢ A type -> Γ ⊨ A type
- lem1 Γ (Π t t₁) = {!!}
+ lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
  lem1 Γ bool = λ _ _ → bool
  lem1 Γ (if x t t₁) = {!!}
- lem1 Γ (∩ t) = {!!}
---  lem1 Γ set = κ set
---  lem1 Γ (Π {A} {B} t t₁) = Π' A B (lem1 Γ t) (lem1 (Γ , A) t₁)
---  lem1 Γ (emb x) = λ x₁ → prop1 (lem3 Γ x x₁ set)
+ lem1 Γ (∩ t) = λ w x → ∩ (λ R x₁ → lem1 _ t (w ,,c x₁) {!!})
  
 --   -- .. Could we do this equivalently by showing Γ ⊢ M ∶ A implies Γ ⊢ A type, and then appealing to lem1?
 --  -- Or alternatively, can we employ the strategy of requiring that Φ A in lem3, analogous to the assumption that Γ ⊢ A type before checking Γ ⊢ M ∶ A?
@@ -554,10 +546,10 @@ mutual
  lem2 Γ tt = λ _ _ → bool
  lem2 Γ ff = λ _ _ → bool
  lem2 Γ (▹ x₁ x₂) = lem1 Γ x₁
- lem2 Γ (ƛ x d) = {!!}
- lem2 Γ (d · d₁) = {!!}
- lem2 Γ (if x d d₁ d₂) = {!!}
- lem2 Γ (∩I d) = {!!}
+ lem2 Γ (ƛ {A} {B} x d) = Π' A B (lem1 Γ x) (lem2 (Γ , A) d)
+ lem2 Γ (_·_ {A} {B} d d₁) = ⊨subst A B (Πinv2 A B (lem2 Γ d)) (lem2 Γ d₁) (lem3 Γ d₁)
+ lem2 Γ (if {C} x d d₁ d₂) = ⊨subst bool C (lem1 (Γ , bool) x) (λ _ _ → bool) (lem3 Γ d)
+ lem2 Γ (∩I d) = λ w x → ∩ (λ R x₁ → lem2 _ d (w ,,c x₁) {!!})
  lem2 Γ (∩E d x) = {!!}
  lem2 Γ (conv x x₁ d) = lem1 Γ x
 --  lem2 Γ bool = κ set
@@ -571,13 +563,12 @@ mutual
 --  lem2 Γ (conv x x₁ t) = lem1 Γ x
 
  lem3 : ∀ {δ n M A} (Γ : dctx δ n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
- lem3 Γ t qs p = {!!}
---  lem3 Γ t qs p = lemma3-3c' (lem2 Γ t qs) p (lem3' Γ t qs)
+ lem3 Γ t qs w p = lemma3-3c (lem2 Γ t qs w) p (lem3' Γ t qs w)
 
  lem3' : ∀ {δ n M A} (Γ : dctx δ n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶' A [ lem2 Γ d ]
  lem3' Γ tt = λ _ _ -> (tt , (refl , tt))
  lem3' Γ ff = λ _ _ -> (ff , (refl , ff))
- lem3' Γ (▹ {A} {x} x₁ x₂) = {!!} --λ w qs → mem x x₂ qs (lem1 Γ x₁ qs)
+ lem3' Γ (▹ {A} {x} x₁ x₂) = λ w qs → mem x x₂ w qs (lem1 Γ x₁ w qs)
  lem3' Γ (ƛ x d) = {!!}
  lem3' Γ (d · d₁) = {!!}
  lem3' Γ (if x d d₁ d₂) = {!!}
