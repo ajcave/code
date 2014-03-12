@@ -609,7 +609,7 @@ ifδ M N1 N2 t d1 d2 w qs | proj₁ , (proj₂ , neut x) = neut-closed x
 ∩E' : ∀ {n δ} {Γ : dctx δ n} M B C -> Γ ⊨ M ∶ (∩ B) -> (d1 : (↑ Γ) ⊨ B type) ->  (d2 : Γ ⊨ C type)
  -> Γ ⊨ M ∶' ([ C /X]δtp B) [ ⊨substδ C B d1 d2 ]
 ∩E' M B C p d1 d2 w qs with p w qs (∩ (λ R x → d1 (w ,,c x) (ψs-wknδ qs))) (ψ _ (d2 w qs)) (ψ-cand (d2 w qs) w)
-... | q = {!!}
+... | q = {!even uglier lemma?!}
 
 mutual
  lem1 : ∀ {δ n A} (Γ : dctx δ n) -> Γ ⊢ A type -> Γ ⊨ A type
