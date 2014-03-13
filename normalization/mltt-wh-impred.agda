@@ -15,6 +15,7 @@ open import Data.Empty
 -- Can we do this proof in e.g. Coq (i.e. without I-R) by using the trick of encoding IR as indexing?
 -- Suspect we would need one more universe to do so
 
+-- ..I guess actually I don't need bool and if, because it can be church encoded now..
 mutual
  data tp (δ : ctx Unit) (n : ctx Unit) : Set where
   ▹ : (X : var δ *) -> tp δ n
@@ -638,7 +639,7 @@ mutual
  lem3' Γ (▹ {A} {x} x₁ x₂) = λ w qs → mem x x₂ w qs (lem1 Γ x₁ w qs)
  lem3' Γ (ƛ x d) = {!!}
  lem3' Γ (d · d₁) = {!!}
- lem3' Γ (if x d d₁ d₂) = {!!}
+ lem3' Γ (if x d d₁ d₂) = {!!} -- Can't get rid of bool by Church encoding because we want large elim
  lem3' Γ (∩I {M} {B} d) = ∩I' M B (lem3 (↑ Γ) d) (lem2 (↑ Γ) d)
  lem3' Γ (∩E {M} {B} {C} d x) = ∩E' M B C (lem3 Γ d) (∩inv B (lem2 Γ d)) (lem1 Γ x)
  lem3' Γ (conv {A} {B} {M} x x₁ d) = ⊨conv M (lem2 Γ d) (lem1 Γ x) x₁ (lem3 Γ d)
