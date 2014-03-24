@@ -44,6 +44,10 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 -- tagging them with a flag indicating which family they're from and using large elim
 -- If not large elim, then we could do it by combining the mutually recursive types into one
 -- and indexing by the flag?
+
+-- It seems that the well-formedness condition for signatures should impose an ordering
+-- it just may be that we need to interleave kinding and typing constants in order for the
+-- ordering to be possible (e.g. for mutual recursion, and inductive-inductive definitions)
 mutual
  data ctx : Set where
   ⊡ : ctx
