@@ -1,6 +1,6 @@
 {-# OPTIONS --no-positivity-check --no-termination-check #-}
 -- By Induction-induction-recursion
-module iir where
+module iir-kinding where
 open import Data.Unit
 open import Data.Product
 open import Function
@@ -62,18 +62,13 @@ mutual
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
   -- nat : tp Γ
   -- vec : (n : ntm Γ nat) -> tp Γ
-  _·_ : ∀ {K : kind Γ} -> (c : inSig K) -> tpSpine Γ K -> tp Γ
+  _·_ : ∀ {K : kind ⊡'} -> (c : inSig K) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
 
  data tpSpine Γ : kind Γ -> Set where
   ε : tpSpine Γ ⋆
   _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> (S : tpSpine Γ (Π T K)) -> tpSpine Γ ([ N /x]kn K)
 
- -- Hmm what is the scope for these? Γ seems weird...
- -- Especially since we intend to parameterize by them... I guess it needs to be some
- -- family that supports weakening?
- data inSig {Γ} : kind Γ -> Set where
-  nat : inSig ⋆
-  vec : inSig (Π (nat · ε) ⋆)
+ 
 
  _,,_ : (Γ : ctx) -> (T : tp Γ) -> ctx
  Γ ,, T = Γ ,' T
@@ -128,6 +123,13 @@ mutual
  [_]kv σ ⋆ = ⋆
  [_]kv σ (Π T K) = Π ([ σ ]tv T) ([ vsubst-ext σ ]kv K)
 
+ -- Hmm what is the scope for these? Γ seems weird...
+ -- Especially since we intend to parameterize by them... I guess it needs to be some
+ -- family that supports weakening?
+ data inSig {Γ} : kind Γ -> Set where
+  nat : inSig ⋆
+  vec : inSig (Π (nat · ε) ⋆)
+
  ⊡s : ∀ {Γ} -> vsubst ⊡' Γ
  ⊡s = unit
 
@@ -135,14 +137,14 @@ mutual
  [_]tsv σ ε = ε
  [_]tsv σ (N ,κ S) = subst (λ K -> tpSpine _ K) trustMe (([ σ ]vn N) ,κ [ σ ]tsv S)
 
- [_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
+ --[_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
  -- [_]tv σ nat = nat
  -- [_]tv σ (vec n) = vec ([ σ ]vn n)
- [ σ ]tv (c · S) = [ σ ]isv c · [ σ ]tsv S
+ [ σ ]tv (c · S) = c · subst (λ K → tpSpine _ K) trustMe ([ σ ]tsv S)
 
- [_]isv σ nat = nat
- [_]isv σ vec = vec
+ -- [_]isv σ nat = nat
+ -- [_]isv σ vec = vec
 
  [_]vv : ∀ {Γ Δ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> var Γ T -> var Δ ([ σ ]tv T)
  [_]vv (σ , y) top = subst (λ S → var _ S) trustMe y
@@ -182,15 +184,15 @@ mutual
  [_]ts σ ε = ε
  [_]ts σ (N ,κ S) = subst (λ K → tpSpine _ K) trustMe (([ σ ]nn N) ,κ ([ σ ]ts S))
 
- [_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
+ --[_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
 
  [_]tpn σ (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
  -- [_]tpn σ nat = nat
  -- [_]tpn σ (vec n) = vec ([ σ ]nn n)
- [ σ ]tpn (c · S) = ([ σ ]isn c) · [ σ ]ts S
+ [ σ ]tpn (c · S) = c · subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S) 
 
- [ σ ]isn nat = nat
- [ σ ]isn vec = vec
+ -- [ σ ]isn nat = nat
+ -- [ σ ]isn vec = vec
 
  [_]nv : ∀ {Γ Δ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> var Γ T -> ntm Δ ([ σ ]tpn T)
  [_]nv (σ , N) top = subst (λ S → ntm _ S) trustMe N
