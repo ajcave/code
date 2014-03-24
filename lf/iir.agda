@@ -48,6 +48,9 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 -- It seems that the well-formedness condition for signatures should impose an ordering
 -- it just may be that we need to interleave kinding and typing constants in order for the
 -- ordering to be possible (e.g. for mutual recursion, and inductive-inductive definitions)
+
+-- WHat does adding sigma types do? 
+-- Can we allow for "arbitrary arity" binders? Have an "n-ary" Π?
 mutual
  data ctx : Set where
   ⊡ : ctx
@@ -229,12 +232,13 @@ mutual
  [_/x]nn : ∀ {Γ} {T} {C} -> (N : ntm Γ T) -> ntm (Γ ,, T) C -> ntm Γ ([ N /x]tpn C)
  [ N /x]nn M = [ single-tsubst N ]nn M
 
-
-
-
-
- {-data vsubst (Δ : ctx) : ctx -> Set where
-  ⊡ : vsubst Δ ⊡
-  _,_ : ∀ {Γ T} -> (σ : vsubst Δ Γ) -> var Δ {!!} -> vsubst Δ (Γ , T) -}
-
+-- Important things still to do:
+-- 1) Add term constants
+-- 2) Require η longness
+-- 3) Define "weak" induction principle which disallows recursion on embedded types?
+-- 4) Try examples
+--    e.g. do plain stlc terms + typing derivations. Prove substitution lemma
+--    (even though we do get it for free)
+--    because this reveals where nasty equations show up.
+-- 5) Do the metatheory involving 
  
