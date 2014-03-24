@@ -66,7 +66,7 @@ mutual
 
  data tpSpine Γ : kind Γ -> Set where
   ε : tpSpine Γ ⋆
-  _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> (S : tpSpine Γ (Π T K)) -> tpSpine Γ ([ N /x]kn K)
+  _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
 
  -- Hmm what is the scope for these? Γ seems weird...
  -- Especially since we intend to parameterize by them... I guess it needs to be some
@@ -133,7 +133,7 @@ mutual
 
  [_]tsv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kv K)
  [_]tsv σ ε = ε
- [_]tsv σ (N ,κ S) = subst (λ K -> tpSpine _ K) trustMe (([ σ ]vn N) ,κ [ σ ]tsv S)
+ [_]tsv σ (N ,κ S) = ([ σ ]vn N) ,κ (subst (λ K -> tpSpine _ K) trustMe ([ σ ]tsv S))
 
  [_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
@@ -180,7 +180,7 @@ mutual
 
  [_]ts : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kn K)
  [_]ts σ ε = ε
- [_]ts σ (N ,κ S) = subst (λ K → tpSpine _ K) trustMe (([ σ ]nn N) ,κ ([ σ ]ts S))
+ [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
 
  [_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
 
