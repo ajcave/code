@@ -60,8 +60,6 @@ mutual
 
  data tp (Γ : ctx) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  -- nat : tp Γ
-  -- vec : (n : ntm Γ nat) -> tp Γ
   _·_ : ∀ {K : kind ⊡'} -> (c : inSig K) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
 
  data tpSpine Γ : kind Γ -> Set where
