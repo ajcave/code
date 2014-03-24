@@ -24,15 +24,54 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 -- Question: Types appear in terms (although implicitly)
 --   Should the eliminator allow (mutual) recursion on them?
 --   Not allowing this is.. like using implicit products/intersection types?
+
+-- I guess that perhaps we don't really need a signature Σ if we're willing to use
+-- variables in Γ for this purpose...
+-- We do need to have "kind" variables then though.
+-- How would this work with the induction principle? We want to be able to access variables
+-- at the "bottom" of Γ for direct analysis...
+--  - Can we "derive" that?
+--  Does this also force us to be "higher order"?
+
+-- I guess that for the basic (non-higher order) system, heads only need to be constants
+-- variables do not come with a spine (they are always at base type)
+--  ...except that this doesn't suffice for intrinsically typed System F
+
+-- What power does adding an implicit product to LF add? Seems to allow us to represent
+-- well-typed terms space-efficiently
+
+-- I wonder if we can implement all the variants of substitution simultaneously by
+-- tagging them with a flag indicating which family they're from and using large elim
+-- If not large elim, then we could do it by combining the mutually recursive types into one
+-- and indexing by the flag?
 mutual
  data ctx : Set where
   ⊡ : ctx
   _,'_ : (Γ : ctx) -> (T : tp Γ) -> ctx
+
+ ⊡' : ctx
+ ⊡' = ⊡
  
+ -- Should I actually compute Γ by (induction) recursion on the kind?
+ -- Maybe these need to be "in reverse order"?
+ data kind (Γ : ctx) : Set where
+  ⋆ : kind Γ
+  Π : (T : tp Γ) -> (K : kind (Γ ,, T)) -> kind Γ
+
  data tp (Γ : ctx) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  nat : tp Γ
-  vec : (n : ntm Γ nat) -> tp Γ
+  -- nat : tp Γ
+  -- vec : (n : ntm Γ nat) -> tp Γ
+  _·_ : ∀ {K : kind Γ} -> (c : inSig K) -> tpSpine Γ K -> tp Γ
+
+ data tpSpine Γ : kind Γ -> Set where
+  ε : tpSpine Γ ⋆
+  _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> (S : tpSpine Γ (Π T K)) -> tpSpine Γ ([ N /x]kn K)
+
+ -- Hmm what is the scope for these? Γ seems weird...
+ data inSig {Γ} : kind Γ -> Set where
+  nat : inSig ⋆
+  vec : inSig (Π (nat · ε) ⋆)
 
  _,,_ : (Γ : ctx) -> (T : tp Γ) -> ctx
  Γ ,, T = Γ ,' T
@@ -83,9 +122,25 @@ mutual
  vsubst-ext σ = do-wkn-vsubst σ , subst (λ S → var _ S) trustMe top
  --vsubst-map : ∀ {Γ Δ} -> vsubst Γ Δ -> 
 
+ [_]kv : ∀ {Γ Δ} (σ : vsubst Γ Δ) -> kind Γ -> kind Δ
+ [_]kv σ ⋆ = ⋆
+ [_]kv σ (Π T K) = Π ([ σ ]tv T) ([ vsubst-ext σ ]kv K)
+
+ ⊡s : ∀ {Γ} -> vsubst ⊡' Γ
+ ⊡s = unit
+
+ [_]tsv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kv K)
+ [_]tsv σ ε = ε
+ [_]tsv σ (N ,κ S) = subst (λ K -> tpSpine _ K) trustMe (([ σ ]vn N) ,κ [ σ ]tsv S)
+
+ [_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
- [_]tv σ nat = nat
- [_]tv σ (vec n) = vec ([ σ ]vn n)
+ -- [_]tv σ nat = nat
+ -- [_]tv σ (vec n) = vec ([ σ ]vn n)
+ [ σ ]tv (c · S) = [ σ ]isv c · [ σ ]tsv S
+
+ [_]isv σ nat = nat
+ [_]isv σ vec = vec
 
  [_]vv : ∀ {Γ Δ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> var Γ T -> var Δ ([ σ ]tv T)
  [_]vv (σ , y) top = subst (λ S → var _ S) trustMe y
@@ -114,9 +169,26 @@ mutual
  ntsubst-ext : ∀ {Γ Δ : ctx} {T : tp Γ}  (σ : ntsubst Γ Δ) -> ntsubst (Γ ,, T) (Δ ,, ([ σ ]tpn T))
  ntsubst-ext σ = (do-wkn-ntsubst σ) , (subst (λ S → ntm _ S) trustMe (v top · ε))
 
+ [_]kn : ∀ {Γ Δ} (σ : ntsubst Γ Δ) -> kind Γ -> kind Δ
+ [_]kn σ ⋆ = ⋆
+ [_]kn σ (Π T K) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]kn K)
+
+ [_/x]kn : ∀ {Γ} {T} -> ntm Γ T -> kind (Γ ,, T) -> kind Γ
+ [ N /x]kn K = [ single-tsubst N ]kn K
+
+ [_]ts : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kn K)
+ [_]ts σ ε = ε
+ [_]ts σ (N ,κ S) = subst (λ K → tpSpine _ K) trustMe (([ σ ]nn N) ,κ ([ σ ]ts S))
+
+ [_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
+
  [_]tpn σ (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
- [_]tpn σ nat = nat
- [_]tpn σ (vec n) = vec ([ σ ]nn n)
+ -- [_]tpn σ nat = nat
+ -- [_]tpn σ (vec n) = vec ([ σ ]nn n)
+ [ σ ]tpn (c · S) = ([ σ ]isn c) · [ σ ]ts S
+
+ [ σ ]isn nat = nat
+ [ σ ]isn vec = vec
 
  [_]nv : ∀ {Γ Δ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> var Γ T -> ntm Δ ([ σ ]tpn T)
  [_]nv (σ , N) top = subst (λ S → ntm _ S) trustMe N
