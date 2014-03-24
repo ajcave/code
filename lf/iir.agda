@@ -71,6 +71,8 @@ mutual
  -- Hmm what is the scope for these? Γ seems weird...
  -- Especially since we intend to parameterize by them... I guess it needs to be some
  -- family that supports weakening?
+ -- See iir-kinding.agda for a slightly different treatment where they have to be closed
+ -- Question then becomes how to include term constants (kind constants may depend on term constants)
  data inSig {Γ} : kind Γ -> Set where
   nat : inSig ⋆
   vec : inSig (Π (nat · ε) ⋆)

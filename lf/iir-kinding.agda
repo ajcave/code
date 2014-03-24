@@ -6,6 +6,9 @@ open import Data.Product
 open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.PropositionalEquality.TrustMe
+-- This file treats constants for kinds slightly differently: they must be "closed"
+-- and they are weakened at their use-point
+-- How does this scale to also allowing term constants? Not sure...
 
 -- What if we didn't use TrustMe and actually proved all of our equations
 -- Would Agda actually accept the definition (positivity check and termination check)?
