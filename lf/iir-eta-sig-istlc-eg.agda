@@ -237,26 +237,31 @@ mutual
   [ N /x]nn M = [ single-tsubst N ]nn M
  
   data inSig where
-   nat : inSig ⋆
-   vec : inSig (Π (nat · ε) ⋆)
+   otp : inSig ⋆
+   exp : inSig (Π (otp · ε) ⋆)
 
   data inSigτ where
-   zero : inSigτ (nat · ε)
-   suc : inSigτ (Π (nat · ε) (nat · ε))
-   nil : inSigτ (vec · ((con zero · ε) ,κ ε))
-   cons : inSigτ (Π (nat · ε) (Π (vec · ((v top · ε) ,κ ε)) (vec · ((con suc · ((v (pop top) · ε) & ε)) ,κ ε))))
+   b : inSigτ (otp · ε)
+   -- b : otp
+   arr : inSigτ (Π (otp · ε) (Π (otp · ε) (otp · ε)))
+   -- arr : otp -> otp -> otp
+   app : inSigτ (Π (otp · ε) (Π (otp · ε) (Π (exp · ((con arr · ((v (pop top) · ε) & ((v top · ε) & ε))) ,κ ε)) (Π (exp · ((v (pop (pop top)) · ε) ,κ ε)) (exp · ((v (pop (pop top)) · ε) ,κ ε))))))
+   -- app : {T:otp}{S:otp} exp (arr T S) -> exp T -> exp S
+
+   -- nil : inSigτ (vec · ((con zero · ε) ,κ ε))
+   -- cons : inSigτ (Π (nat · ε) (Π (vec · ((v top · ε) ,κ ε)) (vec · ((con suc · ((v (pop top) · ε) & ε)) ,κ ε))))
   
-  Nat : ∀ {Γ} -> tp Γ
-  Nat = nat · ε
+  -- Nat : ∀ {Γ} -> tp Γ
+  -- Nat = nat · ε
 
-  Zero : ∀ {Γ} -> ntm Γ Nat
-  Zero = con zero · ε
+  -- Zero : ∀ {Γ} -> ntm Γ Nat
+  -- Zero = con zero · ε
 
-  Suc : ∀ {Γ} -> ntm Γ Nat -> ntm Γ Nat
-  Suc n = con suc · (n & ε)
+  -- Suc : ∀ {Γ} -> ntm Γ Nat -> ntm Γ Nat
+  -- Suc n = con suc · (n & ε)
 
-  Vec : ∀ {Γ} -> ntm Γ Nat -> tp Γ
-  Vec n = vec · (n ,κ ε)
+  -- Vec : ∀ {Γ} -> ntm Γ Nat -> tp Γ
+  -- Vec n = vec · (n ,κ ε)
 
   v1 : ∀ {Γ T} -> ntm (Γ ,, T) ([ ↑ ]tv T)
   v1 = v top ◇ ε
