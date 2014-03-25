@@ -278,4 +278,6 @@ mutual
 --    (even though we do get it for free)
 --    because this reveals where nasty equations show up.
 -- 5) Do the metatheory involving 
- 
+
+
+-- Ok, we're running out of memory. Try the other implementation of signatures that allows us to compile the particular instance separately.
