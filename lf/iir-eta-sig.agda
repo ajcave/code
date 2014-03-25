@@ -70,8 +70,11 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 mutual
  data sig : Set where
   ⊡ : sig
-  _,κ_ : (Σ : sig) -> (K : kind {Σ} ⊡') -> sig
-  _,τ_ : (Σ : sig) -> (T : tp {Σ} ⊡') -> sig
+  _,_ : (Σ : sig) -> (α : sigsort Σ) -> sig
+
+ data sigsort (Σ : sig) : Set where
+  κ : kind {Σ} ⊡' -> sigsort Σ
+  τ : tp {Σ} ⊡' -> sigsort Σ
 
  data ctx (Σ : sig) : Set where
   ⊡ : ctx Σ
@@ -88,23 +91,12 @@ mutual
 
  data tp {Σ : sig} (Γ : ctx Σ) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  _·_ : ∀ {K : kind Γ} -> (c : inSig Σ K) -> tpSpine Γ K -> tp Γ
+  _·_ : ∀ {K : kind ⊡'} -> (c : inSig Σ K) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
 
  data tpSpine {Σ} (Γ : ctx Σ) : kind Γ -> Set where
   ε : tpSpine Γ ⋆
   _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
 
- -- Hmm what is the scope for these? Γ seems weird...
- -- Especially since we intend to parameterize by them... I guess it needs to be some
- -- family that supports weakening?
- -- See iir-kinding.agda for a slightly different treatment where they have to be closed
- -- Question then becomes how to include term constants (kind constants may depend on term constants)
- data inSig Σ {Γ : ctx Σ} : kind Γ -> Set where
-  nat : inSig Σ ⋆
-  vec : inSig Σ (Π (nat · ε) ⋆)
-
- _·'_ : ∀ {Σ} {Γ : ctx Σ} {K : kind Γ} -> (c : inSig Σ K) -> tpSpine Γ K -> tp Γ
- c ·' S = c · S
 
  _,,_ : {Σ : sig} -> (Γ : ctx Σ) -> (T : tp Γ) -> ctx Σ
  Γ ,, T = Γ ,' T
@@ -136,6 +128,15 @@ mutual
  vsubst ⊡ Δ = Unit
  vsubst (Γ ,' T) Δ = Σ (vsubst Γ Δ) (λ σ -> (var Δ ([ σ ]tv T)))
 
+ -- It seems that using names would be better here, since we don't
+ -- have 'freshness' issues (no Σ binders)
+ data inSig : ∀ Σ -> kind ⊡' -> Set where
+  a-top : ∀ {Σ K} -> inSig (Σ , κ K) {! K !} -- TODO: Need to do a "shift"
+  a-pop : ∀ {Σ K K'} -> inSig Σ K -> inSig (Σ , κ K') {! K !}
+  a-pop2 : ∀ {Σ K A} -> inSig Σ K -> inSig (Σ , τ A) {! K !}
+  -- nat : inSig Σ ⋆
+  -- vec : inSig Σ (Π (nat · ε) ⋆)
+ 
  [_]tv : ∀ {Σ} {Γ Δ : ctx Σ} -> vsubst Γ Δ -> tp Γ -> tp Δ
 
  pop' : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} {S} (x : var Γ T) -> var (Γ ,, S) ([  do-wkn-vsubst id-vsubst ]tv T)
@@ -161,16 +162,19 @@ mutual
  ⊡s : ∀ {Σ} {Γ : ctx Σ} -> vsubst ⊡' Γ
  ⊡s = unit
 
+ _·'_ : ∀ {Σ} {Γ : ctx Σ} {K : kind ⊡'} -> (c : inSig Σ K) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
+ c ·' S = c · S
+
  [_]tsv : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kv K)
  [_]tsv σ ε = ε
  [_]tsv σ (N ,κ S) = ([ σ ]vn N) ,κ (subst (λ K -> tpSpine _ K) trustMe ([ σ ]tsv S))
 
- [_]isv : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kv K)
+-- [_]isv : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kv K)
  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
- [ σ ]tv (c · S) = [ σ ]isv c · [ σ ]tsv S
+ [ σ ]tv (c · S) = c ·  subst (λ K → tpSpine _ K) trustMe ([ σ ]tsv S)
 
- [_]isv σ nat = nat
- [_]isv σ vec = vec
+ -- [_]isv σ nat = nat
+ -- [_]isv σ vec = vec
 
  [_]vv : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> var Γ T -> var Δ ([ σ ]tv T)
  [_]vv (σ , y) top = subst (λ S → var _ S) trustMe y
@@ -214,13 +218,13 @@ mutual
  [_]ts σ ε = ε
  [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
 
- [_]isn : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kn K)
+ --[_]isn : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kn K)
 
  [ σ ]tpn (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
- [ σ ]tpn (c · S) = ([ σ ]isn c) · [ σ ]ts S
+ [ σ ]tpn (c · S) = c · subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S)
 
- [ σ ]isn nat = nat
- [ σ ]isn vec = vec
+ -- [ σ ]isn nat = nat
+ -- [ σ ]isn vec = vec
 
  [_]nv : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> var Γ T -> ntm Δ ([ σ ]tpn T)
  [_]nv (σ , N) top = subst (λ S → ntm _ S) trustMe N
