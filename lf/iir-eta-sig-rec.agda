@@ -247,7 +247,6 @@ mutual
    cons : inSigτ (Π (nat · ε) (Π (vec · ((v top · ε) ,κ ε)) (vec · ((con suc · ((v (pop top) · ε) & ε)) ,κ ε))))
 
 -- Important things still to do:
--- 1) Add term constants
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
 -- 4) Try examples
 --    e.g. do plain stlc terms + typing derivations. Prove substitution lemma
