@@ -49,7 +49,7 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 -- it just may be that we need to interleave kinding and typing constants in order for the
 -- ordering to be possible (e.g. for mutual recursion, and inductive-inductive definitions)
 
--- WHat does adding sigma types do? 
+-- What does adding sigma types do? 
 -- Can we allow for "arbitrary arity" binders? Have an "n-ary" Π?
 
 -- I guess there is some "opposite spine" representation for types that we can use?
