@@ -71,6 +71,7 @@ mutual
   -- vec : (n : ntm Γ nat) -> tp Γ
   _·_ : ∀ {K : kind Γ} -> (c : inSig K) -> tpSpine Γ K -> tp Γ
 
+
  data tpSpine Γ : kind Γ -> Set where
   ε : tpSpine Γ ⋆
   _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
@@ -83,6 +84,9 @@ mutual
  data inSig {Γ} : kind Γ -> Set where
   nat : inSig ⋆
   vec : inSig (Π (nat · ε) ⋆)
+
+ _·'_ : ∀ {Γ} {K : kind Γ} -> (c : inSig K) -> tpSpine Γ K -> tp Γ
+ c ·' S = c · S
 
  _,,_ : (Γ : ctx) -> (T : tp Γ) -> ctx
  Γ ,, T = Γ ,' T
@@ -104,7 +108,8 @@ mutual
   top : ∀ {Γ T} -> var (Γ ,' T) ([ do-wkn-vsubst id-vsubst ]tv T)
   pop : ∀ {Γ T S} (x : var Γ T) -> var (Γ ,' S) ([ do-wkn-vsubst id-vsubst ]tv T)
  data ntm (Γ : ctx) : tp Γ -> Set where
-  _·_ : ∀ {T S} -> head Γ T -> spine Γ T S -> ntm Γ S
+ --ntm Γ (a · S) = Σ head Γ 
+  _·_ : ∀ {K} {T} {a : inSig K} {S} -> head Γ T -> spine Γ T (a · S) -> ntm Γ (a · S)
   ƛ : ∀ {T S} -> ntm (Γ ,' T) S -> ntm Γ (Π T S)
  data spine (Γ : ctx) : tp Γ -> tp Γ -> Set where
   ε : ∀ {T} -> spine Γ T T
@@ -172,13 +177,17 @@ mutual
  do-wkn-ntsubst {⊡} σ = unit
  do-wkn-ntsubst {Γ ,' T} (σ , N) = do-wkn-ntsubst σ , subst (λ S → ntm _ S) trustMe ([ wkn-vsubst ]vn N)
 
+ _◇_ : ∀ {Γ A B} -> head Γ A -> spine Γ A B -> ntm Γ B
+ _◇_ {Γ} {A} {Π B B₁} H S = ƛ (([ wkn-vsubst ]vh H) ◇ ([ wkn-vsubst ]vs S ++ ((v top ◇ ε) & subst (λ C → spine _ C B₁) trustMe ε)))
+ _◇_ {Γ} {A} {c · x} H S = H · S
+
  id-ntsubst : ∀ {Γ} -> ntsubst Γ Γ
  id-ntsubst {⊡} = unit
- id-ntsubst {Γ ,' T} = do-wkn-ntsubst id-ntsubst , (subst (λ S -> ntm _ S) trustMe ((v top) · ε))
+ id-ntsubst {Γ ,' T} = do-wkn-ntsubst id-ntsubst , (subst (λ S -> ntm _ S) trustMe (v top ◇ ε))
 
  [_]tpn : ∀ {Γ Δ} -> ntsubst Γ Δ -> tp Γ -> tp Δ
  ntsubst-ext : ∀ {Γ Δ : ctx} {T : tp Γ}  (σ : ntsubst Γ Δ) -> ntsubst (Γ ,, T) (Δ ,, ([ σ ]tpn T))
- ntsubst-ext σ = (do-wkn-ntsubst σ) , (subst (λ S → ntm _ S) trustMe (v top · ε))
+ ntsubst-ext σ = (do-wkn-ntsubst σ) , (subst (λ S → ntm _ S) trustMe (v top ◇ ε))
 
  [_]kn : ∀ {Γ Δ} (σ : ntsubst Γ Δ) -> kind Γ -> kind Δ
  [_]kn σ ⋆ = ⋆
@@ -209,11 +218,15 @@ mutual
  ε ++ S2 = S2
  (N & S1) ++ S2 = N & (S1 ++ S2)
 
- -- TODO: Again, η-longness is crucial but we're not doing it here
+ -- Which of these two do we actually want?
  _◆_ : ∀ {Γ} {T C : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
- (H · S) ◆ S₁ = H · (S ++ S₁)
+ (H · S) ◆ S₁ = H ◇ (S ++ S₁)
  ƛ N ◆ ε = ƛ N
  ƛ N ◆ (N₁ & S₁) = ([ N₁ /x]nn N) ◆ S₁
+
+ _◆'_ : ∀ {Γ} {K} {a : inSig K} {T : tp Γ} {S} -> ntm Γ T -> spine Γ T (a ·' S) -> ntm Γ (a ·' S)
+ (H · S) ◆' S₁ = H · (S ++ S₁)
+ ƛ N ◆' (N₁ & S₁) = ([ N₁ /x]nn N) ◆' S₁
 
  [_]ns : ∀ {Γ Δ} {T C : tp Γ} -> (σ : ntsubst Γ Δ) -> spine Γ T C -> spine Δ ([ σ ]tpn T) ([ σ ]tpn C)
  [_]ns σ ε = ε
