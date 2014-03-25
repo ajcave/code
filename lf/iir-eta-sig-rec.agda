@@ -134,8 +134,8 @@ mutual
   do-wkn-vsubst {⊡} σ = unit
   do-wkn-vsubst {Γ ,' T} (σ , x) = do-wkn-vsubst σ , subst (λ S → var _ S) trustMe (pop x)
 
-  wkn-vsubst : ∀ {Γ : ctx} {T : tp Γ} -> vsubst Γ (Γ ,, T)
-  wkn-vsubst = do-wkn-vsubst id-vsubst
+  ↑ : ∀ {Γ : ctx} {T : tp Γ} -> vsubst Γ (Γ ,, T)
+  ↑ = do-wkn-vsubst id-vsubst
 
   id-vsubst {⊡} = unit
   id-vsubst {Γ ,' T} = (do-wkn-vsubst id-vsubst) , top
@@ -178,10 +178,10 @@ mutual
 
   do-wkn-ntsubst : ∀ {Γ Δ : ctx} {T : tp Δ} -> ntsubst Γ Δ -> ntsubst Γ (Δ ,, T)
   do-wkn-ntsubst {⊡} σ = unit
-  do-wkn-ntsubst {Γ ,' T} (σ , N) = do-wkn-ntsubst σ , subst (λ S → ntm _ S) trustMe ([ wkn-vsubst ]vn N)
+  do-wkn-ntsubst {Γ ,' T} (σ , N) = do-wkn-ntsubst σ , subst (λ S → ntm _ S) trustMe ([ ↑ ]vn N)
 
   _◇_ : ∀ {Γ : ctx} {A B} -> head Γ A -> spine Γ A B -> ntm Γ B
-  _◇_ {Γ} {A} {Π B B₁} H S = ƛ (([ wkn-vsubst ]vh H) ◇ ([ wkn-vsubst ]vs S ++ ((v top ◇ ε) & subst (λ C → spine  _ C B₁) trustMe ε)))
+  _◇_ {Γ} {A} {Π B B₁} H S = ƛ (([ ↑ ]vh H) ◇ ([ ↑ ]vs S ++ ((v top ◇ ε) & subst (λ C → spine  _ C B₁) trustMe ε)))
   _◇_ {Γ} {A} {c · x} H S = H · S
 
   id-ntsubst : ∀ {Γ : ctx} -> ntsubst Γ Γ
@@ -235,7 +235,7 @@ mutual
 
   [_/x]nn : ∀ {Γ : ctx} {T} {C} -> (N : ntm Γ T) -> ntm (Γ ,, T) C -> ntm Γ ([ N /x]tpn C)
   [ N /x]nn M = [ single-tsubst N ]nn M
-
+ 
   data inSig where
    nat : inSig ⋆
    vec : inSig (Π (nat · ε) ⋆)
@@ -245,6 +245,24 @@ mutual
    suc : inSigτ (Π (nat · ε) (nat · ε))
    nil : inSigτ (vec · ((con zero · ε) ,κ ε))
    cons : inSigτ (Π (nat · ε) (Π (vec · ((v top · ε) ,κ ε)) (vec · ((con suc · ((v (pop top) · ε) & ε)) ,κ ε))))
+  
+  Nat : ∀ {Γ} -> tp Γ
+  Nat = nat · ε
+
+  Zero : ∀ {Γ} -> ntm Γ Nat
+  Zero = con zero · ε
+
+  Suc : ∀ {Γ} -> ntm Γ Nat -> ntm Γ Nat
+  Suc n = con suc · (n & ε)
+
+  Vec : ∀ {Γ} -> ntm Γ Nat -> tp Γ
+  Vec n = vec · (n ,κ ε)
+
+  v1 : ∀ {Γ T} -> ntm (Γ ,, T) ([ ↑ ]tv T)
+  v1 = v top ◇ ε
+
+  v2 : ∀ {Γ T S} -> ntm ((Γ ,, T) ,, S) _
+  v2 = v (pop top) ◇ ε
 
 -- Important things still to do:
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
