@@ -63,6 +63,7 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 --  version to be better behaved)
 --  Will this make it feasible for the coverage checker to disregard useless constants?
 -- Explain this as "the part that you need to implement coverage checking is directly available"?
+-- Use to give a "direct" explanation/formalization of coverage checking?
 
 -- In general, this looks a lot like an implementation of a datatype mechanismin type theory
 -- (it is). Can we make it a little simpler and more general for "general" inductive datatypes?
