@@ -124,7 +124,6 @@ mutual
   top : ∀ {Γ T} -> var (Γ ,' T) ([ do-wkn-vsubst id-vsubst ]tv T)
   pop : ∀ {Γ T S} (x : var Γ T) -> var (Γ ,' S) ([ do-wkn-vsubst id-vsubst ]tv T)
  data ntm (Γ : ctx) : tp Γ -> Set where
- --ntm Γ (a · S) = Σ head Γ 
   _·_ : ∀ {K} {T} {a : inSig K} {S} -> head Γ T -> spine Γ T (a · S) -> ntm Γ (a · S)
   ƛ : ∀ {T S} -> ntm (Γ ,' T) S -> ntm Γ (Π T S)
  data spine (Γ : ctx) : tp Γ -> tp Γ -> Set where
@@ -167,8 +166,6 @@ mutual
 
  [_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
- -- [_]tv σ nat = nat
- -- [_]tv σ (vec n) = vec ([ σ ]vn n)
  [ σ ]tv (c · S) = [ σ ]isv c · [ σ ]tsv S
 
  [_]isv σ nat = nat
@@ -218,9 +215,7 @@ mutual
 
  [_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
 
- [_]tpn σ (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
- -- [_]tpn σ nat = nat
- -- [_]tpn σ (vec n) = vec ([ σ ]nn n)
+ [ σ ]tpn (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
  [ σ ]tpn (c · S) = ([ σ ]isn c) · [ σ ]ts S
 
  [ σ ]isn nat = nat
@@ -233,12 +228,6 @@ mutual
  _++_ : ∀ {Γ} {A B C : tp Γ} -> spine Γ A B -> spine Γ B C -> spine Γ A C
  ε ++ S2 = S2
  (N & S1) ++ S2 = N & (S1 ++ S2)
-
- -- Which of these two do we actually want?
- -- _◆_ : ∀ {Γ} {T C : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
- -- (H · S) ◆ S₁ = H ◇ (S ++ S₁)
- -- ƛ N ◆ ε = ƛ N
- -- ƛ N ◆ (N₁ & S₁) = ([ N₁ /x]nn N) ◆ S₁
 
  _◆'_ : ∀ {Γ} {K} {a : inSig K} {T : tp Γ} {S} -> ntm Γ T -> spine Γ T (a ·' S) -> ntm Γ (a ·' S)
  (H · S) ◆' S₁ = H · (S ++ S₁)
@@ -263,7 +252,6 @@ mutual
 
 -- Important things still to do:
 -- 1) Add term constants
--- 2) Require η longness
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
 -- 4) Try examples
 --    e.g. do plain stlc terms + typing derivations. Prove substitution lemma
