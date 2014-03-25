@@ -27,5 +27,6 @@ stlcsig = (((((⊡ ,
         , κ (Π (a-pop (a-pop a-top) · ε) ⋆)) -- exp : tp -> type
         , τ (Π (a-pop (a-pop (a-pop a-top)) · ε) (Π (a-pop (a-pop (a-pop a-top)) · ε) (Π (a-top · (((con (a-pop a-top)) · ((v (pop top) · ε) & {!!})) ,κ ε)) (Π (a-top · {!!}) (a-top · {!!}))))))
             -- app : {T:otp}{S:otp} exp (arr T S) -> exp T -> exp S
+            -- app : {T:otp}{S:otp} exp (arr T ?) -> exp ? -> exp ?
         , {!!}
             -- lam : {T:otp}{S:otp} (exp T -> exp S) -> exp (arr T S)
