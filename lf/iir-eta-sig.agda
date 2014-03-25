@@ -1,4 +1,4 @@
-{-# OPTIONS --no-positivity-check --no-termination-check #-}
+{-# OPTIONS --no-positivity-check --no-termination-check --type-in-type #-}
 -- By Induction-induction-recursion
 module iir-eta-sig where
 open import Data.Unit
@@ -76,6 +76,9 @@ mutual
   κ : kind {Σ} ⊡' -> sigsort Σ
   τ : tp {Σ} ⊡' -> sigsort Σ
 
+ _,s_ : (Σ : sig) -> (α : sigsort Σ) -> sig
+ _,s_ = _,_
+
  data ctx (Σ : sig) : Set where
   ⊡ : ctx Σ
   _,'_ : (Γ : ctx Σ) -> (T : tp Γ) -> ctx Σ
@@ -96,7 +99,6 @@ mutual
  data tpSpine {Σ} (Γ : ctx Σ) : kind Γ -> Set where
   ε : tpSpine Γ ⋆
   _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
-
 
  _,,_ : {Σ : sig} -> (Γ : ctx Σ) -> (T : tp Γ) -> ctx Σ
  Γ ,, T = Γ ,' T
@@ -124,18 +126,56 @@ mutual
   _&_ : ∀ {T T2 C} -> (N : ntm Γ T) -> (S : spine Γ ([ N /x]tpn T2) C) -> spine Γ (Π T T2) C
  data head {Σ} (Γ : ctx Σ) : tp Γ -> Set where
   v : ∀ {T} -> var Γ T -> head Γ T
+  con : ∀ {T : tp ⊡'} -> inSigτ Σ T -> head Γ ([ ⊡s ]tv T)
+
 
  vsubst ⊡ Δ = Unit
  vsubst (Γ ,' T) Δ = Σ (vsubst Γ Δ) (λ σ -> (var Δ ([ σ ]tv T)))
 
+ ↑c : ∀ {Σ α} -> ctx Σ -> ctx (Σ ,s α)
+ ↑c ⊡ = ⊡
+ ↑c (Γ ,' T) = (↑c Γ) ,' (↑t T)
+
+ ↑k : ∀ {Σ} {Γ : ctx Σ} {α : sigsort Σ} -> kind {Σ} Γ -> kind {Σ ,s α} (↑c Γ)
+ ↑k ⋆ = ⋆
+ ↑k (Π T K) = Π (↑t T) (↑k K)
+
  -- It seems that using names would be better here, since we don't
  -- have 'freshness' issues (no Σ binders)
+ -- TODO: Merge these
  data inSig : ∀ Σ -> kind ⊡' -> Set where
-  a-top : ∀ {Σ K} -> inSig (Σ , κ K) {! K !} -- TODO: Need to do a "shift"
-  a-pop : ∀ {Σ K K'} -> inSig Σ K -> inSig (Σ , κ K') {! K !}
-  a-pop2 : ∀ {Σ K A} -> inSig Σ K -> inSig (Σ , τ A) {! K !}
+  a-top : ∀ {Σ K} -> inSig (Σ , κ K) (↑k K) 
+  a-pop : ∀ {Σ K α} -> inSig Σ K -> inSig (Σ , α) (↑k K)
+
+ data inSigτ : ∀ Σ -> tp ⊡' -> Set where
+  a-top : ∀ {Σ T} -> inSigτ (Σ , τ T) (↑t T) -- TODO: Need to do a "shift"
+  a-pop : ∀ {Σ T α} -> inSigτ Σ T -> inSigτ (Σ , α) (↑t T)
   -- nat : inSig Σ ⋆
   -- vec : inSig Σ (Π (nat · ε) ⋆)
+ 
+ ↑t : ∀ {Σ Γ α} -> tp {Σ} Γ -> tp {Σ ,s α} (↑c Γ)
+ ↑t (Π T T₁) = Π (↑t T) (↑t T₁)
+ ↑t (c · x) = a-pop c · subst (λ K → tpSpine _ K) trustMe (↑ts x)
+
+ ↑ts : ∀ {Σ Γ α K} -> tpSpine {Σ} Γ K -> tpSpine {Σ ,s α} (↑c Γ) (↑k K)
+ ↑ts ε = ε
+ ↑ts (N ,κ S) = ↑n N ,κ (subst (λ K -> tpSpine _ K) trustMe (↑ts S))
+
+ ↑n : ∀ {Σ α Γ T} -> ntm {Σ} Γ T -> ntm {Σ ,s α} (↑c Γ) (↑t T)
+ ↑n (c · S) = (↑h c) · (↑s S)
+ ↑n (ƛ M) = ƛ (↑n M)
+
+ ↑v : ∀ {Σ α Γ T} -> var {Σ} Γ T -> var {Σ ,s α} (↑c Γ) (↑t T)
+ ↑v top = subst (λ T -> var _ T) trustMe top
+ ↑v (pop x) = subst (λ T -> var _ T) trustMe (pop (↑v x))
+
+ ↑h : ∀ {Σ α Γ T} -> head {Σ} Γ T -> head {Σ ,s α} (↑c Γ) (↑t T)
+ ↑h (v x) = v (↑v x)
+ ↑h (con c) = subst (λ T → head _ T) trustMe (con (a-pop c))
+
+ ↑s : ∀ {Σ α Γ A B} -> spine {Σ} Γ A B -> spine {Σ ,s α} (↑c Γ) (↑t A) (↑t B)
+ ↑s ε = ε
+ ↑s (_&_ {T1} {T2} {T3} N S) = ↑n N & (subst (λ C -> spine _ C (↑t T3)) trustMe (↑s S))
  
  [_]tv : ∀ {Σ} {Γ Δ : ctx Σ} -> vsubst Γ Δ -> tp Γ -> tp Δ
 
@@ -182,6 +222,7 @@ mutual
 
  [_]vh : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> head Γ T -> head Δ ([ σ ]tv T)
  [_]vh σ (v x) = v ([ σ ]vv x)
+ [ σ ]vh (con c) = subst (λ T → head _ T) trustMe (con c)
 
  [_]vs : ∀ {Σ} {Γ Δ : ctx Σ} {T C : tp Γ} -> (σ : vsubst Γ Δ) -> spine Γ T C -> spine Δ ([ σ ]tv T) ([ σ ]tv C)
  [_]vs σ ε = ε
@@ -244,6 +285,7 @@ mutual
 
  [_]nn : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> ntm Γ T -> ntm Δ ([ σ ]tpn T)
  [_]nn σ (v x · S) = ([ σ ]nv x) ◆' ([ σ ]ns S)
+ [ σ ]nn (con c · S) = subst (λ T → head _ T) trustMe (con c) · ([ σ ]ns S)
  [_]nn σ (ƛ M) = ƛ ([ ntsubst-ext σ ]nn M)
 
  single-tsubst : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> ntsubst (Γ ,, T) Γ
@@ -263,4 +305,6 @@ mutual
 --    (even though we do get it for free)
 --    because this reveals where nasty equations show up.
 -- 5) Do the metatheory involving 
+
+-- Another possible way to save memory? Use irrelevant quantification for types in constructors
  
