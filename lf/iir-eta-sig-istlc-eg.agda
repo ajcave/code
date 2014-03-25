@@ -1,4 +1,4 @@
-{-# OPTIONS --no-positivity-check --no-termination-check #-}
+{-# OPTIONS --no-positivity-check --no-termination-check --type-in-type #-}
 -- By Induction-induction-recursion
 module iir-eta-sig-istlc-eg where
 open import Data.Unit
@@ -245,8 +245,10 @@ mutual
    -- b : otp
    arr : inSigτ (Π (otp · ε) (Π (otp · ε) (otp · ε)))
    -- arr : otp -> otp -> otp
-   app : inSigτ (Π (otp · ε) (Π (otp · ε) (Π (exp · ((con arr · ((v (pop top) · ε) & ((v top · ε) & ε))) ,κ ε)) (Π (exp · ((v (pop (pop top)) · ε) ,κ ε)) (exp · ((v (pop (pop top)) · ε) ,κ ε))))))
+   app : inSigτ (Π (otp · ε) (Π (otp · ε) (Π (exp · {!!} {- ((con arr · ((v (pop top) · ε) & ((v top · ε) & ε))) ,κ ε) -}) (Π (exp · ((v (pop (pop top)) · ε) ,κ ε)) (exp · ((v (pop (pop top)) · ε) ,κ ε))))))
    -- app : {T:otp}{S:otp} exp (arr T S) -> exp T -> exp S
+   lam : inSigτ (Π (otp · ε) (Π (otp · ε) (Π (Π (exp · ((v (pop top) · ε) ,κ ε)) (exp · ((v (pop top) · ε) ,κ ε))) (exp · ((con arr · {!!} {- ({!v (pop ?) · ε!} & ({!!} & ε)) -} ) ,κ ε)))))
+   -- lam : {T:otp}{S:otp} (exp T -> exp S) -> exp (arr T S)
 
    -- nil : inSigτ (vec · ((con zero · ε) ,κ ε))
    -- cons : inSigτ (Π (nat · ε) (Π (vec · ((v top · ε) ,κ ε)) (vec · ((con suc · ((v (pop top) · ε) & ε)) ,κ ε))))
