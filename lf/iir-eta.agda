@@ -51,6 +51,17 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 
 -- WHat does adding sigma types do? 
 -- Can we allow for "arbitrary arity" binders? Have an "n-ary" Π?
+
+-- I guess there is some "opposite spine" representation for types that we can use?
+-- i.e. Π Δ. (a · S) where Δ is a "telescope"?
+-- constructor:
+--    Π_._·_ : tele Γ Γ' -> const K -> tpSpine Γ' K -> tp Γ
+-- tele Γ Γ' represents a "context suffix" which, when appended to Γ, yields Γ'
+--    think of as a witness that "Γ' is a well-formed extension of Γ"
+--  Will this make it feasible for the coverage checker to disregard useless constants?
+
+-- In general, this looks a lot like an implementation of a datatype mechanismin type theory
+-- (it is). Can we make it a little simpler and more general for "general" inductive datatypes?
 mutual
  data ctx : Set where
   ⊡ : ctx
