@@ -58,6 +58,8 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 --    Π_._·_ : tele Γ Γ' -> const K -> tpSpine Γ' K -> tp Γ
 -- tele Γ Γ' represents a "context suffix" which, when appended to Γ, yields Γ'
 --    think of as a witness that "Γ' is a well-formed extension of Γ"
+-- (Obviously there's a "computational" version which explicitly appends, but I expect this
+--  version to be better behaved)
 --  Will this make it feasible for the coverage checker to disregard useless constants?
 
 -- In general, this looks a lot like an implementation of a datatype mechanismin type theory
