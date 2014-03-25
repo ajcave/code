@@ -142,7 +142,6 @@ mutual
 
   vsubst-ext : ∀ {Γ Δ : ctx} {T : tp Γ}  (σ : vsubst Γ Δ) -> vsubst (Γ ,, T) (Δ ,, ([ σ ]tv T))
   vsubst-ext σ = do-wkn-vsubst σ , subst (λ S → var _ S) trustMe top
- --vsubst-map : ∀ {Γ Δ} -> vsubst Γ Δ -> 
 
   [_]kv : ∀ {Γ Δ : ctx} (σ : vsubst Γ Δ) -> kind Γ -> kind Δ
   [_]kv σ ⋆ = ⋆
@@ -158,12 +157,8 @@ mutual
   [_]tsv σ ε = ε
   [_]tsv σ (N ,κ S) = ([ σ ]vn N) ,κ (subst (λ K -> tpSpine _ K) trustMe ([ σ ]tsv S))
 
--- [_]isv : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kv K)
   [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
   [ σ ]tv (c · S) = c ·  subst (λ K → tpSpine _ K) trustMe ([ σ ]tsv S)
-
- -- [_]isv σ nat = nat
- -- [_]isv σ vec = vec
 
   [_]vv : ∀ {Γ Δ : ctx} {T : tp Γ} -> (σ : vsubst Γ Δ) -> var Γ T -> var Δ ([ σ ]tv T)
   [_]vv (σ , y) top = subst (λ S → var _ S) trustMe y
@@ -208,13 +203,8 @@ mutual
   [_]ts σ ε = ε
   [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
 
- --[_]isn : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kn K)
-
   [ σ ]tpn (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
   [ σ ]tpn (c · S) = c · subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S)
-
- -- [ σ ]isn nat = nat
- -- [ σ ]isn vec = vec
 
   [_]nv : ∀ {Γ Δ : ctx} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> var Γ T -> ntm Δ ([ σ ]tpn T)
   [_]nv (σ , N) top = subst (λ S → ntm _ S) trustMe N
