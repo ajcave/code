@@ -142,7 +142,7 @@ mutual
 --  _&_ : ∀ {T T2 C} -> (N : ntm Γ T) -> (S : spine Γ ([ N /x]tpn T2) C) -> spine Γ (Π T T2) C
  data head {Σ} (Γ : ctx Σ) : tp Γ -> Set where
   v : ∀ {T} -> var Γ T -> head Γ T
-  con : ∀ {T : tp ⊡'} -> inSig Σ (τ T) -> head Γ ([ ⊡s ]tpn T)
+  con : ∀ {T : tp ⊡'} -> inSig Σ (τ T) -> head Γ ([ ⊡s {Σ} {Γ} ]tpn T)
 
 
  -- vsubst ⊡ Δ = Unit

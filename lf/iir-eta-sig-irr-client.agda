@@ -5,7 +5,7 @@ open import Data.Product
 open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.PropositionalEquality.TrustMe
-open import iir-eta-sig-irrelevant
+open import iir-eta-sig-novsubst
 
 natsig : sig
 natsig = ((⊡ , (κ ⋆)) , (τ (a-top · ε))) , τ (Π (a-pop a-top · ε) (a-pop a-top · ε))
