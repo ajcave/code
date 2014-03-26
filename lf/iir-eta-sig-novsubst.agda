@@ -100,9 +100,11 @@ mutual
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
   _·_ : ∀ {K : kind ⊡'} -> (c : inSig Σ (κ' K)) -> tpSpine Γ ([ ⊡s ]kn K) -> tp Γ
 
- data tpSpine {Σ} (Γ : ctx Σ) : kind Γ -> Set where
-  ε : tpSpine Γ ⋆
-  _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
+ tpSpine : ∀ {Σ} (Γ : ctx Σ) -> kind Γ -> Set
+ tpSpine Γ ⋆ = Unit
+ tpSpine Γ (Π T K) = Σ (ntm Γ T) (λ N → tpSpine Γ ([ N /x]kn K))
+  -- ε : tpSpine Γ ⋆
+  -- _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
 
  _,,_ : {Σ : sig} -> (Γ : ctx Σ) -> (T : tp Γ) -> ctx Σ
  Γ ,, T = Γ ,' T
@@ -161,8 +163,8 @@ mutual
  ↑t (c · x) = a-pop c · subst (λ K → tpSpine _ K) trustMe (↑ts x)
 
  ↑ts : ∀ {Σ Γ α K} -> tpSpine {Σ} Γ K -> tpSpine {Σ ,s α} (↑c Γ) (↑k K)
- ↑ts ε = ε
- ↑ts (N ,κ S) = ↑n N ,κ (subst (λ K -> tpSpine _ K) trustMe (↑ts S))
+ ↑ts {Σ} {Γ} {α} {⋆} S = unit
+ ↑ts {Σ} {Γ} {α} {Π T K} (N , S) = (↑n N) , (subst (tpSpine _) trustMe (↑ts S))
 
  ↑n : ∀ {Σ α Γ T} -> ntm {Σ} Γ T -> ntm {Σ ,s α} (↑c Γ) (↑t T)
  ↑n (c · S) = (↑h c) · (↑s S)
@@ -228,8 +230,9 @@ mutual
  c ·' S = c · S
 
  [_]ts : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kn K)
- [_]ts σ ε = ε
- [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
+ [_]ts {Σ} {Γ} {Δ} {⋆} σ S = unit
+ [_]ts {Σ} {Γ} {Δ} {Π T K} σ (N , S) = ([ σ ]nn N) , (subst (tpSpine _) trustMe ([ σ ]ts S)) -- ε = ε
+ -- [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
 
  wkn-hd : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} {S} -> head Γ T -> head (Γ ,, S) ([ wkn-ntsubst ]tpn T)
  wkn-hd (v x) = v (pop x)
