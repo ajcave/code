@@ -6,6 +6,7 @@ open import Data.Product
 open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.PropositionalEquality.TrustMe
+open import Data.Empty
 
 -- What if we didn't use TrustMe and actually proved all of our equations
 -- Would Agda actually accept the definition (positivity check and termination check)?
@@ -92,9 +93,12 @@ mutual
   ⋆ : kind Γ
   Π : (T : tp Γ) -> (K : kind (Γ ,, T)) -> kind Γ
 
+ κ' : ∀ {Σ} -> kind {Σ} ⊡' -> sigsort Σ
+ κ' = κ
+
  data tp {Σ : sig} (Γ : ctx Σ) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  _·_ : ∀ {K : kind ⊡'} -> (c : inSig Σ K) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
+  _·_ : ∀ {K : kind ⊡'} -> (c : inSig Σ (κ' K)) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
 
  data tpSpine {Σ} (Γ : ctx Σ) : kind Γ -> Set where
   ε : tpSpine Γ ⋆
@@ -115,11 +119,20 @@ mutual
  -- I guess that we could actually just compute the ntm type by recursion on the tp
  -- arriving eventually at _·_ with Γ appropriately extended (iir-eta-comp)
  -- Can we do the same thing in the formal metatheory of LF?
- data var {Σ} : (Γ : ctx Σ) -> tp Γ -> Set where
-  top : ∀ {Γ T} -> var (Γ ,' T) ([ do-wkn-vsubst id-vsubst ]tv T)
-  pop : ∀ {Γ T S} (x : var Γ T) -> var (Γ ,' S) ([ do-wkn-vsubst id-vsubst ]tv T)
+ -- data var {Σ} : (Γ : ctx Σ) -> tp Γ -> Set where
+ --  top : ∀ {Γ T} -> var (Γ ,' T) ([ do-wkn-vsubst id-vsubst ]tv T)
+ --  pop : ∀ {Γ T S} (x : var Γ T) -> var (Γ ,' S) ([ do-wkn-vsubst id-vsubst ]tv T)
+
+ data var0 {Σ} (Γ : ctx Σ) (S : tp Γ) : (T : tp (Γ ,, S)) -> Set where
+  top : var0 Γ S ([ do-wkn-vsubst id-vsubst ]tv S)
+  pop : ∀ {T' : tp Γ} -> var Γ T' -> var0 Γ S ([ do-wkn-vsubst id-vsubst ]tv T')
+
+ var : ∀ {Σ} (Γ : ctx Σ) -> tp Γ -> Set
+ var ⊡ T = ⊥
+ var (Γ ,' T) T₁ = var0 Γ T T₁
+
  data ntm {Σ} (Γ : ctx Σ) : tp Γ -> Set where
-  _·_ : ∀ {K} {T} {a : inSig Σ K} {S} -> head Γ T -> spine Γ T (a · S) -> ntm Γ (a · S)
+  _·_ : ∀ {K} {T} {a : inSig Σ (κ' K)} {S} -> head Γ T -> spine Γ T (a · S) -> ntm Γ (a · S)
   ƛ : ∀ {T S} -> ntm (Γ ,' T) S -> ntm Γ (Π T S)
  spine : ∀ {Σ} (Γ : ctx Σ) -> tp Γ -> tp Γ -> Set
  spine Γ (Π A A₁) B = Σ (ntm Γ A) (λ N -> spine Γ ([ N /x]tpn A₁) B)
@@ -128,7 +141,7 @@ mutual
 --  _&_ : ∀ {T T2 C} -> (N : ntm Γ T) -> (S : spine Γ ([ N /x]tpn T2) C) -> spine Γ (Π T T2) C
  data head {Σ} (Γ : ctx Σ) : tp Γ -> Set where
   v : ∀ {T} -> var Γ T -> head Γ T
-  con : ∀ {T : tp ⊡'} -> inSigτ Σ T -> head Γ ([ ⊡s ]tv T)
+  con : ∀ {T : tp ⊡'} -> inSig Σ (τ T) -> head Γ ([ ⊡s ]tv T)
 
 
  vsubst ⊡ Δ = Unit
@@ -142,16 +155,20 @@ mutual
  ↑k ⋆ = ⋆
  ↑k (Π T K) = Π (↑t T) (↑k K)
 
+ ↑ss : ∀ {Σ α} -> sigsort Σ -> sigsort (Σ ,s α)
+ ↑ss (κ K) = κ (↑k K)
+ ↑ss (τ T) = τ (↑t T)
+
  -- It seems that using names would be better here, since we don't
  -- have 'freshness' issues (no Σ binders)
  -- TODO: Merge these
- data inSig : ∀ Σ -> kind ⊡' -> Set where
-  a-top : ∀ {Σ K} -> inSig (Σ , κ K) (↑k K) 
-  a-pop : ∀ {Σ K α} -> inSig Σ K -> inSig (Σ , α) (↑k K)
+ data inSig : ∀ Σ -> sigsort Σ -> Set where
+  a-top : ∀ {Σ K} -> inSig (Σ , K) (↑ss K) 
+  a-pop : ∀ {Σ K α} -> inSig Σ K -> inSig (Σ , α) (↑ss K)
 
- data inSigτ : ∀ Σ -> tp ⊡' -> Set where
-  a-top : ∀ {Σ T} -> inSigτ (Σ , τ T) (↑t T) -- TODO: Need to do a "shift"
-  a-pop : ∀ {Σ T α} -> inSigτ Σ T -> inSigτ (Σ , α) (↑t T)
+ -- data inSigτ : ∀ Σ -> tp ⊡' -> Set where
+ --  a-top : ∀ {Σ T} -> inSigτ (Σ , τ T) (↑t T) -- TODO: Need to do a "shift"
+ --  a-pop : ∀ {Σ T α} -> inSigτ Σ T -> inSigτ (Σ , α) (↑t T)
   -- nat : inSig Σ ⋆
   -- vec : inSig Σ (Π (nat · ε) ⋆)
  
@@ -168,8 +185,10 @@ mutual
  ↑n (ƛ M) = ƛ (↑n M)
 
  ↑v : ∀ {Σ α Γ T} -> var {Σ} Γ T -> var {Σ ,s α} (↑c Γ) (↑t T)
- ↑v top = subst (λ T -> var _ T) trustMe top
- ↑v (pop x) = subst (λ T -> var _ T) trustMe (pop (↑v x))
+ ↑v {Σ} {α} {⊡} ()
+ ↑v {Σ} {α} {Γ ,' S} top = subst (var0 _ _) trustMe top
+ ↑v {Σ} {α} {Γ ,' S} (pop x) = subst (var0 _ _) trustMe (pop (↑v x)) -- top = subst (λ T -> var _ T) trustMe top
+ -- ↑v (pop x) = subst (λ T -> var _ T) trustMe (pop (↑v x))
 
  ↑h : ∀ {Σ α Γ T} -> head {Σ} Γ T -> head {Σ ,s α} (↑c Γ) (↑t T)
  ↑h (v x) = v (↑v x)
@@ -182,19 +201,19 @@ mutual
  [_]tv : ∀ {Σ} {Γ Δ : ctx Σ} -> vsubst Γ Δ -> tp Γ -> tp Δ
 
  pop' : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} {S} (x : var Γ T) -> var (Γ ,, S) ([  do-wkn-vsubst id-vsubst ]tv T)
- pop' = pop
+ pop' = pop --pop
 
  do-wkn-vsubst {Σ} {⊡} σ = unit
- do-wkn-vsubst {Σ} {Γ ,' T} (σ , x) = do-wkn-vsubst σ , subst (λ S → var _ S) trustMe (pop x)
+ do-wkn-vsubst {Σ} {Γ ,' T} (σ , x) = (do-wkn-vsubst σ) , (subst (var0 _ _) trustMe (pop x)) --do-wkn-vsubst σ , subst (λ S → var _ S) trustMe (pop x)
 
  wkn-vsubst : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} -> vsubst Γ (Γ ,, T)
  wkn-vsubst = do-wkn-vsubst id-vsubst
 
  id-vsubst {Σ} {⊡} = unit
- id-vsubst {Σ} {Γ ,' T} = (do-wkn-vsubst id-vsubst) , top
+ id-vsubst {Σ} {Γ ,' T} = (do-wkn-vsubst id-vsubst) , top --top
 
  vsubst-ext : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ}  (σ : vsubst Γ Δ) -> vsubst (Γ ,, T) (Δ ,, ([ σ ]tv T))
- vsubst-ext σ = do-wkn-vsubst σ , subst (λ S → var _ S) trustMe top
+ vsubst-ext σ = do-wkn-vsubst σ , subst (λ S → var _ S) trustMe top --top
  --vsubst-map : ∀ {Γ Δ} -> vsubst Γ Δ -> 
 
  [_]kv : ∀ {Σ} {Γ Δ : ctx Σ} (σ : vsubst Γ Δ) -> kind Γ -> kind Δ
@@ -204,7 +223,7 @@ mutual
  ⊡s : ∀ {Σ} {Γ : ctx Σ} -> vsubst ⊡' Γ
  ⊡s = unit
 
- _·'_ : ∀ {Σ} {Γ : ctx Σ} {K : kind ⊡'} -> (c : inSig Σ K) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
+ _·'_ : ∀ {Σ} {Γ : ctx Σ} {K : kind ⊡'} -> (c : inSig Σ (κ' K)) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
  c ·' S = c · S
 
  [_]tsv : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kv K)
@@ -219,8 +238,10 @@ mutual
  -- [_]isv σ vec = vec
 
  [_]vv : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> var Γ T -> var Δ ([ σ ]tv T)
- [_]vv (σ , y) top = subst (λ S → var _ S) trustMe y
- [_]vv (σ , y) (pop x) = subst (λ S → var _ S) trustMe ([ σ ]vv x)
+ [_]vv {Σ} {⊡} σ ()
+ [_]vv {Σ} {Γ ,' S} (σ , y) top = subst (var _) trustMe y
+ [_]vv {Σ} {Γ ,' S} (σ , y) (pop x) = subst (var _) trustMe ([ σ ]vv x) -- top = subst (λ S → var _ S) trustMe y
+ -- [_]vv (σ , y) (pop x) = subst (λ S → var _ S) trustMe ([ σ ]vv x)
 
  [_]vh : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> head Γ T -> head Δ ([ σ ]tv T)
  [_]vh σ (v x) = v ([ σ ]vv x)
@@ -283,15 +304,17 @@ mutual
  -- [ σ ]isn vec = vec
 
  [_]nv : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> var Γ T -> ntm Δ ([ σ ]tpn T)
- [_]nv (σ , N) top = subst (λ S → ntm _ S) trustMe N
- [_]nv (σ , N) (pop x) = subst (λ S → ntm _ S) trustMe ([ σ ]nv x)
+ [_]nv {Σ} {⊡} σ ()
+ [_]nv {Σ} {Γ ,' S} (σ , N) top = subst (ntm _) trustMe N
+ [_]nv {Σ} {Γ ,' S} (σ , N) (pop x) = subst (ntm _) trustMe ([ σ ]nv x)
+ -- [_]nv (σ , N) (pop x) = subst (λ S → ntm _ S) trustMe ([ σ ]nv x)
 
  _++_ : ∀ {Σ} {Γ : ctx Σ} {A B C : tp Γ} -> spine Γ A B -> spine Γ B C -> spine Γ A C
  _++_ {Σ} {Γ} {c · xs} refl S2 = S2
  _++_ {Σ} {Γ} {Π A B} (N , S1) S2 = N , (S1 ++ S2)
  -- (N & S1) ++ S2 = N & (S1 ++ S2)
 
- _◆'_ : ∀ {Σ} {Γ : ctx Σ} {K} {a : inSig Σ K} {T : tp Γ} {S} -> ntm Γ T -> spine Γ T (a ·' S) -> ntm Γ (a ·' S)
+ _◆'_ : ∀ {Σ} {Γ : ctx Σ} {K} {a : inSig Σ (κ' K)} {T : tp Γ} {S} -> ntm Γ T -> spine Γ T (a ·' S) -> ntm Γ (a ·' S)
  (H · S) ◆' S₁ = H · (S ++ S₁)
  ƛ N ◆' (N₁ , S) = ([ N₁ /x]nn N) ◆' S --(N₁ & S₁) = ([ N₁ /x]nn N) ◆' S₁
 
