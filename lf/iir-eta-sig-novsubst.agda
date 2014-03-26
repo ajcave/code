@@ -298,7 +298,7 @@ mutual
 
  --[_]isn : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kn K)
 
- wkn-hd : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} {S} -> head Γ T -> head (Γ ,, S) ([ wkn-ntsubst ]tpn T)
+ wkn-hd : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} {S} -> head Γ T -> head (Γ ,, S) ([ wkn-ntsubst ]tpn T)
  wkn-hd (v x) = v (pop x) --v ([ σ ]vv x)
  wkn-hd (con c) = subst (head _) trustMe (con c) --subst (λ T → head _ T) trustMe (con c)
 
