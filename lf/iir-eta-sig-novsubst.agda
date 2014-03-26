@@ -151,16 +151,21 @@ mutual
  ↑ss (κ K) = κ (↑k K)
  ↑ss (τ T) = τ (↑t T)
 
- -- It seems that using names would be better here, since we don't
- -- have 'freshness' issues (no Σ binders)
- -- TODO: Merge these
- data inSig : ∀ Σ -> sigsort Σ -> Set where
-  a-top : ∀ {Σ K} -> inSig (Σ , K) (↑ss K) 
-  a-pop : ∀ {Σ K α} -> inSig Σ K -> inSig (Σ , α) (↑ss K)
+ data inSig0 Σ (S : sigsort Σ) : (T : sigsort (Σ ,s S)) -> Set where
+  top : inSig0 Σ S (↑ss S)
+  pop : ∀ {T' : sigsort Σ} -> inSig Σ T' -> inSig0 Σ S (↑ss T')
+
+ inSig : ∀ Σ -> sigsort Σ -> Set
+ inSig ⊡ T = ⊥
+ inSig (Σ , T) T₁ = inSig0 Σ T T₁
+
+ -- data inSig : ∀ Σ -> sigsort Σ -> Set where
+ --  a-top : ∀ {Σ K} -> inSig (Σ , K) (↑ss K) 
+ --  a-pop : ∀ {Σ K α} -> inSig Σ K -> inSig (Σ , α) (↑ss K)
  
  ↑t : ∀ {Σ Γ α} -> tp {Σ} Γ -> tp {Σ ,s α} (↑c Γ)
  ↑t (Π T T₁) = Π (↑t T) (↑t T₁)
- ↑t (c · x) = a-pop c · subst (λ K → tpSpine _ K) trustMe (↑ts x)
+ ↑t (c · x) = pop c · subst (λ K → tpSpine _ K) trustMe (↑ts x)
 
  ↑ts : ∀ {Σ Γ α K} -> tpSpine {Σ} Γ K -> tpSpine {Σ ,s α} (↑c Γ) (↑k K)
  ↑ts {Σ} {Γ} {α} {⋆} S = unit
@@ -177,7 +182,7 @@ mutual
 
  ↑h : ∀ {Σ α Γ T} -> head {Σ} Γ T -> head {Σ ,s α} (↑c Γ) (↑t T)
  ↑h (v x) = v (↑v x)
- ↑h (con c) = subst (λ T → head _ T) trustMe (con (a-pop c))
+ ↑h (con c) = subst (λ T → head _ T) trustMe (con (pop c))
 
  ↑s : ∀ {Σ α Γ A B} -> spine {Σ} Γ A B -> spine {Σ ,s α} (↑c Γ) (↑t A) (↑t B)
  ↑s {Σ} {α} {Γ} {Π A A₁} {B} (N , S) = (↑n N) , subst (λ C → spine _ C (↑t B)) trustMe (↑s S)

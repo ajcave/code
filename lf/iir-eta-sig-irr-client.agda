@@ -8,24 +8,24 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 open import iir-eta-sig-novsubst
 
 natsig : sig
-natsig = ((⊡ , (κ ⋆)) , (τ (a-top · ε))) , τ (Π (a-pop a-top · ε) (a-pop a-top · ε))
+natsig = ((⊡ , (κ ⋆)) , (τ (top · unit))) , τ (Π (pop top · unit) (pop top · unit))
 
 Nat : ∀ {Γ : ctx natsig} -> tp Γ
-Nat = a-pop (a-pop a-top) · ε
+Nat = pop (pop top) · unit
 
 Zero : ∀ {Γ : ctx natsig} -> ntm Γ Nat
-Zero = con (a-pop a-top) · refl
+Zero = con (pop top) · refl
 
 Suc : ∀ {Γ : ctx natsig} -> ntm Γ Nat -> ntm Γ Nat
-Suc n = con a-top · (n , refl)
+Suc n = con top · (n , refl)
 
 stlcsig : sig
 stlcsig = (((((⊡ ,
           (κ ⋆)) -- otp : type
-        , (τ (a-top · ε))) -- b : otp
-        , (τ (Π (a-pop a-top · ε) (Π (a-pop a-top · ε) (a-pop a-top · ε))))) -- arr : tp -> tp -> tp
-        , κ (Π (a-pop (a-pop a-top) · ε) ⋆)) -- exp : tp -> type
-        , τ (Π (a-pop (a-pop (a-pop a-top)) · ε) (Π (a-pop (a-pop (a-pop a-top)) · ε) (Π (a-top · (((con (a-pop a-top)) · ((v (pop top) · refl) , ({!!} , refl))) ,κ ε)) (Π (a-top · {!!}) (a-top · {!!}))))))
+        , (τ (top · unit))) -- b : otp
+        , (τ (Π (pop top · unit) (Π (pop top · unit) (pop top · unit))))) -- arr : tp -> tp -> tp
+        , κ (Π (pop (pop top) · unit) ⋆)) -- exp : tp -> type
+        , τ (Π (pop (pop (pop top)) · unit) (Π (pop (pop (pop top)) · unit) (Π (top · (((con (pop top)) · ((v (pop top) · refl) , ({!!} , refl))) , unit)) (Π (top · {!!}) (top · {!!}))))))
             -- app : {T:otp}{S:otp} exp (arr T S) -> exp T -> exp S
             -- app : {T:otp}{S:otp} exp (arr T ?) -> exp ? -> exp ?
         , {!!}
