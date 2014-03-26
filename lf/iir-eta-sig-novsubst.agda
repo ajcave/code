@@ -107,9 +107,7 @@ mutual
  _,,_ : {Σ : sig} -> (Γ : ctx Σ) -> (T : tp Γ) -> ctx Σ
  Γ ,, T = Γ ,' T
  
- -- vsubst : ∀ {Σ} (Γ Δ : ctx Σ) -> Set
  ntsubst : ∀ {Σ} (Γ Δ : ctx Σ) -> Set
- -- id-vsubst : ∀ {Σ} {Γ : ctx Σ} -> vsubst Γ Γ
  
  ntsubst ⊡ Δ = Unit
  ntsubst (Γ ,' T) Δ = Σ (ntsubst Γ Δ) (λ σ -> (ntm Δ ([ σ ]tpn T)))
@@ -120,9 +118,6 @@ mutual
  -- I guess that we could actually just compute the ntm type by recursion on the tp
  -- arriving eventually at _·_ with Γ appropriately extended (iir-eta-comp)
  -- Can we do the same thing in the formal metatheory of LF?
- -- data var {Σ} : (Γ : ctx Σ) -> tp Γ -> Set where
- --  top : ∀ {Γ T} -> var (Γ ,' T) ([ do-wkn-vsubst id-vsubst ]tv T)
- --  pop : ∀ {Γ T S} (x : var Γ T) -> var (Γ ,' S) ([ do-wkn-vsubst id-vsubst ]tv T)
 
  data var0 {Σ} (Γ : ctx Σ) (S : tp Γ) : (T : tp (Γ ,, S)) -> Set where
   top : var0 Γ S ([ do-wkn-ntsubst id-ntsubst ]tpn S)
@@ -138,15 +133,9 @@ mutual
  spine : ∀ {Σ} (Γ : ctx Σ) -> tp Γ -> tp Γ -> Set
  spine Γ (Π A A₁) B = Σ (ntm Γ A) (λ N -> spine Γ ([ N /x]tpn A₁) B)
  spine Γ (c · x) B = (c · x) ≡ B
---  ε : ∀ {K} {a : inSig Σ K} {S} -> spine Γ (a · S) (a · S)
---  _&_ : ∀ {T T2 C} -> (N : ntm Γ T) -> (S : spine Γ ([ N /x]tpn T2) C) -> spine Γ (Π T T2) C
  data head {Σ} (Γ : ctx Σ) : tp Γ -> Set where
   v : ∀ {T} -> var Γ T -> head Γ T
   con : ∀ {T : tp ⊡'} -> inSig Σ (τ T) -> head Γ ([ ⊡s {Σ} {Γ} ]tpn T)
-
-
- -- vsubst ⊡ Δ = Unit
- -- vsubst (Γ ,' T) Δ = Σ (vsubst Γ Δ) (λ σ -> (var Δ ([ σ ]tv T)))
 
  ↑c : ∀ {Σ α} -> ctx Σ -> ctx (Σ ,s α)
  ↑c ⊡ = ⊡
@@ -166,12 +155,6 @@ mutual
  data inSig : ∀ Σ -> sigsort Σ -> Set where
   a-top : ∀ {Σ K} -> inSig (Σ , K) (↑ss K) 
   a-pop : ∀ {Σ K α} -> inSig Σ K -> inSig (Σ , α) (↑ss K)
-
- -- data inSigτ : ∀ Σ -> tp ⊡' -> Set where
- --  a-top : ∀ {Σ T} -> inSigτ (Σ , τ T) (↑t T) -- TODO: Need to do a "shift"
- --  a-pop : ∀ {Σ T α} -> inSigτ Σ T -> inSigτ (Σ , α) (↑t T)
-  -- nat : inSig Σ ⋆
-  -- vec : inSig Σ (Π (nat · ε) ⋆)
  
  ↑t : ∀ {Σ Γ α} -> tp {Σ} Γ -> tp {Σ ,s α} (↑c Γ)
  ↑t (Π T T₁) = Π (↑t T) (↑t T₁)
@@ -188,8 +171,7 @@ mutual
  ↑v : ∀ {Σ α Γ T} -> var {Σ} Γ T -> var {Σ ,s α} (↑c Γ) (↑t T)
  ↑v {Σ} {α} {⊡} ()
  ↑v {Σ} {α} {Γ ,' S} top = subst (var0 _ _) trustMe top
- ↑v {Σ} {α} {Γ ,' S} (pop x) = subst (var0 _ _) trustMe (pop (↑v x)) -- top = subst (λ T -> var _ T) trustMe top
- -- ↑v (pop x) = subst (λ T -> var _ T) trustMe (pop (↑v x))
+ ↑v {Σ} {α} {Γ ,' S} (pop x) = subst (var0 _ _) trustMe (pop (↑v x))
 
  ↑h : ∀ {Σ α Γ T} -> head {Σ} Γ T -> head {Σ ,s α} (↑c Γ) (↑t T)
  ↑h (v x) = v (↑v x)
@@ -199,59 +181,12 @@ mutual
  ↑s {Σ} {α} {Γ} {Π A A₁} {B} (N , S) = (↑n N) , subst (λ C → spine _ C (↑t B)) trustMe (↑s S)
  ↑s {Σ} {α} {Γ} {c · x} S = trustMe
  
- -- [_]tv : ∀ {Σ} {Γ Δ : ctx Σ} -> vsubst Γ Δ -> tp Γ -> tp Δ
-
- -- pop' : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} {S} (x : var Γ T) -> var (Γ ,, S) ([  do-wkn-vsubst id-vsubst ]tv T)
- -- pop' = pop --pop
-
- -- do-wkn-vsubst {Σ} {⊡} σ = unit
- -- do-wkn-vsubst {Σ} {Γ ,' T} (σ , x) = (do-wkn-vsubst σ) , (subst (var0 _ _) trustMe (pop x)) --do-wkn-vsubst σ , subst (λ S → var _ S) trustMe (pop x)
-
  wkn-ntsubst : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} -> ntsubst Γ (Γ ,, T)
  wkn-ntsubst = do-wkn-ntsubst id-ntsubst
-
- -- id-vsubst {Σ} {⊡} = unit
- -- id-vsubst {Σ} {Γ ,' T} = (do-wkn-vsubst id-vsubst) , top --top
-
- -- vsubst-ext : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ}  (σ : vsubst Γ Δ) -> vsubst (Γ ,, T) (Δ ,, ([ σ ]tv T))
- -- vsubst-ext σ = do-wkn-vsubst σ , subst (λ S → var _ S) trustMe top --top
- --vsubst-map : ∀ {Γ Δ} -> vsubst Γ Δ -> 
-
- -- [_]kv : ∀ {Σ} {Γ Δ : ctx Σ} (σ : vsubst Γ Δ) -> kind Γ -> kind Δ
- -- [_]kv σ ⋆ = ⋆
- -- [_]kv σ (Π T K) = Π ([ σ ]tv T) ([ vsubst-ext σ ]kv K)
 
  ⊡s : ∀ {Σ} {Γ : ctx Σ} -> ntsubst ⊡' Γ
  ⊡s = unit
 
---  [_]tsv : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kv K)
---  [_]tsv σ ε = ε
---  [_]tsv σ (N ,κ S) = ([ σ ]vn N) ,κ (subst (λ K -> tpSpine _ K) trustMe ([ σ ]tsv S))
-
--- -- [_]isv : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kv K)
---  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
---  [ σ ]tv (c · S) = c ·  subst (λ K → tpSpine _ K) trustMe ([ σ ]tsv S)
-
---  -- [_]isv σ nat = nat
---  -- [_]isv σ vec = vec
-
---  [_]vv : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> var Γ T -> var Δ ([ σ ]tv T)
---  [_]vv {Σ} {⊡} σ ()
---  [_]vv {Σ} {Γ ,' S} (σ , y) top = subst (var _) trustMe y
---  [_]vv {Σ} {Γ ,' S} (σ , y) (pop x) = subst (var _) trustMe ([ σ ]vv x) -- top = subst (λ S → var _ S) trustMe y
---  -- [_]vv (σ , y) (pop x) = subst (λ S → var _ S) trustMe ([ σ ]vv x)
-
-
---  [_]vs : ∀ {Σ} {Γ Δ : ctx Σ} {T C : tp Γ} -> (σ : vsubst Γ Δ) -> spine Γ T C -> spine Δ ([ σ ]tv T) ([ σ ]tv C)
---  [_]vs {Σ} {Γ} {Δ} {Π T T₁} {C} σ (N , S) = [ σ ]vn N , subst (λ A → spine _ A ([ σ ]tv C)) trustMe ([ σ ]vs S)
---  [_]vs {Σ} {Γ} {Δ} {c · x} σ S = trustMe --  ε = ε
---  -- [_]vs σ (_&_ {T} {T2} {C} N S) = ([ σ ]vn N) & subst (λ S₁ → spine _ S₁ ([ σ ]tv C)) trustMe ([ σ ]vs S)
-
---  [_]vn : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> ntm Γ T -> ntm Δ ([ σ ]tv T)
---  [_]vn σ (H · S) = [ σ ]vh H · [ σ ]vs S
---  [_]vn σ (ƛ M) = ƛ ([ vsubst-ext σ ]vn M)
-
- --do-wkn-ntsubst : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Δ} -> ntsubst Γ Δ -> ntsubst Γ (Δ ,, T)
  do-wkn-ntsubst {Σ} {⊡} σ = unit
  do-wkn-ntsubst {Σ} {Γ ,' T} (σ , N) = do-wkn-ntsubst σ , subst (λ S → ntm _ S) trustMe ([ wkn-ntsubst ]nn N)
 
@@ -272,7 +207,7 @@ mutual
  rapp (S1 & N) S2 = rapp S1 (N , S2)
 
  _◇_ : ∀ {Σ} {Γ : ctx Σ} {A B} -> head Γ A -> rspine Γ A B -> ntm Γ B
- _◇_ {Σ} {Γ} {A} {Π B B₁} H S = ƛ (wkn-hd H ◇ (subst (rspine _ _) trustMe ([ wkn-ntsubst ]vs' S & (v top ◇ ε)))) --ƛ (([ wkn-ntsubst ]nh H) ◇ (subst (rspine _ _) trustMe ([ wkn-vsubst ]vs' S & (v top ◇ ε))))
+ _◇_ {Σ} {Γ} {A} {Π B B₁} H S = ƛ (wkn-hd H ◇ (subst (rspine _ _) trustMe ([ wkn-ntsubst ]vs' S & (v top ◇ ε))))
  _◇_ {Σ} {Γ} {A} {c · x} H S = H · rapp S refl
 
  id-ntsubst : ∀ {Σ} {Γ : ctx Σ} -> ntsubst Γ Γ
@@ -296,34 +231,26 @@ mutual
  [_]ts σ ε = ε
  [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
 
- --[_]isn : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig Σ K -> inSig Σ ([ σ ]kn K)
-
  wkn-hd : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} {S} -> head Γ T -> head (Γ ,, S) ([ wkn-ntsubst ]tpn T)
- wkn-hd (v x) = v (pop x) --v ([ σ ]vv x)
- wkn-hd (con c) = subst (head _) trustMe (con c) --subst (λ T → head _ T) trustMe (con c)
-
- -- [ σ ]isn nat = nat
- -- [ σ ]isn vec = vec
+ wkn-hd (v x) = v (pop x)
+ wkn-hd (con c) = subst (head _) trustMe (con c)
 
  [_]nv : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> var Γ T -> ntm Δ ([ σ ]tpn T)
  [_]nv {Σ} {⊡} σ ()
  [_]nv {Σ} {Γ ,' S} (σ , N) top = subst (ntm _) trustMe N
  [_]nv {Σ} {Γ ,' S} (σ , N) (pop x) = subst (ntm _) trustMe ([ σ ]nv x)
- -- [_]nv (σ , N) (pop x) = subst (λ S → ntm _ S) trustMe ([ σ ]nv x)
 
  _++_ : ∀ {Σ} {Γ : ctx Σ} {A B C : tp Γ} -> spine Γ A B -> spine Γ B C -> spine Γ A C
  _++_ {Σ} {Γ} {c · xs} refl S2 = S2
  _++_ {Σ} {Γ} {Π A B} (N , S1) S2 = N , (S1 ++ S2)
- -- (N & S1) ++ S2 = N & (S1 ++ S2)
 
  _◆'_ : ∀ {Σ} {Γ : ctx Σ} {K} {a : inSig Σ (κ' K)} {T : tp Γ} {S} -> ntm Γ T -> spine Γ T (a ·' S) -> ntm Γ (a ·' S)
  (H · S) ◆' S₁ = H · (S ++ S₁)
- ƛ N ◆' (N₁ , S) = ([ N₁ /x]nn N) ◆' S --(N₁ & S₁) = ([ N₁ /x]nn N) ◆' S₁
+ ƛ N ◆' (N₁ , S) = ([ N₁ /x]nn N) ◆' S
 
  [_]ns : ∀ {Σ} {Γ Δ : ctx Σ} {T C : tp Γ} -> (σ : ntsubst Γ Δ) -> spine Γ T C -> spine Δ ([ σ ]tpn T) ([ σ ]tpn C)
- [_]ns {Σ} {Γ} {Δ} {c · xs} {C} σ S = trustMe -- ε = ε
+ [_]ns {Σ} {Γ} {Δ} {c · xs} {C} σ S = trustMe
  [_]ns {Σ} {Γ} {Δ} {Π A B} {C} σ (N , S) = ([ σ ]nn N) , (subst (λ R → spine _ R ([ σ ]tpn C)) trustMe ([ σ ]ns S))
- -- [_]ns σ (_&_ {T} {T2} {C} N S) = [ σ ]nn N & subst (λ R → spine _ R ([ σ ]tpn C)) trustMe ([ σ ]ns S)
 
  [_]nn : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> ntm Γ T -> ntm Δ ([ σ ]tpn T)
  [_]nn σ (v x · S) = ([ σ ]nv x) ◆' ([ σ ]ns S)
