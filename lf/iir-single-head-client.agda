@@ -27,8 +27,10 @@ stlcsig = (((((⊡ ,
         , κ (Π (top · unit) ⋆)) -- exp : tp -> type
         , τ (Π (pop top · unit) (Π (pop top · unit) (Π (top · (((con top) , ((v (pop top) , refl) , ((v top , refl) , refl))) , unit)) (Π (top · ((v (pop (pop top)) , refl) , unit)) (top · ((v (pop (pop top)) , refl) , unit)))))))
             -- app : {T:otp}{S:otp} exp (arr T S) -> exp T -> exp S
-            -- app : {T:otp}{S:otp} exp (arr T S) -> exp T -> exp ?
         , τ (Π (pop top · unit) (Π (pop top · unit) (Π (Π (top · (((v (pop top)) , refl) , unit)) (top · (((v (pop top)) , refl) , unit))) (top · (((con (pop top)) , (((v (pop (pop top))) , refl) , (((v (pop top)) , refl) , refl))) , unit)))))
             -- lam : {T:otp}{S:otp} (exp T -> exp S) -> exp (arr T S)
 
 -- TODO: I wonder if I can somehow use implicits to avoid the need to supply refl and unit
+
+copy : ∀ {Γ : ctx stlcsig} -> ntm Γ (top · {!!}) -> ntm Γ {!!}
+copy M = {!!}
