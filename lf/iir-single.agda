@@ -254,22 +254,45 @@ mutual
  ⇑t1 : ∀ {Σ} {Γ : ctx Σ} {S} -> tp Γ -> tp (Γ ,, S)
  ⇑t1 T = ⇑t _ (⊡ , _) ⊡ T
  
- [_/x]kn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> kind (Γ ,, T) -> kind Γ
- [ N /x]kn K = {!!} --[ single-tsubst N ]kn K
-
- -- _++_ : ∀ {Σ} {Γ : ctx Σ} {A B C : tp Γ} -> spine Γ A B -> spine Γ B C -> spine Γ A C
- -- _++_ {Σ} {Γ} {c · xs} refl S2 = S2
- -- _++_ {Σ} {Γ} {Π A B} (N , S1) S2 = N , (S1 ++ S2)
 
  _◆'_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
  _◆'_ {Σ} {Γ} {C} {Π T T₁} (ƛ M) (N , S) = [ N /x]nn M ◆' S
  _◆'_ {Σ} {Γ} {.(x · x₁)} {x · x₁} N refl = N
 
+ n-cesub : ∀ {Σ} {Γ : ctx Σ} {B} -> ntm Γ B -> (Δ : ctxext (Γ ,, B)) -> ctxext Γ
+ n-cesub N ⊡ = ⊡
+ n-cesub N (Δ , T) = (n-cesub N Δ) , n-tsub N Δ T
+
+ n-ksub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> kind ((Γ ,, B) << Δ) -> kind (Γ << n-cesub N Δ)
+ n-ksub N Δ ⋆ = ⋆
+ n-ksub N Δ (Π T K) = Π (n-tsub N Δ T) (n-ksub N (Δ , T) K)
+
+ [_/x]kn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> kind (Γ ,, T) -> kind Γ
+ [ N /x]kn K = n-ksub N ⊡ K 
+
+ n-tssub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {K} -> tpSpine ((Γ ,, B) << Δ) K -> tpSpine (Γ << (n-cesub N Δ)) (n-ksub N Δ K)
+ n-tssub N Δ {⋆} S = unit
+ n-tssub {Σ} {Γ} N Δ {Π T K} (N₁ , S) = (n-sub N Δ N₁) , (subst (tpSpine _) trustMe (n-tssub N Δ S))
+ 
+ n-tsub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> tp ((Γ ,, B) << Δ) -> tp (Γ << n-cesub N Δ)
+ n-tsub N Δ (Π T T₁) = Π (n-tsub N Δ T) (n-tsub N (Δ , T) T₁)
+ n-tsub N Δ (x · x₁) = x · (subst (tpSpine _) trustMe (n-tssub N Δ x₁))
+
+ n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
+ n-sub N Δ (v x · x₁) = {!!}
+ n-sub N Δ (con x · x₁) = con x · subst (λ α → spine _ α _) trustMe (s-sub N Δ x₁)
+ n-sub N Δ (ƛ M) = ƛ (n-sub N (Δ , _) M)
+
+ s-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T C} -> spine ((Γ ,, B) << Δ) T C -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ T) (n-tsub N Δ C)
+ s-sub N Δ {a · is} S = trustMe
+ s-sub N Δ {Π T1 T2} (N₁ , S) = (n-sub N Δ N₁) , (subst (λ α → spine _ α _) trustMe (s-sub N Δ S))
+
+
  [_/x]tpn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> tp (Γ ,, T) -> tp Γ
- [ N /x]tpn T = {!!} --[ single-tsubst N ]tpn T
+ [ N /x]tpn T = n-tsub N ⊡ T -- TODO: we could just give these operations better syntax and forget about this definition
 
  [_/x]nn : ∀ {Σ} {Γ : ctx Σ} {T} {C} -> (N : ntm Γ T) -> ntm (Γ ,, T) C -> ntm Γ ([ N /x]tpn C)
- [ N /x]nn M = {!!} --[ single-tsubst N ]nn M
+ [ N /x]nn M = n-sub N ⊡ M --[ single-tsubst N ]nn M
 
 -- Important things still to do:
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
