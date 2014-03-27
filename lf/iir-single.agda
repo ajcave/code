@@ -116,13 +116,6 @@ mutual
  _,,_ : {Σ : sig} -> (Γ : ctx Σ) -> (T : tp Γ) -> ctx Σ
  Γ ,, T = Γ ,' T
  
- -- ntsubst : ∀ {Σ} (Γ Δ : ctx Σ) -> Set
- 
- -- ntsubst ⊡ Δ = Unit
- -- ntsubst (Γ ,' T) Δ = Σ (ntsubst Γ Δ) (λ σ -> (ntm Δ ([ σ ]tpn T)))
- 
- -- do-wkn-ntsubst : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Δ} -> ntsubst Γ Δ -> ntsubst Γ (Δ ,, T)
-
  -- Do we really need λ to be a constructor?
  -- I guess that we could actually just compute the ntm type by recursion on the tp
  -- arriving eventually at _·_ with Γ appropriately extended (iir-eta-comp)
@@ -141,16 +134,8 @@ mutual
  lookup (Γ ,' T) top = ⇑t1 T
  lookup (Γ ,' T) (pop x) = ⇑t1 (lookup Γ x)
 
- -- data var0 {Σ} (Γ : ctx Σ) (S : tp Γ) : (T : tp (Γ ,, S)) -> Set where
- --  top : var0 Γ S ([ do-wkn-ntsubst id-ntsubst ]tpn S)
- --  pop : ∀ {T' : tp Γ} -> var Γ T' -> var0 Γ S ([ do-wkn-ntsubst id-ntsubst ]tpn T')
-
- -- var : ∀ {Σ} (Γ : ctx Σ) -> tp Γ -> Set
- -- var ⊡ T = ⊥
- -- var (Γ ,' T) T₁ = var0 Γ T T₁
-
  data ntm {Σ} (Γ : ctx Σ) : tp Γ -> Set where
-  _·_ : ∀ {T} {C} -> head Γ T -> spine Γ T C -> ntm Γ C
+  _·_ : ∀ {T} {a S} -> head Γ T -> spine Γ T (a · S) -> ntm Γ (a · S)
   ƛ : ∀ {T S} -> ntm (Γ ,' T) S -> ntm Γ (Π T S)
  spine : ∀ {Σ} (Γ : ctx Σ) -> tp Γ -> tp Γ -> Set
  spine Γ (Π A A₁) B = Σ (ntm Γ A) (λ N -> spine Γ ([ N /x]tpn A₁) B)
@@ -170,10 +155,6 @@ mutual
  ↑ss : ∀ {Σ α} -> sigsort Σ -> sigsort (Σ ,s α)
  ↑ss (κ K) = κ (↑k K)
  ↑ss (τ T) = τ (↑t T)
-
- -- data inSig0 Σ (S : sigsort Σ) : (T : sigsort (Σ ,s S)) -> Set where
- --  top : inSig0 Σ S (↑ss S)
- --  pop : ∀ {T' : sigsort Σ} -> inSig Σ T' -> inSig0 Σ S (↑ss T')
 
  inSig1κ : ∀ Σ -> Set
  inSig1κ ⊡ = ⊥
@@ -196,10 +177,6 @@ mutual
  lookupsτ (Σ , κ T) x = ↑t (lookupsτ Σ x)
  lookupsτ (Σ , τ K) top = ↑t K
  lookupsτ (Σ , τ K) (pop x) = ↑t (lookupsτ Σ x)
-
- -- data inSig : ∀ Σ -> sigsort Σ -> Set where
- --  a-top : ∀ {Σ K} -> inSig (Σ , K) (↑ss K) 
- --  a-pop : ∀ {Σ K α} -> inSig Σ K -> inSig (Σ , α) (↑ss K)
  
  ↑t : ∀ {Σ Γ α} -> tp {Σ} Γ -> tp {Σ ,s α} (↑c Γ)
  ↑t (Π T T₁) = Π (↑t T) (↑t T₁)
@@ -270,7 +247,6 @@ mutual
  ⇑v Γ Δ (Δ' , T) top = top
  ⇑v Γ Δ (Δ' , T) (pop x) = pop (⇑v Γ Δ Δ' x)
 
-
  ⇑h : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> head (Γ << Δ') T -> head ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' T)
  ⇑h Γ Δ Δ' (v x) = subst (head _) trustMe (v (⇑v Γ Δ Δ' x))
  ⇑h Γ Δ Δ' (con x) = subst (head _) trustMe (con x)
@@ -278,85 +254,16 @@ mutual
  ⇑t1 : ∀ {Σ} {Γ : ctx Σ} {S} -> tp Γ -> tp (Γ ,, S)
  ⇑t1 T = ⇑t _ (⊡ , _) ⊡ T
  
- -- wkn-ntsubst : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} -> ntsubst Γ (Γ ,, T)
- -- wkn-ntsubst = do-wkn-ntsubst id-ntsubst
-
- -- ⊡s : ∀ {Σ} {Γ : ctx Σ} -> ntsubst ⊡' Γ
- -- ⊡s = unit
-
- -- do-wkn-ntsubst {Σ} {⊡} σ = unit
- -- do-wkn-ntsubst {Σ} {Γ ,' T} (σ , N) = do-wkn-ntsubst σ , subst (λ S → ntm _ S) trustMe ([ wkn-ntsubst ]nn N)
-
- -- [_]tpn : ∀ {Σ} {Γ Δ : ctx Σ} -> ntsubst Γ Δ -> tp Γ -> tp Δ
- -- [ σ ]tpn (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
- -- [ σ ]tpn (c · S) = c · subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S)
-
- -- data rspine {Σ} (Γ : ctx Σ) : tp Γ -> tp Γ -> Set where
- --  ε : ∀ {T} -> rspine Γ T T
- --  _&_ : ∀ {T T2 C} -> (S : rspine Γ C (Π T T2)) -> (N : ntm Γ T) -> rspine Γ C ([ N /x]tpn T2)
-
- -- [_]vs' : ∀ {Σ} {Γ Δ : ctx Σ} {T C : tp Γ} -> (σ : ntsubst Γ Δ) -> rspine Γ T C -> rspine Δ ([ σ ]tpn T) ([ σ ]tpn C)
- -- [_]vs' σ ε = ε
- -- [_]vs' σ (_&_ {T} {T2} {C} S N) = subst (rspine _ _) trustMe (([ σ ]vs' S) & ([ σ ]nn N)) 
-
- -- rapp : ∀ {Σ} {Γ : ctx Σ} {A B C} -> rspine Γ A B -> spine Γ B C -> spine Γ A C
- -- rapp ε S2 = S2
- -- rapp (S1 & N) S2 = rapp S1 (N , S2)
-
- -- _◇_ : ∀ {Σ} {Γ : ctx Σ} {A B} -> head Γ A -> rspine Γ A B -> ntm Γ B
- -- _◇_ {Σ} {Γ} {A} {Π B B₁} H S = ƛ (wkn-hd H ◇ (subst (rspine _ _) trustMe ([ wkn-ntsubst ]vs' S & (v top ◇ ε))))
- -- _◇_ {Σ} {Γ} {A} {c · x} H S = H · rapp S refl
-
- -- id-ntsubst : ∀ {Σ} {Γ : ctx Σ} -> ntsubst Γ Γ
- -- id-ntsubst {Σ} {⊡} = unit
- -- id-ntsubst {Σ} {Γ ,' T} = do-wkn-ntsubst id-ntsubst , (subst (λ S -> ntm _ S) trustMe ((v top) · {!!}))
-
- -- ntsubst-ext : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ}  (σ : ntsubst Γ Δ) -> ntsubst (Γ ,, T) (Δ ,, ([ σ ]tpn T))
- -- ntsubst-ext σ = (do-wkn-ntsubst σ) , {!!} --(subst (λ S → ntm _ S) trustMe (v top · unit))
-
- -- [_]kn : ∀ {Σ} {Γ Δ : ctx Σ} (σ : ntsubst Γ Δ) -> kind Γ -> kind Δ
- -- [_]kn σ ⋆ = ⋆
- -- [_]kn σ (Π T K) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]kn K)
-
  [_/x]kn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> kind (Γ ,, T) -> kind Γ
  [ N /x]kn K = {!!} --[ single-tsubst N ]kn K
- 
- -- _·'_ : ∀ {Σ} {Γ : ctx Σ} -> (x : inSig1κ Σ) -> tpSpine Γ ([ ⊡s ]kn (lookups Σ x)) -> tp Γ
- -- c ·' S = c · S
 
- -- [_]ts : ∀ {Σ} {Γ Δ : ctx Σ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kn K)
- -- [_]ts {Σ} {Γ} {Δ} {⋆} σ S = unit
- -- [_]ts {Σ} {Γ} {Δ} {Π T K} σ (N , S) = ([ σ ]nn N) , (subst (tpSpine _) trustMe ([ σ ]ts S)) -- ε = ε
- -- [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
-
- -- wkn-hd : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} {S} -> head Γ T -> head (Γ ,, S) (⇑t T)
- -- wkn-hd (v x) = v (pop x)
- -- wkn-hd (con c) = subst (head _) trustMe (con c)
-
- -- [_]nv : ∀ {Σ} {Γ Δ : ctx Σ} -> (σ : ntsubst Γ Δ) -> (x : var1 Γ) -> ntm Δ ([ σ ]tpn (lookup Γ x))
- -- [_]nv {Σ} {⊡} σ ()
- -- [_]nv {Σ} {Γ ,' S} (σ , N) top = subst (ntm _) trustMe N
- -- [_]nv {Σ} {Γ ,' S} (σ , N) (pop x) = subst (ntm _) trustMe ([ σ ]nv x)
-
- _++_ : ∀ {Σ} {Γ : ctx Σ} {A B C : tp Γ} -> spine Γ A B -> spine Γ B C -> spine Γ A C
- _++_ {Σ} {Γ} {c · xs} refl S2 = S2
- _++_ {Σ} {Γ} {Π A B} (N , S1) S2 = N , (S1 ++ S2)
+ -- _++_ : ∀ {Σ} {Γ : ctx Σ} {A B C : tp Γ} -> spine Γ A B -> spine Γ B C -> spine Γ A C
+ -- _++_ {Σ} {Γ} {c · xs} refl S2 = S2
+ -- _++_ {Σ} {Γ} {Π A B} (N , S1) S2 = N , (S1 ++ S2)
 
  _◆'_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
- (H · S) ◆' S₁ = H · (S ++ S₁)
- ƛ N ◆' (N₁ , S) = ([ N₁ /x]nn N) ◆' S
-
- -- [_]ns : ∀ {Σ} {Γ Δ : ctx Σ} {T C : tp Γ} -> (σ : ntsubst Γ Δ) -> spine Γ T C -> spine Δ ([ σ ]tpn T) ([ σ ]tpn C)
- -- [_]ns {Σ} {Γ} {Δ} {c · xs} {C} σ S = trustMe
- -- [_]ns {Σ} {Γ} {Δ} {Π A B} {C} σ (N , S) = ([ σ ]nn N) , (subst (λ R → spine _ R ([ σ ]tpn C)) trustMe ([ σ ]ns S))
-
- -- [_]nn : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> ntm Γ T -> ntm Δ ([ σ ]tpn T)
- -- [_]nn σ (v x · S) = ([ σ ]nv x) ◆' ([ σ ]ns S)
- -- [ σ ]nn (con c · S) = subst (λ T → head _ T) trustMe (con c) · ([ σ ]ns S)
- -- [_]nn σ (ƛ M) = ƛ ([ ntsubst-ext σ ]nn M)
-
- -- single-tsubst : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> ntsubst (Γ ,, T) Γ
- -- single-tsubst N = id-ntsubst , (subst (λ S → ntm _ S) trustMe N)
+ _◆'_ {Σ} {Γ} {C} {Π T T₁} (ƛ M) (N , S) = [ N /x]nn M ◆' S
+ _◆'_ {Σ} {Γ} {.(x · x₁)} {x · x₁} N refl = N
 
  [_/x]tpn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> tp (Γ ,, T) -> tp Γ
  [ N /x]tpn T = {!!} --[ single-tsubst N ]tpn T
@@ -365,7 +272,6 @@ mutual
  [ N /x]nn M = {!!} --[ single-tsubst N ]nn M
 
 -- Important things still to do:
--- 1) Add term constants
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
 -- 4) Try examples
 --    e.g. do plain stlc terms + typing derivations. Prove substitution lemma
