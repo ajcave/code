@@ -157,7 +157,7 @@ mutual
  spine Γ (c · x) B = (c · x) ≡ B
  data head {Σ} (Γ : ctx Σ) : tp Γ -> Set where
   v : (x : var1 Γ) -> head Γ (lookup Γ x)
-  con : (x : inSig1τ Σ) -> head Γ {!!} --([ ⊡s {Σ} {Γ} ]tpn (lookupsτ Σ x))
+  con : (x : inSig1τ Σ) -> head Γ (⇑t0 (lookupsτ Σ x))
 
  ↑c : ∀ {Σ α} -> ctx Σ -> ctx (Σ ,s α)
  ↑c ⊡ = ⊡
@@ -249,19 +249,34 @@ mutual
  ⇑t Γ Δ Δ' (Π T T₁) = Π (⇑t Γ Δ Δ' T) (⇑t Γ Δ (Δ' , T) T₁)
  ⇑t Γ Δ Δ' (a · is) = a · subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' is)
 
+ ⇑t0 : ∀ {Σ} {Γ : ctx Σ} -> tp {Σ} ⊡' -> tp Γ
+ ⇑t0 {Σ} {Γ} T = subst tp trustMe (⇑t ⊡ ⌜ Γ ⌝ ⊡ T)
+
  ⇑ts : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {K} -> tpSpine (Γ << Δ') K -> tpSpine ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑k Γ Δ Δ' K)
  ⇑ts Γ Δ Δ' {⋆} S = unit
  ⇑ts Γ Δ Δ' {Π T K} (N , S) = ⇑n Γ Δ Δ' N , subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' S) 
 
  ⇑n : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> ntm (Γ << Δ') T -> ntm ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' T)
- ⇑n Γ Δ Δ' (c · S) = {!!}
+ ⇑n Γ Δ Δ' (c · S) = (⇑h Γ Δ Δ' c) · ⇑s Γ Δ Δ' S
  ⇑n Γ Δ Δ' (ƛ N) = ƛ (⇑n Γ Δ (Δ' , _) N)
 
+ ⇑s : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {A B} -> spine (Γ << Δ') A B -> spine ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' A) (⇑t Γ Δ Δ' B)
+ ⇑s Γ Δ Δ' {Π A A₁} {B} (N , S) = (⇑n Γ Δ Δ' N) , (subst (λ C → spine _ C (⇑t Γ Δ Δ' B)) trustMe (⇑s Γ Δ Δ' S))
+ ⇑s Γ Δ Δ' {x · x₁} S = trustMe
 
--- ⇑h : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> head (Γ << Δ') T -> head ((Γ << Δ) << (⇑ce Δ
+ ⇑v : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> var1 (Γ << Δ') -> var1 ((Γ << Δ) << (⇑ce Γ Δ Δ'))
+ ⇑v Γ ⊡ ⊡ x = x
+ ⇑v Γ (Δ , T) ⊡ x = pop (⇑v Γ Δ ⊡ x)
+ ⇑v Γ Δ (Δ' , T) top = top
+ ⇑v Γ Δ (Δ' , T) (pop x) = pop (⇑v Γ Δ Δ' x)
+
+
+ ⇑h : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> head (Γ << Δ') T -> head ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' T)
+ ⇑h Γ Δ Δ' (v x) = subst (head _) trustMe (v (⇑v Γ Δ Δ' x))
+ ⇑h Γ Δ Δ' (con x) = subst (head _) trustMe (con x)
 
  ⇑t1 : ∀ {Σ} {Γ : ctx Σ} {S} -> tp Γ -> tp (Γ ,, S)
- ⇑t1 T = {!!}
+ ⇑t1 T = ⇑t _ (⊡ , _) ⊡ T
  
  -- wkn-ntsubst : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} -> ntsubst Γ (Γ ,, T)
  -- wkn-ntsubst = do-wkn-ntsubst id-ntsubst
