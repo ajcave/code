@@ -39,4 +39,6 @@ Exp : ∀ {Γ : ctx stlcsig} -> ntm Γ Tp -> tp Γ
 Exp T = top · (T , unit)
 
 copy : ∀ {Γ : ctx stlcsig} -> (T : ntm Γ Tp) -> ntm Γ (Exp T) -> ntm Γ (Exp T)
-copy M = {!!}
+copy T (v x , S) = {!!}
+copy T (con top , S) = ?
+copy T (con (pop c) , S) = ?
