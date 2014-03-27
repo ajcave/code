@@ -143,8 +143,13 @@ mutual
  ntm Γ (a · S) = Σ (head Γ) (λ H -> spine Γ (hlookup Γ H) (a · S))
  ntm Γ (Π T S) = ntm (Γ ,' T) S
  -- TODO: Index spine by a "c" and "x" instead of a B
+ 
+ n-cesub : ∀ {Σ} {Γ : ctx Σ} {B} -> ntm Γ B -> (Δ : ctxext (Γ ,, B)) -> ctxext Γ
+ n-cesub N ⊡ = ⊡
+ n-cesub N (Δ , T) = (n-cesub N Δ) , n-tsub N Δ T
+
  spine : ∀ {Σ} (Γ : ctx Σ) -> tp Γ -> tp Γ -> Set
- spine Γ (Π A A₁) B = Σ (ntm Γ A) (λ N -> spine Γ ([ N /x]tpn A₁) B)
+ spine Γ (Π A A₁) B = Σ (ntm Γ A) (λ N -> spine Γ (n-tsub N ⊡ A₁) B)
  spine Γ (c · x) B = (c · x) ≡ B
  data head {Σ} (Γ : ctx Σ) : Set where
   v : (x : var Γ) -> head Γ
@@ -335,11 +340,8 @@ mutual
 
  _◆_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
  _◆_ {Σ} {Γ} {._} {a · St} M refl = M
- _◆_ {Σ} {Γ} {T} {Π A B} M (N , S) = ([ N /x]nn M) ◆ S
+ _◆_ {Σ} {Γ} {T} {Π A B} M (N , S) = (n-sub N ⊡ M) ◆ S
 
- n-cesub : ∀ {Σ} {Γ : ctx Σ} {B} -> ntm Γ B -> (Δ : ctxext (Γ ,, B)) -> ctxext Γ
- n-cesub N ⊡ = ⊡
- n-cesub N (Δ , T) = (n-cesub N Δ) , n-tsub N Δ T
 
  n-ksub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> kind ((Γ ,, B) << Δ) -> kind (Γ << n-cesub N Δ)
  n-ksub N Δ ⋆ = ⋆
@@ -399,11 +401,11 @@ mutual
  s-sub N Δ {a · is} S = trustMe
  s-sub N Δ {Π T1 T2} {C} (N₁ , S) = (n-sub N Δ {T1} N₁) , (subst (λ α → spine _ α (n-tsub N Δ C)) trustMe (s-sub N Δ S))
 
- [_/x]tpn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> tp (Γ ,, T) -> tp Γ
- [ N /x]tpn T = n-tsub N ⊡ T -- TODO: we could just give these operations better syntax and forget about this definition
+ -- [_/x]tpn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> tp (Γ ,, T) -> tp Γ
+ -- [ N /x]tpn T = n-tsub N ⊡ T -- TODO: we could just give these operations better syntax and forget about this definition
 
- [_/x]nn : ∀ {Σ} {Γ : ctx Σ} {T} {C} -> (N : ntm Γ T) -> ntm (Γ ,, T) C -> ntm Γ ([ N /x]tpn C)
- [_/x]nn {C = C} N M = n-sub N ⊡ {C} M --[ single-tsubst N ]nn M
+ -- [_/x]nn : ∀ {Σ} {Γ : ctx Σ} {T} {C} -> (N : ntm Γ T) -> ntm (Γ ,, T) C -> ntm Γ ([ N /x]tpn C)
+ -- [_/x]nn {C = C} N M = n-sub N ⊡ {C} M --[ single-tsubst N ]nn M
 
 -- Important things still to do:
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
