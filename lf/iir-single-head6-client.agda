@@ -45,6 +45,8 @@ copy : ∀ {Γ : ctx stlcsig} -> (T : ntm Γ Tp) -> ntm Γ (Exp T) -> ntm Γ (Ex
 copy T (v x , S) = {!!}
 copy ._ (lam T1 T2 M) = {!!}
 copy .T2 (app T1 T2 M N) = ?
+-- Note that coverage checking is off
+
 -- copy T (con (pop (pop top)) , ()) = ?
 -- copy T (con (pop (pop (pop top))) , ()) = ?
 
