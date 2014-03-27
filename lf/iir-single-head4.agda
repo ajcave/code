@@ -339,79 +339,79 @@ mutual
  ⇑t1 : ∀ {Σ} {Γ : ctx Σ} {S} -> tp Γ -> tp (Γ ,, S)
  ⇑t1 T = ⇑t _ (⊡ , _) ⊡ T
 
- -- _◆_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
- -- _◆_ {Σ} {Γ} {._} {a · St} M refl = M
- -- _◆_ {Σ} {Γ} {T} {Π A B} M (N , S) = ([ N /x]nn M) ◆ S
+ _◆_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
+ _◆_ {Σ} {Γ} {._} {a · St} M refl = M
+ _◆_ {Σ} {Γ} {T} {Π A B} M (N , S) = ([ N /x]nn M) ◆ S
 
- -- n-cesub : ∀ {Σ} {Γ : ctx Σ} {B} -> ntm Γ B -> (Δ : ctxext (Γ ,, B)) -> ctxext Γ
- -- n-cesub N ⊡ = ⊡
- -- n-cesub N (Δ , T) = (n-cesub N Δ) , n-tsub N Δ T
+ n-cesub : ∀ {Σ} {Γ : ctx Σ} {B} -> ntm Γ B -> (Δ : ctxext (Γ ,, B)) -> ctxext Γ
+ n-cesub N ⊡ = ⊡
+ n-cesub N (Δ , T) = (n-cesub N Δ) , n-tsub N Δ T
 
- -- n-ksub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> kind ((Γ ,, B) << Δ) -> kind (Γ << n-cesub N Δ)
- -- n-ksub N Δ ⋆ = ⋆
- -- n-ksub N Δ (Π T K) = Π (n-tsub N Δ T) (n-ksub N (Δ , T) K)
+ n-ksub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> kind ((Γ ,, B) << Δ) -> kind (Γ << n-cesub N Δ)
+ n-ksub N Δ ⋆ = ⋆
+ n-ksub N Δ (Π T K) = Π (n-tsub N Δ T) (n-ksub N (Δ , T) K)
 
  [_/x]kn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> kind (Γ ,, T) -> kind Γ
- [ N /x]kn K = {!!} --n-ksub N ⊡ K 
+ [ N /x]kn K = n-ksub N ⊡ K 
 
- -- n-tssub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {K} -> tpSpine ((Γ ,, B) << Δ) K -> tpSpine (Γ << (n-cesub N Δ)) (n-ksub N Δ K)
- -- n-tssub N Δ {⋆} S = unit
- -- n-tssub {Σ} {Γ} N Δ {Π T K} (N₁ , S) = (n-sub N Δ N₁) , (subst (tpSpine _) trustMe (n-tssub N Δ S))
+ n-tssub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {K} -> tpSpine ((Γ ,, B) << Δ) K -> tpSpine (Γ << (n-cesub N Δ)) (n-ksub N Δ K)
+ n-tssub N Δ {⋆} S = unit
+ n-tssub {Σ} {Γ} N Δ {Π T K} (N₁ , S) = (n-sub N Δ N₁) , (subst (tpSpine _) trustMe (n-tssub N Δ S))
  
- -- n-tsub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> tp ((Γ ,, B) << Δ) -> tp (Γ << n-cesub N Δ)
- -- n-tsub N Δ (Π T T₁) = Π (n-tsub N Δ T) (n-tsub N (Δ , T) T₁)
- -- n-tsub N Δ (x · x₁) = x · (subst (tpSpine _) trustMe (n-tssub N Δ x₁))
+ n-tsub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> tp ((Γ ,, B) << Δ) -> tp (Γ << n-cesub N Δ)
+ n-tsub N Δ (Π T T₁) = Π (n-tsub N Δ T) (n-tsub N (Δ , T) T₁)
+ n-tsub N Δ (x · x₁) = x · (subst (tpSpine _) trustMe (n-tssub N Δ x₁))
  
- -- vare : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) -> Set
- -- vare ⊡ = ⊥
- -- vare (Δ , T) = varOpt (vare Δ)
+ vare : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) -> Set
+ vare ⊡ = ⊥
+ vare (Δ , T) = varOpt (vare Δ)
 
- -- emb : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) -> vare Δ -> var (Γ << Δ)
- -- emb ⊡ ()
- -- emb (Δ , T) top = top
- -- emb (Δ , T) (pop y) = pop (emb Δ y)
+ emb : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) -> vare Δ -> var (Γ << Δ)
+ emb ⊡ ()
+ emb (Δ , T) top = top
+ emb (Δ , T) (pop y) = pop (emb Δ y)
 
- -- emb1 : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> vare Δ -> vare (n-cesub N Δ)
- -- emb1 N ⊡ ()
- -- emb1 N (Δ , T) top = top
- -- emb1 N (Δ , T) (pop y) = pop (emb1 N Δ y)
+ emb1 : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> vare Δ -> vare (n-cesub N Δ)
+ emb1 N ⊡ ()
+ emb1 N (Δ , T) top = top
+ emb1 N (Δ , T) (pop y) = pop (emb1 N Δ y)
 
- -- data eqDec {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) : var (Γ << Δ) -> Set where
- --  before : (y : var Γ) -> eqDec Δ (⇑v Γ Δ ⊡ y)
- --  after : ∀ (y : vare Δ) -> eqDec Δ (emb Δ y)
+ data eqDec {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) : var (Γ << Δ) -> Set where
+  before : (y : var Γ) -> eqDec Δ (⇑v Γ Δ ⊡ y)
+  after : ∀ (y : vare Δ) -> eqDec Δ (emb Δ y)
 
- -- var-eq : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) (x : var (Γ << Δ)) -> eqDec Δ x
- -- var-eq ⊡ x = before x
- -- var-eq (Δ , T) top = after top
- -- var-eq (Δ , T) (pop x) with var-eq Δ x
- -- var-eq {Σ} {Γ} (Δ , T) (pop .(⇑v Γ Δ ⊡ y)) | before y = before y
- -- var-eq (Δ , T) (pop .(emb Δ y)) | after y = after (pop y)
+ var-eq : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) (x : var (Γ << Δ)) -> eqDec Δ x
+ var-eq ⊡ x = subst (eqDec ⊡) trustMe (before x)
+ var-eq (Δ , T) top = after top
+ var-eq (Δ , T) (pop x) with var-eq Δ x
+ var-eq {Σ} {Γ} (Δ , T) (pop .(⇑v Γ Δ ⊡ y)) | before y = subst (eqDec (Δ , T)) trustMe (before y)
+ var-eq (Δ , T) (pop .(emb Δ y)) | after y = after (pop y)
 
- -- -- TODO: Try this again. Has to be "under another context" though
- -- -- nv-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) (x : var1 ((Γ ,, B) << Δ)) {a St} -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ (lookup ((Γ ,, B) << Δ) x)) (a ·' St) -> ntm (Γ << (n-cesub N Δ)) (a ·' St)
- -- -- nv-sub N ⊡ top S = N ◆ subst (λ C → spine _ C _) trustMe S
- -- -- nv-sub N ⊡ (pop x) {a} {St} S = v x · subst (λ C → spine _ C (a · St)) trustMe S
- -- -- nv-sub N (Δ , T) top {a} {St} S = v top · subst (λ C -> spine _ C (a · St)) trustMe S
- -- -- nv-sub N (Δ , T) (pop x) S = {!!}
+ -- TODO: Try this again. Has to be "under another context" though
+ -- nv-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) (x : var1 ((Γ ,, B) << Δ)) {a St} -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ (lookup ((Γ ,, B) << Δ) x)) (a ·' St) -> ntm (Γ << (n-cesub N Δ)) (a ·' St)
+ -- nv-sub N ⊡ top S = N ◆ subst (λ C → spine _ C _) trustMe S
+ -- nv-sub N ⊡ (pop x) {a} {St} S = v x · subst (λ C → spine _ C (a · St)) trustMe S
+ -- nv-sub N (Δ , T) top {a} {St} S = v top · subst (λ C -> spine _ C (a · St)) trustMe S
+ -- nv-sub N (Δ , T) (pop x) S = {!!}
 
- -- n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
- -- n-sub N Δ {a · St} (v x , S) with var-eq Δ x
- -- n-sub {Σ} {Γ} {B} N Δ {a · St} (v .(⇑v (Γ ,' B) Δ ⊡ top) , S) | before top = _◆_ {T = ⇑t Γ (n-cesub N Δ) ⊡ B} (⇑n Γ (n-cesub N Δ) ⊡ {B} N) (subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
- -- n-sub {Σ} {Γ} {B} N Δ {a · St} (v .(⇑v (Γ ,' B) Δ ⊡ (pop x)) , S) | before (pop x) = (v (⇑v Γ (n-cesub N Δ) ⊡ x) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
- -- n-sub {Σ} {Γ} {B} N Δ {a · St} (v .(emb Δ y) , S) | after y = (v (emb (n-cesub N Δ) (emb1 N Δ y)) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
- -- n-sub N Δ {a · St} (con c , S) = (con c , subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
- -- n-sub N Δ {Π A B} M = n-sub N (Δ , A) {B} M
+ n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
+ n-sub N Δ {a · St} (v x , S) with var-eq Δ x
+ n-sub {Σ} {Γ} {B} N Δ {a · St} (v .(⇑v (Γ ,' B) Δ ⊡ top) , S) | before top = _◆_ {T = ⇑t Γ (n-cesub N Δ) ⊡ B} (⇑n Γ (n-cesub N Δ) ⊡ {B} N) (subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
+ n-sub {Σ} {Γ} {B} N Δ {a · St} (v .(⇑v (Γ ,' B) Δ ⊡ (pop x)) , S) | before (pop x) = (v (⇑v Γ (n-cesub N Δ) ⊡ x) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
+ n-sub {Σ} {Γ} {B} N Δ {a · St} (v .(emb Δ y) , S) | after y = (v (emb (n-cesub N Δ) (emb1 N Δ y)) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
+ n-sub N Δ {a · St} (con c , S) = (con c , subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
+ n-sub N Δ {Π A B} M = n-sub N (Δ , A) {B} M
 
- -- s-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T C} -> spine ((Γ ,, B) << Δ) T C -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ T) (n-tsub N Δ C)
- -- s-sub N Δ {a · is} S = trustMe
- -- s-sub N Δ {Π T1 T2} {C} (N₁ , S) = (n-sub N Δ {T1} N₁) , (subst (λ α → spine _ α (n-tsub N Δ C)) trustMe (s-sub N Δ S))
+ s-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T C} -> spine ((Γ ,, B) << Δ) T C -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ T) (n-tsub N Δ C)
+ s-sub N Δ {a · is} S = trustMe
+ s-sub N Δ {Π T1 T2} {C} (N₁ , S) = (n-sub N Δ {T1} N₁) , (subst (λ α → spine _ α (n-tsub N Δ C)) trustMe (s-sub N Δ S))
 
 
  [_/x]tpn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> tp (Γ ,, T) -> tp Γ
- [ N /x]tpn T = {!!} -- n-tsub N ⊡ T -- TODO: we could just give these operations better syntax and forget about this definition
+ [ N /x]tpn T = n-tsub N ⊡ T -- TODO: we could just give these operations better syntax and forget about this definition
 
  [_/x]nn : ∀ {Σ} {Γ : ctx Σ} {T} {C} -> (N : ntm Γ T) -> ntm (Γ ,, T) C -> ntm Γ ([ N /x]tpn C)
- [_/x]nn {C = C} N M = {!!} --n-sub N ⊡ {C} M --[ single-tsubst N ]nn M
+ [_/x]nn {C = C} N M = n-sub N ⊡ {C} M --[ single-tsubst N ]nn M
 
 -- Important things still to do:
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
