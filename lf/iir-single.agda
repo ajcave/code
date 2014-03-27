@@ -278,14 +278,20 @@ mutual
  n-tsub N Δ (Π T T₁) = Π (n-tsub N Δ T) (n-tsub N (Δ , T) T₁)
  n-tsub N Δ (x · x₁) = x · (subst (tpSpine _) trustMe (n-tssub N Δ x₁))
 
+ nv-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) (x : var1 ((Γ ,, B) << Δ)) {C} -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ (lookup ((Γ ,, B) << Δ) x)) C -> ntm (Γ << (n-cesub N Δ)) C
+ nv-sub N ⊡ top S = {!!}
+ nv-sub N ⊡ (pop x) S = {!!}
+ nv-sub N (Δ , T) top S = {!!}
+ nv-sub N (Δ , T) (pop x) S = {!!}
+
  n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
  n-sub N Δ (v x · x₁) = {!!}
- n-sub N Δ (con x · x₁) = con x · subst (λ α → spine _ α _) trustMe (s-sub N Δ x₁)
+ n-sub N Δ (_·_ {._} {a} {A} (con x) x₁) = con x · subst (λ α → spine _ α (n-tsub N Δ (a · A))) trustMe (s-sub N Δ x₁)
  n-sub N Δ (ƛ M) = ƛ (n-sub N (Δ , _) M)
 
  s-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T C} -> spine ((Γ ,, B) << Δ) T C -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ T) (n-tsub N Δ C)
  s-sub N Δ {a · is} S = trustMe
- s-sub N Δ {Π T1 T2} (N₁ , S) = (n-sub N Δ N₁) , (subst (λ α → spine _ α _) trustMe (s-sub N Δ S))
+ s-sub N Δ {Π T1 T2} {C} (N₁ , S) = (n-sub N Δ N₁) , (subst (λ α → spine _ α (n-tsub N Δ C)) trustMe (s-sub N Δ S))
 
 
  [_/x]tpn : ∀ {Σ} {Γ : ctx Σ} {T} -> ntm Γ T -> tp (Γ ,, T) -> tp Γ
