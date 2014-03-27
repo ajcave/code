@@ -1,6 +1,6 @@
 {-# OPTIONS --no-positivity-check --no-termination-check --type-in-type #-}
 -- By Induction-induction-recursion
-module iir-single-head5 where
+module iir-single-head6 where
 open import Data.Unit
 open import Data.Product
 open import Function
@@ -287,9 +287,9 @@ mutual
  -- ⌜ ⊡ ⌝ = ⊡
  -- ⌜ Γ ,' T ⌝ = ⌜ Γ ⌝ , (subst tp trustMe T)
 
- ⇑ce : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) -> ctxext Γ -> ctxext (Γ << Δ)
- ⇑ce Γ Δ ⊡ = ⊡
- ⇑ce Γ Δ (Δ' , T) = (⇑ce Γ Δ Δ') ,  [ build-sub Γ Δ Δ' ]tv T
+ -- ⇑ce : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) -> ctxext Γ -> ctxext (Γ << Δ)
+ -- ⇑ce Γ Δ ⊡ = ⊡
+ -- ⇑ce Γ Δ (Δ' , T) = (⇑ce Γ Δ Δ') ,  [ build-sub Γ Δ Δ' ]tv T
 
  -- ⇑k : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> kind (Γ << Δ') -> kind ((Γ << Δ) << (⇑ce Γ Δ Δ'))
  -- ⇑k Γ Δ Δ' ⋆ = ⋆
@@ -298,10 +298,9 @@ mutual
  ⇑k0 : ∀ {Σ} {Γ : ctx Σ} -> kind {Σ} ⊡' -> kind Γ
  ⇑k0 {Σ} {Γ} K = [ unit ]kv K
 
- build-sub : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> vsubst (Γ << Δ') ((Γ << Δ) << (⇑ce Γ Δ Δ'))
- build-sub Γ ⊡ ⊡ = id-vsubst
- build-sub Γ (Δ , T) ⊡ = do-wkn-vsubst (build-sub Γ Δ ⊡)
- build-sub Γ Δ (Δ' , T) = vsubst-ext (build-sub Γ Δ Δ')
+ build-sub : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) -> vsubst Γ (Γ << Δ)
+ build-sub Γ ⊡ = id-vsubst
+ build-sub Γ (Δ , T) = do-wkn-vsubst (build-sub Γ Δ)
 
  -- ⇑t Γ Δ Δ' (Π T T₁) = Π (⇑t Γ Δ Δ' T) (⇑t Γ Δ (Δ' , T) T₁)
  -- ⇑t Γ Δ Δ' (a · is) = a · subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' is)
@@ -322,11 +321,9 @@ mutual
  -- ⇑s Γ Δ Δ' {Π A A₁} {B} (N , S) = (⇑n Γ Δ Δ' {A} N) , (subst (λ C → spine _ C (⇑t Γ Δ Δ' B)) trustMe (⇑s Γ Δ Δ' S))
  -- ⇑s Γ Δ Δ' {x · x₁} S = trustMe
 
- ⇑v : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> var (Γ << Δ') -> var ((Γ << Δ) << (⇑ce Γ Δ Δ'))
- ⇑v Γ ⊡ ⊡ x = x
- ⇑v Γ (Δ , T) ⊡ x = pop (⇑v Γ Δ ⊡ x)
- ⇑v Γ Δ (Δ' , T) top = top
- ⇑v Γ Δ (Δ' , T) (pop x) = pop (⇑v Γ Δ Δ' x)
+ ⇑v : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) -> var Γ -> var (Γ << Δ)
+ ⇑v Γ ⊡ x = x
+ ⇑v Γ (Δ , T) x = pop (⇑v Γ Δ x)
 
  -- ⇑h : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> head (Γ << Δ') -> head ((Γ << Δ) << (⇑ce Γ Δ Δ'))
  -- ⇑h Γ Δ Δ' (v x) = v (⇑v Γ Δ Δ' x)
@@ -373,7 +370,7 @@ mutual
  emb1 N (Δ , T) (pop y) = pop (emb1 N Δ y)
 
  data eqDec {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) : var (Γ << Δ) -> Set where
-  before : (y : var Γ) -> eqDec Δ (⇑v Γ Δ ⊡ y)
+  before : (y : var Γ) -> eqDec Δ (⇑v Γ Δ y)
   after : ∀ (y : vare Δ) -> eqDec Δ (emb Δ y)
 
  var-eq : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) (x : var (Γ << Δ)) -> eqDec Δ x
@@ -391,8 +388,8 @@ mutual
  -- nv-sub N (Δ , T) (pop x) S = {!!}
  n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
  n-sub N Δ {a · St} (v x , S) with var-eq Δ x
- n-sub {Σ} {Γ} {B} N Δ {a · St} (v ._ , S) | before top = _◆_ {T =  [ build-sub Γ (n-cesub N Δ) ⊡ ]tv B} ([_]vn {T = B} (build-sub Γ (n-cesub N Δ) ⊡) N) (subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
- n-sub {Σ} {Γ} {B} N Δ {a · St} (v ._ , S) | before (pop x) = (v ([ build-sub Γ (n-cesub N Δ) ⊡ ]v1 x) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
+ n-sub {Σ} {Γ} {B} N Δ {a · St} (v ._ , S) | before top = _◆_ {T =  [ build-sub Γ (n-cesub N Δ) ]tv B} ([_]vn {T = B} (build-sub Γ (n-cesub N Δ)) N) (subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
+ n-sub {Σ} {Γ} {B} N Δ {a · St} (v ._ , S) | before (pop x) = (v ([ build-sub Γ (n-cesub N Δ) ]v1 x) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
  n-sub {Σ} {Γ} {B} N Δ {a · St} (v ._ , S) | after y = (v (emb (n-cesub N Δ) (emb1 N Δ y)) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
  n-sub N Δ {a · St} (con c , S) = (con c , subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
  n-sub N Δ {Π A B} M = n-sub N (Δ , A) {B} M
