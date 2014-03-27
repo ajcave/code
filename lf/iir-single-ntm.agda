@@ -238,9 +238,8 @@ mutual
  ⇑ts Γ Δ Δ' {Π T K} (N , S) = ⇑n Γ Δ Δ' {T} N , subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' S) 
 
  ⇑n : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> ntm (Γ << Δ') T -> ntm ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' T)
- ⇑n Γ Δ Δ' {a · St} (_ , (H , S)) = , (⇑h Γ Δ Δ' H , ⇑s Γ Δ Δ' S) -- (c · S) = (⇑h Γ Δ Δ' c) · ⇑s Γ Δ Δ' S
+ ⇑n Γ Δ Δ' {a · St} (_ , (H , S)) = , (⇑h Γ Δ Δ' H , ⇑s Γ Δ Δ' S)
  ⇑n Γ Δ Δ' {Π T B} N = ⇑n Γ Δ (Δ' , T) {B} N
- -- ⇑n Γ Δ Δ' (ƛ N) = ƛ (⇑n Γ Δ (Δ' , _) N)
 
  ⇑s : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {A B} -> spine (Γ << Δ') A B -> spine ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' A) (⇑t Γ Δ Δ' B)
  ⇑s Γ Δ Δ' {Π A A₁} {B} (N , S) = (⇑n Γ Δ Δ' {A} N) , (subst (λ C → spine _ C (⇑t Γ Δ Δ' B)) trustMe (⇑s Γ Δ Δ' S))
@@ -260,9 +259,8 @@ mutual
  ⇑t1 T = ⇑t _ (⊡ , _) ⊡ T
 
  _◆_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
- _◆_ {Σ} {Γ} {._} {a · St} M refl = M -- (ƛ M) (N , S) = [ N /x]nn M ◆ S
+ _◆_ {Σ} {Γ} {._} {a · St} M refl = M
  _◆_ {Σ} {Γ} {T} {Π A B} M (N , S) = ([ N /x]nn M) ◆ S
- -- _◆_ {Σ} {Γ} {.(x · x₁)} {x · x₁} N refl = N
 
  n-cesub : ∀ {Σ} {Γ : ctx Σ} {B} -> ntm Γ B -> (Δ : ctxext (Γ ,, B)) -> ctxext Γ
  n-cesub N ⊡ = ⊡
