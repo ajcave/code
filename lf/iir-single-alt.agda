@@ -290,6 +290,12 @@ mutual
  B + ⊡ = ⊡ , B
  B + (Δ , T) = (B + Δ) , subst tp trustMe T
 
+ J : ∀ {A : Set} (x : A) (P : (y : A) -> x ≡ y -> Set) -> P x refl -> ∀ y (p : x ≡ y) -> P y p
+ J x P t .x refl = t
+
+ nt1 : ∀ {Σ} {Γ : ctx Σ} {B} (Δ : ctxext (Γ ,, B)) {C} -> ntm (Γ << (B + Δ)) (subst tp trustMe C) -> ntm ((Γ ,, B) << Δ) C
+ nt1 {Σ} {Γ} {B} Δ {C} = J ((Γ ,, B) << Δ) (λ y p -> ntm y (subst tp p C) -> ntm ((Γ ,, B) << Δ) C) (λ x → x) (Γ << (B + Δ)) trustMe 
+
  -- TODO: Try this again. Has to be "under another context" though
  nv-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) (Δ' : ctxext (Γ << (n-cesub N Δ)))
        (x : var1 ((Γ ,, B) << Δ)) {a St}
@@ -298,8 +304,8 @@ mutual
  nv-sub N ⊡ Δ' top {a} {St} S = ⇑n _ Δ' ⊡ N ◆ subst (λ C → spine _ C (a · St)) trustMe S
  nv-sub N ⊡ Δ' (pop x) {a} {St} S = (v (⇑v _ Δ' ⊡ x)) · (subst (λ C → spine _ C (a · St)) trustMe S)
  nv-sub N (Δ , T) Δ' top {a} {St} S = (v (⇑v _ Δ' ⊡ top)) · (subst (λ C → spine _ C (a · St)) trustMe S)
- nv-sub N (Δ , T) Δ' (pop x) {a} {St} S with nv-sub N Δ (n-tsub N Δ T + Δ') x {!!}
- ... | q = {!!}
+ nv-sub N (Δ , T) Δ' (pop x) {a} {St} S with (nv-sub N Δ (n-tsub N Δ T + Δ') x {!!})
+ ... | q = ? --nt1 Δ' q
  -- nv-sub N ⊡ top S = N ◆ subst (λ C → spine _ C _) trustMe S
  -- nv-sub N ⊡ (pop x) {a} {St} S = v x · subst (λ C → spine _ C (a · St)) trustMe S
  -- nv-sub N (Δ , T) top {a} {St} S = v top · subst (λ C -> spine _ C (a · St)) trustMe S
