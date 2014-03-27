@@ -317,7 +317,7 @@ mutual
 
  n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
  n-sub N Δ {a · St} (._ , (v x , S)) with var-eq Δ x
- n-sub {Σ} {Γ} {B} N Δ {a · St} (._ , v .(⇑v (Γ ,' B) Δ ⊡ top) , S) | before top = (⇑n Γ (n-cesub N Δ) ⊡ {B} N) ◆ subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S)
+ n-sub {Σ} {Γ} {B} N Δ {a · St} (._ , v .(⇑v (Γ ,' B) Δ ⊡ top) , S) | before top = _◆_ {T = ⇑t Γ (n-cesub N Δ) ⊡ B} (⇑n Γ (n-cesub N Δ) ⊡ {B} N) (subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
  n-sub {Σ} {Γ} {B} N Δ {a · St} (._ , v .(⇑v (Γ ,' B) Δ ⊡ (pop x)) , S) | before (pop x) = , (v (⇑v Γ (n-cesub N Δ) ⊡ x) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
  n-sub {Σ} {Γ} {B} N Δ {a · St} (._ , v .(emb Δ y) , S) | after y = , (v (emb (n-cesub N Δ) (emb1 N Δ y)) , subst (λ α -> spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
  n-sub N Δ {a · St} (._ , (con c , S)) = , (con c , subst (λ α → spine _ α (n-tsub N Δ (a · St))) trustMe (s-sub N Δ S))
