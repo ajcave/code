@@ -105,9 +105,13 @@ mutual
  κ' : ∀ {Σ} -> kind {Σ} ⊡' -> sigsort Σ
  κ' = κ
 
+ vsubst : ∀ {Σ} (Γ Δ : ctx Σ) -> Set
+ vsubst ⊡ Δ = Unit
+ vsubst (Γ ,' T) Δ = Σ (vsubst Γ Δ) (λ σ -> Σ (var Δ) (λ x -> lookup Δ x ≡ ([ σ ]tv T)))
+
  data tp {Σ : sig} (Γ : ctx Σ) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  _·_ : (x : inSig1κ Σ) -> tpSpine Γ (⇑k0 (lookups Σ x)) -> tp Γ
+  _·_ : (x : inSig1κ Σ) -> tpSpine Γ ([ unit ]kv (lookups Σ x)) -> tp Γ
 
  tpSpine : ∀ {Σ} (Γ : ctx Σ) -> kind Γ -> Set
  tpSpine Γ ⋆ = Unit
@@ -146,9 +150,6 @@ mutual
   v : (x : var Γ) -> head Γ
   con : (x : inSig1τ Σ) -> head Γ 
 
- vsubst : ∀ {Σ} (Γ Δ : ctx Σ) -> Set
- vsubst ⊡ Δ = Unit
- vsubst (Γ ,' T) Δ = Σ (vsubst Γ Δ) (λ σ -> Σ (var Δ) (λ x -> lookup Δ x ≡ ([ σ ]tv T)))
 
  hlookup : ∀ {Σ} (Γ : ctx Σ) -> head Γ -> tp Γ
  hlookup Γ (v x) = lookup Γ x
@@ -295,8 +296,8 @@ mutual
  -- ⇑k Γ Δ Δ' ⋆ = ⋆
  -- ⇑k Γ Δ Δ' (Π T K) = Π (⇑t Γ Δ Δ' T) (⇑k Γ Δ (Δ' , T) K)
 
- ⇑k0 : ∀ {Σ} {Γ : ctx Σ} -> kind {Σ} ⊡' -> kind Γ
- ⇑k0 {Σ} {Γ} K = [ unit ]kv K
+ -- ⇑k0 : ∀ {Σ} {Γ : ctx Σ} -> kind {Σ} ⊡' -> kind Γ
+ -- ⇑k0 {Σ} {Γ} K = [ unit ]kv K
 
  build-sub : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) -> vsubst Γ (Γ << Δ)
  build-sub Γ ⊡ = id-vsubst
