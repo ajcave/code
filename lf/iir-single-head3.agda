@@ -268,7 +268,7 @@ mutual
  -- [_]vv {Σ} {Γ ,' S} (σ , y) (pop x) = [ σ ]vv x -- top = subst (λ S → var _ S) trustMe y
  -- [_]vv (σ , y) (pop x) = subst (λ S → var _ S) trustMe ([ σ ]vv x)
 
- [_]vh : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> head Γ -> head Δ
+ [_]vh : ∀ {Σ} {Γ Δ : ctx Σ} -> (σ : vsubst Γ Δ) -> head Γ -> head Δ
  [_]vh σ (v x) = v ([ σ ]v1 x) --([ σ ]vv x)
  [ σ ]vh (con c) = con c
 
@@ -278,7 +278,7 @@ mutual
  -- [_]vs σ (_&_ {T} {T2} {C} N S) = ([ σ ]vn N) & subst (λ S₁ → spine _ S₁ ([ σ ]tv C)) trustMe ([ σ ]vs S)
 
  [_]vn : ∀ {Σ} {Γ Δ : ctx Σ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> ntm Γ T -> ntm Δ ([ σ ]tv T)
- [_]vn {T = a · St} σ (H , S) = ([ σ ]vh H) , (subst (λ C → spine _ C _) trustMe ([ σ ]vs S)) --  (H · S) = [ σ ]vh H · [ σ ]vs S
+ [_]vn {T = a · St} σ (H , S) = ([ σ ]vh H) , (subst (λ C → spine _ C ([ σ ]tv (a · St))) trustMe ([ σ ]vs S)) --  (H · S) = [ σ ]vh H · [ σ ]vs S
  [_]vn {T = Π A B} σ H = [_]vn {T = B} (vsubst-ext σ) H
  -- [_]vn σ (ƛ M) = ƛ ([ vsubst-ext σ ]vn M)
 
