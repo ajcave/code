@@ -282,9 +282,9 @@ mutual
  [_]vn {T = Π A B} σ H = [_]vn {T = B} (vsubst-ext σ) H
  -- [_]vn σ (ƛ M) = ƛ ([ vsubst-ext σ ]vn M)
 
- ⌜_⌝ : ∀ {Σ} -> ctx Σ -> ctxext {Σ} ⊡'
- ⌜ ⊡ ⌝ = ⊡
- ⌜ Γ ,' T ⌝ = ⌜ Γ ⌝ , (subst tp trustMe T)
+ -- ⌜_⌝ : ∀ {Σ} -> ctx Σ -> ctxext {Σ} ⊡'
+ -- ⌜ ⊡ ⌝ = ⊡
+ -- ⌜ Γ ,' T ⌝ = ⌜ Γ ⌝ , (subst tp trustMe T)
 
  ⇑ce : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) -> ctxext Γ -> ctxext (Γ << Δ)
  ⇑ce Γ Δ ⊡ = ⊡
@@ -295,14 +295,14 @@ mutual
  ⇑k Γ Δ Δ' (Π T K) = Π (⇑t Γ Δ Δ' T) (⇑k Γ Δ (Δ' , T) K)
 
  ⇑k0 : ∀ {Σ} {Γ : ctx Σ} -> kind {Σ} ⊡' -> kind Γ
- ⇑k0 {Σ} {Γ} K = subst kind trustMe (⇑k ⊡ ⌜ Γ ⌝ ⊡ K)
+ ⇑k0 {Σ} {Γ} K = [ unit ]kv K
 
  ⇑t : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> tp (Γ << Δ') -> tp ((Γ << Δ) << (⇑ce Γ Δ Δ'))
  ⇑t Γ Δ Δ' (Π T T₁) = Π (⇑t Γ Δ Δ' T) (⇑t Γ Δ (Δ' , T) T₁)
  ⇑t Γ Δ Δ' (a · is) = a · subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' is)
 
  ⇑t0 : ∀ {Σ} {Γ : ctx Σ} -> tp {Σ} ⊡' -> tp Γ
- ⇑t0 {Σ} {Γ} T = subst tp trustMe (⇑t ⊡ ⌜ Γ ⌝ ⊡ T)
+ ⇑t0 {Σ} {Γ} T = [ unit ]tv T
 
  ⇑ts : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {K} -> tpSpine (Γ << Δ') K -> tpSpine ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑k Γ Δ Δ' K)
  ⇑ts Γ Δ Δ' {⋆} S = unit
