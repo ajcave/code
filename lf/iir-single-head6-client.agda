@@ -40,5 +40,11 @@ Exp T = top · (T , unit)
 
 copy : ∀ {Γ : ctx stlcsig} -> (T : ntm Γ Tp) -> ntm Γ (Exp T) -> ntm Γ (Exp T)
 copy T (v x , S) = {!!}
-copy T (con top , S) = ?
-copy T (con (pop c) , S) = ?
+copy T (con top , S) = {!!}
+copy T (con (pop top) , S) = ?
+copy T (con (pop (pop top)) , S) = ?
+copy T (con (pop (pop (pop top))) , S) = ?
+
+-- TODO: Try with telescope type format?
+-- TODO: Try with the other sig format?
+-- TODO: Figure out "pattern constructor syntax" (i.e. declaring syntax as begin pattern syntax)
