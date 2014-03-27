@@ -86,6 +86,15 @@ mutual
 
  ⊡' : ∀ {Σ} -> ctx Σ
  ⊡' = ⊡
+
+ -- Maybe I should use a relational approach so that there's no so much "green goo" in the indices
+ data ctxext {Σ} (Γ : ctx Σ) : Set where
+  ⊡ : ctxext Γ
+  _,_ : (Δ : ctxext Γ) -> (T : tp (Γ << Δ)) -> ctxext Γ
+
+ _<<_ : ∀ {Σ} -> (Γ : ctx Σ) -> ctxext Γ -> ctx Σ
+ Γ << ⊡ = Γ
+ Γ << (Δ , T) = (Γ << Δ) ,' T
  
  -- Should I actually compute Γ by (induction) recursion on the kind?
  -- Maybe these need to be "in reverse order"?
@@ -98,13 +107,11 @@ mutual
 
  data tp {Σ : sig} (Γ : ctx Σ) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  _·_ : (x : inSig1κ Σ) -> tpSpine Γ {!!} {-([ ⊡s ]kn (lookups Σ x))-} -> tp Γ
+  _·_ : (x : inSig1κ Σ) -> tpSpine Γ (⇑k0 (lookups Σ x)) -> tp Γ
 
  tpSpine : ∀ {Σ} (Γ : ctx Σ) -> kind Γ -> Set
  tpSpine Γ ⋆ = Unit
  tpSpine Γ (Π T K) = Σ (ntm Γ T) (λ N → tpSpine Γ ([ N /x]kn K))
-  -- ε : tpSpine Γ ⋆
-  -- _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
 
  _,,_ : {Σ : sig} -> (Γ : ctx Σ) -> (T : tp Γ) -> ctx Σ
  Γ ,, T = Γ ,' T
@@ -131,8 +138,8 @@ mutual
 
  lookup : ∀ {Σ} (Γ : ctx Σ) -> var1 Γ -> tp Γ
  lookup ⊡ ()
- lookup (Γ ,' T) top = ⇑t T
- lookup (Γ ,' T) (pop x) = ⇑t (lookup Γ x)
+ lookup (Γ ,' T) top = ⇑t1 T
+ lookup (Γ ,' T) (pop x) = ⇑t1 (lookup Γ x)
 
  -- data var0 {Σ} (Γ : ctx Σ) (S : tp Γ) : (T : tp (Γ ,, S)) -> Set where
  --  top : var0 Γ S ([ do-wkn-ntsubst id-ntsubst ]tpn S)
@@ -223,8 +230,38 @@ mutual
  ↑s {Σ} {κ K} {Γ} {c · x} S = trustMe
  ↑s {Σ} {τ T} {Γ} {c · x} S = trustMe
 
- ⇑t : ∀ {Σ} {Γ : ctx Σ} {S} -> tp Γ -> tp (Γ ,, S)
- ⇑t T = {!!}
+ ⌜_⌝ : ∀ {Σ} -> ctx Σ -> ctxext {Σ} ⊡'
+ ⌜ ⊡ ⌝ = ⊡
+ ⌜ Γ ,' T ⌝ = ⌜ Γ ⌝ , (subst tp trustMe T)
+
+ ⇑ce : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) -> ctxext Γ -> ctxext (Γ << Δ)
+ ⇑ce Γ Δ ⊡ = ⊡
+ ⇑ce Γ Δ (Δ' , T) = (⇑ce Γ Δ Δ') , ⇑t Γ Δ Δ' T
+
+ ⇑k : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> kind (Γ << Δ') -> kind ((Γ << Δ) << (⇑ce Γ Δ Δ'))
+ ⇑k Γ Δ Δ' ⋆ = ⋆
+ ⇑k Γ Δ Δ' (Π T K) = Π (⇑t Γ Δ Δ' T) (⇑k Γ Δ (Δ' , T) K)
+
+ ⇑k0 : ∀ {Σ} {Γ : ctx Σ} -> kind {Σ} ⊡' -> kind Γ
+ ⇑k0 {Σ} {Γ} K = subst kind trustMe (⇑k ⊡ ⌜ Γ ⌝ ⊡ K)
+
+ ⇑t : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) -> tp (Γ << Δ') -> tp ((Γ << Δ) << (⇑ce Γ Δ Δ'))
+ ⇑t Γ Δ Δ' (Π T T₁) = Π (⇑t Γ Δ Δ' T) (⇑t Γ Δ (Δ' , T) T₁)
+ ⇑t Γ Δ Δ' (a · is) = a · subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' is)
+
+ ⇑ts : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {K} -> tpSpine (Γ << Δ') K -> tpSpine ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑k Γ Δ Δ' K)
+ ⇑ts Γ Δ Δ' {⋆} S = unit
+ ⇑ts Γ Δ Δ' {Π T K} (N , S) = ⇑n Γ Δ Δ' N , subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' S) 
+
+ ⇑n : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> ntm (Γ << Δ') T -> ntm ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' T)
+ ⇑n Γ Δ Δ' (c · S) = {!!}
+ ⇑n Γ Δ Δ' (ƛ N) = ƛ (⇑n Γ Δ (Δ' , _) N)
+
+
+-- ⇑h : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> head (Γ << Δ') T -> head ((Γ << Δ) << (⇑ce Δ
+
+ ⇑t1 : ∀ {Σ} {Γ : ctx Σ} {S} -> tp Γ -> tp (Γ ,, S)
+ ⇑t1 T = {!!}
  
  -- wkn-ntsubst : ∀ {Σ} {Γ : ctx Σ} {T : tp Γ} -> ntsubst Γ (Γ ,, T)
  -- wkn-ntsubst = do-wkn-ntsubst id-ntsubst
