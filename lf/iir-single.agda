@@ -253,11 +253,10 @@ mutual
 
  ⇑t1 : ∀ {Σ} {Γ : ctx Σ} {S} -> tp Γ -> tp (Γ ,, S)
  ⇑t1 T = ⇑t _ (⊡ , _) ⊡ T
- 
 
- _◆'_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
- _◆'_ {Σ} {Γ} {C} {Π T T₁} (ƛ M) (N , S) = [ N /x]nn M ◆' S
- _◆'_ {Σ} {Γ} {.(x · x₁)} {x · x₁} N refl = N
+ _◆_ : ∀ {Σ} {Γ : ctx Σ} {C} {T : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
+ _◆_ {Σ} {Γ} {C} {Π T T₁} (ƛ M) (N , S) = [ N /x]nn M ◆ S
+ _◆_ {Σ} {Γ} {.(x · x₁)} {x · x₁} N refl = N
 
  n-cesub : ∀ {Σ} {Γ : ctx Σ} {B} -> ntm Γ B -> (Δ : ctxext (Γ ,, B)) -> ctxext Γ
  n-cesub N ⊡ = ⊡
@@ -278,13 +277,6 @@ mutual
  n-tsub N Δ (Π T T₁) = Π (n-tsub N Δ T) (n-tsub N (Δ , T) T₁)
  n-tsub N Δ (x · x₁) = x · (subst (tpSpine _) trustMe (n-tssub N Δ x₁))
  
- -- _·'_ : ∀ {Σ} {Γ : ctx Σ} -> (x : inSig1κ Σ) -> tpSpine Γ (⇑k0 (lookups Σ x)) -> tp Γ
- -- c ·' S = c · S
-
- -- thatone : ∀ {Σ} {Γ : ctx Σ} {B} (Δ : ctxext (Γ ,, B)) -> var1 ((Γ ,, B) << Δ)
- -- thatone ⊡ = top
- -- thatone (Δ , T) = pop (thatone Δ)
-
  vare : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) -> Set
  vare ⊡ = ⊥
  vare (Δ , T) = varOpt (vare Δ)
@@ -310,15 +302,16 @@ mutual
  var-eq {Σ} {Γ} (Δ , T) (pop .(⇑v Γ Δ ⊡ y)) | before y = before y
  var-eq (Δ , T) (pop .(emb Δ y)) | after y = after (pop y)
 
+ -- TODO: Try this again. Has to be "under another context" though
  -- nv-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) (x : var1 ((Γ ,, B) << Δ)) {a St} -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ (lookup ((Γ ,, B) << Δ) x)) (a ·' St) -> ntm (Γ << (n-cesub N Δ)) (a ·' St)
- -- nv-sub N ⊡ top S = N ◆' subst (λ C → spine _ C _) trustMe S
+ -- nv-sub N ⊡ top S = N ◆ subst (λ C → spine _ C _) trustMe S
  -- nv-sub N ⊡ (pop x) {a} {St} S = v x · subst (λ C → spine _ C (a · St)) trustMe S
  -- nv-sub N (Δ , T) top {a} {St} S = v top · subst (λ C -> spine _ C (a · St)) trustMe S
  -- nv-sub N (Δ , T) (pop x) S = {!!}
 
  n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
  n-sub N Δ (v x · x₁) with var-eq Δ x
- n-sub {Σ} {Γ} {B} N Δ (_·_ {._} {a} {S} (v .(⇑v (Γ ,' B) Δ ⊡ top)) x₁) | before top = (⇑n Γ (n-cesub N Δ) ⊡ N) ◆' subst (λ α → spine _ α (n-tsub N Δ (a · S))) trustMe (s-sub N Δ x₁)
+ n-sub {Σ} {Γ} {B} N Δ (_·_ {._} {a} {S} (v .(⇑v (Γ ,' B) Δ ⊡ top)) x₁) | before top = (⇑n Γ (n-cesub N Δ) ⊡ N) ◆ subst (λ α → spine _ α (n-tsub N Δ (a · S))) trustMe (s-sub N Δ x₁)
  n-sub {Σ} {Γ} {B} N Δ (_·_ {._} {a} {S} (v .(⇑v (Γ ,' B) Δ ⊡ (pop x))) x₁) | before (pop x) = v (⇑v Γ (n-cesub N Δ) ⊡ x) · subst (λ α -> spine _ α (n-tsub N Δ (a · S))) trustMe (s-sub N Δ x₁)
  n-sub N Δ (_·_ {._} {a} {S} (v .(emb Δ y)) x₁) | after y = v (emb (n-cesub N Δ) (emb1 N Δ y)) · subst (λ α -> spine _ α (n-tsub N Δ (a · S))) trustMe (s-sub N Δ x₁)
  n-sub N Δ (_·_ {._} {a} {A} (con x) x₁) = con x · subst (λ α → spine _ α (n-tsub N Δ (a · A))) trustMe (s-sub N Δ x₁)
