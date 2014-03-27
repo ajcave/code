@@ -197,7 +197,7 @@ mutual
  ↑ts {Σ} {Γ} {α} {Π T K} (N , S) = (↑n {T = T} N) , (subst (tpSpine _) trustMe (↑ts S))
 
  ↑n : ∀ {Σ α Γ T} -> ntm {Σ} Γ T -> ntm {Σ ,s α} (↑c Γ) (↑t T)
- ↑n {T = c · St} (H , S) = ↑h H , subst (λ C -> spine _ C _) trustMe (↑s S)
+ ↑n {T = c · St} (H , S) = ↑h H , subst (λ C -> spine _ C (↑t (c · St))) trustMe (↑s S)
  ↑n {T = Π T B} N = ↑n {T = B} N
 
  ↑v : ∀ {Σ α Γ} -> var1 {Σ} Γ -> var1 {Σ ,s α} (↑c Γ)
@@ -242,7 +242,7 @@ mutual
  ⇑ts Γ Δ Δ' {Π T K} (N , S) = ⇑n Γ Δ Δ' {T} N , subst (tpSpine _) trustMe (⇑ts Γ Δ Δ' S) 
 
  ⇑n : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {T} -> ntm (Γ << Δ') T -> ntm ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' T)
- ⇑n Γ Δ Δ' {a · St} (H , S) = ⇑h Γ Δ Δ' H , subst (λ C -> spine _ C _) trustMe (⇑s Γ Δ Δ' S)
+ ⇑n Γ Δ Δ' {a · St} (H , S) = ⇑h Γ Δ Δ' H , subst (λ C -> spine _ C (⇑t Γ Δ Δ' (a · St))) trustMe (⇑s Γ Δ Δ' S)
  ⇑n Γ Δ Δ' {Π T B} N = ⇑n Γ Δ (Δ' , T) {B} N
 
  ⇑s : ∀ {Σ} (Γ : ctx Σ) (Δ : ctxext Γ) (Δ' : ctxext Γ) {A B} -> spine (Γ << Δ') A B -> spine ((Γ << Δ) << (⇑ce Γ Δ Δ')) (⇑t Γ Δ Δ' A) (⇑t Γ Δ Δ' B)
