@@ -1,4 +1,4 @@
-{-# OPTIONS --no-positivity-check --no-termination-check --type-in-type #-}
+{-# OPTIONS --no-positivity-check --no-termination-check --type-in-type --no-coverage-check #-}
 module iir-single-head6-client where
 open import Data.Unit
 open import Data.Product
@@ -38,13 +38,17 @@ Tp = (pop top) · unit
 Exp : ∀ {Γ : ctx stlcsig} -> ntm Γ Tp -> tp Γ
 Exp T = top · (T , unit)
 
+pattern lam T1 T2 M = con top , (T1 , T2 , M , refl)
+pattern app T1 T2 M N = con (pop top) , (T1 , T2 , M , N , refl)
+
 copy : ∀ {Γ : ctx stlcsig} -> (T : ntm Γ Tp) -> ntm Γ (Exp T) -> ntm Γ (Exp T)
 copy T (v x , S) = {!!}
-copy T (con top , S) = {!!}
-copy T (con (pop top) , S) = ?
-copy T (con (pop (pop top)) , S) = ?
-copy T (con (pop (pop (pop top))) , S) = ?
+copy ._ (lam T1 T2 M) = {!!}
+copy .T2 (app T1 T2 M N) = ?
+-- copy T (con (pop (pop top)) , ()) = ?
+-- copy T (con (pop (pop (pop top))) , ()) = ?
 
 -- TODO: Try with telescope type format?
 -- TODO: Try with the other sig format?
 -- TODO: Figure out "pattern constructor syntax" (i.e. declaring syntax as begin pattern syntax)
+ --- These are called "pattern synonyms"
