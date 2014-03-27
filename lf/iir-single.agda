@@ -277,15 +277,50 @@ mutual
  n-tsub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> tp ((Γ ,, B) << Δ) -> tp (Γ << n-cesub N Δ)
  n-tsub N Δ (Π T T₁) = Π (n-tsub N Δ T) (n-tsub N (Δ , T) T₁)
  n-tsub N Δ (x · x₁) = x · (subst (tpSpine _) trustMe (n-tssub N Δ x₁))
+ 
+ -- _·'_ : ∀ {Σ} {Γ : ctx Σ} -> (x : inSig1κ Σ) -> tpSpine Γ (⇑k0 (lookups Σ x)) -> tp Γ
+ -- c ·' S = c · S
 
- nv-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) (x : var1 ((Γ ,, B) << Δ)) {C} -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ (lookup ((Γ ,, B) << Δ) x)) C -> ntm (Γ << (n-cesub N Δ)) C
- nv-sub N ⊡ top S = {!!}
- nv-sub N ⊡ (pop x) S = {!!}
- nv-sub N (Δ , T) top S = {!!}
- nv-sub N (Δ , T) (pop x) S = {!!}
+ -- thatone : ∀ {Σ} {Γ : ctx Σ} {B} (Δ : ctxext (Γ ,, B)) -> var1 ((Γ ,, B) << Δ)
+ -- thatone ⊡ = top
+ -- thatone (Δ , T) = pop (thatone Δ)
+
+ vare : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) -> Set
+ vare ⊡ = ⊥
+ vare (Δ , T) = varOpt (vare Δ)
+
+ emb : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) -> vare Δ -> var1 (Γ << Δ)
+ emb ⊡ ()
+ emb (Δ , T) top = top
+ emb (Δ , T) (pop y) = pop (emb Δ y)
+
+ emb1 : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) -> vare Δ -> vare (n-cesub N Δ)
+ emb1 N ⊡ ()
+ emb1 N (Δ , T) top = top
+ emb1 N (Δ , T) (pop y) = pop (emb1 N Δ y)
+
+ data eqDec {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) : var1 (Γ << Δ) -> Set where
+  before : (y : var1 Γ) -> eqDec Δ (⇑v Γ Δ ⊡ y)
+  after : ∀ (y : vare Δ) -> eqDec Δ (emb Δ y)
+
+ var-eq : ∀ {Σ} {Γ : ctx Σ} (Δ : ctxext Γ) (x : var1 (Γ << Δ)) -> eqDec Δ x
+ var-eq ⊡ x = before x
+ var-eq (Δ , T) top = after top
+ var-eq (Δ , T) (pop x) with var-eq Δ x
+ var-eq {Σ} {Γ} (Δ , T) (pop .(⇑v Γ Δ ⊡ y)) | before y = before y
+ var-eq (Δ , T) (pop .(emb Δ y)) | after y = after (pop y)
+
+ -- nv-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) (x : var1 ((Γ ,, B) << Δ)) {a St} -> spine (Γ << (n-cesub N Δ)) (n-tsub N Δ (lookup ((Γ ,, B) << Δ) x)) (a ·' St) -> ntm (Γ << (n-cesub N Δ)) (a ·' St)
+ -- nv-sub N ⊡ top S = N ◆' subst (λ C → spine _ C _) trustMe S
+ -- nv-sub N ⊡ (pop x) {a} {St} S = v x · subst (λ C → spine _ C (a · St)) trustMe S
+ -- nv-sub N (Δ , T) top {a} {St} S = v top · subst (λ C -> spine _ C (a · St)) trustMe S
+ -- nv-sub N (Δ , T) (pop x) S = {!!}
 
  n-sub : ∀ {Σ} {Γ : ctx Σ} {B} (N : ntm Γ B) (Δ : ctxext (Γ ,, B)) {T} -> ntm ((Γ ,, B) << Δ) T -> ntm (Γ << (n-cesub N Δ)) (n-tsub N Δ T)
- n-sub N Δ (v x · x₁) = {!!}
+ n-sub N Δ (v x · x₁) with var-eq Δ x
+ n-sub {Σ} {Γ} {B} N Δ (_·_ {._} {a} {S} (v .(⇑v (Γ ,' B) Δ ⊡ top)) x₁) | before top = (⇑n Γ (n-cesub N Δ) ⊡ N) ◆' subst (λ α → spine _ α (n-tsub N Δ (a · S))) trustMe (s-sub N Δ x₁)
+ n-sub {Σ} {Γ} {B} N Δ (_·_ {._} {a} {S} (v .(⇑v (Γ ,' B) Δ ⊡ (pop x))) x₁) | before (pop x) = v (⇑v Γ (n-cesub N Δ) ⊡ x) · subst (λ α -> spine _ α (n-tsub N Δ (a · S))) trustMe (s-sub N Δ x₁)
+ n-sub N Δ (_·_ {._} {a} {S} (v .(emb Δ y)) x₁) | after y = v (emb (n-cesub N Δ) (emb1 N Δ y)) · subst (λ α -> spine _ α (n-tsub N Δ (a · S))) trustMe (s-sub N Δ x₁)
  n-sub N Δ (_·_ {._} {a} {A} (con x) x₁) = con x · subst (λ α → spine _ α (n-tsub N Δ (a · A))) trustMe (s-sub N Δ x₁)
  n-sub N Δ (ƛ M) = ƛ (n-sub N (Δ , _) M)
 
