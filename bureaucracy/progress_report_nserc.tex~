@@ -1,0 +1,97 @@
+
+\documentclass[11pt]{article}
+\textheight=9.5in
+\textwidth=7in
+\oddsidemargin=-.34in
+\topmargin=-.75in
+\renewcommand{\baselinestretch}{1.2}
+\pagestyle{plain}
+
+\begin{document}
+\begin{center}
+\large {\bf SCHOOL OF COMPUTER SCIENCE \\ PHD STUDENT RESEARCH PROGRESS REPORT FORM}
+\end{center}
+
+Note: The activities reported here cover the period starting from 
+last September to this August or the period starting from your admission day 
+to this August if this is your first progress report.
+\medskip
+
+
+\textbf{Name:} Andrew Cave
+
+\textbf{Supervisor(s):} Brigitte Pientka
+
+\textbf{Year in the Program:} PhD 4 (admitted to PhD 2 January 2012)
+
+\textbf{Dates of Applicable Time Period}:
+\textbf{From:} January 2013            \ \ \textbf{To:} February 2014
+
+
+\begin{enumerate}
+\item \textbf{Courses:}
+  \begin{enumerate}
+  \item \textbf{Courses Taken and Grades:} None
+  
+  \item \textbf{Courses Audited:}  None
+
+  \item \textbf{Courses TA'd:} None
+
+  \item \textbf{Courses Taught:}  COMP 302 (Winter 2013) (co-taught with Francisco Ferreira)
+
+  \end{enumerate}
+
+\item \textbf{Publications (indicate if they are refereed):}
+  \begin{enumerate}
+  \item \textbf{Journals:} None
+
+  \item \textbf{Conferences:}
+Andrew Cave, Francisco Ferreira, Prakash Panangaden and Brigitte Pientka. Fair reactive programming to 41st ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL'14) (refereed).
+  \item \textbf{Other:}  
+   Andrew Cave and Brigitte Pientka. First-class substitutions in contextual type theory. Proceedings of the Eighth ACM SIGPLAN international workshop on Logical frameworks \& meta-languages: theory \& practice (LFMTP'13) (refereed)
+
+  \end{enumerate}
+
+\item \textbf{Software or System Built:}  None
+
+\item \textbf{Talks Given at McGill or Elsewhere, Workshops Attended, Research Visits:} 
+Attended Workshop on Formal Meta-Theory at INRIA March 2013, presented Fair Reactive Programming.
+
+Presented First-class substitutions in contextual type theory at LFMTP'13 in September 2013.
+
+Presented Fair Reactive Programming at POPL'14 in January 2014.
+\item \textbf{Prizes and Awards:}  NSERC CGS-D, beginning May 2013
+
+\item \textbf{Committee Service (if relevant to research):} None
+
+
+\item \textbf{Summary of Research Progress}
+January 2014, submitted to ITP 2014: Andrew Cave and Brigitte Pientka. Mechanizing Logical Relations using Contextual Type Theory.
+
+The LFMTP'13 paper and ITP'14 submission represent progress on extending contextual type theory to support effective mechanization of logical relations proofs for simply typed languages.
+\item \textbf{Research Plan for the Next 12 Months:}  
+Preparing to do thesis proposal in April 2014.
+
+The goal is to extend my work on first-class substitutions to ``full'' dependent type theory supporting computation in types, which will enable effective mechanization of logical relations proofs for a wider variety of more realistic languages. To illustrate this, I intend to develop more motivating examples: mechanizing step-indexed logical relations proofs for reasoning about higher-order programs with effects and normalization for dependent type theories with features such as large eliminations. I have carried out initial attempts at these proofs in traditional proof assistants (Coq, Agda), which suggest that such proofs are feasible to mechanize and would greatly benefit from support for first-class substitutions.
+
+\end{enumerate}
+
+
+\newpage
+\textbf{Overall Research Progress: \qquad satisfactory\underline{\hspace{20mm}}, 
+\qquad NOT satisfactory\underline{\hspace{20mm}}}
+
+\bigskip
+\textbf{Comments of the Progress Committee:}
+
+\vspace{100mm}
+
+
+\textbf{Representative of the Progress Committee:}
+\underline{\hspace{50mm}}
+ 
+\bigskip
+
+\textbf{Date:} \underline{\hspace{50mm}}
+
+\end{document}

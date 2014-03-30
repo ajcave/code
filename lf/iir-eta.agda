@@ -1,6 +1,6 @@
 {-# OPTIONS --no-positivity-check --no-termination-check #-}
 -- By Induction-induction-recursion
-module iir where
+module iir-eta-comp where
 open import Data.Unit
 open import Data.Product
 open import Function
@@ -49,8 +49,24 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 -- it just may be that we need to interleave kinding and typing constants in order for the
 -- ordering to be possible (e.g. for mutual recursion, and inductive-inductive definitions)
 
--- WHat does adding sigma types do? 
+-- What does adding sigma types do? 
 -- Can we allow for "arbitrary arity" binders? Have an "n-ary" Π?
+
+-- I guess there is some "opposite spine" representation for types that we can use?
+-- i.e. Π Δ. (a · S) where Δ is a "telescope"?
+-- constructor:
+--    Π_._·_ : tele Γ Γ' -> const K -> tpSpine Γ' K -> tp Γ
+-- tele Γ Γ' represents a "context suffix" which, when appended to Γ, yields Γ'
+--    think of as a witness that "Γ' is a well-formed extension of Γ"
+--    "telescopic extension"?
+-- (Obviously there's a "computational" version which explicitly appends, but I expect this
+--  version to be better behaved)
+--  Will this make it feasible for the coverage checker to disregard useless constants?
+-- Explain this as "the part that you need to implement coverage checking is directly available"?
+-- Use to give a "direct" explanation/formalization of coverage checking?
+
+-- In general, this looks a lot like an implementation of a datatype mechanismin type theory
+-- (it is). Can we make it a little simpler and more general for "general" inductive datatypes?
 mutual
  data ctx : Set where
   ⊡ : ctx
@@ -67,8 +83,6 @@ mutual
 
  data tp (Γ : ctx) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  -- nat : tp Γ
-  -- vec : (n : ntm Γ nat) -> tp Γ
   _·_ : ∀ {K : kind Γ} -> (c : inSig K) -> tpSpine Γ K -> tp Γ
 
  data tpSpine Γ : kind Γ -> Set where
@@ -84,6 +98,9 @@ mutual
   nat : inSig ⋆
   vec : inSig (Π (nat · ε) ⋆)
 
+ _·'_ : ∀ {Γ} {K : kind Γ} -> (c : inSig K) -> tpSpine Γ K -> tp Γ
+ c ·' S = c · S
+
  _,,_ : (Γ : ctx) -> (T : tp Γ) -> ctx
  Γ ,, T = Γ ,' T
  
@@ -95,16 +112,15 @@ mutual
  ntsubst ⊡ Δ = Unit
  ntsubst (Γ ,' T) Δ = Σ (ntsubst Γ Δ) (λ σ -> (ntm Δ ([ σ ]tpn T)))
 
- -- TODO: We need to enforce η-longness?
  -- Do we really need λ to be a constructor?
  -- I guess that we could actually just compute the ntm type by recursion on the tp
- -- arriving eventually at _·_ with Γ appropriately extended
+ -- arriving eventually at _·_ with Γ appropriately extended (iir-eta-comp)
  -- Can we do the same thing in the formal metatheory of LF?
  data var : (Γ : ctx) -> tp Γ -> Set where
   top : ∀ {Γ T} -> var (Γ ,' T) ([ do-wkn-vsubst id-vsubst ]tv T)
   pop : ∀ {Γ T S} (x : var Γ T) -> var (Γ ,' S) ([ do-wkn-vsubst id-vsubst ]tv T)
  data ntm (Γ : ctx) : tp Γ -> Set where
-  _·_ : ∀ {T S} -> head Γ T -> spine Γ T S -> ntm Γ S
+  _·_ : ∀ {K} {T} {a : inSig K} {S} -> head Γ T -> spine Γ T (a · S) -> ntm Γ (a · S)
   ƛ : ∀ {T S} -> ntm (Γ ,' T) S -> ntm Γ (Π T S)
  data spine (Γ : ctx) : tp Γ -> tp Γ -> Set where
   ε : ∀ {T} -> spine Γ T T
@@ -146,8 +162,6 @@ mutual
 
  [_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
- -- [_]tv σ nat = nat
- -- [_]tv σ (vec n) = vec ([ σ ]vn n)
  [ σ ]tv (c · S) = [ σ ]isv c · [ σ ]tsv S
 
  [_]isv σ nat = nat
@@ -172,13 +186,17 @@ mutual
  do-wkn-ntsubst {⊡} σ = unit
  do-wkn-ntsubst {Γ ,' T} (σ , N) = do-wkn-ntsubst σ , subst (λ S → ntm _ S) trustMe ([ wkn-vsubst ]vn N)
 
+ _◇_ : ∀ {Γ A B} -> head Γ A -> spine Γ A B -> ntm Γ B
+ _◇_ {Γ} {A} {Π B B₁} H S = ƛ (([ wkn-vsubst ]vh H) ◇ ([ wkn-vsubst ]vs S ++ ((v top ◇ ε) & subst (λ C → spine _ C B₁) trustMe ε)))
+ _◇_ {Γ} {A} {c · x} H S = H · S
+
  id-ntsubst : ∀ {Γ} -> ntsubst Γ Γ
  id-ntsubst {⊡} = unit
- id-ntsubst {Γ ,' T} = do-wkn-ntsubst id-ntsubst , (subst (λ S -> ntm _ S) trustMe ((v top) · ε))
+ id-ntsubst {Γ ,' T} = do-wkn-ntsubst id-ntsubst , (subst (λ S -> ntm _ S) trustMe (v top ◇ ε))
 
  [_]tpn : ∀ {Γ Δ} -> ntsubst Γ Δ -> tp Γ -> tp Δ
  ntsubst-ext : ∀ {Γ Δ : ctx} {T : tp Γ}  (σ : ntsubst Γ Δ) -> ntsubst (Γ ,, T) (Δ ,, ([ σ ]tpn T))
- ntsubst-ext σ = (do-wkn-ntsubst σ) , (subst (λ S → ntm _ S) trustMe (v top · ε))
+ ntsubst-ext σ = (do-wkn-ntsubst σ) , (subst (λ S → ntm _ S) trustMe (v top ◇ ε))
 
  [_]kn : ∀ {Γ Δ} (σ : ntsubst Γ Δ) -> kind Γ -> kind Δ
  [_]kn σ ⋆ = ⋆
@@ -193,9 +211,7 @@ mutual
 
  [_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
 
- [_]tpn σ (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
- -- [_]tpn σ nat = nat
- -- [_]tpn σ (vec n) = vec ([ σ ]nn n)
+ [ σ ]tpn (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
  [ σ ]tpn (c · S) = ([ σ ]isn c) · [ σ ]ts S
 
  [ σ ]isn nat = nat
@@ -209,18 +225,16 @@ mutual
  ε ++ S2 = S2
  (N & S1) ++ S2 = N & (S1 ++ S2)
 
- -- TODO: Again, η-longness is crucial but we're not doing it here
- _◆_ : ∀ {Γ} {T C : tp Γ} -> ntm Γ T -> spine Γ T C -> ntm Γ C
- (H · S) ◆ S₁ = H · (S ++ S₁)
- ƛ N ◆ ε = ƛ N
- ƛ N ◆ (N₁ & S₁) = ([ N₁ /x]nn N) ◆ S₁
+ _◆'_ : ∀ {Γ} {K} {a : inSig K} {T : tp Γ} {S} -> ntm Γ T -> spine Γ T (a ·' S) -> ntm Γ (a ·' S)
+ (H · S) ◆' S₁ = H · (S ++ S₁)
+ ƛ N ◆' (N₁ & S₁) = ([ N₁ /x]nn N) ◆' S₁
 
  [_]ns : ∀ {Γ Δ} {T C : tp Γ} -> (σ : ntsubst Γ Δ) -> spine Γ T C -> spine Δ ([ σ ]tpn T) ([ σ ]tpn C)
  [_]ns σ ε = ε
  [_]ns σ (_&_ {T} {T2} {C} N S) = [ σ ]nn N & subst (λ R → spine _ R ([ σ ]tpn C)) trustMe ([ σ ]ns S)
 
  [_]nn : ∀ {Γ Δ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> ntm Γ T -> ntm Δ ([ σ ]tpn T)
- [_]nn σ (v x · S) = ([ σ ]nv x) ◆ ([ σ ]ns S)
+ [_]nn σ (v x · S) = ([ σ ]nv x) ◆' ([ σ ]ns S)
  [_]nn σ (ƛ M) = ƛ ([ ntsubst-ext σ ]nn M)
 
  single-tsubst : ∀ {Γ} {T} -> ntm Γ T -> ntsubst (Γ ,, T) Γ
@@ -234,7 +248,6 @@ mutual
 
 -- Important things still to do:
 -- 1) Add term constants
--- 2) Require η longness
 -- 3) Define "weak" induction principle which disallows recursion on embedded types?
 -- 4) Try examples
 --    e.g. do plain stlc terms + typing derivations. Prove substitution lemma

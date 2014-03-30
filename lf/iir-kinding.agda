@@ -1,11 +1,14 @@
 {-# OPTIONS --no-positivity-check --no-termination-check #-}
 -- By Induction-induction-recursion
-module iir where
+module iir-kinding where
 open import Data.Unit
 open import Data.Product
 open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.PropositionalEquality.TrustMe
+-- This file treats constants for kinds slightly differently: they must be "closed"
+-- and they are weakened at their use-point
+-- How does this scale to also allowing term constants? Not sure...
 
 -- What if we didn't use TrustMe and actually proved all of our equations
 -- Would Agda actually accept the definition (positivity check and termination check)?
@@ -44,13 +47,6 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 -- tagging them with a flag indicating which family they're from and using large elim
 -- If not large elim, then we could do it by combining the mutually recursive types into one
 -- and indexing by the flag?
-
--- It seems that the well-formedness condition for signatures should impose an ordering
--- it just may be that we need to interleave kinding and typing constants in order for the
--- ordering to be possible (e.g. for mutual recursion, and inductive-inductive definitions)
-
--- WHat does adding sigma types do? 
--- Can we allow for "arbitrary arity" binders? Have an "n-ary" Π?
 mutual
  data ctx : Set where
   ⊡ : ctx
@@ -67,22 +63,13 @@ mutual
 
  data tp (Γ : ctx) : Set where
   Π : (T : tp Γ) (S : tp (Γ ,' T)) -> tp Γ
-  -- nat : tp Γ
-  -- vec : (n : ntm Γ nat) -> tp Γ
-  _·_ : ∀ {K : kind Γ} -> (c : inSig K) -> tpSpine Γ K -> tp Γ
+  _·_ : ∀ {K : kind ⊡'} -> (c : inSig K) -> tpSpine Γ ([ ⊡s ]kv K) -> tp Γ
 
  data tpSpine Γ : kind Γ -> Set where
   ε : tpSpine Γ ⋆
-  _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K)  -> tpSpine Γ (Π T K)
+  _,κ_ : ∀ {T : tp Γ} {K : kind (Γ ,, T)} (N : ntm Γ T) -> tpSpine Γ ([ N /x]kn K) -> tpSpine Γ (Π T K)
 
- -- Hmm what is the scope for these? Γ seems weird...
- -- Especially since we intend to parameterize by them... I guess it needs to be some
- -- family that supports weakening?
- -- See iir-kinding.agda for a slightly different treatment where they have to be closed
- -- Question then becomes how to include term constants (kind constants may depend on term constants)
- data inSig {Γ} : kind Γ -> Set where
-  nat : inSig ⋆
-  vec : inSig (Π (nat · ε) ⋆)
+ 
 
  _,,_ : (Γ : ctx) -> (T : tp Γ) -> ctx
  Γ ,, T = Γ ,' T
@@ -137,6 +124,13 @@ mutual
  [_]kv σ ⋆ = ⋆
  [_]kv σ (Π T K) = Π ([ σ ]tv T) ([ vsubst-ext σ ]kv K)
 
+ -- Hmm what is the scope for these? Γ seems weird...
+ -- Especially since we intend to parameterize by them... I guess it needs to be some
+ -- family that supports weakening?
+ data inSig : kind ⊡' -> Set where
+  nat : inSig ⋆
+  vec : inSig (Π (nat · ε) ⋆)
+
  ⊡s : ∀ {Γ} -> vsubst ⊡' Γ
  ⊡s = unit
 
@@ -144,14 +138,14 @@ mutual
  [_]tsv σ ε = ε
  [_]tsv σ (N ,κ S) = ([ σ ]vn N) ,κ (subst (λ K -> tpSpine _ K) trustMe ([ σ ]tsv S))
 
- [_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
+ --[_]isv : ∀ {Γ Δ} {K : kind Γ} -> (σ : vsubst Γ Δ) -> inSig K -> inSig ([ σ ]kv K)
  [_]tv σ (Π T S) = Π ([ σ ]tv T) ([ vsubst-ext σ ]tv S)
  -- [_]tv σ nat = nat
  -- [_]tv σ (vec n) = vec ([ σ ]vn n)
- [ σ ]tv (c · S) = [ σ ]isv c · [ σ ]tsv S
+ [ σ ]tv (c · S) = c · subst (λ K → tpSpine _ K) trustMe ([ σ ]tsv S)
 
- [_]isv σ nat = nat
- [_]isv σ vec = vec
+ -- [_]isv σ nat = nat
+ -- [_]isv σ vec = vec
 
  [_]vv : ∀ {Γ Δ} {T : tp Γ} -> (σ : vsubst Γ Δ) -> var Γ T -> var Δ ([ σ ]tv T)
  [_]vv (σ , y) top = subst (λ S → var _ S) trustMe y
@@ -189,17 +183,19 @@ mutual
 
  [_]ts : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> tpSpine Γ K -> tpSpine Δ ([ σ ]kn K)
  [_]ts σ ε = ε
- [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ (subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
+ [_]ts σ (N ,κ S) = ([ σ ]nn N) ,κ ( subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S))
 
- [_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
+ -- [_]ts' : ∀ {Γ Δ} {K : kind ⊡'} -> (σ : ntsubst Γ Δ) -> tpSpine Γ ([ ⊡s ]kv K) -> tpSpine Δ ([ ⊡s ]kv K)
+ -- [_]ts' {Γ} {Δ} {⋆} σ ε = ε
+ -- [_]ts' {Γ} {Δ} {Π T K} σ (N ,κ S) = (subst (λ T₁ → ntm Δ T₁) trustMe ([ σ ]nn N)) ,κ subst (λ K₁ → tpSpine _ K₁) trustMe {![ σ ]ts'!}
+
+ --[_]isn : ∀ {Γ Δ} {K : kind Γ} -> (σ : ntsubst Γ Δ) -> inSig K -> inSig ([ σ ]kn K)
 
  [_]tpn σ (Π T T₁) = Π ([ σ ]tpn T) ([ ntsubst-ext σ ]tpn T₁)
- -- [_]tpn σ nat = nat
- -- [_]tpn σ (vec n) = vec ([ σ ]nn n)
- [ σ ]tpn (c · S) = ([ σ ]isn c) · [ σ ]ts S
+ [ σ ]tpn (c · S) = c · subst (λ K → tpSpine _ K) trustMe ([ σ ]ts S) 
 
- [ σ ]isn nat = nat
- [ σ ]isn vec = vec
+ -- [ σ ]isn nat = nat
+ -- [ σ ]isn vec = vec
 
  [_]nv : ∀ {Γ Δ} {T : tp Γ} -> (σ : ntsubst Γ Δ) -> var Γ T -> ntm Δ ([ σ ]tpn T)
  [_]nv (σ , N) top = subst (λ S → ntm _ S) trustMe N
@@ -232,13 +228,12 @@ mutual
  [_/x]nn : ∀ {Γ} {T} {C} -> (N : ntm Γ T) -> ntm (Γ ,, T) C -> ntm Γ ([ N /x]tpn C)
  [ N /x]nn M = [ single-tsubst N ]nn M
 
--- Important things still to do:
--- 1) Add term constants
--- 2) Require η longness
--- 3) Define "weak" induction principle which disallows recursion on embedded types?
--- 4) Try examples
---    e.g. do plain stlc terms + typing derivations. Prove substitution lemma
---    (even though we do get it for free)
---    because this reveals where nasty equations show up.
--- 5) Do the metatheory involving 
+
+
+
+
+ {-data vsubst (Δ : ctx) : ctx -> Set where
+  ⊡ : vsubst Δ ⊡
+  _,_ : ∀ {Γ T} -> (σ : vsubst Δ Γ) -> var Δ {!!} -> vsubst Δ (Γ , T) -}
+
  
