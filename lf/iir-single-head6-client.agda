@@ -42,9 +42,11 @@ pattern lam T1 T2 M = con top , (T1 , T2 , M , refl)
 pattern app T1 T2 M N = con (pop top) , (T1 , T2 , M , N , refl)
 
 copy : ∀ {Γ : ctx stlcsig} -> (T : ntm Γ Tp) -> ntm Γ (Exp T) -> ntm Γ (Exp T)
-copy T (v x , S) = {!!}
-copy ._ (lam T1 T2 M) = {!!}
-copy .T2 (app T1 T2 M N) = ?
+copy T (v x , S) = (v x , S)
+copy T (con top , S) = (con top , S)
+copy T (con (pop c) , S) = (con (pop c) , S)
+-- copy ._ (lam T1 T2 M) = {!!}
+-- copy .T2 (app T1 T2 M N) = ?
 -- Note that coverage checking is off
 
 -- copy T (con (pop (pop top)) , ()) = ?
