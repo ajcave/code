@@ -1,11 +1,20 @@
+Mod. Module ::= "module" Ident "where" [ Decl ] ;
+separator Decl ";" ;
+
+Def. Decl ::= Ident ":" Exp "=" Exp; 
+
 Pi.  Exp ::= "(" Ident ":" Exp ")" "->" Exp ;
+Sigma. Exp ::= "(" Ident ":" Exp ")" "*" Exp ;
 Nat. Exp2 ::= "Nat";
 Set. Exp2 ::= "Set";
+Unit. Exp2 ::= "Unit";
 
 Lam. Exp ::= "\\" Ident "->" Exp;
 App. Exp1 ::= Exp1 Exp2;
-VarConst. Exp2 ::= Ident;
+Var. Exp2 ::= Ident;
 Zero. Exp2 ::= "0";
 Suc. Exp1 ::= "suc" Exp2;
+Plus. Exp1 ::= Exp1 "+" Exp2;
+NatRec. Exp1 ::= "rec" Exp2 Exp2 "(" Ident "->" Exp ")";
 
-coercions Exp 2;
+coercions Exp 3;
