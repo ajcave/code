@@ -1,7 +1,11 @@
-TPi.  Type ::= "(" Ident ":" Type ")" "->" Type ;
-TNat. Type ::= "Nat" ;
+Pi.  Exp ::= "(" Ident ":" Exp ")" "->" Exp ;
+Nat. Exp2 ::= "Nat";
+Set. Exp2 ::= "Set";
 
 Lam. Exp ::= "\\" Ident "->" Exp;
-App. Exp ::= Exp Exp;
-VarConst. Exp ::= Ident;
-Zero. Exp ::= "0";
+App. Exp1 ::= Exp1 Exp2;
+VarConst. Exp2 ::= Ident;
+Zero. Exp2 ::= "0";
+Suc. Exp1 ::= "suc" Exp2;
+
+coercions Exp 2;
