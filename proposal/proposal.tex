@@ -5,13 +5,19 @@
 \maketitle
 
 \section{Introduction}
-clear thesis statement
+Contrast dependent type theory with indexed types (Beluga) and first-order
+logic (Abella).
+
+Thesis statement: Building a logical framework into dependent type
+theory is possible and enables effective mechanization of state-of-the-art programming
+language metatheory. (Moreover: it's a rich programming environment)
+(todo: look at other examples of thesis statements)
 
 main issues:
 in first order representations, defining substitution principles
 
 though actually this isn't the worst of it, the worst of it is
-establishing necessary properties of substitution and weakening
+establishing necessary equational properties of substitution and weakening
 (freshness in the nominal world, shifts in the de Bruijn world) (cite
 Altenkirch) and deducing equations from the resulting equational
 theory.
@@ -35,6 +41,8 @@ since they aren't positive definitions
 \subsection{Example}
 \section{Remaining to be done}
 \subsection{Computation in types}
+basic design sketch
+
 why: richer tools (functions which compute instead of functional
 relations) for more effective proofs
 
@@ -47,7 +55,15 @@ parameterized by a signature, permitting mutual definitions, etc.
 
 issues: adequacy, decidability of typechecking, (strong) normalization
 \section{Timeline}
+Next 2-5 months: working out the metatheory of the computation in
+types, potentially for a POPL paper in July.
+
 backup/option: implementation (prototype?)
 
-optional piece: support for (and examples of) step-indexed logical relations
+optional piece: support for (and examples of) step-indexed logical
+relations
+
+\begin{thebibliography}
+Test
+\end{thebibliography}
 \end{document}
