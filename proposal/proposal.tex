@@ -10,11 +10,17 @@ logic (Abella).
 
 Thesis statement: Building a logical framework into dependent type
 theory is possible and enables effective mechanization of state-of-the-art programming
-language metatheory. (Moreover: it's a rich programming environment)
+language metatheory. (Moreover: it's a rich programming
+environment. ``sliding scale'' of programming to verification with dependent types)
 (todo: look at other examples of thesis statements)
+
+design space: systems with support for binding and substitution vs
+systems with metatheoretic strength and rich abstraction mechanisms
 
 main issues:
 in first order representations, defining substitution principles
+
+``A domain-specific dependent type theory''
 
 though actually this isn't the worst of it, the worst of it is
 establishing necessary equational properties of substitution and weakening
@@ -31,6 +37,10 @@ distinction between techniques for supporting ``names'', weakening, freshness (n
 
 dependent type theory allows effective programming and proving
 \section{Background}
+Sketch well-scoped representation in Agda and substitution
+principles. Illustrate the point that the main bottleneck for
+mechanization are the equations which arise (e.g. church rosser proof?)
+
 \subsection{Indexed recursive types}
 
 don't quite suffice for proofs: need positivity. don't quite suffice
