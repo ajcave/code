@@ -305,7 +305,7 @@ mutual
  nv-sub N ⊡ Δ' (pop x) {a} {St} S = (v (⇑v _ Δ' ⊡ x)) · (subst (λ C → spine _ C (a · St)) trustMe S)
  nv-sub N (Δ , T) Δ' top {a} {St} S = (v (⇑v _ Δ' ⊡ top)) · (subst (λ C → spine _ C (a · St)) trustMe S)
  nv-sub N (Δ , T) Δ' (pop x) {a} {St} S with (nv-sub N Δ (n-tsub N Δ T + Δ') x {!!})
- ... | q = ? --nt1 Δ' q
+ ... | q = {!!} --nt1 Δ' q
  -- nv-sub N ⊡ top S = N ◆ subst (λ C → spine _ C _) trustMe S
  -- nv-sub N ⊡ (pop x) {a} {St} S = v x · subst (λ C → spine _ C (a · St)) trustMe S
  -- nv-sub N (Δ , T) top {a} {St} S = v top · subst (λ C -> spine _ C (a · St)) trustMe S
