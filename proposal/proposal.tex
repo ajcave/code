@@ -6,16 +6,43 @@
 
 \section{Introduction}
 clear thesis statement
+
+main issues:
+in first order representations, defining substitution principles
+
+though actually this isn't the worst of it, the worst of it is
+establishing necessary properties of substitution and weakening
+(freshness in the nominal world, shifts in the de Bruijn world) (cite
+Altenkirch) and deducing equations from the resulting equational
+theory.
+
+classic: $[P/y]([N/x]M) = [([P/y]N)/x] ([P/y]M)$ provided $x\neq y$
+(check this: Barendregt?)
+
+higher order abstract syntax partially solves this
+
+distinction between techniques for supporting ``names'', weakening, freshness (nominal) and ``substitution''.
+
+dependent type theory allows effective programming and proving
 \section{Background}
 \subsection{Indexed recursive types}
 
+don't quite suffice for proofs: need positivity. don't quite suffice
+for logical relations: need universe (large eliminations) to justify,
+since they aren't positive definitions
 \subsection{First class substitutions}
 
 \subsection{Example}
 \section{Remaining to be done}
 \subsection{Computation in types}
-(why)
+why: richer tools (functions which compute instead of functional
+relations) for more effective proofs
 
+necessary to support state-of-the-art proofs involving polymorphism,
+universes, ``generic programming'', dependent types, step indexing.
+
+technique for induction principle: induct over all of ``LF''
+parameterized by a signature, permitting mutual definitions, etc.
 \subsection{Some theory}
 
 issues: adequacy, decidability of typechecking, (strong) normalization
