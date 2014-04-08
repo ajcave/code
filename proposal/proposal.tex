@@ -5,42 +5,50 @@
 \maketitle
 
 \section{Introduction}
-Contrast dependent type theory with indexed types (Beluga) and first-order
-logic (Abella). 
-
 Thesis statement: Building a logical framework into dependent type
-theory is possible and enables effective mechanization of state-of-the-art programming
-language metatheory. (Moreover: it's a rich programming
-environment. ``sliding scale'' of programming to verification with dependent types)
-(todo: look at other examples of thesis statements)
+theory is possible and makes mechanization of state-of-the-art programming
+language metatheory more effective. (Moreover: it's a rich programming
+environment. Dependent type theory gives a ``sliding scale'' from
+programming to verification)
+%(todo: look at other examples of thesis statements)
 
-clarify: this means e.g. logical relations, like Coquand's type
-directed conversion (the ITP paper), soundness/completeness of NbE
+\begin{itemize}
+\item Standard issues in mechanizing metatheory: first order
+  representations require defining weakening, substitution, and proving
+  equations pertaining to (compositions of) weakening and
+  substitution.
+\item Higher-order abstract syntax solves some of these issues, but it
+  is not so clear how to combine with rich type theories and logics
+\item Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
+logic (e.g. Abella). 
+
+\item Primary examples are logical relations, like Coquand's type
+directed conversion (and our ITP submission), soundness/completeness of NbE
 (cite e.g. Abel for recent work, Dybjer for original?),
 step-indexed logical relations for reasoning about effects
 
-design space: systems with support for binding and substitution vs
-systems with metatheoretic strength and rich abstraction mechanisms
+\item clarify distinction with Hybrid: I'm proposing to use language design
+techniques to give better support (definitional equalities for
+simultaneous substitutions).
 
-main issues:
-in first order representations, defining substitution principles
+\item design space: systems with support for binding and substitution vs
+systems with rich abstraction mechanisms and logical strength
 
-``A domain-specific dependent type theory''
+%``A domain-specific dependent type theory''
 
-though actually this isn't the worst of it, the worst of it is
-establishing necessary equational properties of substitution and weakening
-(freshness in the nominal world, shifts in the de Bruijn world) (cite
-Altenkirch) and deducing equations from the resulting equational
-theory.
+% though actually this isn't the worst of it, the worst of it is
+% establishing necessary equational properties of substitution and weakening
+% (freshness in the nominal world, shifts in the de Bruijn world) (cite
+% Altenkirch) and deducing equations from the resulting equational
+% theory.
 
-classic: $[P/y]([N/x]M) = [([P/y]N)/x] ([P/y]M)$ provided $x\neq y$
-(check this: Barendregt?)
+%classic: $[P/y]([N/x]M) = [([P/y]N)/x] ([P/y]M)$ provided $x\neq y$
+%(check this: Barendregt?)
 
-higher order abstract syntax partially solves this
+%distinction between techniques for supporting ``names'', weakening, freshness (nominal) and ``substitution''.
 
-distinction between techniques for supporting ``names'', weakening, freshness (nominal) and ``substitution''.
-
-dependent type theory allows effective programming and proving
+%dependent type theory allows effective programming and proving
+\end{itemize}
 \section{Background}
 Sketch well-scoped representation in Agda and substitution
 principles. Illustrate the point that the main bottleneck for
@@ -57,29 +65,31 @@ since they aren't positive definitions
 \subsection{Example}
 \section{Remaining to be done}
 \subsection{Computation in types}
-basic design sketch
-
-why: richer tools (functions which compute instead of functional
+\begin{itemize}
+\item motivation
+\begin{itemize}
+\item richer tools (functions which compute instead of functional
 relations) for more effective proofs
-
-necessary to support state-of-the-art proofs involving polymorphism,
+\item necessary to support state-of-the-art proofs involving polymorphism,
 universes, ``generic programming'', dependent types, step indexing.
-
-technique for induction principle: induct over all of ``LF''
+\end{itemize}
+\item basic design sketch
+\begin{itemize}
+\item technique for induction principle: induct over all of ``LF''
 parameterized by a signature, permitting mutual definitions, etc.
-\subsection{Some theory}
-
-issues: adequacy, decidability of typechecking, (strong) normalization
+\end{itemize}
+\item technical results I am aiming to achieve: adequacy, decidability
+  of typechecking, (strong) normalization
+\end{itemize}
 \section{Timeline}
-Next 2-5 months: working out the metatheory and examples of computation in
+\begin{itemize}
+\item Next 2-5 months: working out the metatheory and examples of computation in
 types, potentially for a POPL paper in July.
-
-backup/option: implementation (prototype?). ``structural''/``categorical'' account of a logical framework?
-
-optional piece: support for (and examples of) step-indexed logical
-relations
-
-\begin{thebibliography}
-Test
-\end{thebibliography}
+\item backup/option: implementation (prototype?). ``structural''/``categorical'' account of a logical framework?
+\item optional piece: support for (and examples of) step-indexed
+  logical relations
+\end{itemize}
+% \begin{thebibliography}
+% Test
+% \end{thebibliography}
 \end{document}
