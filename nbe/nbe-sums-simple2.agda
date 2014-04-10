@@ -54,6 +54,20 @@ mutual
  data ntm (Γ : ctx) : (T : tp) -> Set where
   case_of_-_ : ∀ {C T S} (M : rtm Γ (T + S)) (N1 : ntm (Γ , T) C) (N2 : ntm (Γ , S) C) -> ntm Γ C
   pure : ∀ {T} -> pntm Γ T -> ntm Γ T
+  -- maybe it can be case analysis on an rtm whose head is the newly introduced variable?
+  -- or.. a list of rtms whose heads are the newly introduced variable...
+  -- Then maybe "duplicate" branches (i.e. unnecessary matches) can be handled by the
+  -- equivalence test
+  -- what about a representation which pushes all the matches down all the way to a + in the type
+  -- this looks kind of like saying that case is neutral
+  -- what about an equivalence test where ntm and pntm are merged (maybe even have case in rtm too?) then the algorithm
+  -- keeps track of which things are known to be equal to which in the process of testing?
+  -- oh right the tricky part: knowing when two neutral terms (that you pattern matched on) are equal requires
+  -- alternating back to "eta expansion" mode... and solving more equations recursively
+  -- if we match on the same thing twice, the off-diagonal cases should be impossible and hence succeed
+  -- (huh "non-determinism" rears its head here: this commuting conversion isn't valid in the presence of non-determinism?)
+  -- i.e. spine form?
+  -- Does this correspond to some focusing or multifocusing system?
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
