@@ -1,4 +1,5 @@
-module nbe-sums-simple where
+{-# OPTIONS --type-in-type #-}
+module nbe-sums-simple2 where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -114,111 +115,6 @@ isSheaf unit s' f0 f1 = tt
 id : ∀ {Γ} -> vsubst Γ Γ
 id x = x
 
-
-open import Data.Maybe
-
-data IsEq {A : Set} (x : A) : (y : A) -> Set where
- yep : IsEq x x
- nope : ∀ {y} -> IsEq x y
-
-tpEq : ∀ (T S : tp) -> IsEq T S
-tpEq (T ⇝ T₁) (S ⇝ S₁) with tpEq T S | tpEq T₁ S₁
-tpEq (.S ⇝ .S₁) (S ⇝ S₁) | yep | yep = yep
-tpEq (T ⇝ T₁) (S ⇝ S₁) | _ | _ = nope
-tpEq (T × T₁) (S × S₁) with tpEq T S | tpEq T₁ S₁
-tpEq (.S × .S₁) (S × S₁) | yep | yep = yep
-tpEq (T × T₁) (S × S₁) | _ | _ = nope
-tpEq (T + T₁) (S + S₁) with tpEq T S | tpEq T₁ S₁
-tpEq (.S + .S₁) (S + S₁) | yep | yep = yep
-tpEq (T + T₁) (S + S₁) | _ | _ = nope
-tpEq unit unit = yep
-tpEq _ _ = nope
-
-varEq : ∀ {Γ T} (x y : var Γ T) -> IsEq x y
-varEq z z = yep
-varEq (s x) (s y) with varEq x y
-varEq (s x) (s .x) | yep = yep
-varEq (s x) (s y) | nope = nope
-varEq _ _ = nope
-
-_<$>'_ : ∀ {A B} (f : A -> B) {x y} -> IsEq x y -> IsEq (f x) (f y)
-f <$>' yep = yep
-f <$>' nope = nope
-
-_<$>_ : ∀ {A B} -> (A -> B) -> Maybe A -> Maybe B
-f <$> nothing = nothing
-f <$> (just x) = just (f x)
-infixl 9 _<$>_
-
-_<*>_ : ∀ {A B} -> Maybe (A -> B) -> Maybe A -> Maybe B
-(just f) <*> (just x) = just (f x)
-_ <*> _ = nothing
-infixl 9 _<*>_
-
-varInImage : ∀ Γ {T} {Δ} -> vsubst Γ Δ -> var Δ T -> Maybe (var Γ T)
-varInImage ⊡ σ x = nothing
-varInImage (Γ , T) {S} σ x with tpEq T S
-varInImage (Γ , .T) {T} σ x | yep with varEq x (σ z)
-varInImage (Γ , .T) {T} σ .(σ z) | yep | yep = just z
-varInImage (Γ , .T) {T} σ x | yep | nope = s <$> (varInImage Γ (σ ∘ s) x)
-varInImage (Γ , T) σ x | nope = s <$> (varInImage Γ (σ ∘ s) x)
-
-mutual
- ntmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> ntm Δ T -> Maybe (ntm Γ T)
- ntmInImage σ (case M of N - N₁) = case_of_-_ <$> (rtmInImage σ M) <*> (ntmInImage (ext σ) N) <*> (ntmInImage (ext σ) N₁)
- ntmInImage σ (pure x) = pure <$> (pntmInImage σ x)
-
- rtmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> rtm Δ T -> Maybe (rtm Γ T)
- rtmInImage σ (v x) = v <$> varInImage _ σ x
- rtmInImage σ (R · x) = _·_ <$> rtmInImage σ R <*> pntmInImage σ x
- rtmInImage σ (π₁ R) = π₁ <$> rtmInImage σ R
- rtmInImage σ (π₂ R) = π₂ <$> rtmInImage σ R
-
- pntmInImage : ∀ {Γ T Δ} -> vsubst Γ Δ -> pntm Δ T -> Maybe (pntm Γ T)
- pntmInImage σ (ƛ x) = ƛ <$> ntmInImage (ext σ) x
- pntmInImage σ < P , P₁ > = <_,_> <$> pntmInImage σ P <*> pntmInImage σ P₁
- pntmInImage σ tt = just tt
- pntmInImage σ (inl P) = inl <$> pntmInImage σ P
- pntmInImage σ (inr P) = inr <$> pntmInImage σ P
-
-mutual
- ntmEq : ∀ {T Γ} (N M : ntm Γ T) -> IsEq N M
- ntmEq (case_of_-_ {C} {T} {S} M N N₁) (case_of_-_ {.C} {T'} {S'} M₁ N' N₁') with tpEq T T' | tpEq S S'
- ntmEq (case M of N - N₁) (case M₁ of N' - N₁') | yep | yep with rtmEq M M₁ | ntmEq N N' | ntmEq N₁ N₁'
- ntmEq (case .M₁ of .N' - .N₁') (case M₁ of N' - N₁') | yep | yep | yep | yep | yep = yep
- ntmEq (case M of N - N₁) (case M₁ of N' - N₁') | yep | yep | _ | _ | _ = nope
- ntmEq (case M of N - N₁) (case M₁ of N' - N₁') | _ | _ = nope
- ntmEq (pure N) (pure M) with pntmEq N M
- ntmEq (pure .M) (pure M) | yep = yep
- ntmEq (pure N) (pure M) | nope = nope
- ntmEq _ _ = nope
-
- rtmEq : ∀ {Γ T} (N M : rtm Γ T) -> IsEq N M
- rtmEq (v x) (v x') = v <$>' varEq x x'
- rtmEq (_·_ {T} {S} N M) (_·_ {T'} {.S} N' M') with tpEq T T'
- rtmEq (N · M) (N' · M') | yep with rtmEq N N' | pntmEq M M'
- rtmEq (.N' · .M') (N' · M') | yep | yep | yep = yep
- rtmEq (N · M) (N' · M') | yep | _ | _ = nope
- rtmEq (N · M) (N' · M') | nope = nope
- rtmEq (π₁ {T} {S} N) (π₁ {.T} {S'} N') with tpEq S S'
- rtmEq (π₁ N) (π₁ N') | yep = π₁ <$>' rtmEq N N'
- rtmEq (π₁ N) (π₁ N') | nope = nope
- rtmEq (π₂ {T} {S} N) (π₂ {T'} {.S} N') with tpEq T T'
- rtmEq (π₂ N) (π₂ N') | yep = π₂ <$>' rtmEq N N'
- rtmEq (π₂ N) (π₂ N') | nope = nope
- rtmEq _ _ = nope
-
- pntmEq : ∀ {Γ T} (N M : pntm Γ T) -> IsEq N M
- pntmEq (ƛ N) (ƛ M) = ƛ <$>' ntmEq N M
- pntmEq < N , N₁ > < M , M₁ > with pntmEq N M | pntmEq N₁ M₁
- pntmEq < .M , .M₁ > < M , M₁ > | yep | yep = yep
- pntmEq < N , N₁ > < M , M₁ > | _ | _ = nope 
- pntmEq tt tt = yep
- pntmEq (inl N) (inl M) = inl <$>' pntmEq N M
- pntmEq (inr N) (inr M) = inr <$>' pntmEq N M
- pntmEq _ _ = nope
-
-
 pair1 : ∀ {Γ T S} -> ntm Γ T -> pntm Γ S -> ntm Γ (T × S)
 pair1 (case M of N - N₁) P = case M of pair1 N (pnappSubst wkn P) - pair1 N₁ (pnappSubst wkn P)
 pair1 (pure x) P = pure < x , P >
@@ -236,14 +132,14 @@ pinr : ∀ {Γ T S} -> ntm Γ T -> ntm Γ (S + T)
 pinr (case M of N - N₁) = case M of pinr N - pinr N₁
 pinr (pure x) = pure (inr x)
 
--- This ugly part can be left out and you still have something pretty cool
--- This removes redundant case splits
-ncase : ∀ {Γ T S C} -> rtm Γ (T + S) -> ntm (Γ , T) C -> ntm (Γ , S) C -> ntm Γ C
-ncase R N1 N2 with ntmInImage wkn N1 | ntmInImage wkn N2
-ncase R N1 N2 | just x | just x₁ with ntmEq x x₁
-ncase R N1 N2 | just .x | just x | yep = x
-ncase R N1 N2 | just x | just x₁ | nope = case R of N1 - N2
-ncase R N1 N2 | _ | _ = case R of N1 - N2
+-- -- This ugly part can be left out and you still have something pretty cool
+-- -- This removes redundant case splits
+-- ncase : ∀ {Γ T S C} -> rtm Γ (T + S) -> ntm (Γ , T) C -> ntm (Γ , S) C -> ntm Γ C
+-- ncase R N1 N2 with ntmInImage wkn N1 | ntmInImage wkn N2
+-- ncase R N1 N2 | just x | just x₁ with ntmEq x x₁
+-- ncase R N1 N2 | just .x | just x | yep = x
+-- ncase R N1 N2 | just x | just x₁ | nope = case R of N1 - N2
+-- ncase R N1 N2 | _ | _ = case R of N1 - N2
 
 mutual
  reflect : ∀ {T Γ} -> rtm Γ T -> sem T Γ
@@ -262,7 +158,7 @@ mutual
  reify {unit} _ = pure tt
  reify {T + S} (inl x) = pinl (reify x)
  reify {T + S} (inr x) = pinr (reify x)
- reify {T + S} (case s' M M₁) = ncase s' (reify M) (reify M₁)
+ reify {T + S} (case s' M M₁) = case s' of (reify M) - (reify M₁)
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem T Δ
