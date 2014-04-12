@@ -101,6 +101,8 @@ data sum Γ (F G : ctx -> Set) : Set where
  inr : G Γ -> sum Γ F G
  case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) F G -> sum (Γ , B) F G -> sum Γ F G
                                       -- This is the sheafification of F + G (well, technically it needs to be quotiented or given a more unique representation)
+-- Does this fits better the idea of pushing matches down to where they are needed at + types?
+
 sem : (T : tp) -> (Γ : ctx) -> Set
 sem (T ⇝ S) Γ = ∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
 sem (T × S) Γ = sem T Γ * sem S Γ
