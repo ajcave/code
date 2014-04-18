@@ -13,6 +13,16 @@ environment. %Dependent type theory gives a ``sliding scale'' from programming t
 %(todo: look at other examples of thesis statements)
 
 \begin{itemize}
+\item Dependent types are good
+\end{itemize}
+
+\section{Background}
+Sketch well-scoped representation in Agda and substitution
+principles. Illustrate the point that the main bottleneck for
+mechanization are the equations which arise (e.g. church rosser proof?
+similar experiments as far as proving normalization for MLTT with a universe)
+
+\begin{itemize}
 \item Standard issues in mechanizing metatheory: first order
   representations require defining weakening, substitution, and proving
   equations pertaining to (compositions of) weakening and
@@ -49,11 +59,6 @@ systems with rich abstraction mechanisms and logical strength
 
 %dependent type theory allows effective programming and proving
 \end{itemize}
-\section{Background}
-Sketch well-scoped representation in Agda and substitution
-principles. Illustrate the point that the main bottleneck for
-mechanization are the equations which arise (e.g. church rosser proof?
-similar experiments as far as proving normalization for MLTT with a universe)
 
 \subsection{Indexed recursive types}
 
@@ -77,15 +82,16 @@ universes, ``generic programming'', dependent types, step indexing.
 \begin{itemize}
 \item technique for induction principle: induct over ``all of LF'' uniformly, permitting mutual definitions, etc.
 \end{itemize}
-\item technical results I am aiming to achieve: adequacy, decidability
+\item technical results I am aiming to achieve: decidability
   of typechecking, (strong) normalization
 \end{itemize}
 \section{Timeline}
 \begin{itemize}
-\item Next 2-5 months: working out the metatheory and examples of computation in
+\item Next 6 months: working out the metatheory and examples of computation in
 types, potentially for a POPL paper in July.
-\item backup/option: implementation (prototype?). Some kind of
-  (``structural''?) ``initial algebra semantics'' for hypothetical judgments?
+\item 6 months: prototype implementation and implementing examples
+\item 6 months: writing thesis
+\item backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
 \item optional piece: support for (and examples of) step-indexed
   logical relations
 \end{itemize}
