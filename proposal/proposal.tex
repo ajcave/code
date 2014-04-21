@@ -1,4 +1,5 @@
 \documentclass{article}
+\usepackage{natbib}
 \author{Andrew Cave}
 \title{Dependent type theory for contextual reasoning}
 \begin{document}
@@ -12,9 +13,7 @@ environment. %Dependent type theory gives a ``sliding scale'' from programming t
 )
 %(todo: look at other examples of thesis statements)
 
-\begin{itemize}
-\item Dependent types are good
-\end{itemize}
+Dependent type theory provides a rich environment for both proofs and programs. 
 
 \section{Background}
 Sketch well-scoped representation in Agda and substitution
@@ -85,6 +84,10 @@ universes, ``generic programming'', dependent types, step indexing.
 \item technical results I am aiming to achieve: decidability
   of typechecking, (strong) normalization
 \end{itemize}
+
+Along lines of DML, ATS: specialized for metatheory. ``New equations for neutral terms'' \cite{Allais13}
+
+Logical step-indexed logical relations: \cite{Dreyer11}.
 \section{Timeline}
 \begin{itemize}
 \item Next 6 months: working out the metatheory and examples of computation in
@@ -95,7 +98,7 @@ types, potentially for a POPL paper in July.
 \item optional piece: support for (and examples of) step-indexed
   logical relations
 \end{itemize}
-% \begin{thebibliography}
-% Test
-% \end{thebibliography}
+
+\bibliographystyle{plainnat}
+\bibliography{proposal}
 \end{document}
