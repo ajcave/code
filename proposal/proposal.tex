@@ -68,9 +68,10 @@ Existing systems targetting support for programming language
   metatheory handle well proofs which require modest logical
   strength, such as proofs of confluence and type safety. However,
   increasingly the programming language community is interested in
-  topics such as normalization, parametricity, decidability of
-  typechecking, (step-indexed) logical relations for contextual
-  equivalence, soundness and completenes of NbE, all of which require
+  topics such as normalization, parametricity \citep{Reynolds,more recent?}, decidability of
+  typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
+  equivalence \citep{Dreyer11,others}, soundness and completenes of
+  NbE \citep{Abel?}, all of which require
   richer logics to express. Sometimes also simple requirements like
   concatenation of contexts -- can't directly be expressed in Twelf or
   Beluga, can often be worked around, but why not directly? Twelf and
@@ -89,8 +90,14 @@ understanding of termination. (We ``cheat'' in Beluga to do logical relations)
 proof assistants, hence it makes sense to target?)
 
 We give up a bit: intend to build around a de Bruijn
-representation. Argue that for proofs it typically doesn't matter:
-typically we deal with one or two binders at at time.
+representation. Argue that for proofs it doesn't matter much:
+typically we deal with one or two binders at at time. Scoping is
+enforced by typechecking, which guides you where to insert
+shifts. It actually takes quite a bit of effort to get shifts wrong.
+
+cite POPLMark
+
+cite Altenkirch complaining about de Bruijn indices
 
 CoqMT approach to implementation?
 
