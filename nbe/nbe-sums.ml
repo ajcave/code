@@ -57,6 +57,8 @@ and reflect t r = match (t,r) with
 
 let rcase s b1 b2 = SUnit (* TODO: We need the type here in order to push it in ...*)
  (* Should we annotate the tm case with the return type like we have to in dependent type theory? *)
+(* Couldn't we also just sheafify all the semantic type constructions instead of "reducing" them?
+   i.e. allow SCase over top of any sem object? *)
 
 let rec scase s b1 b2 = match s with
  | SInl s1 -> b1 s1
