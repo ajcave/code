@@ -55,7 +55,8 @@ and reflect t r = match (t,r) with
     SSum (SCase (r, (x, SInl (reflect t1 (NVar x))), (y,SInr (reflect t2 (NVar y)))))
    (* The var selection here is wrong.. the SCase needs to come with names? *)
 
-let rcase s b1 b2 = SUnit (* TODO: We need the type here in order to push it in... *)
+let rcase s b1 b2 = SUnit (* TODO: We need the type here in order to push it in ...*)
+ (* Should we annotate the tm case with the return type like we have to in dependent type theory? *)
 
 let rec scase s b1 b2 = match s with
  | SInl s1 -> b1 s1
