@@ -109,18 +109,23 @@ tvsub-ext θ zero = refl
 tvsub-ext {σ = σ} θ (suc x) with θ x | cong (lookup _) (map-lem suc σ x)
 ... | q0 | q1 = trans q0 (sym q1)
 
-
 [_]tpv : ∀ {Γ Δ T} {σ} (θ : tvsub Γ Δ σ) {M} -> oft Δ M T -> oft Γ ([ σ ] M) T
 [_]tpv {σ = σ} θ (▹ x) = subst (oft _ (▹ ([ σ ]v x))) (sym (θ x)) (▹ ([ σ ]v x))
 [_]tpv θ (m · m₁) = ([ θ ]tpv m) · ([ θ ]tpv m₁)
 [_]tpv θ (ƛ m) = ƛ ([ tvsub-ext θ ]tpv m)
 
 lem0 : ∀ {Γ Δ Δ'} (w : vsub Δ' Δ) (σ : sub Δ Γ) x -> [ tmap [ w ] σ ]tv x ≡ [ w ] ([ σ ]tv x)
-lem0 w σ x = {!!}
+lem0 w ⊡ ()
+lem0 w (σ , M) zero = refl
+lem0 w (σ , M) (suc x) = lem0 w σ x
+
+lem1 : ∀ {Γ} (x : var Γ) -> x ≡ [ id ]v x
+lem1 zero = refl
+lem1 (suc x) = trans (cong suc (lem1 x)) (sym (map-lem suc id x))
 
 tvsub-wkn : ∀ {Γ : ctx} {T} -> tvsub (Γ , T) Γ wkn
 tvsub-wkn {Γ} {T} x with map-lem suc id x
-... | q = trans {!!} (cong (lookup (Γ , T)) (sym q))
+... | q = trans (cong (lookup Γ) (lem1 x)) (cong (lookup (Γ , T)) (sym q))
 
 tpsub-wkn : ∀ {Γ : ctx} {Δ : ctx} {T} {σ} -> tsub Γ Δ σ -> tsub (Γ , T) Δ (tmap [ wkn ] σ)
 tpsub-wkn {Γ} {Δ} {T} {σ = σ} θ x = subst (λ α → oft (Γ , T) α (lookup Δ x)) (sym (lem0 wkn σ x)) ([ tvsub-wkn  ]tpv (θ x))
@@ -128,7 +133,6 @@ tpsub-wkn {Γ} {Δ} {T} {σ = σ} θ x = subst (λ α → oft (Γ , T) α (looku
 tpsub-ext : ∀ {Γ : ctx} {Δ : ctx} {T} {σ} -> tsub Γ Δ σ -> tsub (Γ , T) (Δ , T) (tmap [ wkn ] σ , ▹ zero)
 tpsub-ext θ zero = ▹ zero
 tpsub-ext {σ = σ} θ (suc x) = tpsub-wkn {σ = σ} θ x
-
 
 [_]tp : ∀ {Γ Δ T} {σ} (θ : tsub Γ Δ σ) {M} -> oft Δ M T -> oft Γ ([ σ ]t M) T
 [_]tp θ (▹ x) = θ x
