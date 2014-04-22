@@ -43,6 +43,7 @@ simultaneous substitutions).
 \item design space: systems with support for binding and substitution vs
 systems with rich abstraction mechanisms and logical strength
 
+
 %``A domain-specific dependent type theory''
 
 % though actually this isn't the worst of it, the worst of it is
@@ -58,6 +59,33 @@ systems with rich abstraction mechanisms and logical strength
 
 %dependent type theory allows effective programming and proving
 \end{itemize}
+
+Proofs in programming language metatheory have lots of cases (which
+can often be generated/developed interactively), which is why they're
+a good candidate for formalization.
+
+Existing systems targetting support for programming language
+  metatheory handle well proofs which require modest logical
+  strength, such as proofs of confluence and type safety. However,
+  increasingly the programming language community is interested in
+  topics such as normalization, parametricity, decidability of
+  typechecking, (step-indexed) logical relations for contextual
+  equivalence, soundness and completenes of NbE, all of which require
+  richer logics to express. Sometimes also simple requirements like
+  concatenation of contexts -- can't directly be expressed in Twelf or
+  Beluga, can often be worked around, but why not directly? Twelf and
+  Beluga can express concatenation of lists, but contexts have special status.
+  By giving a more seemless integration of a logical framework
+  into dependent type theory (i.e. no separation between levels) this
+  can be accomplished.
+
+Also forgetful maps on contexts (v.s. representation using relations
+and proving totality, etc)
+
+(Can I claim that the PL community is one of the biggest users of
+proof assistants, hence it makes sense to target?)
+
+CoqMT approach to implementation?
 
 \subsection{Indexed recursive types}
 
