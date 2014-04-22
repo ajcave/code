@@ -1,6 +1,7 @@
 module eq where
+open import Level
 
-data _≡_ {A : Set} (x : A) : (y : A) -> Set where
+data _≡_ {l} {A : Set l} (x : A) : (y : A) -> Set l where
  refl : x ≡ x
 
 _≋_ : ∀ {A B : Set} (f g : A -> B) -> Set
