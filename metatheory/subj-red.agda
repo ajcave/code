@@ -1,6 +1,7 @@
 module subj-red where
 open import Data.Nat
 open import Data.Fin
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 data tp : Set where
  i : tp
@@ -20,63 +21,116 @@ data exp (Γ : ℕ) :  Set where
  _·_ : ∀ (M : exp Γ) (N : exp Γ) -> exp Γ
  ƛ : (M : exp (suc Γ)) -> exp Γ
 
--- data exp (Γ : ctx) : tp -> Set where
---  ▹ : ∀ {T} -> var Γ T -> exp Γ T
---  _·_ : ∀ {T S} (M : exp Γ (T ⇝ S)) (N : exp Γ T) -> exp Γ S
---  ƛ : ∀ {T S} (M : exp (Γ , T) S) -> exp Γ (T ⇝ S)
+⌞_⌟ : ctx -> ℕ
+⌞ ⊡ ⌟ = 0
+⌞ Γ , T ⌟ = suc ⌞ Γ ⌟
 
--- data sub : (Γ : ctx) -> ctx -> Set where
---  ⊡ : ∀ {Γ} -> sub Γ ⊡
---  _,_ : ∀ {Γ Δ T} (σ : sub Γ Δ) (M : exp Γ T) -> sub Γ (Δ , T)
+lookup : (Γ : ctx) -> Fin ⌞ Γ ⌟ -> tp
+lookup ⊡ ()
+lookup (Γ , T) zero = T
+lookup (Γ , T) (suc n) = lookup Γ n
 
--- data vsub : (Γ : ctx) -> ctx -> Set where
---  ⊡ : ∀ {Γ} -> vsub Γ ⊡
---  _,_ : ∀ {Γ Δ T} (σ : vsub Γ Δ) (x : var Γ T) -> vsub Γ (Δ , T)
+data oft (Γ : ctx) : exp ⌞ Γ ⌟ -> tp -> Set where
+ ▹ : (x : Fin ⌞ Γ ⌟) -> oft Γ (▹ x) (lookup Γ x)
+ _·_ : ∀ {T S} {M N} -> oft Γ M (T ⇝ S) -> oft Γ N T -> oft Γ (M · N) S
+ ƛ : ∀ {T S} {M} -> oft (Γ , T) M S -> oft Γ (ƛ M) (T ⇝ S)
 
--- [_]v : ∀ {Γ Δ T} (σ : vsub Γ Δ) (x : var Δ T) -> var Γ T
--- [ ⊡ ]v ()
--- [ σ , x ]v top = x
--- [ σ , x ]v (pop y) = [ σ ]v y
+data sub : (Γ : ℕ) -> ℕ -> Set where
+  ⊡ : ∀ {Γ} -> sub Γ zero
+  _,_ : ∀ {Γ Δ } (σ : sub Γ Δ) (M : exp Γ) -> sub Γ (suc Δ)
 
--- map : ∀ {Γ Δ θ} (f : ∀ {T} -> var Γ T -> var θ T) (σ : vsub Γ Δ) -> vsub θ Δ
--- map f ⊡ = ⊡
--- map f (σ , x) = (map f σ) , (f x)
+--  where
+ -- ⊡ : ∀ {Γ} -> tsub Γ ⊡ ⊡
+ -- _,_ : ∀ {Γ Δ T} {σ} (θ : tsub Γ Δ σ) {M} -> oft Γ M T -> tsub Γ (Δ , T) (σ , M)
 
--- vext : ∀ {Γ Δ T} (σ : vsub Γ Δ) -> vsub (Γ , T) (Δ , T)
--- vext σ = map pop σ , top
+data vsub : (Γ : ℕ) -> ℕ -> Set where
+ ⊡ : ∀ {Γ} -> vsub Γ zero
+ _,_ : ∀ {Γ Δ} (σ : vsub Γ Δ) (x : Fin Γ) -> vsub Γ (suc Δ)
 
--- id : ∀ {Γ} -> vsub Γ Γ
--- id {⊡} = ⊡
--- id {Γ , T} = (map pop id) , top
+[_]v : ∀ {Γ Δ} (σ : vsub Γ Δ) (x : Fin Δ) -> Fin Γ
+[ ⊡ ]v ()
+[ σ , x ]v zero = x
+[ σ , x ]v (suc y) = [ σ ]v y
 
--- wkn : ∀ {Γ T} -> vsub (Γ , T) Γ
--- wkn = map pop id
+tvsub : (Γ : ctx) -> (Δ : ctx) -> (σ : vsub ⌞ Γ ⌟ ⌞ Δ ⌟) -> Set
+tvsub Γ Δ σ = ∀ x -> lookup Δ x ≡ lookup Γ ([ σ ]v x)
 
--- [_] : ∀ {Γ Δ T} (σ : vsub Γ Δ) (M : exp Δ T) -> exp Γ T
--- [_] σ (▹ y) = ▹ ([ σ ]v y)
--- [_] σ (M · N) = ([ σ ] M) · ([ σ ] N)
--- [_] σ (ƛ M) = ƛ ([ vext σ ] M)
+var = Fin
 
--- [_]tv : ∀ {Γ Δ T} (σ : sub Γ Δ) (x : var Δ T) -> exp Γ T
--- [ ⊡ ]tv ()
--- [ σ , x ]tv top = x
--- [ σ , x ]tv (pop y) = [ σ ]tv y
+map : ∀ {Γ Δ θ} (f : var Γ -> var θ) (σ : vsub Γ Δ) -> vsub θ Δ
+map f ⊡ = ⊡
+map f (σ , x) = (map f σ) , (f x)
 
--- tmap : ∀ {Γ Δ θ} (f : ∀ {T} -> exp Γ T -> exp θ T) (σ : sub Γ Δ) -> sub θ Δ
--- tmap f ⊡ = ⊡
--- tmap f (σ , x) = (tmap f σ) , (f x)
+vext : ∀ {Γ Δ} (σ : vsub Γ Δ) -> vsub (suc Γ) (suc Δ)
+vext σ = map suc σ , zero
 
--- [_]t : ∀ {Γ Δ T} (σ : sub Γ Δ) (M : exp Δ T) -> exp Γ T
--- [_]t σ (▹ y) = [ σ ]tv y
--- [_]t σ (M · N) = [ σ ]t M · [ σ ]t N
--- [_]t σ (ƛ M) = ƛ ([ tmap [ wkn ] σ , (▹ top) ]t M)
+id : ∀ {Γ} -> vsub Γ Γ
+id {zero} = ⊡
+id {suc Γ} = (map suc id) , zero
 
--- tid : ∀ {Γ} -> sub Γ Γ
--- tid {⊡} = ⊡
--- tid {Γ , T} = (tmap [ wkn ] tid) , (▹ top)
+wkn : ∀ {Γ} -> vsub (suc Γ) Γ
+wkn = map suc id
 
--- [_/x] : ∀ {Γ T S} (N : exp Γ T) (M : exp (Γ , T) S) -> exp Γ S
--- [ N /x] M = [ tid , N ]t M
+[_] : ∀ {Γ Δ} (σ : vsub Γ Δ) (M : exp Δ) -> exp Γ
+[_] σ (▹ y) = ▹ ([ σ ]v y)
+[_] σ (M · N) = ([ σ ] M) · ([ σ ] N)
+[_] σ (ƛ M) = ƛ ([ vext σ ] M)
+
+[_]tv : ∀ {Γ Δ} (σ : sub Γ Δ) (x : var Δ) -> exp Γ
+[ ⊡ ]tv ()
+[ σ , x ]tv zero = x
+[ σ , x ]tv (suc y) = [ σ ]tv y
+
+tmap : ∀ {Γ Δ θ} (f : exp Γ -> exp θ) (σ : sub Γ Δ) -> sub θ Δ
+tmap f ⊡ = ⊡
+tmap f (σ , x) = (tmap f σ) , (f x)
+
+[_]t : ∀ {Γ Δ} (σ : sub Γ Δ) (M : exp Δ) -> exp Γ
+[_]t σ (▹ y) = [ σ ]tv y
+[_]t σ (M · N) = [ σ ]t M · [ σ ]t N
+[_]t σ (ƛ M) = ƛ ([ tmap [ wkn ] σ , (▹ zero) ]t M)
+
+tsub : (Γ : ctx) -> (Δ : ctx) -> (σ : sub ⌞ Γ ⌟ ⌞ Δ ⌟) -> Set
+tsub Γ Δ σ = ∀ x -> oft Γ ([ σ ]tv x) (lookup Δ x)
+
+tid : ∀ {Γ} -> sub Γ Γ
+tid {zero} = ⊡
+tid {suc Γ} = (tmap [ wkn ] tid) , (▹ zero)
+
+[_/x] : ∀ {Γ} (N : exp Γ) (M : exp (suc Γ)) -> exp Γ
+[ N /x] M = [ tid , N ]t M
+
+tvsub-ext : ∀ {Γ : ctx} {Δ : ctx} {T} {σ : vsub ⌞ Γ ⌟ ⌞ Δ ⌟} -> tvsub Γ Δ σ -> tvsub (Γ , T) (Δ , T) (vext σ)
+tvsub-ext θ zero = refl
+tvsub-ext θ (suc x) with θ x
+... | q = {!!}
+
+
+[_]tpv : ∀ {Γ Δ T} {σ} (θ : tvsub Γ Δ σ) {M} -> oft Δ M T -> oft Γ ([ σ ] M) T
+[_]tpv {σ = σ} θ (▹ x) = subst (oft _ (▹ ([ σ ]v x))) (sym (θ x)) (▹ ([ σ ]v x))
+[_]tpv θ (m · m₁) = ([ θ ]tpv m) · ([ θ ]tpv m₁)
+[_]tpv θ (ƛ m) = ƛ ([ tvsub-ext θ ]tpv m)
+
+lem0 : ∀ {Γ Δ Δ'} (w : vsub Δ' Δ) (σ : sub Δ Γ) x -> [ tmap [ w ] σ ]tv x ≡ [ w ] ([ σ ]tv x)
+lem0 w σ x = {!!}
+
+tvsub-wkn : ∀ {Γ : ctx} {T} -> tvsub (Γ , T) Γ wkn
+tvsub-wkn x = {!!}
+
+tpsub-wkn : ∀ {Γ : ctx} {Δ : ctx} {T} {σ} -> tsub Γ Δ σ -> tsub (Γ , T) Δ (tmap [ wkn ] σ)
+tpsub-wkn {Γ} {Δ} {T} {σ = σ} θ x = subst (λ α → oft (Γ , T) α (lookup Δ x)) (sym (lem0 wkn σ x)) ([ tvsub-wkn  ]tpv (θ x))
+
+tpsub-ext : ∀ {Γ : ctx} {Δ : ctx} {T} {σ} -> tsub Γ Δ σ -> tsub (Γ , T) (Δ , T) (tmap [ wkn ] σ , ▹ zero)
+tpsub-ext θ zero = ▹ zero
+tpsub-ext {σ = σ} θ (suc x) = tpsub-wkn {σ = σ} θ x
+
+
+[_]tp : ∀ {Γ Δ T} {σ} (θ : tsub Γ Δ σ) {M} -> oft Δ M T -> oft Γ ([ σ ]t M) T
+[_]tp θ (▹ x) = θ x
+[_]tp θ (m · m₁) = ([ θ ]tp m) · ([ θ ]tp m₁)
+[_]tp θ (ƛ m) = ƛ ([ tpsub-ext θ ]tp m)
+
+
 
 
 
