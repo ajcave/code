@@ -1,5 +1,6 @@
 \documentclass{article}
 \usepackage{natbib}
+\usepackage{hyperref}
 \author{Andrew Cave}
 \title{Dependent type theory for contextual reasoning}
 \begin{document}
@@ -13,7 +14,9 @@ environment. %Dependent type theory gives a ``sliding scale'' from programming t
 )
 %(todo: look at other examples of thesis statements)
 
-Dependent type theory provides a rich environment for both proofs and programs. 
+Dependent type theory provides a rich environment for both proofs and
+programs. 
+NuPRL \citep{NuPRL}
 
 \section{Background}
 Sketch well-scoped representation in Agda and substitution
@@ -109,12 +112,18 @@ witnesses. (both beta and OL substitution equations)
 Spells out equality testing -- algorithm, not heuristic.
 
 \subsection{Indexed recursive types}
+Explored recursive datatypes \citep{Cave12}
+
+This was the first step in exploring how HOAS types can fit
+into a picture with traditional recursive (or inductive..) datatypes. 
 
 don't quite suffice for proofs: need positivity. don't quite suffice
 for logical relations: need universe (large eliminations) to justify,
 since they aren't positive definitions
 \subsection{First class substitutions}
+\citep{Cave13}
 
+\citep{Cave14}
 \subsection{Example}
 \section{Remaining to be done}
 \subsection{Computation in types}
