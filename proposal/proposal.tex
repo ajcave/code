@@ -111,6 +111,20 @@ witnesses. (both beta and OL substitution equations)
 
 Spells out equality testing -- algorithm, not heuristic.
 
+\subsection{Conversion in type theory}
+A central issue in the design of a dependent type theory is
+conversion: when are two types deemed to be equal? In
+intensional type theories, conversion is decidable, but somewhat
+weak, typically including only $\beta$ laws and perhaps some $\eta$
+laws. There has been substantial work on the design and verification
+of algorithms for deciding increasingly richer theories, typically
+with more forms of $\eta$ laws. To take a
+small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
+\cite{Allais13} have developed promising techniques for incorporating equations
+which are neither $\beta$ nor $\eta$ laws, such as the associativity
+and unit laws for list append. It remains open to establish if 
+these techniques can be applied to rich dependent type theories.
+
 \subsection{Indexed recursive types}
 Explored recursive datatypes \citep{Cave12}
 
@@ -121,8 +135,11 @@ don't quite suffice for proofs: need positivity. don't quite suffice
 for logical relations: need universe (large eliminations) to justify,
 since they aren't positive definitions
 \subsection{First class substitutions}
-\citep{Cave13}
+Develops decision procedure for a weaker setting: hereditiary
+substitution works well for indexed types, but it does not scale well
+to richer dependent types. \citep{Cave13}
 
+\subsection{Logical relations in contextual type theory}
 \citep{Cave14}
 \subsection{Example}
 \section{Remaining to be done}
