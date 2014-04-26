@@ -2,6 +2,8 @@
 \usepackage{natbib}
 \usepackage{color}
 \usepackage[pdftex, pdfborderstyle={/S/U/W 0}]{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
 \author{Andrew Cave}
 \title{Dependent type theory for contextual reasoning}
 
@@ -62,6 +64,16 @@ simultaneous substitutions).
 \item design space: systems with support for binding and substitution vs
 systems with rich abstraction mechanisms and logical strength
 
+Definition of substitution with names:
+
+\begin{eqnarray*}
+[N/x](x) & = & N \\
+ \lbrack N/x](y) & = & y \quad \text{if $x \neq y$} \\
+ \lbrack N/x](M_1 M_2) & = & ([N/x]M_1) ([N/x]M_2) \\
+ \lbrack N/x](\lambda y. M) & = & \lambda y. [N/x]M \quad
+ \text{choosing $y \not\in fv(N)$ and
+  $y \neq x$}
+\end{eqnarray*}
 
 %``A domain-specific dependent type theory''
 
@@ -111,7 +123,19 @@ We give up a bit: intend to build around a de Bruijn
 representation. Argue that for proofs it doesn't matter much:
 typically we deal with one or two binders at at time. Scoping is
 enforced by typechecking, which guides you where to insert
-shifts. It actually takes quite a bit of effort to get shifts wrong.
+shifts. It actually takes quite a bit of effort to get shifts wrong. 
+
+Pro of de Bruijn indices and contextual types (vs names, nominal
+logic): purely equational; no ``propositional'' side
+conditions. Compare:
+
+$[N/x]M = M$ if $x \not\in fv(M)$, versus:
+
+$[0 := N]M = M$ if $M = [\uparrow]M'$ for some $M'$.
+
+This fits better into dependent type theory.
+
+HOAS/contextual types are ``syntax'' on top of de Bruijn indices.
 
 cite structural logical relations: requires auxiliary logic, deviates
 somewhat from the on-paper techniques? \citep{Schurmann08}
@@ -193,6 +217,14 @@ intensional type theory is a language of verifiable evidence (McBride's term?)
 \item Next 6 months: working out the metatheory and examples of computation in
 types, potentially for a POPL paper in July.
 \item 6 months: prototype implementation and implementing examples
+
+ - Implementing examples is key to demonstrating the value of this
+ approach. I have conducted many such proofs in Agda: There are three
+ main practical obstacles to carrying out such proofs 1) one needs a
+ sufficient understanding of techniques for dealing with de Bruijn
+ indices 2) one of course needs to understanding the proofs 3)
+ applying the equational theory of simultaneous substitutions. 1 and 2
+ I have tackled, and 3 is still a burden: this is what I propose to address
 \item 6 months: writing thesis
 \item backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
 \item optional piece: support for (and examples of) step-indexed
