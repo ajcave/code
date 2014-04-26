@@ -16,7 +16,18 @@ environment. %Dependent type theory gives a ``sliding scale'' from programming t
 
 Dependent type theory provides a rich environment for both proofs and
 programs. \cite{Martin-Loef73a}
-NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq \citep{bertot/casteran:2004}
+NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
+\citep{bertot/casteran:2004}
+
+Increasingly, there is a desire to write computer checked proofs for
+research in programming languages and logic \citep{POPLMark}.
+
+LF \citep{Harper93jacm} has proven to be well-suited for representing
+programming language syntax, logics and hypothetical
+judgments. However, it has been less clear how to formulate induction
+over LF representations in a way that is directly comparable to
+induction over a first-order representation like de Bruijn indices or
+names. (? is this fair? cite?)
 
 \section{Background}
 Sketch well-scoped representation in Agda and substitution
@@ -126,9 +137,9 @@ and unit laws for list append. It remains open to establish if
 these techniques can be applied to rich dependent type theories.
 
 \subsection{Indexed recursive types}
-Explored recursive datatypes \citep{Cave12}
-
-This was the first step in exploring how HOAS types can fit
+Recently, we have developed LF-indexed recursive types
+\citep{Cave12}, as a stepping stone to support LF-indexed inductive
+types. This was the first step in exploring how HOAS types can fit
 into a picture with traditional recursive (or inductive..) datatypes. 
 
 don't quite suffice for proofs: need positivity. don't quite suffice
