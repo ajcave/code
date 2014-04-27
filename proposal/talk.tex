@@ -148,6 +148,7 @@ $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in fv(\sigma)$ (TODO: chec
 \item Analyze LF objects by the induction principle you get from considering an inductive type representing LF
 \item We can represent intrinsically well-typed object logics with inductive types, but it's repetitive to do define and prove properties of substitution for each object logic. Solution: Implement one, canonical forms LF, in which many others fit. (e.g. show intrinsically typed STLC?)
 \item Refinement: Build this datatype and related operations into the theory so we can support an equational theory for it.
+\item Resulting theory looks like \textbf{dependently typed} Beluga
 \item provides basic approach to semantics, termination (via basic eliminators)
 \item Support universes (necessary to justify logical relations)
 \item (predicative) polymorphism
