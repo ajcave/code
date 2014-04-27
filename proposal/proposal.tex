@@ -14,17 +14,8 @@
 \maketitle
 
 \section{Introduction}
-Thesis statement: Building a logical framework into dependent type
-theory is possible and makes mechanization of state-of-the-art programming
-language metatheory more effective. (Moreover: it's a rich programming
-environment. %Dependent type theory gives a ``sliding scale'' from programming to verification
-)
-%(todo: look at other examples of thesis statements)
 
-Dependent type theory provides a rich environment for both proofs and
-programs. \cite{Martin-Loef73a}
-NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
-\citep{bertot/casteran:2004}
+%(todo: look at other examples of thesis statements)
 
 Increasingly, there is a desire to write computer checked proofs for
 research in programming languages and logic
@@ -61,9 +52,33 @@ over LF representations in a way that is directly comparable to
 induction over a first-order representation like de Bruijn indices or
 names. (? is this fair? cite?)
 
-However, some of the more effective approaches to this problem often
-come at a price: fairly weak logics.
+However, the most effective approaches to this problem have
+come at a fairly steep price: fairly weak logics. (elaborate)
 
+
+There are a handful of approaches to logics and theories suitable for
+machine checked proofs. Higher order logic, set theory, and dependent
+type theory are the main alternatives which are rich enough to serve
+as a foundation for modern mathematics. Among these, dependent type theory
+\citep{Martin-Loef73a} boasts the advantage that it comes equipped with a direct
+connection to computer programming. This means that it provides a rich
+environment which at the same time supports both proofs and
+programs. By constructing a proof in dependent type theory, one has
+implicitly also constructed a corresponding algorithm which can be
+directly executed. This is very valuable, because it
+enables the development of theory to proceed hand in hand
+with implementation. Moreover, (intensional) dependent type theory offers a
+principled approach to incorporating automated
+support for a decidable equational theory, which is of primary concern
+for the proposed work.
+NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
+\citep{bertot/casteran:2004}
+
+Thesis statement: Building a logical framework into dependent type
+theory is possible and makes mechanization of state-of-the-art programming
+language metatheory more effective. Moreover: it shows promise for a rich programming
+environment in which to implement programming languages and logics, which allows
+implementation to be carried out jointly with a ``sliding-scale'' of verification.
 
 
 \section{Background}
