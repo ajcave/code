@@ -37,8 +37,8 @@ assistants to not only check that all cases have been covered, but
 even to automatically generate the list of cases for the human prover
 to consider, so that constructing a proof becomes an interactive effort.
 
-However, formalizing such proofs can still be tedious for one reason,
-namely formal treatment of variable binding and
+However, formalizing such proofs can still be tedious for at least one reason,
+namely giving a formal treatment of variable binding and
 substitution. \cite{Altenkirch93} writes (about
 formalizing a proof of normalization for System F):
 
@@ -51,12 +51,18 @@ much more work than expected, e.g. proving lemmas about substitution
 and weakening.
 \end{quote}
 
+This issue has spawned a large body of work aiming to relieve this
+particular burden.
+
 The logical framework LF \citep{Harper93jacm} has proven to be well-suited for representing
 programming language syntax, logics and hypothetical
 judgments. However, it has been less clear how to formulate induction
 over LF representations in a way that is directly comparable to
 induction over a first-order representation like de Bruijn indices or
 names. (? is this fair? cite?)
+
+However, some of the more effective approaches to this problem often
+come at a price: fairly weak logics.
 
 
 
