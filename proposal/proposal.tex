@@ -1,6 +1,15 @@
 \documentclass{article}
+\usepackage{natbib}
+\usepackage{color}
+\usepackage[pdftex, pdfborderstyle={/S/U/W 0}]{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
 \author{Andrew Cave}
 \title{Dependent type theory for contextual reasoning}
+
+\definecolor{light-gray}{gray}{0.5}
+\newcommand{\LONGVERSION}[1]{{\color{light-gray}#1}}
+
 \begin{document}
 \maketitle
 
@@ -11,6 +20,27 @@ language metatheory more effective. (Moreover: it's a rich programming
 environment. %Dependent type theory gives a ``sliding scale'' from programming to verification
 )
 %(todo: look at other examples of thesis statements)
+
+Dependent type theory provides a rich environment for both proofs and
+programs. \cite{Martin-Loef73a}
+NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
+\citep{bertot/casteran:2004}
+
+Increasingly, there is a desire to write computer checked proofs for
+research in programming languages and logic \citep{POPLMark}.
+
+LF \citep{Harper93jacm} has proven to be well-suited for representing
+programming language syntax, logics and hypothetical
+judgments. However, it has been less clear how to formulate induction
+over LF representations in a way that is directly comparable to
+induction over a first-order representation like de Bruijn indices or
+names. (? is this fair? cite?)
+
+\section{Background}
+Sketch well-scoped representation in Agda and substitution
+principles. Illustrate the point that the main bottleneck for
+mechanization are the equations which arise (e.g. church rosser proof?
+similar experiments as far as proving normalization for MLTT with a universe)
 
 \begin{itemize}
 \item Standard issues in mechanizing metatheory: first order
@@ -34,6 +64,17 @@ simultaneous substitutions).
 \item design space: systems with support for binding and substitution vs
 systems with rich abstraction mechanisms and logical strength
 
+Definition of substitution with names:
+
+\begin{eqnarray*}
+[N/x](x) & = & N \\
+ \lbrack N/x](y) & = & y \quad \text{if $x \neq y$} \\
+ \lbrack N/x](M_1 M_2) & = & ([N/x]M_1) ([N/x]M_2) \\
+ \lbrack N/x](\lambda y. M) & = & \lambda y. [N/x]M \quad
+ \text{choosing $y \not\in fv(N)$ and
+  $y \neq x$}
+\end{eqnarray*}
+
 %``A domain-specific dependent type theory''
 
 % though actually this isn't the worst of it, the worst of it is
@@ -49,19 +90,103 @@ systems with rich abstraction mechanisms and logical strength
 
 %dependent type theory allows effective programming and proving
 \end{itemize}
-\section{Background}
-Sketch well-scoped representation in Agda and substitution
-principles. Illustrate the point that the main bottleneck for
-mechanization are the equations which arise (e.g. church rosser proof?
-similar experiments as far as proving normalization for MLTT with a universe)
+
+Proofs in programming language metatheory have lots of cases (which
+can often be generated/developed interactively), which is why they're
+a good candidate for formalization.
+
+Existing systems targetting support for programming language
+  metatheory handle well proofs which require modest logical
+  strength, such as proofs of confluence and type safety. However,
+  increasingly the programming language community is interested in
+  topics such as normalization, parametricity \citep{Reynolds,morerecent?}, decidability of
+  typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
+  equivalence \citep{Dreyer11,others}, soundness and completenes of
+  NbE \citep{Dybjer00,Abel07}, all of which require
+  richer logics to express. Sometimes also simple requirements like
+  concatenation of contexts -- can't directly be expressed in Twelf
+  (can in Beluga), can often be worked around, but why not directly? 
+  By giving a more seemless integration of a logical framework
+  into dependent type theory (i.e. no separation between levels) this
+  can be accomplished.
+
+Also forgetful maps on contexts (v.s. representation using relations
+and proving totality, etc)
+
+Also to properly justify logical relations arguments and use existing
+understanding of termination. (We ``cheat'' in Beluga to do logical relations)
+
+(Can I claim that the PL community is one of the biggest users of
+proof assistants, hence it makes sense to target?)
+
+We give up a bit: intend to build around a de Bruijn
+representation. Argue that for proofs it doesn't matter much:
+typically we deal with one or two binders at at time. Scoping is
+enforced by typechecking, which guides you where to insert
+shifts. It actually takes quite a bit of effort to get shifts wrong. 
+
+Pro of de Bruijn indices and contextual types (vs names, nominal
+logic): purely equational; no ``propositional'' side
+conditions. Compare:
+
+$[N/x]M = M$ if $x \not\in fv(M)$, versus:
+
+$[0 := N]M = M$ if $M = [\uparrow]M'$ for some $M'$.
+
+This fits better into dependent type theory.
+
+HOAS/contextual types are ``syntax'' on top of de Bruijn indices.
+
+cite structural logical relations: requires auxiliary logic, deviates
+somewhat from the on-paper techniques? \citep{Schurmann08}
+
+cite POPLMark \cite{POPLMark}
+
+cite Altenkirch complaining about de Bruijn indices
+
+CoqMT approach to implementation?
+
+In defense of intensional type theory: *smaller* checkable
+witnesses. (both beta and OL substitution equations)
+
+Spells out equality testing -- algorithm, not heuristic.
+
+\subsection{Conversion in type theory}
+A central issue in the design of a dependent type theory is
+conversion: when are two types deemed to be equal? In
+intensional type theories, conversion is decidable, but somewhat
+weak, typically including only $\beta$ laws and perhaps some $\eta$
+laws. There has been substantial work on the design and verification
+of algorithms for deciding increasingly richer theories, typically
+with more forms of $\eta$ laws. To take a
+small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
+\cite{Allais13} have developed promising techniques for incorporating equations
+which are neither $\beta$ nor $\eta$ laws, such as the associativity
+and unit laws for list append. It remains open to establish if 
+these techniques can be applied to rich dependent type theories.
 
 \subsection{Indexed recursive types}
+Recently, we have developed LF-indexed recursive types
+\citep{Cave12}, as a stepping stone to support LF-indexed inductive
+types. This was a first step in exploring how HOAS types can fit
+into a picture with traditional recursive (or inductive..) datatypes. 
 
-don't quite suffice for proofs: need positivity. don't quite suffice
+Recursive types are suitable for programming, but they do not suffice
+if we are interested in proofs: need positivity. don't quite suffice
 for logical relations: need universe (large eliminations) to justify,
-since they aren't positive definitions
+since they aren't positive definitions/
 \subsection{First class substitutions}
+Our work on first-class substitutions \citep{Cave13} identifies ...
+\LONGVERSION{This is precisely what is needed to support the fact that substitution
+is monadic \cite{?}}
 
+
+Develops decision procedure for a weaker setting: hereditiary
+substitution works well for indexed types, but it does not scale well
+to richer dependent types. 
+
+\subsection{Logical relations in contextual type theory}
+\citep{Cave14}
 \subsection{Example}
 \section{Remaining to be done}
 \subsection{Computation in types}
@@ -79,19 +204,36 @@ universes, ``generic programming'', dependent types, step indexing.
   uniformly, permitting mutual definitions, etc.
 \item Pattern matching
 \end{itemize}
-\item technical results I am aiming to achieve: adequacy, decidability
+\item technical results I am aiming to achieve: decidability
   of typechecking, (strong) normalization
+\item Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
 \end{itemize}
+
+Along lines of DML, ATS: specialized for metatheory. ``New equations for neutral terms'' \cite{Allais13}
+
+Logical step-indexed logical relations: \cite{Dreyer11}.
+
+intensional type theory is a language of verifiable evidence (McBride's term?)
 \section{Timeline}
 \begin{itemize}
-\item Next 2-5 months: working out the metatheory and examples of computation in
+\item Next 6 months: working out the metatheory and examples of computation in
 types, potentially for a POPL paper in July.
-\item backup/option: implementation (prototype?). Some kind of
-  (``structural''?) ``initial algebra semantics'' for hypothetical judgments?
+\item 6 months: prototype implementation and implementing examples
+
+ - Implementing examples is key to demonstrating the value of this
+ approach. I have conducted many such proofs in Agda: There are three
+ main practical obstacles to carrying out such proofs 1) one needs a
+ sufficient understanding of techniques for dealing with de Bruijn
+ indices 2) one of course needs to understanding the proofs 3)
+ applying the equational theory of simultaneous substitutions. 1 and 2
+ I have tackled, and 3 is still a burden: this is what I propose to address
+\item 6 months: writing thesis
+\item backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
 \item optional piece: support for (and examples of) step-indexed
   logical relations
+\item (Journal version of rec types paper combined with subst. vars?)
 \end{itemize}
-% \begin{thebibliography}
-% Test
-% \end{thebibliography}
+
+\bibliographystyle{plainnat}
+\bibliography{proposal}
 \end{document}

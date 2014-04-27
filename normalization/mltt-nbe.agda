@@ -672,10 +672,11 @@ n ⊨ d = ∀ {m} {ps : Φs m n} (qs : φs ps) -> φ (d ps qs) _ id
 
 mutual
   lem1 : ∀ {n A} (Γ : dctx n) -> Γ ⊢ A type -> n ⊨type
-  lem1 Γ set = λ ps x → set
-  lem1 Γ (Π {A} {B} t t₁) = λ ps x → Π (lem1 Γ t ps x)
+  lem1 Γ set ps x = set
+  lem1 Γ (Π {A} {B} t t₁) ps x = Π (lem1 Γ t ps x)
     (λ w x₁ → lem1 (Γ , A) t₁ _ (φswkn w x ,[ Φwkn w (lem1 Γ t ps x) ] φfunct' w id (lem1 Γ t ps x) x₁))
-  lem1 Γ (emb x) = λ ps x₁ → {!!}
+  lem1 Γ (emb x) ps x₁ with lem3' Γ x x₁
+  ... | q = {!!}
  
   lem2 : ∀ {n M A} (Γ : dctx n)  -> Γ ⊢ M ∶ A -> n ⊨type
   lem2 Γ bool ps x = set
@@ -685,9 +686,12 @@ mutual
   lem2 Γ (Π t t₁) ps x = set
   lem2 Γ (ƛ x t) ps x₁ = Π (lem1 Γ x ps x₁) (λ w x₂ → lem2 (Γ , _) t _ (φswkn w x₁ ,[ Φwkn w (lem1 Γ x ps x₁) ] φfunct' w id (lem1 Γ x ps x₁) x₂))
   lem2 Γ (t · t₁) ps x with lem2 Γ t₁ ps x
-  ... | q = {!!}
+  lem2 Γ (t · t₁) ps x | bool = {!!}
+  lem2 Γ (t · t₁) ps x | Π q x₁ = x₁ id {!!}
+  lem2 Γ (t · t₁) ps x | neut A₁ = {!!}
+  lem2 Γ (t · t₁) ps x | set = {!!}
   lem2 Γ (if x1 t t₁ t₂) ps x = lem1 (Γ , bool) x1 _ (x ,[ bool ] {!!})
-  lem2 Γ (conv x1 x₁ t) ps x = {!!}
+  lem2 Γ (conv x1 x₁ t) ps x = lem2 Γ t ps x
 
 --  lem3 : ∀ {n M A} (Γ : dctx n) (d : Γ ⊢ M ∶ A) -> Γ ⊨ M ∶ A
 --  lem3 Γ t = ?
