@@ -27,17 +27,20 @@ NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
 \citep{bertot/casteran:2004}
 
 Increasingly, there is a desire to write computer checked proofs for
-research in programming languages and logic \citep{POPLMark}.
+research in programming languages and logic
+\citep{POPLMark}. Results in programming languages appear to be prime
+candidates for computer checked proofs. For one, these proofs typically take the
+form of a proof by induction with many cases, and formalizing inductive
+reasoning is by now quite well understood. Moreover, the abundance of cases means that such proofs can be
+tedious and error-prone to write and to verify by hand. Fortunately, it is now commonplace for proof
+assistants to not only check that all cases have been covered, but
+even to automatically generate the list of cases for the human prover
+to consider, so that constructing a proof becomes an interactive effort.
 
-The logical framework LF \citep{Harper93jacm} has proven to be well-suited for representing
-programming language syntax, logics and hypothetical
-judgments. However, it has been less clear how to formulate induction
-over LF representations in a way that is directly comparable to
-induction over a first-order representation like de Bruijn indices or
-names. (? is this fair? cite?)
-
-About formalizing a proof of normalization for System F with de Bruijn
-indices, \cite{Altenkirch93} writes:
+However, formalizing such proofs can still be tedious for one reason,
+namely formal treatment of variable binding and
+substitution. \cite{Altenkirch93} writes (about
+formalizing a proof of normalization for System F):
 
 \begin{quote}
 When doing the formalization, I discovered that the core part of the
@@ -47,6 +50,14 @@ completing the proof I observed that in certain places I had to invest
 much more work than expected, e.g. proving lemmas about substitution
 and weakening.
 \end{quote}
+
+The logical framework LF \citep{Harper93jacm} has proven to be well-suited for representing
+programming language syntax, logics and hypothetical
+judgments. However, it has been less clear how to formulate induction
+over LF representations in a way that is directly comparable to
+induction over a first-order representation like de Bruijn indices or
+names. (? is this fair? cite?)
+
 
 
 \section{Background}
