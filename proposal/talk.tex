@@ -34,10 +34,138 @@
 
 \begin{frame}{Introduction}
 \begin{itemize}
-\item Stuff
+\item Increasingly, Desire to write computer checked proofs
+\item Results in programming languages appear to be prime
+candidates:
+\begin{itemize}
+\item Formalizing inductive reasoning is by well understood.
+\item Abundance of cases means that such proofs can be
+tedious and error-prone to write and to verify by hand.
+\end{itemize}
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Introduction}
+\begin{itemize}
+\item Such proofs can still be tedious: giving a formal treatment of variable binding and
+substitution.
+\end{itemize}
+\begin{quote}
+When doing the formalization, I discovered that the core part of the
+proof (here proving the lemmas about CR) is fairly straightforward and
+only requires a good understanding of the paper version. However, in
+completing the proof I observed that in certain places I had to invest
+much more work than expected, e.g. proving lemmas about substitution
+and weakening.
 
+-- Thorsten Altenkirch, 1993
+
+   (formalizing normalization of System F)
+\end{quote}
+\pause
+\begin{itemize}
+\item This proof still hasn't been done in a less painful way(?!)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Proof environments designed for the task}
+\begin{itemize}
+\item LF is well-suited for representing
+programming language syntax, logics and hypothetical
+judgments.
+\item Less clear how to formulate induction
+over LF representations
+\item Steep price: fairly weak logics (Twelf: $\forall\exists$; Beluga: better...)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Dependent type theory}
+\begin{itemize}
+\item Approaches to logics/languages for
+machine checked proofs: Higher order logic, set theory, and dependent
+type theory
+\item Dependent type theory comes equipped with a direct
+connection to computer programming.
+\item Rich environment supports both proofs and
+programs.
+\item A proof in dependent type theory is an algorithm
+\item Theory hand in hand with implementation!
+\item Intensional dependent type theory includes a decidable equational theory
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Thesis}
+\begin{quote}Building a logical framework into dependent type
+theory is possible and makes mechanization of state-of-the-art programming
+language metatheory more effective.
+\end{quote}
+\begin{itemize}
+\pause
+\item More generally: Learn some lessons on how
+to make mechanization of proofs outside of programming languages and
+logic more practical?
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Background}
+$[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in fv(\sigma)$ (TODO: check)
+\end{frame}
+
+\begin{frame}{Related work}
+\begin{itemize}
+\item Beluga: indexed types
+\item Abella: first order logic
+\item Hybrid: weak support for substitution
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Indexed recursive types}
+\begin{itemize}
+\item Recently, we have developed LF-indexed recursive types
+[Cave and Pientka 2012]
+\end{itemize}
+\end{frame}
+
+\begin{frame}{First class substitutions}
+\begin{itemize}
+\item Equational theory of substitutions
+[Cave and Pientka 2013]
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Logical relations in contextual type theory}
+\begin{itemize}
+\item Completeness of algorithmic equality for STLC
+\item Lacks check that definitions are reasonable (positivity)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Proposed extension: Computation in types}
+\begin{itemize}
+\item Fit into dependent type theory
+\item Supports computation in types
+\item e.g. concatenation of contexts, forgetful mappings on contexts instead of relations
+\item Analyze LF objects by the induction principle you get from considering an inductive type representing LF
+\item We can represent intrinsically well-typed object logics with inductive types, but it's repetitive to do define and prove properties of substitution for each object logic. Solution: Implement one, canonical forms LF, in which many others fit. (e.g. show intrinsically typed STLC?)
+\item Refinement: Build this datatype and related operations into the theory so we can support an equational theory for it.
+\item provides basic approach to semantics, termination (via basic eliminators)
+\item Support universes (necessary to justify logical relations)
+\item (predicative) polymorphism
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Design goals}
+\begin{itemize}
+\item Algorithm for typechecking (decidability, soundness, completeness)
+\item Consequences: normalization, consistency
+\item Prototype implementation
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Results}
+\begin{itemize}
+\item Hope to be able to formalize e.g. C. Coquand's normalization proof for MLTT or a step-indexed logical relation or soundness and completenes of NbE (done a bunch of these in Agda)
+\end{itemize}
+\end{frame}
 
 \end{document}

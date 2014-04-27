@@ -1,4 +1,6 @@
-all:
+all: doc pres
+
+doc:
 	pdflatex proposal.tex
 	bibtex proposal
 	bibtex proposal
