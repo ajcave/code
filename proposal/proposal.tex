@@ -67,23 +67,30 @@ programs. By constructing a proof in dependent type theory, one has
 implicitly also constructed a corresponding algorithm which can be
 directly executed. This is very valuable, because it
 enables the development of theory to proceed hand in hand
-with implementation. Moreover, (intensional) dependent type theory offers a
-principled approach to incorporating automated
-support for a decidable equational theory, which is of primary concern
-for the proposed work.
+with implementation. Moreover, (intensional) dependent type theory
+incorporates automated support for a decidable equational theory in a
+principled way, which is an important asset for the proposed work.
 NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
 \citep{bertot/casteran:2004}
 
-Thesis statement: Building a logical framework into dependent type
+The main claim I aim to support with my thesis work is the following:
+
+\begin{quote}Building a logical framework into dependent type
 theory is possible and makes mechanization of state-of-the-art programming
-language metatheory more effective. Moreover: it shows promise for a rich programming
+language metatheory more effective.
+\end{quote}
+
+Moreover: the resulting framework shows promise for a rich programming
 environment in which to implement programming languages and logics, which allows
 implementation to be carried out jointly with a ``sliding-scale'' of
 verification.
 
 More generally, I hope that the lessons learned from these efforts can shed some light on how
 to make mechanization of proofs outside of programming languages and
-logic more practical.
+logic more practical. A main component of the proposed work is the
+incorporation of a (particular) rich, decidable equational theory into a
+proof assistant, and the result seems very likely to offer insight into how to
+incorporate other equational theories from other areas of application.
 
 
 \section{Background}
