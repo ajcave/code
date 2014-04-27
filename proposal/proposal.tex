@@ -29,12 +29,25 @@ NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
 Increasingly, there is a desire to write computer checked proofs for
 research in programming languages and logic \citep{POPLMark}.
 
-LF \citep{Harper93jacm} has proven to be well-suited for representing
+The logical framework LF \citep{Harper93jacm} has proven to be well-suited for representing
 programming language syntax, logics and hypothetical
 judgments. However, it has been less clear how to formulate induction
 over LF representations in a way that is directly comparable to
 induction over a first-order representation like de Bruijn indices or
 names. (? is this fair? cite?)
+
+About formalizing a proof of normalization for System F with de Bruijn
+indices, \cite{Altenkirch93} writes:
+
+\begin{quote}
+When doing the formalization, I discovered that the core part of the
+proof (here proving the lemmas about CR) is fairly straightforward and
+only requires a good understanding of the paper version. However, in
+completing the proof I observed that in certain places I had to invest
+much more work than expected, e.g. proving lemmas about substitution
+and weakening.
+\end{quote}
+
 
 \section{Background}
 Sketch well-scoped representation in Agda and substitution
