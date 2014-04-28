@@ -140,6 +140,29 @@ $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in fv(\sigma)$ (TODO: chec
 \end{itemize}
 \end{frame}
 
+\begin{frame}[fragile]{Intrinsically typed encodings}
+\begin{verbatim}
+data exp (G : ctx) : tp -> Set where
+ v : var G T -> exp G T
+ app : exp G (arr T S) -> exp G T -> exp S
+ lam : exp (G , T) S -> exp G (arr T S)
+\end{verbatim}
+\pause
+\begin{alltt}
+[_] : sub G' G -> exp G T -> exp G' T
+[_]' : sub G' G -> sub G D -> sub G' D
+\end{alltt}
+\pause
+\begin{alltt}
+lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
+lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
+lem3 : [ id ]' \(\sigma\) = \(\sigma\)
+lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1] = [ \(\sigma\) , N ]
+...
+\end{alltt}
+\end{frame}
+
+
 \begin{frame}{Proposed extension: Computation in types}
 \begin{itemize}
 \item Fit into dependent type theory
