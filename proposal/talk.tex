@@ -1,0 +1,214 @@
+\documentclass[usenames,dvipsnames]{beamer}
+\setbeamertemplate{footline}[frame number]
+\usepackage{alltt}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata}
+\setbeamertemplate{navigation symbols}{}%remove navigation symbols
+
+
+\usepackage{srcltx}
+\usepackage[tikz]{bclogo}
+
+
+\providecommand{\term}[1]{\mbox{\small{\textsf{#1}}}}
+
+\providecommand{\always}{\square}
+\providecommand{\eventually}{\Diamond}
+\providecommand{\tnext}{\bigcirc}
+\providecommand{\nexti}{\bullet}
+\providecommand{\until}{\mathrel{\mathcal{U}}}
+\providecommand{\onceuntil}{\mathrel{\hat{\mathcal{U}}}}
+\setbeamertemplate{itemize item}{\scriptsize\raise1.25pt\hbox{\donotcoloroutermaths$\blacktriangleright$}}
+\setbeamertemplate{itemize subitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$\bullet$}}
+\setbeamertemplate{itemize subsubitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$-$}}
+
+\author{Andrew Cave}
+\title[{\makebox[.45\paperwidth]{Dependent Type Theory for Contextual Reasoning\hfill%
+       \insertframenumber/\inserttotalframenumber}}]{Dependent Type Theory for Contextual Reasoning} 
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Introduction}
+\begin{itemize}
+\item Increasingly, desire to write computer checked proofs
+\item Results in programming languages appear to be prime
+candidates:
+\begin{itemize}
+\item Formalizing inductive reasoning is well understood.
+\item Abundance of cases means that such proofs can be
+tedious and error-prone to write and to verify by hand.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Introduction cont'd}
+\begin{itemize}
+\item Such proofs can still be tedious: giving a formal treatment of variable binding and
+substitution.
+\end{itemize}
+\begin{quote}
+When doing the formalization, I discovered that the core part of the
+proof (here proving the lemmas about CR) is fairly straightforward and
+only requires a good understanding of the paper version. However, in
+completing the proof I observed that in certain places I had to invest
+much more work than expected, e.g. proving lemmas about substitution
+and weakening.
+
+-- Thorsten Altenkirch, 1993
+
+   (formalizing normalization of System F)
+\end{quote}
+\pause
+\begin{itemize}
+\item 20 years later: This proof still hasn't been done in a less painful way(?!)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Proof environments designed for the task}
+\begin{itemize}
+\item LF is well-suited for representing
+programming language syntax, logics and hypothetical
+judgments.
+\item Less clear how to formulate induction
+over HOAS representations
+\item Steep price: fairly weak logics (Twelf: $\forall\exists$; Beluga: better...)
+\item Abella: first order logic (weak)
+\item Hybrid, nominal logic, locally nameless, etc: less support for substitution
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Dependent type theory}
+\begin{itemize}
+\item Approaches to logics/languages for
+machine checked proofs: Higher order logic, set theory, and dependent
+type theory
+\item Dependent type theory comes equipped with a direct
+connection to computer programming.
+\item Rich environment supports both proofs and
+programs.
+\item A proof in dependent type theory is an algorithm
+\item Theory and implementation, hand in hand!
+\item Intensional dependent type theory includes a decidable equational theory
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Thesis}
+\begin{quote}Building a logical framework into dependent type
+theory is possible and makes mechanization of state-of-the-art programming
+language metatheory more effective.
+\end{quote}
+\begin{itemize}
+\pause
+\item Hopefully more generally: Learn some lessons on how
+to make mechanization of proofs outside of programming languages and
+logic more practical?
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Indexed recursive types}
+\begin{itemize}
+\item Adds LF-indexed recursive types [Cave and Pientka 2012]
+\item Proof theoretic strength: richer forms of induction
+\item Can express forms of predicates that LF can't e.g.
+\begin{itemize}
+\item certain subexpressions are \emph{closed}
+\item relations between contexts
+\end{itemize}
+\item Not ideal: relations between contexts are typically \emph{functional} relations: why not treat them as \emph{functions}
+\item \emph{Too much} strength: new ways to prove false!
+\end{itemize}
+\end{frame}
+
+\begin{frame}{First class substitutions}
+\begin{itemize}
+\item Special built-in type of substitutions with equational theory [Cave and Pientka 2013]
+\item Convenient for logical relations: need to quantify over ``closing substitutions''
+\begin{theorem}[Fundamental theorem]
+If $\Gamma \vdash M : A$ {\color{purple} and $\sigma \in \mathcal{R}_\Gamma$} then
+$[\sigma]M \in \mathcal{R}_A$.
+\end{theorem}
+\item New equations to solve: $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in fv(\sigma)$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Logical relations in contextual type theory}
+\begin{itemize}
+\item Completeness of algorithmic equality for STLC
+\item Proof is ``easy'': lemmas about substitutions are simple and few in number
+\item Lacks check that definitions are reasonable (positivity)
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Proposed work: ``Computation in types''}
+\begin{itemize}
+\item Fit into dependent type theory
+\item Supports computation in types
+\item e.g. concatenation of contexts, functions from contexts to contexts instead of relations
+% \item We can represent intrinsically well-typed object logics with inductive types, but it's repetitive to do define and prove properties of substitution for each object logic. Solution: Implement one, canonical forms LF, in which many others fit. (e.g. show intrinsically typed STLC?)
+% \item Refinement: Build this datatype and related operations into the theory so we can support an equational theory for it.
+% \item Resulting theory looks like \textbf{dependently typed} Beluga
+\item Support universes (``necessary'' to justify logical relations)
+% \item (predicative) polymorphism
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{The problem with first order encodings}
+\begin{verbatim}
+data exp (G : ctx) : tp -> Set where
+ v : var G T -> exp G T
+ app : exp G (arr T S) -> exp G T -> exp G S
+ lam : exp (G , T) S -> exp G (arr T S)
+\end{verbatim}
+\pause
+\begin{alltt}
+[_] : sub G' G -> exp G T -> exp G' T
+[_]' : sub G' G -> sub G D -> sub G' D
+\end{alltt}
+\pause
+\begin{alltt}
+lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
+lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
+lem3 : [ id ]' \(\sigma\) = \(\sigma\)
+lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
+...
+\end{alltt}
+This is tedious to do for each language we study!
+
+\end{frame}
+
+\begin{frame}{A solution?}
+\begin{itemize}
+\pause \item We know that LF works well to encode object languages...
+\pause \item So do this *once* for LF, and embed your OL inside
+\pause \item I've prototyped this in Agda
+\pause \item $>$48GB of memory to typecheck an example
+\pause \item And we still have to apply these lemmas manually and often compose several of them
+\pause \item Solution: build LF datatype into DTT and build lemmas into conversion check
+\pause \item Result: ``dependently typed Beluga''
+\pause \item Analyze LF objects by the induction principle you get from considering an inductive type representing LF
+\pause \item provides ``simple'' approach to semantics, termination (via eliminator for LF datatype)?
+\end{itemize}
+\end{frame}
+
+\begin{frame}{The metric for success}
+\begin{itemize}
+\item Algorithm for typechecking (decidability, soundness, completeness)
+\item Consequences: normalization, consistency
+\item Prototype implementation
+\item Formalize non-trivial proofs, e.g.
+\begin{itemize}
+\item C. Coquand's normalization proof for MLTT with a universe
+\item logical relation for contextual equivalence (parametricity)
+\item soundness and completeness of NbE
+\item normalization for System F?
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\end{document}
