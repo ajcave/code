@@ -64,7 +64,7 @@ and weakening.
 \end{quote}
 \pause
 \begin{itemize}
-\item This proof still hasn't been done in a less painful way(?!)
+\item 20 years later: This proof still hasn't been done in a less painful way(?!)
 \end{itemize}
 \end{frame}
 
@@ -74,7 +74,7 @@ and weakening.
 programming language syntax, logics and hypothetical
 judgments.
 \item Less clear how to formulate induction
-over LF representations
+over HOAS representations
 \item Steep price: fairly weak logics (Twelf: $\forall\exists$; Beluga: better...)
 \item Abella: first order logic (weak)
 \item Hybrid, nominal logic, locally nameless, etc: less support for substitution
@@ -150,12 +150,11 @@ $[\sigma]M \in \mathcal{R}_A$.
 \item Fit into dependent type theory
 \item Supports computation in types
 \item e.g. concatenation of contexts, functions from contexts to contexts instead of relations
-\item Analyze LF objects by the induction principle you get from considering an inductive type representing LF
 % \item We can represent intrinsically well-typed object logics with inductive types, but it's repetitive to do define and prove properties of substitution for each object logic. Solution: Implement one, canonical forms LF, in which many others fit. (e.g. show intrinsically typed STLC?)
 % \item Refinement: Build this datatype and related operations into the theory so we can support an equational theory for it.
 % \item Resulting theory looks like \textbf{dependently typed} Beluga
 \item Support universes (``necessary'' to justify logical relations)
-\item (predicative) polymorphism
+% \item (predicative) polymorphism
 \end{itemize}
 \end{frame}
 
@@ -179,18 +178,20 @@ lem3 : [ id ]' \(\sigma\) = \(\sigma\)
 lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
 ...
 \end{alltt}
+This is tedious to do for each language we study!
+
 \end{frame}
 
 \begin{frame}{A solution?}
 \begin{itemize}
-\item This is tedious to do for each language we study!
 \pause \item We know that LF works well to encode object languages...
 \pause \item So do this *once* for LF, and embed your OL inside
 \pause \item I've prototyped this in Agda
 \pause \item $>$48GB of memory to typecheck an example
 \pause \item And we still have to apply these lemmas manually and often compose several of them
 \pause \item Solution: build LF datatype into DTT and build lemmas into conversion check
-\pause \item Result: dependently typed Beluga
+\pause \item Result: ``dependently typed Beluga''
+\pause \item Analyze LF objects by the induction principle you get from considering an inductive type representing LF
 \pause \item provides ``simple'' approach to semantics, termination (via eliminator for LF datatype)?
 \end{itemize}
 \end{frame}
