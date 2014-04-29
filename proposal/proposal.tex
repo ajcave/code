@@ -254,7 +254,7 @@ Recursive types are suitable for programming, but they do not suffice
 if we are interested in proofs: need positivity. don't quite suffice
 for logical relations: need universe (large eliminations) to justify,
 since they aren't positive definitions.
-\subsection{First class substitutions}
+\subsection{First class substitutions}\label{sec:lfmtp13}
 Our work on first-class substitutions \citep{Cave13} allows
 abstraction over simultaneous (sometimes known as parallel)
 substitutions, which is a natural technique used in many proofs
@@ -353,9 +353,7 @@ kind of result about a dependent type theory also implies a few very
 important corollaries: consistency of the theory, as well as
 normalization of the calculus as a programming language.
 
-This proof is highly non-trivial. 
-
-This is ``Deep Theory''
+This proof is highly non-trivial. This is ``Deep Theory''
 
 technique for induction principle: induct over ``all of LF'' uniformly, permitting mutual definitions, etc.
 
@@ -365,6 +363,29 @@ technical results I am aiming to achieve: decidability
 Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
 
 Along lines of DML, ATS: specialized for metatheory. ``New equations for neutral terms'' \cite{Allais13}
+
+The second main component is to implement a prototype sufficient to
+check some non-trivial proofs. I am to formalize 
+
+\cite{Coquand} normalization proof for Martin-L\"of type theory with a universe
+
+soundness and completeness of a normalization by evaluation algorithm
+as presented by \cite{Dybjer00}. 
+
+These are substantial proofs which, to the best of my knowledge, have never been
+formalized in a proof assistant with sufficient support for
+substitution and binding. I aim to do these proofs because I have carried out these formalizations in
+Agda, with gaps in the proof pertaining to substitutions. I have found
+that these proofs are quite manageable once they are understood, with
+the main exception of substitutions, which, for these proofs, will be
+entirely handled by support for the equational theory of
+substitutions, as described in Section \ref{sec:lfmtp13}.
+
+If it turns out that such proofs will not work for some reason, there
+are alternative candidates to illustrate the point: a logical relation
+for contextual equivalence (parametricity) in the style of
+\cite{Dreyer11} or normalization for (perhaps a predicative variant
+of) System F \citep{ProofsAndTypes,Altenkirch93}.
 
 Logical step-indexed logical relations: \cite{Dreyer11}.
 
