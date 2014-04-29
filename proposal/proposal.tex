@@ -3,7 +3,12 @@
 \usepackage{color}
 \usepackage[pdftex, pdfborderstyle={/S/U/W 0}]{hyperref}
 \usepackage{amsmath}
+\usepackage{amsthm}
 \usepackage{amssymb}
+\usepackage{alltt}
+
+\newtheorem{theorem}{Theorem}
+
 \author{Andrew Cave}
 \title{Dependent type theory for contextual reasoning}
 
@@ -26,7 +31,11 @@ reasoning is by now quite well understood. Moreover, the abundance of cases mean
 tedious and error-prone to write and to verify by hand. Fortunately, it is now commonplace for proof
 assistants to not only check that all cases have been covered, but
 even to automatically generate the list of cases for the human prover
-to consider, so that constructing a proof becomes an interactive effort.
+to consider, so that constructing a proof becomes an interactive
+effort.
+
+\LONGVERSION{(proof carrying code? want to formalize your ``domain specific'' reasoning logic and mechanize
+its metatheory)}
 
 However, formalizing such proofs can still be tedious for at least one reason,
 namely giving a formal treatment of variable binding and
@@ -227,47 +236,143 @@ Recently, we have developed LF-indexed recursive types
 types. This was a first step in exploring how HOAS types can fit
 into a picture with traditional recursive (or inductive..) datatypes. 
 
+These increase the expressive power of the system: we can express
+predicates on LF objects which were inexpressible before: e.g. that
+certain subexpressions are closed (they do not refer to any free variables), and express relationships between
+contexts. Generally, it gives direct access to properties of
+contexts. This is in contrast to Abella and Delphin, and Twelf, which do not
+provide such direct access to the context.
+
+This is not ideal: typically, the relations between contexts were are
+interested in expressing are \emph{functional} relations. This means
+that often we are obligated to prove that they are deterministic and
+total. It would be substantially more convenient to treat them
+directly as functions, but this is not supported by the framework of
+indexed types. 
+
 Recursive types are suitable for programming, but they do not suffice
 if we are interested in proofs: need positivity. don't quite suffice
 for logical relations: need universe (large eliminations) to justify,
-since they aren't positive definitions/
+since they aren't positive definitions.
 \subsection{First class substitutions}
-Our work on first-class substitutions \citep{Cave13} identifies ...
-\LONGVERSION{This is precisely what is needed to support the fact that substitution
-is monadic \cite{?}}
+Our work on first-class substitutions \citep{Cave13} allows
+abstraction over simultaneous (sometimes known as parallel)
+substitutions, which is a natural technique used in many proofs
+(logical relations). For example, a typical logical relations proof
+takes a form like the following:
 
+\begin{quote}
+If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
+$[\sigma]M \in \mathcal{R}_A$.
+\end{quote}
 
-Develops decision procedure for a weaker setting: hereditiary
-substitution works well for indexed types, but it does not scale well
-to richer dependent types. 
+Here we have quantified over all substitutions $\sigma$ providing
+instantiations for all the free variables in $M$. This is a capability
+which is often not present in systems with rich support for
+substitutions, since the context $\Gamma$ is often ambient instead of
+available explicitly. 
+
+In such proofs, there is typically a need to
+prove equations about simultaneous substitutions, for example:
+$[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in
+fv(\sigma)$. Our work in \citep{Cave13} solves this issue by embedding
+a decision procedure for these sorts of equations into the proof checker.
+
+Our approach works well for the setting of indexed typed we develop,
+but it does not scale well to dependent types.
+
+In this work we give the first example of a logical relation proof.
 
 \subsection{Logical relations in contextual type theory}
-\citep{Cave14}
+We have developed a larger case study of a formalization\citep{Cave14}
 \subsection{Example}
 \section{Remaining to be done}
 \subsection{Computation in types}
-\begin{itemize}
-\item motivation
-\begin{itemize}
-\item richer tools (functions which compute instead of functional
-relations) for more effective proofs
-\item necessary to support state-of-the-art proofs involving polymorphism,
+My goal for the future is to integrate a logical framework into
+dependent type theory. This provides an avenue to solve several of the
+above mentioned issues:
+
+
+1) Expressing functional relations on contexts as genuine
+functions. Many other examples of ``computation in types''.
+
+2) An avenue for analyzing termination
+
+3) Justifying the reasonableness of logical relations (universes)
+
+4) Reuse understanding of inductive types
+
+This is necessary to support state-of-the-art proofs involving polymorphism,
 universes, ``generic programming'', dependent types, step indexing.
-\end{itemize}
-\item basic design sketch
-\begin{itemize}
-\item technique for induction principle: induct over ``all of LF'' uniformly, permitting mutual definitions, etc.
-\end{itemize}
-\item technical results I am aiming to achieve: decidability
+
+basic design sketch
+
+\begin{verbatim}
+data exp (G : ctx) : tp -> Set where
+ v : var G T -> exp G T
+ app : exp G (arr T S) -> exp G T -> exp G S
+ lam : exp (G , T) S -> exp G (arr T S)
+\end{verbatim}
+
+\begin{alltt}
+[_] : sub G' G -> exp G T -> exp G' T
+[_]' : sub G' G -> sub G D -> sub G' D
+\end{alltt}
+
+\begin{alltt}
+lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
+lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
+lem3 : [ id ]' \(\sigma\) = \(\sigma\)
+lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
+...
+\end{alltt}
+This is tedious to do for each language we study!
+
+We know that LF works well to encode object languages...
+
+So do this *once* for LF, and embed your OL inside
+
+I've prototyped this in Agda
+
+$>$48GB of memory to typecheck an example
+
+And we still have to apply these lemmas manually and often compose several of them
+
+Solution: build LF datatype into DTT and build lemmas into conversion check
+
+Result: ``dependently typed Beluga''
+
+Analyze LF objects by the induction principle you get from considering an inductive type representing LF
+
+provides ``simple'' approach to semantics, termination (via eliminator for LF datatype)?
+
+The goal is (success is measured by) an algorithm for typechecking,
+together with a proof of this algorithm's correctness: termination,
+soundness, and completeness. The standard technique for proving this
+kind of result about a dependent type theory also implies a few very
+important corollaries: consistency of the theory, as well as
+normalization of the calculus as a programming language.
+
+This proof is highly non-trivial. 
+
+This is ``Deep Theory''
+
+technique for induction principle: induct over ``all of LF'' uniformly, permitting mutual definitions, etc.
+
+technical results I am aiming to achieve: decidability
   of typechecking, (strong) normalization
-\item Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
-\end{itemize}
+
+Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
 
 Along lines of DML, ATS: specialized for metatheory. ``New equations for neutral terms'' \cite{Allais13}
 
 Logical step-indexed logical relations: \cite{Dreyer11}.
 
-intensional type theory is a language of verifiable evidence (McBride's term?)
+intensional type theory is a language of verifiable evidence
+(McBride's term?)
+
+Alternative approaches: may ask why a language design? aren't there
+already tools we can use to do this? e.g. proof by reflection, CoqMT, VeriML?
 \section{Timeline}
 \begin{itemize}
 \item Next 6 months: working out the metatheory and examples of computation in
