@@ -200,6 +200,7 @@ Definition of substitution with names:
 
 
 
+
 %``A domain-specific dependent type theory''
 
 % though actually this isn't the worst of it, the worst of it is
@@ -277,7 +278,46 @@ witnesses. (both beta and OL substitution equations)
 Spells out equality testing -- algorithm, not heuristic.
 
 
+\subsection{Conversion in type theory}
+A central issue in the design of a dependent type theory is
+conversion: when are two types deemed to be equal? In
+intensional type theories, conversion is decidable, but somewhat
+weak, typically including only $\beta$ laws and perhaps some $\eta$
+laws. There has been substantial work on the design and verification
+of algorithms for deciding increasingly richer theories, typically
+with more forms of $\eta$ laws. To take a
+small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
+\cite{Allais13} have developed promising techniques for incorporating equations
+which are neither $\beta$ nor $\eta$ laws, such as the associativity
+and unit laws for list append. It remains open to establish if 
+these techniques can be applied to rich dependent type theories.
 
+\section{Summary of progress to date}
+
+\subsection{Indexed recursive types}
+Recently, we have developed LF-indexed recursive types
+\citep{Cave12}, as a stepping stone to support LF-indexed inductive
+types. This was a first step in exploring how HOAS types can fit
+into a picture with traditional recursive (or inductive..) datatypes. 
+
+These increase the expressive power of the system: we can express
+predicates on LF objects which were inexpressible before: e.g. that
+certain subexpressions are closed (they do not refer to any free variables), and express relationships between
+contexts. Generally, it gives direct access to properties of
+contexts. This is in contrast to Abella and Delphin, and Twelf, which do not
+provide such direct access to the context.
+
+This is not ideal: typically, the relations between contexts were are
+interested in expressing are \emph{functional} relations. This means
+that often we are obligated to prove that they are deterministic and
+total. It would be substantially more convenient to treat them
+directly as functions, but this is not supported by the framework of
+indexed types. 
+
+Recursive types are suitable for programming, but they do not suffice
+if we are interested in proofs: need positivity. don't quite suffice
+for logical relations: need universe (large eliminations) to justify,
+since they aren't positive definitions.
 
 % \subsection{Contextual LF}\label{sec:clf}
 % Contextual LF extends the logical
@@ -665,44 +705,6 @@ Computation typing rules:
   \label{fig:typcomp}
 \end{figure}
 
-\subsection{Conversion in type theory}
-A central issue in the design of a dependent type theory is
-conversion: when are two types deemed to be equal? In
-intensional type theories, conversion is decidable, but somewhat
-weak, typically including only $\beta$ laws and perhaps some $\eta$
-laws. There has been substantial work on the design and verification
-of algorithms for deciding increasingly richer theories, typically
-with more forms of $\eta$ laws. To take a
-small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
-\cite{Allais13} have developed promising techniques for incorporating equations
-which are neither $\beta$ nor $\eta$ laws, such as the associativity
-and unit laws for list append. It remains open to establish if 
-these techniques can be applied to rich dependent type theories.
-
-\subsection{Indexed recursive types}
-Recently, we have developed LF-indexed recursive types
-\citep{Cave12}, as a stepping stone to support LF-indexed inductive
-types. This was a first step in exploring how HOAS types can fit
-into a picture with traditional recursive (or inductive..) datatypes. 
-
-These increase the expressive power of the system: we can express
-predicates on LF objects which were inexpressible before: e.g. that
-certain subexpressions are closed (they do not refer to any free variables), and express relationships between
-contexts. Generally, it gives direct access to properties of
-contexts. This is in contrast to Abella and Delphin, and Twelf, which do not
-provide such direct access to the context.
-
-This is not ideal: typically, the relations between contexts were are
-interested in expressing are \emph{functional} relations. This means
-that often we are obligated to prove that they are deterministic and
-total. It would be substantially more convenient to treat them
-directly as functions, but this is not supported by the framework of
-indexed types. 
-
-Recursive types are suitable for programming, but they do not suffice
-if we are interested in proofs: need positivity. don't quite suffice
-for logical relations: need universe (large eliminations) to justify,
-since they aren't positive definitions.
 \subsection{First class substitutions}\label{sec:lfmtp13}
 Our work on first-class substitutions \citep{Cave13} allows
 abstraction over simultaneous (sometimes known as parallel)
