@@ -818,24 +818,6 @@ expansion by induction on the type:
 \begin{lemma}[Closure under expansion]
 If $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
 \end{lemma}
-\LONGVERSION{
-\begin{proof}
-By induction on $A$.
-
-Case $A = \const i$: by Lemma \ref{lem:haltsclosed}.
-
-Case $A = B \arrow C$: by definition of $\mathcal{R}_A$ we have that $M'$
-halts. So by Lemma \ref{lem:haltsclosed} we have that
-$M$ halts.
-
-Suppose we are given $N \in \mathcal{R}_B$. Then by rule
-$\mathsf{app}$ we have that $M\; N \stepsto M'\; N$. By definition of
-$\mathcal{R}_{B \arrow C}$ we have that $M'\;N \in \mathcal{R}_C$. By
-the induction hypothesis, $M\;N \in \mathcal{R}_C$.
-
-Hence $M \in \mathcal{R}_{B \arrow C}$.
-\end{proof}
-}
 
 Our aim is to show that all well-typed closed terms are reducible, but as
 usual we must generalize to showing that all closed instantiations of
@@ -1300,11 +1282,11 @@ intensional type theory is a language of verifiable evidence
 Alternative approaches: may ask why a language design? aren't there
 already tools we can use to do this? e.g. proof by reflection, CoqMT, VeriML?
 \section{Timeline}
-\paragraph{Stage 1} Next 6 months (May 2014 to Nov 2014): working out the metatheory and examples of computation in
+\paragraph{Stage 1:  May 2014 to Nov 2014} working out the metatheory and examples of computation in
 types. Optimistically, a POPL paper in July. ESOP deadline in
 October. 
 
-\paragraph{Stage 2} 6 months (Nov 2014 to May 2014): prototype implementation and implementing examples
+\paragraph{Stage 2: Nov 2014 to May 2014} prototype implementation and implementing examples
 
  - Implementing examples is key to demonstrating the value of this
  approach. I have conducted many such proofs in Agda: There are three
@@ -1313,7 +1295,7 @@ October.
  indices 2) one of course needs to understanding the proofs 3)
  applying the equational theory of simultaneous substitutions. 1 and 2
  I have tackled, and 3 is still a burden: this is what I propose to address
-\paragraph{Stage 3} 6 months (May 2015 to Nov 2015): writing thesis.
+\paragraph{Stage 3: May 2015 to Nov 2015} writing thesis.
 
 backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
 optional piece: support for (and examples of) step-indexed logical relations
