@@ -6,8 +6,13 @@
 \usepackage{amsthm}
 \usepackage{amssymb}
 \usepackage{alltt}
+\usepackage{proof}
+\usepackage{listings}
+\input{notation}
 
+\newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
 
 \author{Andrew Cave}
 \title{Dependent type theory for contextual reasoning}
@@ -140,6 +145,9 @@ Definition of substitution with names:
   $y \neq x$}
 \end{eqnarray*}
 
+
+
+
 %``A domain-specific dependent type theory''
 
 % though actually this isn't the worst of it, the worst of it is
@@ -216,6 +224,397 @@ witnesses. (both beta and OL substitution equations)
 
 Spells out equality testing -- algorithm, not heuristic.
 
+
+
+
+% \subsection{Contextual LF}\label{sec:clf}
+% Contextual LF extends the logical
+% framework LF \citep{Harper93jacm} with the power of contextual objects
+% $\Psihat. M$ of type $A[\Psi]$. $M$ denotes an object which may refer to the
+% bound variables listed in $\Psihat$ and has type $A$ in the context
+% $\Psi$ (see also \citep{Nanevski:ICML05}).$\Psihat$ can be obtained from the
+% context $\Psi$ by simply dropping the type annotations and keeping only the
+% declared variable names. We characterize only objects in $\beta\eta$ normal
+% form, since these are the only meaningful objects in LF. Furthermore, we
+% concentrate here on characterizing well-typed terms, but defining kinds and
+% kinding rules for types is straightforward and omitted.
+%     \[ \begin{array}{lrcl}
+% %     \mbox{Sorts} & s & \bnfas & \ttype \mid \tkind
+%       \mbox{Atomic types} & P,Q & \bnfas & \app {\const a} {\vec M} \\ % \neutral{\const{a}}{S} \mid \Size \\
+% %      \mbox{Types/kinds} & A,B,K & \bnfas & \ttype \mid P \bnfalt \Pi x{:}A.B %
+% %      \mid \Pi x{:}\Size.B
+%       \mbox{Types} & A,B & \bnfas &  P \bnfalt \Pi x{:}A.B % \mid \Pi x{:}\Size.B
+% \\
+%       \mbox{Heads}  & H & \bnfas & x \bnfalt \const{c} \bnfalt
+%         p[\sigma] % \mid \const a 
+% \\
+%       \mbox{Neutral Terms} & R & \bnfas &  H \mid \app R N \bnfalt u[\sigma]  
+% \\                                   
+%       \mbox{Normal Terms} & M,N & \bnfas &  R  \mid \lam{x}{M}  
+% \\
+%      \mbox{Substitutions} & \sigma & \bnfas & \edot \bnfalt \id_\psi \bnfalt
+%      \sigma, M \bnfalt \sigma ; H \\ % \bnfalt s[\sigma]\\
+%       \mbox{Contexts} & \Psi & \bnfas & \edot \bnfalt \psi \bnfalt
+%       \Psi, x{:}A
+% % \\
+% % \mbox{Signature} & \Sigma & \bnfas & \cdot 
+% %   \bnfalt \Sigma, \const a{:}K 
+% %   \bnfalt \Sigma, \const c{:}A 
+% % \\[1ex]
+% \end{array}\]
+
+
+% \begin{center}
+%   \begin{tabular}{ll}
+% $\Delta ; \Psi \der M \chk A$ & Normal term $M$ checks against type $A$ \\
+% $\Delta ; \Psi \der R \syn A$ & Neutral term $R$ synthesizes type $A$ \\
+% $\Delta ; \Psi \der \sigma \chk \Psi'$ & Substitution $\sigma$ has domain $\Psi'$ and range $\Psi$. \\
+% % $\Delta ; \Psi    \der A \chk s$ & LF types and kinds are well-formed \\
+%   \end{tabular}
+% \end{center}
+
+% \begin{figure}
+% \[
+% \begin{array}{l}
+%      \mbox{Neutral Terms}\quad \fbox{$\Delta;\Psi \der R \syn A$}
+%       \hfill
+% \\[0.7em]
+%      % \quad
+%       % \infer{\Delta; \Psi \entails \const a \syn K}
+%       %       {\Sigma(\const a) = K}
+%       \quad
+%       \infer{\Delta; \Psi \entails x \syn A}
+%             {\Psi(x) = A}
+% \quad
+%       \infer{\Delta; \Psi \entails p[\sigma] \syn [\sigma]_\Phi A}
+%             {\Delta(p) = \# A[\Phi] & 
+%              \Delta; \Psi \entails \sigma \chk \Phi }
+%      \\[1em] 
+%       \infer{\Delta; \Psi \entails \const c \syn A}
+%             {\Sigma(\const c) = A}
+% \quad
+%      \infer{\Delta; \Psi \entails u[\sigma] \syn [\sigma]_{\Phi} P}
+%             {\Delta(u) = P[\Phi]  % & \Delta; \Psi \entails S :
+%               & \Delta ; \Psi \entails \sigma \chk \Phi }
+%       \\[1em]
+%       \infer{\Delta; \Psi \entails R\,M \syn [M/x]_A B 
+%            }{\Delta; \Psi \entails R \syn \Pi x{:}A.B &
+%              \Delta; \Psi \entails M \chk A}
+%       \quad
+% \\[1em]
+%       \mbox{Normal Terms}\quad\fbox{$\Delta;\Psi \der M \chk A$}\hfill
+% \\[0.7em]
+%       \infer{\Delta; \Psi \entails R \chk Q
+%            }{\Delta; \Psi \entails R \syn P & P = Q }
+%       \quad
+%       \infer{\Delta; \Psi \entails \lam{x}{M} \chk \Pi x{:}A.B}
+%             {\Delta; \Psi, x{:}A \entails M \chk B}
+%       \\[1em]
+%       \mbox{Substitutions}\quad\fbox{$\Delta;\Psi \der \sigma \chk
+%         \Psi'$} \hfill\\[0.5em]
+%       \infer{\Delta; \Psi \entails \edot \chk \edot}{}
+%       \quad
+%       \infer{\Delta; \Psi \entails \sigma ; H \chk \Phi,x{:}A}
+%             {\Delta; \Psi \entails \sigma \chk \Phi & \Delta ; \Psi \entails H \syn B & B = [\sigma]_{\Phi}A}
+%      \\[1em]
+%       \infer{\Delta; \psi,\Psi \entails \id_{\psi} \chk \psi}{}
+%       \quad
+%       \infer{\Delta; \Psi \entails \sigma , M \chk \Phi,x{:}A}
+%             {\Delta; \Psi \entails \sigma \chk \Phi & 
+%               \Delta; \Psi \entails M \chk [\sigma]_{\Phi} A}
+% \end{array}
+% \]
+% \caption{Typing for contextual LF}
+% \label{fig:lftyping}
+% \end{figure}
+
+%     \[ \begin{array}{lrcl}
+%  \mbox{Context schemas} & G & \bnfas & \exists \wvec{(x{:}A)} . B  \mid G + \exists \wvec{(x{:}A)} . B \\
+%       \mbox{Meta Objects} & C & \bnfas & \Psihat. R \bnfalt \Psi % \bnfalt \Psihat.\sigma
+% \\
+%       \mbox{Meta Types} & U & \bnfas & P[\Psi] \bnfalt \#A[\Psi] % \bnfalt \Psi[\Phi]
+%         \bnfalt G
+% \\ 
+% %      \mbox{Free variable contexts} & \Phi & \bnfas & \edot \bnfalt
+% %      \Phi, X:A\\
+%       \mbox{Meta substitutions} & \theta & \bnfas & \edot \bnfalt
+%         \theta, C / X
+% %        \bnfalt \theta, X  % BP: we need the identity to push theta through an mlam. where we do not
+%                            % have the type of X available to appropriately expand meta-variables.
+% \\    
+%   % \theta, \Psihat.R \bnfalt \theta, \Psihat.x  \bnfalt \theta ; q\\[0.5em]
+% \mbox{Meta-context} & \Delta & \bnfas & \edot \bnfalt 
+%    \Delta, X{:}U
+% %  \Delta, u{:}P[\Psi] \bnfalt \Delta, p{:}A[\Psi]  \bnfalt \Delta , \psi {:}W\\
+%     \end{array} \]
+
+
+% \begin{figure}
+%     \begin{rules}
+% \mbox{Meta Terms}\quad \fbox{$\Delta \der C \chk U$}
+% \hfill 
+% \\
+% \hfill\infer{\Delta \der {\cdot} \chk G}{}
+% \quad
+% \infer{\Delta \der \psi \chk G
+%      }{\Delta(\psi) = G}
+% \\[0.5em]
+% \infer{\Delta \der \Psi, x{:}A \chk G
+%      }{
+%        \begin{array}{l}
+%        \Delta \der \Psi \chk G 
+% \\        
+%        \exists \wvec{(x:B')}.B \in G \quad
+%        \Delta; \Psi \der \sigma \chk \wvec{(x{:}B')} \quad
+%        A = [\sigma]_{\wvec{(x:B')}} B 
+%        \end{array}
+%      } 
+% \\[1em]       
+% %\mbox{Meta-Terms}\hfill \\
+% \infer{\Delta \der \Psihat. \sigma \chk \Phi[\Psi]
+%      }{\Delta; \Psi \der \sigma \chk \Phi}
+% \quad
+% \infer{\Delta \der \Psihat. R \chk P[\Psi]
+%      }{\Delta; \Psi \der R \chk P}
+% \quad
+% \infer{\Delta \der \Psihat. x \chk \#A[\Psi]
+%      }{% \Delta;\Psi \der \Psi(x) = A : \ttype
+%          \Psi(x) = A}
+% \\[1em]
+% \infer{\Delta \der \Psihat. p[\pi] \chk \# B[\Psi] }{
+%        \Delta(p) = \# A[\Phi] & 
+% %       \Delta ; \Psi \der p[\sigma] \syn A &
+% & 
+% %       \Delta; \Psi \der A = B : \ttype
+%          \Delta ; \Psi \der \pi \chk \Phi &
+%          [\pi]_{\Phi}(A) = B
+%        }
+% %\\[0.5em]
+% %\mbox{where}\;\pi\;\mbox{is a variable substitution} 
+% \\[1em]
+% \mbox{Meta-Substitutions} \quad \fbox{$\Delta \der \theta \chk \Delta'$}\hfill \\[0.7em]
+% %\framebox[10cm]{
+% \infer{\Delta \vdash \cdot \chk \cdot}{} 
+% \quad
+% \infer{\Delta \der \theta, C/X \chk \Delta', X{:}U
+%      }{\Delta \der \theta \chk \Delta' &
+%        \Delta \der C \chk \msub{\theta}_{\Delta'}(U)
+%      }
+%    \end{rules}
+% \caption{Typing for meta-terms}
+% \label{fig:metatyping}
+% \end{figure}
+
+Computation level types:
+
+\[
+\begin{array}{l@{~}r@{~}c@{~}l}
+% \mbox{Recursive Type} & S & \bnfas & 
+%          C = C \bnfalt T 
+%   \bnfalt S_1 & S_2 
+%   \bnfalt S_1 + S_2  \bnfalt \exists X:U. S 
+%
+%  \\[2pt] 
+\mbox{Kinds} & K & \bnfas & \ctype \bnfalt \pibox X U K \\
+% \mbox{Type Constants} & F & \bnfas & \m{Unit} \bnfalt \arrow \bnfalt \times
+%                             \bnfalt \Pi \bnfalt \Sigma \bnfalt \mu \\
+% \mbox{Normal Types} & T  & \bnfas & \Lambda Z.T \bnfalt \lambda X.T 
+%                                     \bnfalt \dsum{\wvec{l : T}}  \bnfalt Q\\
+% &&& \bnfalt C_1 = C_2 \andalso T \bnfalt U \\
+% \mbox{Neutral Types} & Q & \bnfas & F \bnfalt Z \bnfalt Q\;T \bnfalt \bnfalt Q\;C 
+
+\mbox{Types} & T  & \bnfas & 
+        \m{Unit} 
+\bnfalt Z 
+\bnfalt T_1 \arrow T_2   
+\bnfalt  T_1 \times T_2 
+\bnfalt \dsum{\wvec{l : T}} 
+\\
+& & &   
+\bnfalt \pibox X U T 
+\bnfalt \sigmabox X U T 
+\bnfalt C_1 = C_2 \andalso T
+\\
+&&&    
+ \bnfalt \mu Z.\,\mlam {\vec X}  T 
+ \bnfalt T\;{\vec C} 
+% \bnfalt T\;C
+\bnfalt U
+% \mbox{Definition} & D & \bnfas & \lambda X.D \bnfalt \bnfalt \bnfalt T
+\\[2pt] %  
+\mbox{Context} & \Gamma & \bnfas & \cdot \bnfalt \Gamma, Z:K \bnfalt \Gamma, x:T
+\end{array}
+\]
+
+Computation level syntax:
+
+\[
+\begin{array}{l@{~}r@{~}c@{~}l}
+\mbox{Expressions} & I  & \bnfas & y 
+  \bnfalt \app I E % \bnfalt \fst I \bnfalt \snd I 
+  \bnfalt \app I \ctxi C 
+%  \bnfalt \unfold I
+   \bnfalt  (E : T)\\
+\mbox{~(synth.)} & & & 
+% \Bnfalt  \letpack{u}{x}{e}{e'}
+\\[2pt]
+\mbox{Expressions} & E & \bnfas &  I 
+%  \bnfalt \boxm{\Psihat}{R} 
+  \bnfalt C % \tbox\, C
+  \bnfalt \fn{y}{E}
+  \bnfalt \mlam{X}{E} 
+  \bnfalt \rec{f}{E} 
+  \bnfalt \m{unit}\\
+\mbox{~(checked)}& & &   \bnfalt \fold E  \bnfalt \dsum{l=E}   \bnfalt \pack (C , E) \\
+% & & &   \bnfalt \letpack {(X , y) = I} E
+&&&  \bnfalt (E_1, E_2) \bnfalt \casebox{I}{\vec{B}} \\
+\mbox{Pattern } & {pat} & \bnfas & x \bnfalt C \bnfalt \m{unit} \bnfalt \fold {pat} \bnfalt \dsum{l = {pat}} \\
+                         &          &            & \bnfalt \pack (C , {pat}) \bnfalt ({pat}_1, {pat}_2)\\
+\mbox{Branch  } & B  & \bnfas &  \casearm{\Delta ; \Gamma\;.\; pat : \theta}{E}
+%%&&& 
+%%                         \bnfalt \casearm{\Delta ; \Gamma\;.\;pat : \theta}{\impos} 
+\\[2pt]
+\mbox{Contexts} & \Gamma  & \bnfas &  \edot \bnfalt \Gamma, y{:}T \\
+\end{array}
+\]  
+
+Computation typing rules:
+
+\begin{figure}
+  \centering
+  \begin{small}
+\[
+\begin{array}{l}
+\multicolumn{1}{l}{\fbox{$\Delta;\Gamma \der I \syn T$}\quad
+\mbox{Expression $I$ synthesizes type $T$}}\hfill\\[0.8em]
+\infer{\Delta; \Gamma \entails y \syn T}
+      {y{:}T \in \Gamma} 
+\quad
+\infer{\Delta ; \Gamma \der I \syn T}{
+       \Delta ; \Gamma \der I \syn C = C \andalso T
+}
+ \\[0.8em]
+ ~~~
+\infer
+ {\Delta ; \Gamma \entails I\;E \syn T}{
+  \Delta ; \Gamma \entails I \syn T_2 \arrow T ~~&~~
+  \Delta ; \Gamma \entails E \chk T_2 }
+ \\[0.8em]
+ \quad
+\infer
+  {\Delta ; \Gamma \entails \app I \ctxi C \syn \msub{C/X}T}
+  {\Delta ; \Gamma \entails I \syn \pibox X U T
+    ~~&~~ 
+   \Delta \entails C \chk U }
+%\\[0.7em]
+\quad
+\infer
+   {\Delta ; \Gamma \entails (E : T) \syn T}
+   {\Delta ; \Gamma  \entails E \chk T }
+% \quad
+% \infer{\Delta ; \Gamma \der \unfold I \syn [T/Z]\msub{\vec C / \vec X}S}{
+%        \Delta ; \Gamma \der I \syn T\;{\vec C} & 
+%        T = \mu Z.\,\mlam {\vec X} S
+% }
+\\[0.7em]
+\multicolumn{1}{l}{\fbox{$\Delta;\Gamma \der E \chk T$}\quad
+\mbox{Expression $E$ checks against type $T$}}\\[0.8em]
+\infer{\Delta ; \Gamma \der \dsum{l_i=E_i} \chk \dsum{\wvec{l:T}}}
+      {\Delta ; \Gamma \der E_i \chk T_i\quad\mbox{where}~l_i:T_i \in \wvec{l:T}}
+% \\[0.8em]
+%\\[1em]
+\quad
+\infer %[\Delta = \vec X : \vec U(\vec X)]
+   {\Delta; \Gamma ~\entails~  \rec{f}{E} ~\chk~ T }
+   {\Delta ;  \Gamma, \, f : T
+     ~\entails~ E ~\chk~ T}
+\\[0.8em]
+\infer
+    {\Delta; \Gamma \entails  \fn{y}{E} \chk T_1 \arrow T_2}
+    {\Delta; \Gamma, y{:}T_1 \entails E \chk T_2 } 
+\quad
+% \\[0.8em]
+\infer
+ {\Delta ; \Gamma \entails \mlam{X}{E} \chk \Pibox X{:}U.T }
+ {\Delta, X{:}U ; \Gamma \entails E \chk T }
+\\[0.8em]
+%\quad
+\infer{\Delta ; \Gamma \der (E_1,E_2) \chk T_1 \times T_2}{
+       \Delta ; \Gamma \der E_1 \chk T_1 & 
+       \Delta ; \Gamma \der E_2 \chk T_2
+}
+\quad
+\infer
+  {\Delta ; \Gamma \entails I \chk T' }
+  {\Delta ; \Gamma \entails I \syn T & T = T'}
+%\\[0.8em]
+\\[0.8em]
+% \infer{\Delta ; \Gamma \der \inl E \chk T_l + T_r}{\Delta ; \Gamma \der E \chk T_l }
+% \quad
+%  \infer{\Delta ; \Gamma \der \inr E \chk T_l + T_r}{\Delta ; \Gamma \der E \chk T_r}
+% \\[1em]
+%\\[1em]
+\infer{\Delta ; \Gamma \der \pack (C , E) \chk \sigmabox X U T}{
+       \Delta \der C \chk U & 
+       \Delta ; \Gamma \der E \chk \msub{C/X}T
+}
+\quad
+ \infer{\Delta; \Gamma \entails % \tbox\,
+          C \chk U}
+       {\Delta \entails C \chk U }
+\\[0.8em]
+\infer{\Delta ; \Gamma \der \fold E \chk  (\mu Z. \mlam {\vec X}  S)\;{\vec C}}{
+%       T = \mu Z. \mlam {\vec X} . S& 
+       \Delta ; \Gamma \der E \chk [\mu Z. \mlam {\vec X} S/Z]\msub{\vec C/\vec X}S}
+%\quad
+\quad
+\infer{\Delta ; \Gamma \der E \chk C = C \andalso T}{
+       \Delta ; \Gamma \der E \chk T
+}
+\\[0.8em]
+% \infer{\Delta ; \Gamma \der \letpack {(X,y) = I} E \chk T}{
+%        \Delta ; \Gamma \der I \syn \sigmabox X U S & 
+%        \Delta, X{:}U ; \Gamma,y {:}S \der E \chk T
+% }
+% \\[1em]
+\infer
+   {\Delta; \Gamma \entails \casebox{I}{\vec B} \chk T }
+   {\Delta; \Gamma \entails I \syn S % T\;\vec C
+     &
+     \mbox{for all}~i~ 
+    \Delta; \Gamma \entails B_i  \chkbranch{S} T  %& 
+%    \Delta; \Gamma \entails B_r  \chkbranch{S_r} T  %& 
+%      \Delta; \Gamma \entails B_r  \chkbranch{S_r} T  
+} 
+\\[0.8em]
+\multicolumn{1}{l}{\fbox{$\Delta ; \Gamma \der B \chkbranch{S} T$}\quad
+\mbox{Branch $B$ with pattern of $S$ checks against $T$}} \\[0.8em]
+\infer
+  { \Delta ; \Gamma \entails \Delta_i ; \Gamma_i\,.\,{pat} : \theta_i \mapsto E \chkbranch{S} T}
+  {% () \not\in {pat} &
+%   \begin{array}{c}
+  \Delta_i  \entails  \theta_i  \chk \Delta  & 
+    \Delta_i ; \Gamma_i \der {pat} \chk \msub{\theta_i} S &
+    \Delta_i ; \msub{\theta_i}\Gamma, \Gamma_i \entails E \chk  \msub{\theta_i}T  
+   }
+%\\[1em]
+%\infer
+%  { \Delta ; \Gamma \entails \Delta_i ; \Gamma_i\,.\,{pat} : \theta_i \mapsto \impos \chkbranch{S} T}
+%  {() \in {pat} & \Delta_i ; \Gamma_i \der {pat} \chk \absurd \msub{\theta}S & 
+%   \Delta_i  \entails  \theta_i  \chk \Delta  }
+%\\[1em]
+%\end{array}
+%\]
+%\[
+%\begin{array}{l}
+\end{array}
+\]   
+  \end{small}
+%
+  \caption{Typing for computations}
+  \label{fig:typcomp}
+\end{figure}
+
 \subsection{Conversion in type theory}
 A central issue in the design of a dependent type theory is
 conversion: when are two types deemed to be equal? In
@@ -282,6 +681,460 @@ Our approach works well for the setting of indexed typed we develop,
 but it does not scale well to dependent types.
 
 In this work we give the first example of a logical relation proof.
+
+\subsection{Hand written proof}
+
+We begin by illustrating a typical logical relations proof of weak
+normalization for a simply typed lambda calculus to recap the encoding
+of formal systems and proofs in Beluga, and to emphasize the
+applications of a first-class notion of substitution.
+
+
+The grammar is straightforward: it includes lambda abstractions, variables, application, and a single
+constant of a constant type $\const i$. Lambda abstractions and the
+constant $\const c$ are considered values.
+
+\newcommand{\stepsto}{\longrightarrow}
+
+\[
+\begin{array}{lrcl}
+\mbox{Types} & A,B & \bnfas & {\const i} \bnfalt A \arrow B \\
+\mbox{Terms} & M,N & \bnfas & {\const c} \bnfalt x \bnfalt \lam x M \bnfalt M\;N \\
+\mbox{Values} & V & \bnfas & {\const c} \bnfalt \lam x M
+\end{array}
+\]
+
+The typing rules are standard and use the judgment $\Gamma \vdash M : A$ where
+$\Gamma$ describes a typing context.
+
+\[
+\begin{array}{l}
+\infer{\Gamma \vdash x : A}{\Gamma(x) = A}
+\quad
+\infer{\Gamma \entails \lam x M : A \arrow B}
+      {\Gamma,x{:}A \der M : B}
+\\[0.4em]
+\infer{\Gamma \entails {\const c} : {\const i}}{}
+\quad
+\infer{\Gamma \entails M\; N : B}
+      {\Gamma \entails M : A \arrow B & \Gamma \entails N : A}
+\end{array}
+\]
+
+We then define a form of weak head reduction with transitivity and
+reflexivity built in, simply because it is compact
+and convenient for this proof.
+
+\[
+\begin{array}{l}
+\infer[\mathsf{refl}]{M \stepsto M}{}
+\quad
+\infer[\mathsf{trans}]{M \stepsto N}{M \stepsto M' & M' \stepsto N}
+\\[0em]
+\infer[\mathsf{beta}]{(\lam x M) N \stepsto [N/x]M}{}
+\quad
+\infer[\mathsf{app}]{M\;N \stepsto M'\;N}{M \stepsto M'}
+\end{array}
+\]
+
+We say that a term $M$ halts if there exists a value $V$ such that $M
+\stepsto V$.
+
+\begin{lemma}[Halts is closed under expansion]\label{lem:haltsclosed}
+If $M'$ halts, and $M \stepsto M'$ then $M$ halts.
+\end{lemma}
+
+We can now define the notion of reducibility which is typical for logical
+relations proofs. A term is reducible at base type precisely
+when it halts. A term $M$ is reducible at arrow type $A \arrow B$ when it halts, and
+for every reducible $N$ at type $A$, the application of $M$ to $N$ is
+reducible at type $B$.
+
+\[
+\begin{array}{l}
+\mathcal{R}_{\const i} = \{M\; |\; M \text{ halts}\} \\
+\mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } \forall N
+\in \mathcal{R}_A, (M\; N) \in \mathcal{R}_B \}
+\end{array}
+\]
+
+It is trivial from the definition that if a term $M$ is reducible at
+some type $A$, then it halts. One can easily prove that
+$\mathcal{R}_A$ is closed under
+expansion by induction on the type:
+
+\begin{lemma}[Closure under expansion]
+If $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
+\end{lemma}
+\LONGVERSION{
+\begin{proof}
+By induction on $A$.
+
+Case $A = \const i$: by Lemma \ref{lem:haltsclosed}.
+
+Case $A = B \arrow C$: by definition of $\mathcal{R}_A$ we have that $M'$
+halts. So by Lemma \ref{lem:haltsclosed} we have that
+$M$ halts.
+
+Suppose we are given $N \in \mathcal{R}_B$. Then by rule
+$\mathsf{app}$ we have that $M\; N \stepsto M'\; N$. By definition of
+$\mathcal{R}_{B \arrow C}$ we have that $M'\;N \in \mathcal{R}_C$. By
+the induction hypothesis, $M\;N \in \mathcal{R}_C$.
+
+Hence $M \in \mathcal{R}_{B \arrow C}$.
+\end{proof}
+}
+
+Our aim is to show that all well-typed closed terms are reducible, but as
+usual we must generalize to showing that all closed instantiations of
+a well-typed open term are reducible. For this we need the notion of a
+simultaneous substitution, and to define reducibility of
+substitutions. If $\sigma = M_1/x_1,M_2/x_2,...,M_n/x_n$, we say
+$\sigma$ is reducible at context $\Gamma = x_1{:}A_1,...,x_n{:}A_n$ if
+each $M_i$ is reducible at $A_i$, i.e. $M_i \in \mathcal{R}_{A_i}$. We
+write this as $\sigma \in \mathcal{R}_\Gamma$. We can now state the main
+lemma:
+
+\begin{lemma}[Main lemma]\label{lem:main}
+If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
+$[\sigma]M \in \mathcal{R}_A$.
+\end{lemma}
+\begin{proof}
+By induction on the typing derivation. 
+We show only the interesting case:
+
+\begin{enumerate}
+\item $[\sigma]M \in \mathcal{R}_{A \arrow B}$ and $[\sigma]N \in
+  \mathcal{R}_A$ (by I.H.)
+\item For any $N' \in \mathcal{R}_A$ we have
+  $([\sigma]M)\;N' \in \mathcal{R}_B$ (by def of $\mathcal{R}$)
+\item Hence $([\sigma]M)\;([\sigma]N) \in \mathcal{R}_B$ as required.
+\end{enumerate}
+
+Case $\begin{array}{l}\infer{\Gamma \der \lam x M : A \arrow
+    B}{\Gamma,x{:}A \der M : B}\end{array}$:
+
+First, $[\sigma](\lam x M) = \lam x ([\sigma,x/x]M)$ halts, since it
+is a value. Suppose then that we are given $N \in \mathcal{R}_A$.
+
+\begin{enumerate}
+\item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H.)
+\item $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (properties of
+  substitution)
+\item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
+  under expansion)
+\end{enumerate}
+Hence $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ (by definition)
+\end{proof}
+
+\begin{corollary}[Weak normalization]
+If $\der M : A$ then $M$ halts.
+\end{corollary}
+\begin{proof}
+By the main lemma, we have that $[\cdot]M\in \mathcal{R}_A$
+and hence that $[\cdot]M (= M)$ halts.
+\end{proof}
+
+We wish to draw attention to the use of properties of simultaneous substitutions in the main
+lemma and its corollary. These properties are typically the source of
+the most overhead when formalizing results using various low level
+representations of variables and variable binding. However, we will
+illustrate that these properties are immediate in our framework, as
+the equational theory of (simultaneous) substitutions is built into
+our type theory.
+
+\subsection{Encoding in Beluga}\label{sec:belugaweaknorm}
+
+Here we demonstrate the particularly elegant encoding of this proof in Beluga using first
+class (simultaneous) substitutions. By hand we defined grammar and
+typing separately, but here it is actually more convenient to define
+intrinsically typed terms directly. Below, \lstinline{tm} defines our family of simply-typed lambda
+terms indexed by their type as an LF signature. In typical higher-order abstract syntax fashion, lambda
+abstraction takes a \emph{function} representing the abstraction of a
+term over a variable. There is no case for variables, as they are
+treated implicitly. We remind the reader that this is a weak, representational function space
+-- there is no case analysis or recursion, and hence only genuine
+lambda terms can be represented.
+
+\begin{lstlisting}
+tp  : type.               
+i   :  tp.
+arr : tp -> tp -> tp.
+
+tm  : tp -> type.
+app : tm (arr A B) -> tm A -> tm B.
+lam : (tm A -> tm B) -> tm (arr A B).
+c   : tm i.
+\end{lstlisting}
+
+We can then encode our step relation in a similar fashion below. Notice in
+particular we use LF's notion of substitution to encode the
+object-level substitution in the \lstinline{s/beta} case.
+
+\begin{lstlisting}
+mstep  : tm A -> tm A -> type.
+s/beta : mstep (app (lam M) N) (M N).
+s/app  : mstep M M' -> mstep (app M N) (app M' N).
+s/refl : mstep M M.
+s/trans: mstep M M' -> mstep M' N -> mstep M N.
+\end{lstlisting}
+
+We define a predicate on terms expressing what it means to be a value:
+again, the constant \lstinline{c} and lambda abstractions are our values.
+
+\begin{lstlisting}
+val     : tm A -> type.
+val/c   : val c.
+val/lam : val (lam M).
+\end{lstlisting}
+
+A term halts if it reduces to a value. In the following, \lstinline{M'} is
+implicitly universally quantified by the constructor
+\lstinline{h/val}, and so this has the effect of encoding the
+existential statement ``There exists a value $M'$ that $M$ steps to''.
+As in Twelf \citep{Pfenning99cade}, type reconstruction infers types for any free
+variable in a given type or kind declaration and implicitly quantifies over
+them. Programmers subsequently do not need to supply arguments for implicitly
+quantified variables.
+
+\begin{lstlisting}
+halts : tm A -> type.
+h/val : mstep M M' -> val M' -> halts M.
+\end{lstlisting}
+
+Reducibility cannot be directly encoded at the LF layer, since it
+involves a strong, computational function space. Hence we move to the
+computation layer of Beluga, and employ an
+indexed recursive type, as defined by \cite{Cave:POPL12}. Contextual LF objects
+and contexts which are embedded into computation-level types and programs are 
+written inside \lstinline![  ]!. 
+
+Once again, a term of type \lstinline{i} is reducible if it halts, and a term
+\lstinline{M} of
+type \lstinline{arr A B} is reducible if it halts, and moreover for every
+reducible \lstinline{N} of type \lstinline{A}, the application
+\lstinline{app M N} is reducible. We write \lstinline!{N:[.tm A]}!
+for explicit $\Pi$-quantification over \lstinline{N}, a closed term of type
+\lstinline!A!. To the left of the dot in \lstinline{[.tm A]} is where
+one writes the context the term is defined in -- in this case, it is empty.
+
+\begin{lstlisting}
+datatype Reduce : {A:[.tp]} {M:[.tm A]} ctype =
+| I   : [. halts M] -> Reduce [. i] [. M]
+| Arr : [. halts M] ->
+       ({N:[.tm A]} Reduce [. A] [. N]
+           -> Reduce [. B] [. app M N])
+     -> Reduce [. arr A B] [. M];
+\end{lstlisting}
+
+In this definition, the arrows represent the usual computational
+function space, not the weak function space of LF. We note that this
+definition is not (strictly) positive, since \lstinline{Reduce}
+appears to the left of an arrow in the \lstinline{Arr} case. Allowing unrestricted such definitions
+destroys the soundness of our system. Here we note that this
+definition is stratified by the type: the recursive occurences of
+\lstinline{Reduce} are at types \lstinline{A} and \lstinline{B} which
+are smaller than \lstinline{arr A B}. This is how one justifies its
+existence. Beluga does not currently perform either a positivity check
+or a stratification check, so in the present we must convince ourselves that this
+predicate is well-defined. In Coq \citep{bertot/casteran:2004} and Agda
+\citep{Norell:phd07} one typically justifies such definitions using
+large elimination, which Beluga does not currently support.
+
+The next step we elided in the handwritten proof. It is a trivial
+lemma showing that halts is closed under expansion. Proofs in Beluga are written as recursive
+functions, analyzing the construction of the underlying LF objects,
+making recursive calls for appeals to the induction hypothesis. Here, we proceed by
+unboxing and pattern matching on our arguments to extract the witness of the existential and
+rebuilding them, appealing to transitivity of
+\lstinline{mstep}.
+
+% \LONGVERSION{
+\begin{lstlisting}
+rec haltsClosed : [. mstep M M'] -> [. halts M']
+ -> [. halts M] =
+fn ms => fn h =>
+ let [. h/val MS' V] = h in
+ let [. MS] = ms in
+ [. h/val (trans MS MS') V];
+\end{lstlisting}
+% }
+
+%\SHORTVERSION{
+%\begin{lstlisting}
+%rec haltsClosed : [.mstep M M'] -> [. halts M'] -> [. halts M]
+%\end{lstlisting}
+%}
+
+The trivial fact that reducible terms halt has a corresponding trivial
+proof, analyzing the construction of the the proof of
+\lstinline{Reduce [.A] [.M]}:
+
+% \LONGVERSION{
+\begin{lstlisting}
+rec cr1 : Reduce [.A] [.M] -> [. halts M] =
+fn r => case r of
+| I h => h
+| Arr h f => h;
+\end{lstlisting}
+% }
+
+%\SHORTVERSION{
+%\begin{lstlisting}
+%rec cr1 : Reduce [.A] [.M] -> [. halts M]
+%\end{lstlisting}
+%}
+
+Next we prove closure of \lstinline{Reduce} under expansion. This
+follows the handwritten proof, proceeding by induction on the type \lstinline{A} which is
+an implicit argument. In the base case we appeal to
+\lstinline{haltsClosed}, while in the \lstinline{Arr} case we must
+also appeal to the induction hypothesis at the range type, going
+inside the function position of applications.
+
+\begin{lstlisting}
+rec closed : [. mstep M M'] -> Reduce [.A] [.M'] -> Reduce [.A] [.M] =
+fn ms => fn r => case r of
+| I h => I (haltsClosed ms h)
+| Arr h f => let [.MS] = ms in
+  Arr (haltsClosed ms h)
+  (mlam N => fn rn =>
+   closed [. s/app MS] (f [. N] rn));
+\end{lstlisting}
+
+Note that we overload $\lambda$; here we use \lstinline!mlam!-abstractions when
+abstracting over an index argument explicitely, while we use
+\lstinline!fn!-abstraction when abstracting 
+over a computation-level variable. 
+Now we arrive at the part of the proof requiring simultaneous
+substitutions. First we define a schema for contexts, describing a
+type of contexts which contains only (typed) term assumptions:
+
+\begin{lstlisting}
+schema ctx = tm T;
+\end{lstlisting}
+
+Schema declarations are similar to world
+declarations in Twelf \citep{Pfenning99cade}. In the example above, 
+\lstinline{ctx} classifies contexts which contain instances of \lstinline!tm T!;
+for example, \lstinline!x:tm i, y: tm (arr i i), w: tm i! is a well-formed
+context of schema \lstinline!ctx!. 
+
+We now must state precisely what it means for a substitution to be
+reducible. We do this by employing another indexed recursive type: a predicate
+expressing that the substitution was built up as a list of reducible
+terms. The notation \lstinline{#S} stands for a substitution
+variable. Its type is written \lstinline{g[]}, meaning that it has
+domain \lstinline{g} and empty range, i.e. it takes variables in
+\lstinline{g} to closed terms of the same type. In the base case, the
+empty substitution is reducible. In the \lstinline{Cons} case, we read
+this as saying: if \lstinline{#S} is a reducible substitution
+(implicitly at type \lstinline{g[]}) and \lstinline{M} is a reducible
+term at type \lstinline{A}, then \lstinline{#S} with \lstinline{M}
+appended is a reducible substitution (implicitly at type
+\lstinline{(g,x:tm A)[]} -- the domain has been extended with a
+variable of type \lstinline{A}).
+
+\begin{lstlisting}
+datatype RedSub : (g:ctx){#S:g[]} ctype =
+| Nil : RedSub [. ^$\,$ ]
+| Cons : RedSub [. #S] -> Reduce [.A] [.M] -> RedSub [. #S M ];
+\end{lstlisting}
+% \bpcomment{AC: Juxtaposition is too overloaded...}
+% -bp : Yes, it is overloaded, but it is also disambiguiated by using
+% capitalization; we may need to find a better solution in practice ...
+
+We implicitly quantify over the context \lstinline!g! by using round
+parenthesis writing \lstinline!(g:ctx)!; we explictly quantify over substitution
+variables using curly braces writing \lstinline!{#S:g[]}!. 
+
+The main fact that we need about this definition is that if a
+substitution \lstinline{#S} is reducible, then looking up a variable
+\lstinline{#p} in it produces something reducible. The hash in front
+of \lstinline{#p} distinguishes it as a \emph{parameter} variable,
+i.e. standing for an object-level variable. To clarify,
+\lstinline{#p #S} is notation for applying the substitution
+\lstinline{#S} to the variable \lstinline{#p} -- informally,
+$\sigma(x)$. The proof proceeds by analyzing the variable. If it is
+the top variable of the context, the proof that \lstinline{#p #S} is
+reducible is the one at the top. Otherwise, we continue inductively
+looking in the prefix of the context. The case of an empty context is
+impossible, as there are no variables in the empty context.
+
+\begin{lstlisting}
+rec lookup : {g:ctx}{#p:[g.tm A]} RedSub [. #S] -> Reduce [.A] [. #p #S] =
+mlam g => mlam #p => fn rs =>
+case [g. #p ..] of
+ | [g',x:tm A. x] => let Cons rs' rN = rs in rN
+ | [g',x:tm A. #q ..] => let Cons rs' rN = rs in lookup [g'] [g'. #q ..] rs';
+\end{lstlisting}
+
+In the above, we write \lstinline{..} for the identity substitution
+associated with a context variable. In particular, when we write
+\lstinline{[g',x:tm A. #q ..]}, this means that \lstinline{#q} is a
+parameter variable defined in \lstinline{g'}, and hence is not
+\lstinline{x}. If we wished to allow it to be x, we would instead
+write \lstinline{#q .. x}, where now \lstinline{.. x} is the expanded identity
+substitution for the context \lstinline{g',x:tm A}. One may choose to
+think of the \lstinline{..} in this instance as a
+shift. Operationally, when we have a concrete variable for
+\lstinline{#p}, this pattern performs a check to see if the variable
+is in the image of the \lstinline{..} pattern substitution, i.e. if it is not
+the top variable \lstinline{x}.
+
+Finally, our main lemma is standard and takes the form we would expect
+from the handwritten proof: if \lstinline{M} is a well-typed
+term, and we provide a reducible substitution \lstinline{#S} with closed
+instantiations for each of the free variables of \lstinline{M}, then
+\lstinline{M #S} (that is, the application of \lstinline{#S} to
+\lstinline{M}) is reducible. We proceed by induction on the term. When
+it is a variable, we appeal to \lstinline{lookup}. When it is an
+application, we straightforwardly apply the functional argument we obtain
+from the induction hypothesis for \lstinline{M1} to the induction
+hypothesis for \lstinline{M2}. The \lstinline{lam} case is the most
+interesting. Clearly the lambda abstraction halts, as it is a value. To show
+that 
+applying it to any reducible term is reducible, we appeal directly to
+closure under expansion, and the induction hypothesis for
+\lstinline{M1} with the substitution extended with
+\lstinline{N}. Recall that \lstinline{rN} is a proof that
+\lstinline{N} is reducible. We write \lstinline!_ ! for the type of the variable
+\lstinline!x! and let reconstruction infer it.
+
+\begin{lstlisting}
+rec main : {g:ctx}{M:[g.tm A]} RedSub [. #S] 
+         -> Reduce [.A] [. M #S] =
+mlam g => mlam M => fn rs => case [g. M ..] of
+| [g. #p ..] => lookup [g] [g. #p ..] rs
+
+| [g. lam (\x. M1 .. x)] =>
+  Arr [. h/val s/refl val/lam]
+   (mlam N => fn rN => closed [. s/beta]
+    (main [g,x:tm _] [g,x. M1 .. x] (Cons rs rN)))
+
+| [g. app (M1 ..) (M2 ..)] =>
+  let Arr h f = main [g] [g. M1 ..] rs in
+  f [._] (main [g] [g. M2 ..] rs)
+
+| [g. c] => I [. h/val s/refl val/c];
+\end{lstlisting}
+
+Notably, we did not have to concern
+ourselves with the property of substitutions that we wrote explicitly
+in the paper proof in the \lstinline{lam} case. Using a low-level representation
+of substitution (e.g. de Bruijn indices) one must prove $[\sigma,N/x]M = [N/x][\sigma,x/x]M$
+(where $x \not\in \FV(\sigma)$) by hand, and this is actually a large
+bulk of the proof. We will see that in our setting, it is handled automatically
+by normalization during typechecking: the normal
+form of both sides of this equation is $[\sigma,N/x]M$.
+
+Weak normalization is now a trivial corollary, taking \lstinline{M} to be a closed term and
+\lstinline{#S} to be the empty substitution:
+
+\begin{lstlisting}
+rec weakNorm : {M:[. tm A]} [. halts M] =
+mlam M => cr1 (main [] [. M] Nil);
+\end{lstlisting}
 
 \subsection{Logical relations in contextual type theory}
 We have developed a larger case study of a formalization
