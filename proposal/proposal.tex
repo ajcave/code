@@ -8,6 +8,58 @@
 \usepackage{alltt}
 \usepackage{proof}
 \usepackage{listings}
+\lstloadlanguages{ContextualML}
+\lstset{language=ContextualML}  % Added to local lstlang2.sty
+
+\renewcommand{\t}[1]{{\fontsize{1.0\zzlistingsize}{1.05\zzlistingsize}\texttt{#1}}}
+% Set up listings "literate" keyword stuff (for \lstset below)
+\newdimen\zzlistingsize
+\newdimen\zzlistingsizedefault
+\zzlistingsizedefault=9pt
+\zzlistingsize=\zzlistingsizedefault
+\global\def\InsideComment{0}
+\newcommand{\Lstbasicstyle}{\fontsize{\zzlistingsize}{1.05\zzlistingsize}\ttfamily}
+\newcommand{\keywordFmt}{\fontsize{0.9\zzlistingsize}{1.0\zzlistingsize}\bf}
+\newcommand{\smartkeywordFmt}{\if0\InsideComment\keywordFmt\fi}
+\newcommand{\commentFmt}{\def\InsideComment{1}\fontsize{0.95\zzlistingsize}{1.0\zzlistingsize}\rmfamily\slshape}
+
+\newcommand{\LST}{\setlistingsize{\zzlistingsizedefault}}
+
+\newlength{\zzlstwidth}
+\newcommand{\setlistingsize}[1]{\zzlistingsize=#1%
+\settowidth{\zzlstwidth}{{\Lstbasicstyle~}}}
+\setlistingsize{\zzlistingsizedefault}
+\lstset{literate={->}{{$\rightarrow~$}}2 %
+                 {=>}{{$\Rightarrow~$}}2 %
+                 {id}{{{\smartkeywordFmt id}}}1 % 3 $~$
+                 {\\}{{$\lambda$}}1 %
+                 {\\Pi}{{$\Pi$}}1 %
+                 {\\Sigma}{{$\Sigma$}}1 %
+                 {\\Pibox}{{$\Pibox$}}1 %
+                 {\\psi}{{$\psi$}}1 %
+                 {\\phi}{{$\phi$}}1 %
+                 {\\sigma}{{$\sigma$}}1 %
+                 {\\gamma}{{$\gamma$}}1 %
+%                 {mlam}{{$\lambda^{\scriptscriptstyle\Box}$}}1 %
+                 {mlam}{{$\lambda$}}1 %
+                 {FN}{{$\Lambda$}}1 %
+                 {<<}{\color{dGreen}}1 %
+                 {>>}{\color{black}}1 %
+                 {^}{{$\cdot$}}1 %
+               ,
+               columns=[l]fullflexible,
+               basewidth=\zzlstwidth,
+               basicstyle=\Lstbasicstyle,
+               keywordstyle=\keywordFmt,
+               identifierstyle=\relax,
+%               stringstyle=\relax,
+               commentstyle=\commentFmt,
+               breaklines=true,
+               breakatwhitespace=true,   % doesn't do anything (?!)
+               mathescape=true,   % interprets $...$ in listing as math mode
+%               tabsize=8,
+               texcl=false}
+
 \input{notation}
 
 \newtheorem{lemma}{Lemma}
