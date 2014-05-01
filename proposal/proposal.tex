@@ -510,12 +510,6 @@ Computation level types:
 %
 %  \\[2pt] 
 \mbox{Kinds} & K & \bnfas & \ctype \bnfalt \pibox X U K \\
-% \mbox{Type Constants} & F & \bnfas & \m{Unit} \bnfalt \arrow \bnfalt \times
-%                             \bnfalt \Pi \bnfalt \Sigma \bnfalt \mu \\
-% \mbox{Normal Types} & T  & \bnfas & \Lambda Z.T \bnfalt \lambda X.T 
-%                                     \bnfalt \dsum{\wvec{l : T}}  \bnfalt Q\\
-% &&& \bnfalt C_1 = C_2 \andalso T \bnfalt U \\
-% \mbox{Neutral Types} & Q & \bnfas & F \bnfalt Z \bnfalt Q\;T \bnfalt \bnfalt Q\;C 
 
 \mbox{Types} & T  & \bnfas & 
         \m{Unit} 
@@ -527,11 +521,11 @@ Computation level types:
 & & &   
 \bnfalt \pibox X U T 
 \bnfalt \sigmabox X U T 
-\bnfalt C_1 = C_2 \andalso T
+\bnfalt {\color{blue} C_1 = C_2 \andalso T}
 \\
 &&&    
- \bnfalt \mu Z.\,\mlam {\vec X}  T 
- \bnfalt T\;{\vec C} 
+ \bnfalt {\color{blue} \mu Z.\,\mlam {\vec X}  T}
+ \bnfalt {\color{blue} T\;{\vec C} }
 % \bnfalt T\;C
 \bnfalt U
 % \mbox{Definition} & D & \bnfas & \lambda X.D \bnfalt \bnfalt \bnfalt T
@@ -556,8 +550,9 @@ which lists both term variables and type variables to a corresponding
 context which lists only the type variables (e.g. when representing
 System F). Below we write this relation in surface syntax and the
 corresponding form in the core theory. This is a typical example of
-functional relation: in proofs, we will often be obligated to prove
-that it is total and deterministic.
+functional relation. We will often be obligated to prove manually
+that it is total and deterministic, which would be unnecessary if it
+was represented directly as a function. 
 
 % \begin{lstlisting}
 % datatype ctx_rel : ctx -> cctx -> ctype
@@ -595,6 +590,12 @@ y{:}\m{tp} \\
 
 \end{array}
 \]
+
+\begin{eqnarray*}
+|-| & : & \text{tmctx} \rightarrow \text{tpctx} \\
+| \psi , x:\text{tm} | & = & | \psi | \\
+| \psi , a:\text{tp} | & = & | \psi | , a:\text{tp}
+\end{eqnarray*}
 
 Computation level syntax:
 
@@ -1232,7 +1233,124 @@ mlam M => cr1 (main [] [. M] Nil);
 We have developed a larger case study of a formalization
 \citep{Cave14} of a logical relations proof using the techniques of
 \citep{Cave12} and \citep{Cave13}.
-\subsection{Example}
+
+I want to draw attention to the aspects of this proof which make it
+challenging to formalize and not worry too much about the details of
+the proof. (ditto for the logical relations proof above)
+
+In this
+section we give a brief overview of the motivation and high level structure of
+the completeness proof of algorithmic equality. For more detail, we refer the
+reader to \cite{Crary:ATAPL} and \cite{Harper03tocl}. Extensions of 
+this proof are important for the metatheory of dependently typed systems such as
+LF and varieties of Martin-L\"of 
+Type Theory, where they are used to establish decidability of typechecking. The proof concerns three judgements:
+
+\begin{center}
+  \begin{tabular}{@{}l@{~~~}l@{}}
+$\Gamma \vdash M \equiv N : A$ & terms M and N are declaratively equivalent at
+type $A$ \\
+$\Gamma \vdash M \Leftrightarrow N : A$ & terms M and N are
+algorithmically equivalent at type $A$ \\
+$\Gamma \vdash M \leftrightarrow N : A$ & paths M and N are
+algorithmically equivalent at type $A$ \\
+  \end{tabular}
+\end{center}
+
+Declarative equivalence (also called definitional equality) includes convenient but non-syntax directed rules
+such as transitivity and symmetry, among rules for congruence,
+extensionality and $\beta$-contraction. We will see the full definition
+in Sec. \ref{sec:mechanization}. In particular, it may include
+apparently type-directed rules such as extensionality at unit type:
+
+$$
+\infer{\Gamma \vdash M \equiv N : \mathrm{Unit}}{\Gamma \vdash M : \mathrm{Unit} &
+  \Gamma \vdash N : \mathrm{Unit}}
+$$
+
+We do not consider such a rule in our development. For our present
+purpose it merely adds uninteresting cases to the proof. However, such a rule
+motivates the use of algorithmic type-directed equivalence. The rule
+above relies on type information and hence the usual normalize-and-compare strategy
+for deciding equivalence does not work in the presence of this rule. Algorithmic equivalence on the
+other hand is directly implementable, since it is directed by the syntax of
+types and terms. We define algorithmic term equivalence 
+mutually with path equivalence, which is the syntactic equivalence of terms headed by
+variables, i.e. terms of the form $x\,M_1\,...\,M_n$. 
+
+In this paper, we show completeness of algorithmic equivalence for declarative
+equivalence. As usual, the problem is what 
+to do at function types, since we need that applying equivalent
+functions to equivalent arguments yields equivalent results. This is the reason
+for defining an intermediate logical relation, which we write:
+
+\begin{center}
+  \begin{tabular}{@{}l@{~~~}l@{}}
+$\Gamma \vdash M \approx N : A$ & terms M and N are logically equivalent at
+type $A$ \\
+  \end{tabular}
+\end{center}
+
+This relation is defined by induction on the structure of the
+type. The key case is at function type, where Crary defines:
+
+\begin{center}
+  \begin{tabular}{@{}l@{~~~}l@{~~~}l@{}}
+$\Gamma \vdash M_1 \approx M_2 : A \Rightarrow B$ & iff & for all $\Delta \geq \Gamma$
+and $N_1$, $N_2$, \\
+& & if $\Delta \vdash N_1 \approx N_2 : A$\\
+& & then $\Delta \vdash M_1\; N_1 \approx M_2\; N_2 : B$
+  \end{tabular}
+\end{center}
+
+The quantification over extensions $\Delta$ of $\Gamma$ is essential
+for establishing monotonicity, below. This Kripke-style monotonicity
+is one of the reasons that this proof is more challenging than normalization proofs, where this
+quantification can be avoided using other technical tricks. For
+our formalization, we take a slightly different approach which 
+better exploits the features of Beluga available to us. We
+instead quantify over an arbitrary $\Delta$ together with a
+\emph{renaming} substitution $\pi$ which brings terms from $\Gamma$ to
+$\Delta$, i.e. $\Delta \vdash \pi : \Gamma$. This is a substitution of
+variables for variables, i.e. it embodies precisely the structural
+rules of exchange, contraction, and most importantly, weakening.
+
+\begin{center}
+  \begin{tabular}{@{}l@{~~~}l@{~~~}l@{}}
+$\Gamma \vdash M_1 \approx M_2 : A \Rightarrow B$ & iff & for all
+$\Delta$, $N_1$, $N_2$, and renamings $\pi$ \\
+& & if $\Delta \vdash N_1 \approx N_2 : A$ and $\Delta \vdash \pi : \Gamma$ \\
+& & then $\Delta \vdash M_1[\pi]\; N_1 \approx M_2[\pi]\; N_2 : B$
+  \end{tabular}
+\end{center}
+
+The high level goal is to establish that declaratively equivalent
+terms are logically equivalent, and that logically equivalent terms
+are algorithmically equivalent. The proof requires establishing a
+few key properties of logical equivalence. The first is
+monotonicity, which is crucially used for weakening logical
+equivalence. This is used when applying terms to fresh variables.
+
+\begin{lemma}[Monotonicity]
+If $\Gamma \vdash M \approx N : A$ and $\Delta \vdash \pi : \Gamma$ is
+a renaming substitution, then $\Delta \vdash M[\pi] \approx N[\pi] : A$
+\end{lemma}
+
+\begin{theorem}[Fundamental theorem]
+If $\Gamma \vdash M \equiv N : A$ \\ and $\Delta \vdash \sigma_1 \approx
+\sigma_2 : \Gamma$ then $\Delta \vdash M[\sigma_1] \approx
+N[\sigma_2] : A$
+\end{theorem}
+
+By establishing the relatedness of the identity substitution to
+itself, i.e. $\Gamma \vdash \mathrm{id} \approx \mathrm{id} : \Gamma$ we can combine the
+fundamental theorem with the main lemma to obtain completeness.
+
+\begin{corollary}[Completeness]
+If $\Gamma \vdash M \equiv N : A$ then $\Gamma \vdash M
+\Leftrightarrow N : A$
+\end{corollary}
+
 \section{Remaining to be done}
 \subsection{Computation in types}
 My goal for the future is to integrate a logical framework into
@@ -1338,7 +1456,12 @@ intensional type theory is a language of verifiable evidence
 (McBride's term?)
 
 Alternative approaches: may ask why a language design? aren't there
-already tools we can use to do this? e.g. proof by reflection, CoqMT, VeriML?
+already tools we can use to do this? e.g. proof by reflection, CoqMT,
+VeriML?
+
+\section{Related Work}
+...
+
 \section{Timeline}
 \paragraph{Stage 1:  May 2014 to Nov 2014} working out the metatheory and examples of computation in
 types. Optimistically, a POPL paper in July. ESOP deadline in
