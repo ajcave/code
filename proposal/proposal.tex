@@ -538,6 +538,62 @@ Computation level types:
 \end{array}
 \]
 
+\[
+\begin{array}{r@{\;}c@{\;}l@{~:~}l}
+% \nat:& \multicolumn{2}{l}{\ttype.}\\ \relax
+% 0 : & \multicolumn{2}{l}{\nat.}\\\relax
+% \m{s}: & \multicolumn{2}{l}{\nat \arrow \nat.}\\[1em]
+%
+\text{Vec} = \mu \text{Vec}. \lambda X. & \langle & \m{nil} &  X = 0 \andalso \tunit\;, \\
+&  & \m{cons} &  \sigmabox Y \nat X = \m{s}\;Y \andalso \m{bool} \times \text{Vec}\;Y  \;\rangle 
+\end{array}
+\]
+
+For example, a typical context relation might take relate a context
+which lists both term variables and type variables to a corresponding
+context which lists only the type variables (e.g. when representing
+System F). Below we write this relation in surface syntax and the
+corresponding form in the core theory. This is a typical example of
+functional relation: in proofs, we will often be obligated to prove
+that it is total and deterministic.
+
+% \begin{lstlisting}
+% datatype ctx_rel : ctx -> cctx -> ctype
+% | rnil : ctx_rel [] []
+% | rsnoc : ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
+% \end{lstlisting}
+
+\begin{lstlisting}
+datatype ctx_rel : tmctx -> tpctx -> ctype
+| nil : ctx_rel [] []
+| tmsnoc : ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) \phi
+| tpsnoc : ctx_rel \psi$\;$\phi -> ctx_rel (\psi,a:tp) (\phi,a:tp)
+\end{lstlisting}
+
+% \[
+% \begin{array}{r@{\;}c@{\;}l@{}l}
+% \mu \text{Ctx\_rel}. \lambda \psi\lambda \phi. & \langle & \m{nil}\; &:  \psi
+% = \cdot \andalso \phi = \cdot \andalso \tunit\;, \\
+% &  & \m{snoc} & : \Sigma \psi'{:}{\m{ctx}}. \Sigma \phi'{:}{\m{cctx}}.\\ 
+% &&& \psi = \psi', x{:}\m{tm} ~\andalso~ \phi = \phi', y{:}\m{ctm} \\
+% &&& \andalso\;\text{Ctx\_rel}\;\psi'\;\phi' \;\rangle 
+% \end{array}
+% \]
+
+\[
+\begin{array}{r@{\;}c@{\;}l@{}l}
+\mu \text{Ctx\_rel}. \lambda \psi\lambda \phi. & \langle & \m{nil}\; &:  \psi
+= \cdot \andalso \phi = \cdot \andalso \tunit\;, \\
+&  & \m{tmsnoc} & : \Sigma \psi'{:}{\m{tmctx}}. \psi = \psi', x{:}\m{tm}
+\andalso\;\text{Ctx\_rel}\;\psi'\;\phi ,\\
+&  & \m{tpsnoc} & : \Sigma \psi'{:}{\m{tmctx}}. \Sigma
+\phi'{:}{\m{tpctx}}. \psi = \psi', x{:}\m{tp} ~\andalso~ \phi = \phi',
+y{:}\m{tp} \\
+&&& \andalso\;\text{Ctx\_rel}\;\psi'\;\phi' \;\rangle 
+
+\end{array}
+\]
+
 Computation level syntax:
 
 \[
