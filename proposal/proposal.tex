@@ -207,7 +207,7 @@ instantations for the variables in \lstinline{G} as expressions in
 \lstinline{G'}, and write a function which applies a substitution to
 an expression. We may also write a function which composes two
 substitutions. We also need functions for weakening terms
-\lstinline{exp G T} to \lstinline{exp (G , S)\, T}, which are equally
+\lstinline{exp G T} to \lstinline{exp (G , S)$\,$ T}, which are equally
 burdensome, but which I do not discuss below.
 
 \begin{alltt}
@@ -234,16 +234,16 @@ substitutions. I have only listed four of these lemmas, and only the
 ones pertaining to substitution, not to weakening. In all, one
 typically finds that it is necessary to prove about a dozen such lemmas. 
 
-All this effort for one of the simplest imaginable programming
-languages. As the number of constructs in our language grows, or as we
-begin to consider several languages, these lemmas quickly become a major
-burden. 
+One begins to lament: all this effort for one of the simplest imaginable programming
+languages? As the number of constructs in our language grows, or as we
+begin to consider other languages, these lemmas quickly become a major
+burden. These problems can not be blamed on de Bruijn indices: if we were to use a named representation of variables, these
+lemmas simply take different forms, but do not really become any
+simpler.
 
-Illustrate the point that the main bottleneck for
-mechanization are the equations which arise.
-
-Higher-order abstract syntax solves some of these issues, but it
-  is not so clear how to combine with rich type theories and logics
+Higher-order abstract syntax solves many of these issues. Roughly the
+idea... It does not support simultaneous substitutions, only
+individual substitutions $[N/x]M$.
 
 Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
 logic (e.g. Abella). 
