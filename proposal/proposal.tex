@@ -323,6 +323,18 @@ and unit laws for list append. It remains open to establish if
 these techniques can be applied to rich dependent type theories.
 
 \section{Summary of progress to date}
+I have published two papers in this direction to date. The first
+was presented at POPL'12 \citep{Cave12} , and was a first step in
+exploring how HOAS can fit into a rich type theory, targetting support
+for indexed recursive types. The second was presented at LFMTP'13
+\citep{Cave13}, and addresses direct support for the notion of
+simultaneous substitution, a concept which has been absent from most
+work on HOAS, but which is nevertheless extremely useful. I am
+preparing a third paper \citep{Cave14} for submission to the Journal
+of Formalized Reasoning, which explains how the tools described the
+previous two papers can be successfully applied in the formalization
+of a substantial logical relations proof. In this
+section I briefly explain the main contributions of these papers.
 
 \subsection{Indexed recursive types}
 Recently, we have developed LF-indexed recursive types
@@ -608,15 +620,12 @@ a boolean and, recursively, a vector of indexed by $Y$.
 
 For our purposes, we are interested in using such indexed recursive
 types enforcing invariants about syntax and related notions such as contexts.
-For example, one is often pushed to express the notion of a relation
+For example, one often has the need to express the notion of a relation
 between contexts when relating two languages. A typical example might relate a context
 which lists both term variables and type variables to a corresponding
 context which lists only the type variables (e.g. when representing
-System F). Below we write this relation in surface syntax and the
-corresponding form in the core theory. This is a typical example of
-functional relation. We will often be obligated to prove manually
-that it is total and deterministic, which would be unnecessary if it
-was represented directly as a function. 
+System F). Below we write this relation in surface syntax of Beluga and the
+corresponding form in the core theory. 
 
 % \begin{lstlisting}
 % datatype ctx_rel : ctx -> cctx -> ctype
@@ -641,6 +650,8 @@ datatype ctx_rel : tmctx -> tpctx -> ctype
 % \end{array}
 % \]
 
+Here is its corresponding representation in the core language: 
+
 \[
 \begin{array}{r@{\;}c@{\;}l@{}l}
 \mu \text{Ctx\_rel}. \lambda \psi\lambda \phi. & \langle & \m{nil}\; &:  \psi
@@ -651,17 +662,31 @@ datatype ctx_rel : tmctx -> tpctx -> ctype
 \phi'{:}{\m{tpctx}}. \psi = \psi', x{:}\m{tp} ~\andalso~ \phi = \phi',
 y{:}\m{tp} \\
 &&& \andalso\;\text{Ctx\_rel}\;\psi'\;\phi' \;\rangle 
-
 \end{array}
 \]
 
+This is a typical example of
+functional relation. We will often be obligated to prove manually
+that it is total and deterministic, which would be unnecessary if it
+were represented directly as a function, such as the one
+below. However, while the language in this paper supports writing such
+functions, it does not support \emph{reasoning} about them, since they
+cannot occur in indices. So such a function is of limited
+utility; it cannot completely replace the corresponding relation.
 \begin{eqnarray*}
 |-| & : & \text{tmctx} \rightarrow \text{tpctx} \\
 | \psi , x:\text{tm} | & = & | \psi | \\
 | \psi , a:\text{tp} | & = & | \psi | , a:\text{tp}
 \end{eqnarray*}
 
-Computation level syntax:
+I present below the syntax for the computation language. The
+corresponding typing rules can be found in Fig. \ref{fig:comptyping}. This
+is mostly standard. The recursive types are \emph{iso-recursive}
+types, so \lstinline{fold} contructs an inhabitant of such types, and
+they are destructed by pattern matching. Case branches $B$ have a
+\emph{refinement substitution} $\theta$ which describes how variables
+of the index language are refined with more information when a
+particular pattern matches.
 
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
@@ -693,9 +718,7 @@ Computation level syntax:
 \end{array}
 \]  
 
-Computation typing rules:
-
-\begin{figure}
+\begin{figure}\label{fig:comptyping}
   \centering
 \[
 \begin{array}{l}
@@ -827,6 +850,18 @@ Computation typing rules:
   \caption{Typing for computations}
   \label{fig:typcomp}
 \end{figure}
+
+The main technical result in this paper is a machine-checked proof of type
+soundness for this language, which I developed in the Coq proof assistant.
+
+This work was an important milestone in understanding how HOAS can fit
+into the more general setting of an expressive type theory, and how it
+can be used effectively in implementing algorithms over syntax which
+enforce sophisticated invariants. However, it left open a few
+questions, first how to transition from indexed recursive types to
+\emph{inductive types} over LF representations, and closely related, how to support termination analysis for
+such types. These steps are crucial if we wish to transition from
+programming to \emph{proving}.
 
 \subsection{First class substitutions}\label{sec:lfmtp13}
 Our work on first-class substitutions \citep{Cave13} allows
