@@ -242,8 +242,24 @@ lemmas simply take different forms, but do not really become any
 simpler.
 
 Higher-order abstract syntax solves many of these issues. Roughly the
-idea... It does not support simultaneous substitutions, only
-individual substitutions $[N/x]M$.
+idea is to directly embed the language of study inside of LF:
+constructors become constants, bindings become *functions*. Difficult
+part is recovering a view of this HOAS data as a first-order
+representation: we want a form of induction \emph{over} a HOAS representation.
+ It does not support simultaneous substitutions, only
+individual substitutions $[N/x]M$. Individual substitutions suffice
+for many purposes, but some problems are much more naturally handled
+with simultaneous substitutions. And simultaneous substitutions have a
+larger equational theory that needs to be treated. This is something
+that LF remains silent about: we need to do much of the same effort
+for simultaneous substitution as we did in the first-order
+representation. In my view, Beluga, Abella, Delphin are approaches to
+recovering a ``first-order view'' of ``higher-order representations''.
+
+Deficiency of Beluga,Abella,Delphin: maintain a strict
+separation between the two levels. This means it is not so clear how
+to support the automated equational theory that makes intensional type
+theory so powerful.
 
 Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
 logic (e.g. Abella). 
@@ -254,18 +270,6 @@ simultaneous substitutions).
 
 design space: systems with support for binding and substitution vs
 systems with rich abstraction mechanisms and logical strength
-
-Definition of substitution with names:
-
-\begin{eqnarray*}
-[N/x](x) & = & N \\
- \lbrack N/x](y) & = & y \quad \text{if $x \neq y$} \\
- \lbrack N/x](M_1 M_2) & = & ([N/x]M_1) ([N/x]M_2) \\
- \lbrack N/x](\lambda y. M) & = & \lambda y. [N/x]M \quad
- \text{choosing $y \not\in fv(N)$ and
-  $y \neq x$}
-\end{eqnarray*}
-
 
 Proofs in programming language metatheory have lots of cases (which
 can often be generated/developed interactively), which is why they're
