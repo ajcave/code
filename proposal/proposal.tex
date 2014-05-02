@@ -109,22 +109,38 @@ and weakening.
 \end{quote}
 
 This issue has spawned a large body of work aiming to relieve this
-particular burden.
-
-The logical framework LF \citep{Harper93jacm} has proven to be well-suited for representing
-programming language syntax, logics and hypothetical
-judgments. However, it has been less clear how to formulate induction
+particular burden. Nominal logic \cite{?} supports names and weakening
+effectively, but is relatively silent about substitution. The
+logical framework LF \citep{Harper93jacm} has proven to be well-suited
+for representing programming language syntax, logics and hypothetical
+judgments and it provides direct support for substitution using an
+idea called higher-order abstract syntax (HOAS). While higher-order
+abstract syntax has proven to be one of the most 
+effective approaches to the problem of binding and substitution, it
+has come at a fairly steep price: most theories and systems
+incorporating higher order abstract syntax have fairly weak
+logics. This is in part because it has been less clear how to formulate induction
 over LF representations in a way that is directly comparable to
 induction over a first-order representation like de Bruijn indices or
-names. (? is this fair? cite?)
+names.
 
-However, the most effective approaches to this problem have
-come at a fairly steep price: fairly weak logics. (elaborate)
+For example, Twelf \cite{Twelf} can only express $\Pi_2$
+statements, i.e. statements of the form $\forall x \exists y. \psi$
+where $\psi$ contains no quantifiers. Beluga (?), Abella (?), and
+Delphin (?) are
+somewhat better: they are all, crudely speaking, first order logic
+with induction. These weak logics suffice for many results in
+programming language metatheory, such as type soundness, but it is
+difficult, if not outright impossible, to express more sophisticated
+results such as normalization and parametricity, or generally to build
+interesting models. If we wish to mechanize these (and other
+state-of-the-art) results, we need foundations which lie closer in
+strength to foundations of mathematics, and we want as much support as
+possible for variable binding and substitution.
 
-There are a handful of approaches to logics and theories suitable for
-machine checked proofs. Higher order logic, set theory, and dependent
-type theory are the main alternatives which are rich enough to serve
-as a foundation for modern mathematics. Among these, dependent type theory
+There are a handful of approaches to logics and theories rich enough
+to serve as foundations for mathematics. Higher order logic, set theory, and dependent
+type theory are the main alternatives. Among these, dependent type theory
 \citep{Martin-Loef73a} boasts the advantage that it comes equipped with a direct
 connection to computer programming. This means that it provides a rich
 environment which at the same time supports both proofs and
@@ -134,7 +150,9 @@ directly executed. This is very valuable, because it
 enables the development of theory to proceed hand in hand
 with implementation. Moreover, (intensional) dependent type theory
 incorporates automated support for a decidable equational theory in a
-principled way, which is an important asset for the proposed work.
+principled way, which allows fully formal proofs to be remarkably
+short (at the cost of a more expensive proof-checking
+procedure). This is an important asset for the proposed work. 
 NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
 \citep{bertot/casteran:2004}
 
@@ -159,31 +177,82 @@ incorporate other equational theories from other areas of application.
 
 
 \section{Background}
-Sketch well-scoped representation in Agda and substitution
-principles. Illustrate the point that the main bottleneck for
-mechanization are the equations which arise (e.g. church rosser proof?
-similar experiments as far as proving normalization for MLTT with a universe)
+To make the issues involved more concrete, and later to give a sketch
+of proposed work, I briefly describe the
+well-known issues involved in dealing with a first-order representation of
+syntax. Below I sketch an intrinsically typed encoding of the
+simply typed lambda calculus in a simplified Agda-like notation. This
+is a well-known technique \cite{Benton?Coqencodingspaper} for
+economically describing well-typed expressions, and enforcing some
+invariants about them in a lightweight way.
 
-\begin{itemize}
-\item Standard issues in mechanizing metatheory: first order
-  representations require defining weakening, substitution, and proving
-  equations pertaining to (compositions of) weakening and
-  substitution.
-\item Higher-order abstract syntax solves some of these issues, but it
+\begin{verbatim}
+data exp (G : ctx) : tp -> Set where
+ v : var G T -> exp G T
+ app : exp G (arr T S) -> exp G T -> exp G S
+ lam : exp (G , T) S -> exp G (arr T S)
+\end{verbatim}
+
+Here, \lstinline{exp} is a family of types indexed by  a context
+\lstinline{G} (which we can think of a list of types) and its
+type. We have three constructors, \lstinline{v}, \lstinline{app}, and
+\lstinline{lam}. Variables are represented as de Bruijn indices and
+embedded into terms with \lstinline{v}, but we do
+not go into detail about this here. When describing an operational
+semantics, we quickly have need to describe substitution of
+expressions for variables. This in itself is not so difficult,
+although it is somewhat repetitive. We can
+describe (simultaneous) substitutions \lstinline{sub G' G} which provide
+instantations for the variables in \lstinline{G} as expressions in
+\lstinline{G'}, and write a function which applies a substitution to
+an expression. We may also write a function which composes two
+substitutions. We also need functions for weakening terms
+\lstinline{exp G T} to \lstinline{exp (G , S)\, T}, which are equally
+burdensome, but which I do not discuss below.
+
+\begin{alltt}
+[_] : sub G' G -> exp G T -> exp G' T = ...
+[_]' : sub G' G -> sub G D -> sub G' D = ...
+\end{alltt}
+
+This is sufficient in this case to describe the operational semantics
+of our language, but if we wish to prove results about the operational
+semantics (for example, confluence), we quickly find that we need to
+prove some equations about the application of substitutions. Typical
+results we may need are listed below:
+
+\begin{alltt}
+lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
+lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
+lem3 : [ id ]' \(\sigma\) = \(\sigma\)
+lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
+\end{alltt}
+
+For example, \lstinline{lem1} says that the composition of applying
+substitutions is the application of the composition of
+substitutions. I have only listed four of these lemmas, and only the
+ones pertaining to substitution, not to weakening. In all, one
+typically finds that it is necessary to prove about a dozen such lemmas. 
+
+All this effort for one of the simplest imaginable programming
+languages. As the number of constructs in our language grows, or as we
+begin to consider several languages, these lemmas quickly become a major
+burden. 
+
+Illustrate the point that the main bottleneck for
+mechanization are the equations which arise.
+
+Higher-order abstract syntax solves some of these issues, but it
   is not so clear how to combine with rich type theories and logics
-\item Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
+
+Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
 logic (e.g. Abella). 
 
-\item Primary examples are logical relations, like Coquand's type
-directed conversion (and our ITP submission), soundness/completeness of NbE
-(cite e.g. Abel for recent work, Dybjer for original?),
-step-indexed logical relations for reasoning about effects
-
-\item clarify distinction with Hybrid: I'm proposing to use language design
+clarify distinction with Hybrid: I'm proposing to use language design
 techniques to give better support (definitional equalities for
 simultaneous substitutions).
 
-\item design space: systems with support for binding and substitution vs
+design space: systems with support for binding and substitution vs
 systems with rich abstraction mechanisms and logical strength
 
 Definition of substitution with names:
@@ -197,25 +266,6 @@ Definition of substitution with names:
   $y \neq x$}
 \end{eqnarray*}
 
-
-
-
-
-%``A domain-specific dependent type theory''
-
-% though actually this isn't the worst of it, the worst of it is
-% establishing necessary equational properties of substitution and weakening
-% (freshness in the nominal world, shifts in the de Bruijn world) (cite
-% Altenkirch) and deducing equations from the resulting equational
-% theory.
-
-%classic: $[P/y]([N/x]M) = [([P/y]N)/x] ([P/y]M)$ provided $x\neq y$
-%(check this: Barendregt?)
-
-%distinction between techniques for supporting ``names'', weakening, freshness (nominal) and ``substitution''.
-
-%dependent type theory allows effective programming and proving
-\end{itemize}
 
 Proofs in programming language metatheory have lots of cases (which
 can often be generated/developed interactively), which is why they're
@@ -1371,29 +1421,6 @@ This is necessary to support state-of-the-art proofs involving polymorphism,
 universes, ``generic programming'', dependent types, step indexing.
 
 basic design sketch
-
-\begin{verbatim}
-data exp (G : ctx) : tp -> Set where
- v : var G T -> exp G T
- app : exp G (arr T S) -> exp G T -> exp G S
- lam : exp (G , T) S -> exp G (arr T S)
-\end{verbatim}
-
-\begin{alltt}
-[_] : sub G' G -> exp G T -> exp G' T
-[_]' : sub G' G -> sub G D -> sub G' D
-\end{alltt}
-
-\begin{alltt}
-lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
-lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
-lem3 : [ id ]' \(\sigma\) = \(\sigma\)
-lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
-...
-\end{alltt}
-This is tedious to do for each language we study!
-
-We know that LF works well to encode object languages...
 
 So do this *once* for LF, and embed your OL inside
 
