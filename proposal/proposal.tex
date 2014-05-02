@@ -256,7 +256,7 @@ for simultaneous substitution as we did in the first-order
 representation. In my view, Beluga, Abella, Delphin are approaches to
 recovering a ``first-order view'' of ``higher-order representations''.
 
-Deficiency of Beluga,Abella,Delphin: maintain a strict
+Beluga, Abella, and Delphin maintain a strict
 separation between the two levels. This means it is not so clear how
 to support the automated equational theory that makes intensional type
 theory so powerful.
@@ -268,25 +268,14 @@ clarify distinction with Hybrid: I'm proposing to use language design
 techniques to give better support (definitional equalities for
 simultaneous substitutions).
 
-design space: systems with support for binding and substitution vs
-systems with rich abstraction mechanisms and logical strength
-
-Proofs in programming language metatheory have lots of cases (which
-can often be generated/developed interactively), which is why they're
-a good candidate for formalization.
-
-Existing systems targetting support for programming language
-  metatheory handle well proofs which require modest logical
-  strength, such as proofs of confluence and type safety. However,
-  increasingly the programming language community is interested in
-  topics such as normalization, parametricity \citep{Reynolds,morerecent?}, decidability of
+Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
   typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
   equivalence \citep{Dreyer11,others}, soundness and completenes of
   NbE \citep{Dybjer00,Abel07}, all of which require
   richer logics to express. Sometimes also simple requirements like
   concatenation of contexts -- can't directly be expressed in Twelf
   (can in Beluga), can often be worked around, but why not directly? 
-  By giving a more seemless integration of a logical framework
+  By giving a more seamless integration of a logical framework
   into dependent type theory (i.e. no separation between levels) this
   can be accomplished.
 
@@ -298,12 +287,6 @@ understanding of termination. (We ``cheat'' in Beluga to do logical relations)
 
 (Can I claim that the PL community is one of the biggest users of
 proof assistants, hence it makes sense to target?)
-
-We give up a bit: intend to build around a de Bruijn
-representation. Argue that for proofs it doesn't matter much:
-typically we deal with one or two binders at at time. Scoping is
-enforced by typechecking, which guides you where to insert
-shifts. It actually takes quite a bit of effort to get shifts wrong. 
 
 Pro of de Bruijn indices and contextual types (vs names, nominal
 logic): purely equational; no ``propositional'' side
@@ -320,17 +303,10 @@ HOAS/contextual types are ``syntax'' on top of de Bruijn indices.
 cite structural logical relations: requires auxiliary logic, deviates
 somewhat from the on-paper techniques? \citep{Schurmann08}
 
-cite POPLMark \cite{POPLMark}
-
-cite Altenkirch complaining about de Bruijn indices
-
-CoqMT approach to implementation?
-
 In defense of intensional type theory: *smaller* checkable
 witnesses. (both beta and OL substitution equations)
 
 Spells out equality testing -- algorithm, not heuristic.
-
 
 \subsection{Conversion in type theory}
 A central issue in the design of a dependent type theory is
@@ -352,28 +328,29 @@ these techniques can be applied to rich dependent type theories.
 Recently, we have developed LF-indexed recursive types
 \citep{Cave12}, as a stepping stone to support LF-indexed inductive
 types. This was a first step in exploring how HOAS types can fit
-into a picture with traditional recursive (or inductive..) datatypes. 
+into a picture with traditional recursive (or inductive..)
+datatypes. This work emphasized ``programming'' applications
+as opposed to reasoning, since it was an open problem at the time how
+to support termination analysis in this setting. The techniques
+applied here also improved understanding of how to \emph{reason} about
+HOAS encodings.
 
-These increase the expressive power of the system: we can express
+These increase the expressive power of the system: one can express
 predicates on LF objects which were inexpressible before: e.g. that
 certain subexpressions are closed (they do not refer to any free variables), and express relationships between
 contexts. Generally, it gives direct access to properties of
-contexts. This is in contrast to Abella and Delphin, and Twelf, which do not
+contexts. This is similar to Abella, but in contrast to Delphin, and Twelf which do not
 provide such direct access to the context.
-
-This is not ideal: typically, the relations between contexts were are
-interested in expressing are \emph{functional} relations. This means
-that often we are obligated to prove that they are deterministic and
-total. It would be substantially more convenient to treat them
-directly as functions, but this is not supported by the framework of
-indexed types. 
 
 Recursive types are suitable for programming, but they do not suffice
 if we are interested in proofs: need positivity. don't quite suffice
 for logical relations: need universe (large eliminations) to justify,
 since they aren't positive definitions.
 
-Main example: NbE. Difficult/impossible for other HOAS based systems.
+In this paper, we described an intrinsically type-preseriving
+normalization by evaluation algorithm. This algorithm is traditionally
+difficult or impossible for systems based on HOAS, because it requires
+a comparatively rich computation/reasoning layer in order to define a semantic domain for expressions.
 
 % \subsection{Contextual LF}\label{sec:clf}
 % Contextual LF extends the logical
@@ -553,7 +530,31 @@ Main example: NbE. Difficult/impossible for other HOAS based systems.
 % \label{fig:metatyping}
 % \end{figure}
 
-Computation level types:
+I give below a brief overview of the results of this work, which
+describes the integration of LF-indexed recursive datatypes into 
+
+Indexed recursive types have been considered before
+by e.g. \cite{Zenger:TCS97} and \cite{Xi99popl}. There were two main
+novel aspects of our work:
+%1) A modular description of the index
+%language and the computation language allows one to consider
+%alternative index languages with minimal impact on the metatheory or
+%implementation of the computation language
+1) the application of these techniques to an index language
+supporting notions binding and substitution; i.e. an index language
+(in this case, Contextual LF) rich enough to talk about object
+logics. 2) The treatment of index contraints, and our treatment of
+pattern matching and refinement of indices is simpler than other
+known approaches. The resulting language is a prime candidate for
+implementing code transformations, algorithms over abstract syntax,
+and (partial) verification.
+
+I briefly recapitulate the main technical aspects of this work. The
+language of (computation-level) types is presented below, with the
+most important type formers highlighted. I write $U$ to stand for an index
+language type, $\mu$ contructs indexed recursive types, and $C_1 = C_2
+\wedge T$ expresses an equational constraint on indices together with
+a type.
 
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
@@ -587,6 +588,12 @@ Computation level types:
 \mbox{Context} & \Gamma & \bnfas & \cdot \bnfalt \Gamma, Z:K \bnfalt \Gamma, x:T
 \end{array}
 \]
+
+Below, I illustrate how to write a type of lists of booleans indexed by their
+length, which we call vectors. The type of vectors is defined
+recursively: either the index $X$ is 0 and we are at the end of the
+list or there is some $Y$ such that $X$ is the successor of $Y$, then
+a boolean and, recursively, a vector of indexed by $Y$.
 
 \[
 \begin{array}{r@{\;}c@{\;}l@{~:~}l}
@@ -1458,7 +1465,15 @@ technical results I am aiming to achieve: decidability
 
 Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
 
-Along lines of DML, ATS: specialized for metatheory. ``New equations for neutral terms'' \cite{Allais13}
+Along lines of DML, ATS: specialized for metatheory. ``New equations
+for neutral terms'' \cite{Allais13}
+
+
+We give up a bit: intend to build around a de Bruijn
+representation. Argue that for proofs it doesn't matter much:
+typically we deal with one or two binders at at time. Scoping is
+enforced by typechecking, which guides you where to insert
+shifts. It actually takes quite a bit of effort to get shifts wrong. 
 
 The second main component is to implement a prototype sufficient to
 check some non-trivial proofs. I am to formalize 
@@ -1506,7 +1521,10 @@ October.
  sufficient understanding of techniques for dealing with de Bruijn
  indices 2) one of course needs to understanding the proofs 3)
  applying the equational theory of simultaneous substitutions. 1 and 2
- I have tackled, and 3 is still a burden: this is what I propose to address
+ I have tackled, and 3 is still a burden: this is what I propose to
+ address
+
+CoqMT approach to implementation?
 \paragraph{Stage 3: May 2015 to Nov 2015} writing thesis.
 
 backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
