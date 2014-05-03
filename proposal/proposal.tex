@@ -903,7 +903,9 @@ this formalization here.
 \subsubsection{Hand written proof}
 
 Here I go over the informal presentation of the proof to explain
-the translation to a HOAS-based formalization.
+the translation to a HOAS-based formalization, and to draw attention
+to the aspects one often ignores in a paper proof, but which have
+significant impact on a formalization.
 
 The grammar for the calculus includes lambda abstractions, variables, application, and a single
 constant $\const c$ of a constant type $\const i$. Lambda abstractions and the
@@ -1018,7 +1020,8 @@ over the context $\Gamma$ and the quantification over a simultaneous
 substitution $\sigma$ providing instantiations for $\Gamma$. This
 quantification typically cannot be directly expressed in HOAS-based
 systems, since the context is typically ambient, so that direct
-access to the context is impossible. This is the case in Twelf and Delphin.
+access to the context is impossible. This is the case in Twelf and
+Delphin.
 
 The second point to draw attention to in this proof is the use of
 properties of simultaneous substitutions in the main
@@ -1032,9 +1035,10 @@ our type theory. This means that the formalization need only implement
 the main content of the proof as it is written on paper, and not these
 technical details.
 
-\subsection{Encoding in Beluga}\label{sec:belugaweaknorm}
+\subsubsection{Formalization}\label{sec:belugaweaknorm}
 
-Here we demonstrate the particularly elegant encoding of this proof in Beluga using first
+Here we demonstrate the particularly elegant encoding of this proof in
+the Beluga system, extended with support for first
 class (simultaneous) substitutions. By hand we defined grammar and
 typing separately, but here it is actually more convenient to define
 intrinsically typed terms directly. Below, \lstinline{tm} defines our family of simply-typed lambda
@@ -1061,11 +1065,12 @@ particular we use LF's notion of substitution to encode the
 object-level substitution in the \lstinline{s/beta} case.
 
 \begin{lstlisting}
+step  : tm A -> tm A -> type.
+s/beta : step (app (lam M) N) (M N).
+s/app  : step M M' -> step (app M N) (app M' N).
+
 mstep  : tm A -> tm A -> type.
-s/beta : mstep (app (lam M) N) (M N).
-s/app  : mstep M M' -> mstep (app M N) (app M' N).
-s/refl : mstep M M.
-s/trans: mstep M M' -> mstep M' N -> mstep M N.
+...
 \end{lstlisting}
 
 We define a predicate on terms expressing what it means to be a value:
@@ -1085,11 +1090,6 @@ As in Twelf \citep{Pfenning99cade}, type reconstruction infers types for any fre
 variable in a given type or kind declaration and implicitly quantifies over
 them. Programmers subsequently do not need to supply arguments for implicitly
 quantified variables.
-
-\begin{lstlisting}
-halts : tm A -> type.
-h/val : mstep M M' -> val M' -> halts M.
-\end{lstlisting}
 
 Reducibility cannot be directly encoded at the LF layer, since it
 involves a strong, computational function space. Hence we move to the
@@ -1111,9 +1111,8 @@ one writes the context the term is defined in -- in this case, it is empty.
 datatype Reduce : {A:[.tp]} {M:[.tm A]} ctype =
 | I   : [. halts M] -> Reduce [. i] [. M]
 | Arr : [. halts M] ->
-       ({N:[.tm A]} Reduce [. A] [. N]
-           -> Reduce [. B] [. app M N])
-     -> Reduce [. arr A B] [. M];
+          ({N:[.tm A]} Reduce [. A] [. N] -> Reduce [. B] [. app M N])
+        -> Reduce [. arr A B] [. M];
 \end{lstlisting}
 
 In this definition, the arrows represent the usual computational
@@ -1130,65 +1129,11 @@ predicate is well-defined. In Coq \citep{bertot/casteran:2004} and Agda
 \citep{Norell:phd07} one typically justifies such definitions using
 large elimination, which Beluga does not currently support.
 
-The next step we elided in the handwritten proof. It is a trivial
-lemma showing that halts is closed under expansion. Proofs in Beluga are written as recursive
-functions, analyzing the construction of the underlying LF objects,
-making recursive calls for appeals to the induction hypothesis. Here, we proceed by
-unboxing and pattern matching on our arguments to extract the witness of the existential and
-rebuilding them, appealing to transitivity of
-\lstinline{mstep}.
-
-% \LONGVERSION{
-\begin{lstlisting}
-rec haltsClosed : [. mstep M M'] -> [. halts M']
- -> [. halts M] =
-fn ms => fn h =>
- let [. h/val MS' V] = h in
- let [. MS] = ms in
- [. h/val (trans MS MS') V];
-\end{lstlisting}
-% }
-
-%\SHORTVERSION{
-%\begin{lstlisting}
-%rec haltsClosed : [.mstep M M'] -> [. halts M'] -> [. halts M]
-%\end{lstlisting}
-%}
-
-The trivial fact that reducible terms halt has a corresponding trivial
-proof, analyzing the construction of the the proof of
-\lstinline{Reduce [.A] [.M]}:
-
-% \LONGVERSION{
-\begin{lstlisting}
-rec cr1 : Reduce [.A] [.M] -> [. halts M] =
-fn r => case r of
-| I h => h
-| Arr h f => h;
-\end{lstlisting}
-% }
-
-%\SHORTVERSION{
-%\begin{lstlisting}
-%rec cr1 : Reduce [.A] [.M] -> [. halts M]
-%\end{lstlisting}
-%}
-
 Next we prove closure of \lstinline{Reduce} under expansion. This
-follows the handwritten proof, proceeding by induction on the type \lstinline{A} which is
-an implicit argument. In the base case we appeal to
-\lstinline{haltsClosed}, while in the \lstinline{Arr} case we must
-also appeal to the induction hypothesis at the range type, going
-inside the function position of applications.
+follows the handwritten proof directly, so we do not discuss it further.
 
 \begin{lstlisting}
-rec closed : [. mstep M M'] -> Reduce [.A] [.M'] -> Reduce [.A] [.M] =
-fn ms => fn r => case r of
-| I h => I (haltsClosed ms h)
-| Arr h f => let [.MS] = ms in
-  Arr (haltsClosed ms h)
-  (mlam N => fn rn =>
-   closed [. s/app MS] (f [. N] rn));
+rec closed : [. step M M'] -> Reduce [.A] [.M'] -> Reduce [.A] [.M] = ...
 \end{lstlisting}
 
 Note that we overload $\lambda$; here we use \lstinline!mlam!-abstractions when
@@ -1198,16 +1143,6 @@ over a computation-level variable.
 Now we arrive at the part of the proof requiring simultaneous
 substitutions. First we define a schema for contexts, describing a
 type of contexts which contains only (typed) term assumptions:
-
-\begin{lstlisting}
-schema ctx = tm T;
-\end{lstlisting}
-
-Schema declarations are similar to world
-declarations in Twelf \citep{Pfenning99cade}. In the example above, 
-\lstinline{ctx} classifies contexts which contain instances of \lstinline!tm T!;
-for example, \lstinline!x:tm i, y: tm (arr i i), w: tm i! is a well-formed
-context of schema \lstinline!ctx!. 
 
 We now must state precisely what it means for a substitution to be
 reducible. We do this by employing another indexed recursive type: a predicate
@@ -1227,49 +1162,12 @@ variable of type \lstinline{A}).
 \begin{lstlisting}
 datatype RedSub : (g:ctx){#S:g[]} ctype =
 | Nil : RedSub [. ^$\,$ ]
-| Cons : RedSub [. #S] -> Reduce [.A] [.M] -> RedSub [. #S M ];
+| Cons : RedSub [. #S] -> Reduce [.A] [.M] -> RedSub [. #S, M ];
 \end{lstlisting}
-% \bpcomment{AC: Juxtaposition is too overloaded...}
-% -bp : Yes, it is overloaded, but it is also disambiguiated by using
-% capitalization; we may need to find a better solution in practice ...
 
 We implicitly quantify over the context \lstinline!g! by using round
 parenthesis writing \lstinline!(g:ctx)!; we explictly quantify over substitution
 variables using curly braces writing \lstinline!{#S:g[]}!. 
-
-The main fact that we need about this definition is that if a
-substitution \lstinline{#S} is reducible, then looking up a variable
-\lstinline{#p} in it produces something reducible. The hash in front
-of \lstinline{#p} distinguishes it as a \emph{parameter} variable,
-i.e. standing for an object-level variable. To clarify,
-\lstinline{#p #S} is notation for applying the substitution
-\lstinline{#S} to the variable \lstinline{#p} -- informally,
-$\sigma(x)$. The proof proceeds by analyzing the variable. If it is
-the top variable of the context, the proof that \lstinline{#p #S} is
-reducible is the one at the top. Otherwise, we continue inductively
-looking in the prefix of the context. The case of an empty context is
-impossible, as there are no variables in the empty context.
-
-\begin{lstlisting}
-rec lookup : {g:ctx}{#p:[g.tm A]} RedSub [. #S] -> Reduce [.A] [. #p #S] =
-mlam g => mlam #p => fn rs =>
-case [g. #p ..] of
- | [g',x:tm A. x] => let Cons rs' rN = rs in rN
- | [g',x:tm A. #q ..] => let Cons rs' rN = rs in lookup [g'] [g'. #q ..] rs';
-\end{lstlisting}
-
-In the above, we write \lstinline{..} for the identity substitution
-associated with a context variable. In particular, when we write
-\lstinline{[g',x:tm A. #q ..]}, this means that \lstinline{#q} is a
-parameter variable defined in \lstinline{g'}, and hence is not
-\lstinline{x}. If we wished to allow it to be x, we would instead
-write \lstinline{#q .. x}, where now \lstinline{.. x} is the expanded identity
-substitution for the context \lstinline{g',x:tm A}. One may choose to
-think of the \lstinline{..} in this instance as a
-shift. Operationally, when we have a concrete variable for
-\lstinline{#p}, this pattern performs a check to see if the variable
-is in the image of the \lstinline{..} pattern substitution, i.e. if it is not
-the top variable \lstinline{x}.
 
 Finally, our main lemma is standard and takes the form we would expect
 from the handwritten proof: if \lstinline{M} is a well-typed
@@ -1290,22 +1188,21 @@ closure under expansion, and the induction hypothesis for
 \lstinline{N} is reducible. We write \lstinline!_ ! for the type of the variable
 \lstinline!x! and let reconstruction infer it.
 
-\begin{lstlisting}
-rec main : {g:ctx}{M:[g.tm A]} RedSub [. #S] 
-         -> Reduce [.A] [. M #S] =
-mlam g => mlam M => fn rs => case [g. M ..] of
-| [g. #p ..] => lookup [g] [g. #p ..] rs
+Proofs in Beluga are written as recursive
+functions, analyzing the construction of the underlying LF objects,
+making recursive calls for appeals to the induction hypothesis. 
 
+(Here, we proceed by
+unboxing and pattern matching on our arguments...)
+
+\begin{lstlisting}
+rec main : {g:ctx}{M:[g.tm A]} RedSub [. #S] -> Reduce [.A] [. M #S] =
+mlam g => mlam M => fn rs => case [g. M ..] of
 | [g. lam (\x. M1 .. x)] =>
   Arr [. h/val s/refl val/lam]
    (mlam N => fn rN => closed [. s/beta]
     (main [g,x:tm _] [g,x. M1 .. x] (Cons rs rN)))
-
-| [g. app (M1 ..) (M2 ..)] =>
-  let Arr h f = main [g] [g. M1 ..] rs in
-  f [._] (main [g] [g. M2 ..] rs)
-
-| [g. c] => I [. h/val s/refl val/c];
+...
 \end{lstlisting}
 
 Notably, we did not have to concern
@@ -1461,6 +1358,13 @@ assistants together with the world of rich dependent type theory. My
 work to date lays out the groundwork for such a plan, and gives us
 reason to believe it is possible. This requires an explanation of how
 higher-order abstract syntax is actually first-order.
+
+The wisdom from LF is that if we understand and develop the theory for
+a single, sufficiently powerful language (LF), we have along the way
+developed the tools necessary for a wide variety of languages; we need
+only encode them as ``sublanguages'' of LF: technically, by
+considering a particular LF signature (list of basic constants). The
+``higher-order'' aspect of these encodings is a red herring.
 
 My goal for the future is to integrate a logical framework into
 dependent type theory. This provides an avenue to solve several of the
