@@ -1352,14 +1352,14 @@ In this work we give the first example of a mechanized logical
 relation proof using HOAS which has computational behaviour: its
 computational content is a normalization algorithm.
 
-\section{Remaining to be done}
+\section{Proposed work}
 \subsection{Computation in types}
 Roughly speaking, my goal is to bring the worlds of HOAS-based proof
 assistants together with the world of rich dependent type theory. My
 work to date lays out the groundwork for such a plan, and gives us
-reason to believe it is possible. This requires an explanation of how
-higher-order abstract syntax is actually first-order.
+reason to believe it is feasible. 
 
+\LONGVERSION{
 The wisdom from LF is that if we understand and develop the theory for
 a single, sufficiently powerful language (LF), we have along the way
 developed the tools necessary for a wide variety of languages; we need
@@ -1390,11 +1390,12 @@ basic design sketch
 
 So do this *once* for LF, and embed your OL inside
 
-I've prototyped this in Agda
+I've prototyped this in Agda, became unfeasible: time to do it
+properly.
 
-$>$48GB of memory to typecheck an example
+And we still have to apply these lemmas manually and often compose
+several of them
 
-And we still have to apply these lemmas manually and often compose several of them
 
 Solution: build LF datatype into DTT and build lemmas into conversion check
 
@@ -1402,7 +1403,11 @@ Result: ``dependently typed Beluga''
 
 Analyze LF objects by the induction principle you get from considering an inductive type representing LF
 
-provides ``simple'' approach to semantics, termination (via eliminator for LF datatype)?
+provides ``simple'' approach to semantics, termination (via eliminator
+for LF datatype)?
+
+A side product of this work will be an explanation of how
+higher-order abstract syntax can actually be seen as first-order.
 
 The goal is (success is measured by) an algorithm for typechecking,
 together with a proof of this algorithm's correctness: termination,
@@ -1423,12 +1428,22 @@ Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
 Along lines of DML, ATS: specialized for metatheory. ``New equations
 for neutral terms'' \cite{Allais13}
 
-
 We give up a bit: intend to build around a de Bruijn
 representation. Argue that for proofs it doesn't matter much:
 typically we deal with one or two binders at at time. Scoping is
 enforced by typechecking, which guides you where to insert
 shifts. It actually takes quite a bit of effort to get shifts wrong. 
+
+intensional type theory is a language of verifiable evidence
+(McBride's term?)
+
+Alternative approaches: may ask why a language design? aren't there
+already tools we can use to do this? e.g. proof by reflection, CoqMT,
+VeriML?
+
+Decidability of conversion with a universe: \cite{Abel07}
+
+}
 
 The second main component is to implement a prototype sufficient to
 check some non-trivial proofs. I am to formalize 
@@ -1453,14 +1468,6 @@ for contextual equivalence (parametricity) in the style of
 \cite{Dreyer11} or normalization for (perhaps a predicative variant
 of) System F \citep{ProofsAndTypes,Altenkirch93}.
 
-intensional type theory is a language of verifiable evidence
-(McBride's term?)
-
-Alternative approaches: may ask why a language design? aren't there
-already tools we can use to do this? e.g. proof by reflection, CoqMT,
-VeriML?
-
-Decidability of conversion with a universe: \cite{Abel07}
 
 \section{Related Work}
 ...
