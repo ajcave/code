@@ -1207,25 +1207,18 @@ to not scale to such theories, so a more robust approach is needed.
 \subsection{Logical relations in contextual type theory}
 I am in the process of preparing for submission a larger case study of a formalization
 of a logical relations proof using the techniques developed in 
-POPL'12 and LFMTP13 papers. This work is presented in the draft
+POPL'12 and LFMTP'13 papers. This work is presented in the draft
 \citep{Cave14}. It describes a formalization of a proof of
 completeness of an algorithm for deciding equality of simply-typed
 lambda terms up to $\beta\eta$ equivalence. Such a proof is the core
 of the proof of decidability of typechecking for LF
-\cite{Harper03tocl}, and the general technique is known to scale to
+\citep{Harper03tocl}, and the general technique is known to scale to
 much richer type theories (e.g. \cite{Abel11}).
 
-I want to draw attention to the aspects of this proof which make it
-challenging to formalize and not worry too much about the details of
-the proof. (ditto for the logical relations proof above)
-
-In this
-section we give a brief overview of the motivation and high level structure of
-the completeness proof of algorithmic equality. For more detail, we refer the
-reader to \cite{Crary:ATAPL} and \cite{Harper03tocl}. Extensions of 
-this proof are important for the metatheory of dependently typed systems such as
-LF and varieties of Martin-L\"of 
-Type Theory, where they are used to establish decidability of typechecking. The proof concerns three judgements:
+In this section I briefly describe the high-level structure of this
+proof, focusing on the aspects which
+make it challenging to formalize, and how these aspects are treated
+effectively by the POPL'12 and LFMTP'13 work. The proof concerns two main judgements:
 
 \begin{center}
   \begin{tabular}{@{}l@{~~~}l@{}}
@@ -1233,15 +1226,12 @@ $\Gamma \vdash M \equiv N : A$ & terms M and N are declaratively equivalent at
 type $A$ \\
 $\Gamma \vdash M \Leftrightarrow N : A$ & terms M and N are
 algorithmically equivalent at type $A$ \\
-$\Gamma \vdash M \leftrightarrow N : A$ & paths M and N are
-algorithmically equivalent at type $A$ \\
   \end{tabular}
 \end{center}
 
 Declarative equivalence (also called definitional equality) includes convenient but non-syntax directed rules
 such as transitivity and symmetry, among rules for congruence,
-extensionality and $\beta$-contraction. We will see the full definition
-in Sec. \ref{sec:mechanization}. In particular, it may include
+extensionality and $\beta$-contraction. In particular, it may include
 apparently type-directed rules such as extensionality at unit type:
 
 $$
@@ -1249,21 +1239,16 @@ $$
   \Gamma \vdash N : \mathrm{Unit}}
 $$
 
-We do not consider such a rule in our development. For our present
-purpose it merely adds uninteresting cases to the proof. However, such a rule
-motivates the use of algorithmic type-directed equivalence. The rule
-above relies on type information and hence the usual normalize-and-compare strategy
-for deciding equivalence does not work in the presence of this rule. Algorithmic equivalence on the
+Such a rule motivates the use of algorithmic type-directed
+equivalence, since a more naive ``normalize-and-compare''
+strategy to decide equivalence will not be able to incorporate such a
+rule, since it relies on type information. Algorithmic equivalence on the
 other hand is directly implementable, since it is directed by the syntax of
-types and terms. We define algorithmic term equivalence 
-mutually with path equivalence, which is the syntactic equivalence of terms headed by
-variables, i.e. terms of the form $x\,M_1\,...\,M_n$. 
+types and terms. 
 
-In this paper, we show completeness of algorithmic equivalence for declarative
-equivalence. As usual, the problem is what 
-to do at function types, since we need that applying equivalent
-functions to equivalent arguments yields equivalent results. This is the reason
-for defining an intermediate logical relation, which we write:
+In this paper, we formalize the proof of completeness of algorithmic equivalence for declarative
+equivalence in the Beluga system. As one might expect, this proof goes
+through an intermediate logical relation, which we write:
 
 \begin{center}
   \begin{tabular}{@{}l@{~~~}l@{}}
@@ -1273,7 +1258,8 @@ type $A$ \\
 \end{center}
 
 This relation is defined by induction on the structure of the
-type. The key case is at function type, where Crary defines:
+type. The key case is at function type, which is defined on paper as
+the following:
 
 \begin{center}
   \begin{tabular}{@{}l@{~~~}l@{~~~}l@{}}
@@ -1285,7 +1271,7 @@ and $N_1$, $N_2$, \\
 \end{center}
 
 The quantification over extensions $\Delta$ of $\Gamma$ is essential
-for establishing monotonicity, below. This Kripke-style monotonicity
+for establishing a monotonicity lemma. This Kripke-style monotonicity
 is one of the reasons that this proof is more challenging than normalization proofs, where this
 quantification can be avoided using other technical tricks. For
 our formalization, we take a slightly different approach which 
@@ -1305,30 +1291,20 @@ $\Delta$, $N_1$, $N_2$, and renamings $\pi$ \\
   \end{tabular}
 \end{center}
 
-The high level goal is to establish that declaratively equivalent
-terms are logically equivalent, and that logically equivalent terms
-are algorithmically equivalent. The proof requires establishing a
-few key properties of logical equivalence. The first is
-monotonicity, which is crucially used for weakening logical
-equivalence. This is used when applying terms to fresh variables.
-
 As one can imagine, the introduction of more substitutions means that
 the equations which arise in the proofs become even more complex, and
 the desire to discharge them automatically becomes even more
 pressing. For example, the most complex equation which arises in this
-proof is the following:
+proof is the following (written in de Bruijn form):
 
 $$
 M[\sigma[\uparrow],1][\pi[\uparrow],1][\text{id}, N] = M[\sigma[\pi],N]
 $$
 
 Fortunately, the LFMTP'13 work dutifully discharges this equation, and the user
-does not even encounter the complex expression on the left.
-
-\begin{lemma}[Monotonicity]
-If $\Gamma \vdash M \approx N : A$ and $\Delta \vdash \pi : \Gamma$ is
-a renaming substitution, then $\Delta \vdash M[\pi] \approx N[\pi] : A$
-\end{lemma}
+does not even encounter the complex expression on the left. The formal
+proof establishes the main results with essentially no bureaucratic
+manipulation of substitutions:
 
 \begin{theorem}[Fundamental theorem]
 If $\Gamma \vdash M \equiv N : A$ \\ and $\Delta \vdash \sigma_1 \approx
@@ -1336,21 +1312,17 @@ If $\Gamma \vdash M \equiv N : A$ \\ and $\Delta \vdash \sigma_1 \approx
 N[\sigma_2] : A$
 \end{theorem}
 
-By establishing the relatedness of the identity substitution to
-itself, i.e. $\Gamma \vdash \mathrm{id} \approx \mathrm{id} : \Gamma$ we can combine the
-fundamental theorem with the main lemma to obtain completeness.
-
 \begin{corollary}[Completeness]
 If $\Gamma \vdash M \equiv N : A$ then $\Gamma \vdash M
 \Leftrightarrow N : A$
 \end{corollary}
 
-Our approach works well for the setting of indexed types we develop,
-but it does not scale well to dependent types.
-
-In this work we give the first example of a mechanized logical
-relation proof using HOAS which has computational behaviour: its
-computational content is a normalization algorithm.
+This paper marks the first time such a proof has been formalized with
+such minimal bureaucracy about substitutions; it appears to directly
+follow the paper proof, once one has adapted slightly the notion of
+monotonicity to fit the framework. This is significant evidence that
+our methods can scale to modern, sophisticated proofs in programming
+language metatheory.
 
 \section{Proposed work}
 \subsection{Computation in types}
