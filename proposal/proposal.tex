@@ -185,7 +185,7 @@ of proposed work, I briefly describe the
 well-known issues involved in dealing with a first-order representation of
 syntax. Below I sketch an intrinsically typed encoding of the
 simply typed lambda calculus in a simplified Agda-like notation. This
-is a well-known technique \cite{Benton?Coqencodingspaper} for
+is a well-known technique (see e.g. \citep{Benton:12}) for
 economically describing well-typed expressions, and enforcing some
 invariants about them in a lightweight way.
 
@@ -244,26 +244,44 @@ burden. These problems can not be blamed on de Bruijn indices: if we were to use
 lemmas simply take different forms, but do not really become any
 simpler.
 
-\LONGVERSION{Higher-order abstract syntax solves many of these issues. Roughly the
-idea is to directly embed the language of study inside of LF:
-constructors become constants, bindings become *functions*. Difficult
-part is recovering a view of this HOAS data as a first-order
-representation: we want a form of induction \emph{over} a HOAS representation.
- It does not support simultaneous substitutions, only
-individual substitutions $[N/x]M$. Individual substitutions suffice
-for many purposes, but some problems are much more naturally handled
-with simultaneous substitutions. And simultaneous substitutions have a
-larger equational theory that needs to be treated. This is something
-that LF remains silent about: we need to do much of the same effort
-for simultaneous substitution as we did in the first-order
-representation. In my view, Beluga, Abella, Delphin are approaches to
-recovering a ``first-order view'' of ``higher-order representations''.
+Higher-order abstract syntax solves many of these issues. The 
+idea of HOAS is to directly embed the language of study inside a
+relatively weak language, commonly LF. Term formers become constants
+and bindings become functions. Substitution becomes application. This
+technique proves to be very effective for representing syntax,
+hypothetical judgments, and obtaining substitution principles. For
+example, the type of intrinsically typed expressions corresponding to
+the first order representation we wrote above can be written as an LF
+signature as follows: 
 
-Beluga, Abella, and Delphin maintain a strict
-separation between the two levels. This means it is not so clear how
-to support the automated equational theory that makes intensional type
-theory so powerful.
-}
+\begin{lstlisting}
+exp  : tp -> type.
+app : exp (arr A B) -> exp A -> exp B.
+lam : (exp A -> exp B) -> exp (arr A B).
+\end{lstlisting}
+
+There is no case for variables, as they are
+treated implicitly. We emphasize that the function space in the
+\lstinline{lam} case is a weak, \emph{representational} function space
+-- there is no case analysis or recursion, and hence only genuine
+lambda terms can be represented. To convince oneself of this fact, one can prove that this definition is
+\emph{adequate}: that there is a (compositional) bijection between normal LF terms of
+this type, and our on-paper notion of terms. We do not go into details
+about this here. To clarify, one cannot view this signature literally as an inductive
+definition, since the apparently negative occurrence of
+\lstinline{exp} prevents one from doing so.
+
+The challenging aspect of HOAS is then how to give this definition the same
+status as a first-order representation. That is, we wish to somehow
+perform induction over a HOAS representation. The
+common goal of many systems employing HOAS, such as Beluga \citep{Pientka:IJCAR10} and
+Abella \citep{Gacek:IJCAR08} can be seen as recovering this ``first-order view'' of
+apparently higher-order representations. Typically, such systems
+achieve this by maintaining a strict separation between the two
+levels: the specification level (e.g. LF) and the reasoning level. In many ways, this
+separation, as it is implemented, is too strict to be completely practical. It is one goal of
+my thesis to demonstrate that this separation can in fact
+be much more liberal to achieve a more practical theory and system.
 
 \section{Summary of progress to date}
 I have published two papers to date in the direction of building a logical
@@ -985,13 +1003,7 @@ intrinsically typed terms directly. Below, \lstinline{tm} defines our family of 
 terms indexed by their type as an LF signature: term formers are
 represented as LF constants. In typical higher-order abstract syntax fashion, lambda
 abstraction takes a \emph{function} representing the abstraction of a
-term over a variable. There is no case for variables, as they are
-treated implicitly. We remind the reader that this is a weak, representational function space
--- there is no case analysis or recursion, and hence only genuine
-lambda terms can be represented. To convince oneself of this fact, one can prove that this definition is
-\emph{adequate}: that there is a (compositional) bijection between normal LF terms of
-this type, and our on-paper notion of terms. We do not go into details
-about this here.
+term over a variable.
 
 \begin{lstlisting}
 tp  : type.               
@@ -1300,7 +1312,7 @@ these techniques can be applied to rich dependent type theories.
 
 \LONGVERSION{
 Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
-logic (e.g. Abella). 
+logic (e.g. Abella). indexed types mean 
 
 clarify distinction with Hybrid: I'm proposing to use language design
 techniques to give better support (definitional equalities for
