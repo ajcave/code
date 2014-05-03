@@ -1219,9 +1219,9 @@ work. Unfortunately, the technique of hereditary substitution appears
 to not scale to such theories, so a more robust approach is needed.
 
 \subsection{Logical relations in contextual type theory}
-We have developed a larger case study of a formalization
-\citep{Cave14} of a logical relations proof using the techniques of
-\citep{Cave12} and \citep{Cave13}.
+I am in the process of preparing for submission a larger case study of a formalization
+of a logical relations proof using the techniques developed in 
+POPL'12 and LFMTP13 papers. This work is presented in the draft \citep{Cave14}.
 
 I want to draw attention to the aspects of this proof which make it
 challenging to formalize and not worry too much about the details of
@@ -1297,12 +1297,12 @@ for establishing monotonicity, below. This Kripke-style monotonicity
 is one of the reasons that this proof is more challenging than normalization proofs, where this
 quantification can be avoided using other technical tricks. For
 our formalization, we take a slightly different approach which 
-better exploits the features of Beluga available to us. We
+better exploits the features available to us. We
 instead quantify over an arbitrary $\Delta$ together with a
 \emph{renaming} substitution $\pi$ which brings terms from $\Gamma$ to
 $\Delta$, i.e. $\Delta \vdash \pi : \Gamma$. This is a substitution of
 variables for variables, i.e. it embodies precisely the structural
-rules of exchange, contraction, and most importantly, weakening.
+rules of exchange, contraction, and most importantly for this proof, weakening.
 
 \begin{center}
   \begin{tabular}{@{}l@{~~~}l@{~~~}l@{}}
@@ -1319,6 +1319,19 @@ are algorithmically equivalent. The proof requires establishing a
 few key properties of logical equivalence. The first is
 monotonicity, which is crucially used for weakening logical
 equivalence. This is used when applying terms to fresh variables.
+
+As one can imagine, the introduction of more substitutions means that
+the equations which arise in the proofs become even more complex, and
+the desire to discharge them automatically becomes even more
+pressing. For example, the most complex equation which arises in this
+proof is the following:
+
+$$
+M[\sigma[\uparrow],1][\pi[\uparrow],1][\text{id}, N] = M[\sigma[\pi],N]
+$$
+
+Fortunately, the LFMTP'13 work dutifully discharges this equation, and the user
+does not even encounter the complex expression on the left.
 
 \begin{lemma}[Monotonicity]
 If $\Gamma \vdash M \approx N : A$ and $\Delta \vdash \pi : \Gamma$ is
