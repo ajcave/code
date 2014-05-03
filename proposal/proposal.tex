@@ -161,11 +161,12 @@ procedure). This is an important practical asset for the proposed work.
 The main claim I aim to support with my thesis work is the following:
 
 \begin{quote}Building a logical framework into dependent type
-theory is possible and makes mechanization of state-of-the-art programming
+theory is feasible and makes mechanization of state-of-the-art programming
 language metatheory more effective.
 \end{quote}
 
-Moreover: the resulting framework shows promise for a rich programming
+Moreover, there is good reason to believe that the resulting framework
+could be a rich programming
 environment in which to implement programming languages and logics, which allows
 implementation to be carried out jointly with a ``sliding-scale'' of
 verification.
@@ -243,7 +244,7 @@ burden. These problems can not be blamed on de Bruijn indices: if we were to use
 lemmas simply take different forms, but do not really become any
 simpler.
 
-Higher-order abstract syntax solves many of these issues. Roughly the
+\LONGVERSION{Higher-order abstract syntax solves many of these issues. Roughly the
 idea is to directly embed the language of study inside of LF:
 constructors become constants, bindings become *functions*. Difficult
 part is recovering a view of this HOAS data as a first-order
@@ -262,60 +263,12 @@ Beluga, Abella, and Delphin maintain a strict
 separation between the two levels. This means it is not so clear how
 to support the automated equational theory that makes intensional type
 theory so powerful.
-
-\LONGVERSION{
-Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
-logic (e.g. Abella). 
-
-clarify distinction with Hybrid: I'm proposing to use language design
-techniques to give better support (definitional equalities for
-simultaneous substitutions).
-
-Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
-  typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
-  equivalence \citep{Dreyer11,others}, soundness and completenes of
-  NbE \citep{Dybjer00,Abel07}, all of which require
-  richer logics to express. Sometimes also simple requirements like
-  concatenation of contexts -- can't directly be expressed in Twelf
-  (can in Beluga), can often be worked around, but why not directly? 
-  By giving a more seamless integration of a logical framework
-  into dependent type theory (i.e. no separation between levels) this
-  can be accomplished.
-
-Pro of de Bruijn indices and contextual types (vs names, nominal
-logic): purely equational; no ``propositional'' side
-conditions. Compare:
-
-$[N/x]M = M$ if $x \not\in fv(M)$, versus: $[\text{id},N][\uparrow]M = M$
-
-This fits better into dependent type theory.
-
-HOAS/contextual types can be seen as ``syntactic sugar'' on top of de Bruijn indices.
-
-cite structural logical relations: requires auxiliary logic, deviates
-somewhat from the on-paper techniques? \citep{Schurmann08}
-
-In defense of intensional type theory: *smaller* checkable
-witnesses. (both beta and OL substitution equations). Spells out
-equality testing -- algorithm, not heuristic. 
 }
 
-\subsection{Conversion in type theory}
-A central issue in the design of a dependent type theory is
-conversion: when are two types deemed to be equal? In
-intensional type theories, conversion is decidable, but somewhat
-weak, typically including only $\beta$ laws and perhaps some $\eta$
-laws. There has been substantial work on the design and verification
-of algorithms for deciding increasingly richer theories, typically
-with more forms of $\eta$ laws. To take a
-small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
-\cite{Allais13} have developed promising techniques for incorporating equations
-which are neither $\beta$ nor $\eta$ laws, such as the associativity
-and unit laws for list append. It remains open to establish if 
-these techniques can be applied to rich dependent type theories.
-
 \section{Summary of progress to date}
-I have published two papers in this direction to date. The first
+I have published two papers to date in the direction of building a logical
+framework into dependent type theory, and formalizing state-of-the-art
+metatheory. The first
 was presented at POPL'12 \citep{Cave12} , and was a first step in
 exploring how HOAS can fit into a rich type theory, targetting support
 for indexed recursive types. The second was presented at LFMTP'13
@@ -1325,12 +1278,62 @@ monotonicity to fit the framework. This is significant evidence that
 our methods can scale to modern, sophisticated proofs in programming
 language metatheory.
 
-\section{Proposed work}
-\subsection{Computation in types}
+\section{Proposed work : From Indexed to Dependent Type Theory}
 Roughly speaking, my goal is to bring the worlds of HOAS-based proof
 assistants together with the world of rich dependent type theory. My
 work to date lays out the groundwork for such a plan, and gives us
 reason to believe it is feasible. 
+
+\paragraph{Conversion in type theory}
+A central issue in the design of a dependent type theory is
+conversion: when are two types deemed to be equal? In
+intensional type theories, conversion is decidable, but somewhat
+weak, typically including only $\beta$ laws and perhaps some $\eta$
+laws. There has been substantial work on the design and verification
+of algorithms for deciding increasingly richer theories, typically
+with more forms of $\eta$ laws. To take a
+small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
+\cite{Allais13} have developed promising techniques for incorporating equations
+which are neither $\beta$ nor $\eta$ laws, such as the associativity
+and unit laws for list append. It remains open to establish if 
+these techniques can be applied to rich dependent type theories.
+
+\LONGVERSION{
+Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
+logic (e.g. Abella). 
+
+clarify distinction with Hybrid: I'm proposing to use language design
+techniques to give better support (definitional equalities for
+simultaneous substitutions).
+
+Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
+  typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
+  equivalence \citep{Dreyer11,others}, soundness and completenes of
+  NbE \citep{Dybjer00,Abel07}, all of which require
+  richer logics to express. Sometimes also simple requirements like
+  concatenation of contexts -- can't directly be expressed in Twelf
+  (can in Beluga), can often be worked around, but why not directly? 
+  By giving a more seamless integration of a logical framework
+  into dependent type theory (i.e. no separation between levels) this
+  can be accomplished.
+
+Pro of de Bruijn indices and contextual types (vs names, nominal
+logic): purely equational; no ``propositional'' side
+conditions. Compare:
+
+$[N/x]M = M$ if $x \not\in fv(M)$, versus: $[\text{id},N][\uparrow]M = M$
+
+This fits better into dependent type theory.
+
+HOAS/contextual types can be seen as ``syntactic sugar'' on top of de Bruijn indices.
+
+cite structural logical relations: requires auxiliary logic, deviates
+somewhat from the on-paper techniques? \citep{Schurmann08}
+
+In defense of intensional type theory: *smaller* checkable
+witnesses. (both beta and OL substitution equations). Spells out
+equality testing -- algorithm, not heuristic. 
+}
 
 \LONGVERSION{
 The wisdom from LF is that if we understand and develop the theory for
