@@ -1040,14 +1040,18 @@ technical details.
 Here we demonstrate the particularly elegant encoding of this proof in
 the Beluga system, extended with support for first
 class (simultaneous) substitutions. By hand we defined grammar and
-typing separately, but here it is actually more convenient to define
+typing separately, but here it is more convenient to define
 intrinsically typed terms directly. Below, \lstinline{tm} defines our family of simply-typed lambda
-terms indexed by their type as an LF signature. In typical higher-order abstract syntax fashion, lambda
+terms indexed by their type as an LF signature: term formers are
+represented as LF constants. In typical higher-order abstract syntax fashion, lambda
 abstraction takes a \emph{function} representing the abstraction of a
 term over a variable. There is no case for variables, as they are
 treated implicitly. We remind the reader that this is a weak, representational function space
 -- there is no case analysis or recursion, and hence only genuine
-lambda terms can be represented.
+lambda terms can be represented. To convince oneself of this fact, one can prove that this definition is
+\emph{adequate}: that there is a (compositional) bijection between normal LF terms of
+this type, and our informal notion of terms. We do not go into details
+about this here.
 
 \begin{lstlisting}
 tp  : type.               
@@ -1060,41 +1064,21 @@ lam : (tm A -> tm B) -> tm (arr A B).
 c   : tm i.
 \end{lstlisting}
 
-We can then encode our step relation in a similar fashion below. Notice in
-particular we use LF's notion of substitution to encode the
-object-level substitution in the \lstinline{s/beta} case.
+We can then encode our step relation in a similar fashion. Notice in
+particular we use LF's application to encode substitution in the
+\lstinline{s/beta} case. We define also which terms are values, and
+what it means for a term to halt (not shown). 
 
 \begin{lstlisting}
 step  : tm A -> tm A -> type.
-s/beta : step (app (lam M) N) (M N).
+s/beta : step (app (lam (\x. M x)) N) (M N).
 s/app  : step M M' -> step (app M N) (app M' N).
-
-mstep  : tm A -> tm A -> type.
-...
 \end{lstlisting}
 
-We define a predicate on terms expressing what it means to be a value:
-again, the constant \lstinline{c} and lambda abstractions are our values.
-
-\begin{lstlisting}
-val     : tm A -> type.
-val/c   : val c.
-val/lam : val (lam M).
-\end{lstlisting}
-
-A term halts if it reduces to a value. In the following, \lstinline{M'} is
-implicitly universally quantified by the constructor
-\lstinline{h/val}, and so this has the effect of encoding the
-existential statement ``There exists a value $M'$ that $M$ steps to''.
-As in Twelf \citep{Pfenning99cade}, type reconstruction infers types for any free
-variable in a given type or kind declaration and implicitly quantifies over
-them. Programmers subsequently do not need to supply arguments for implicitly
-quantified variables.
-
-Reducibility cannot be directly encoded at the LF layer, since it
-involves a strong, computational function space. Hence we move to the
+Reducibility cannot be encoded as an LF signature, since it
+involves a genuine function space. Hence we move to the
 computation layer of Beluga, and employ an
-indexed recursive type, as defined by \cite{Cave:POPL12}. Contextual LF objects
+indexed recursive type, as defined in the previous section. Contextual LF objects
 and contexts which are embedded into computation-level types and programs are 
 written inside \lstinline![  ]!. 
 
@@ -1111,46 +1095,46 @@ one writes the context the term is defined in -- in this case, it is empty.
 datatype Reduce : {A:[.tp]} {M:[.tm A]} ctype =
 | I   : [. halts M] -> Reduce [. i] [. M]
 | Arr : [. halts M] ->
-          ({N:[.tm A]} Reduce [. A] [. N] -> Reduce [. B] [. app M N])
+        ({N:[.tm A]} Reduce [. A] [. N] -> Reduce [. B] [. app M N])
         -> Reduce [. arr A B] [. M];
 \end{lstlisting}
 
 In this definition, the arrows represent the usual computational
 function space, not the weak function space of LF. We note that this
-definition is not (strictly) positive, since \lstinline{Reduce}
-appears to the left of an arrow in the \lstinline{Arr} case. Allowing unrestricted such definitions
-destroys the soundness of our system. Here we note that this
-definition is stratified by the type: the recursive occurences of
+is \emph{not} an inductive definition: it is not (strictly) positive, since \lstinline{Reduce}
+appears to the left of an arrow in the \lstinline{Arr} case. Here we note that this
+definition is, in some sense, stratified by the \lstinline{tp} index: the recursive occurences of
 \lstinline{Reduce} are at types \lstinline{A} and \lstinline{B} which
 are smaller than \lstinline{arr A B}. This is how one justifies its
-existence. Beluga does not currently perform either a positivity check
+existence: the type is, in a sense, \emph{computed} by primitive
+recursion on the index argument \lstinline{tp}. Beluga does not currently perform either a positivity check
 or a stratification check, so in the present we must convince ourselves that this
 predicate is well-defined. In Coq \citep{bertot/casteran:2004} and Agda
-\citep{Norell:phd07} one typically justifies such definitions using
-large elimination, which Beluga does not currently support.
+\citep{Norell:phd07} one typically justifies such definitions using a
+universe (large elimination), which Beluga does not currently
+support. I comment more on this point later.
 
-Next we prove closure of \lstinline{Reduce} under expansion. This
-follows the handwritten proof directly, so we do not discuss it further.
+Next we prove closure of \lstinline{Reduce} under expansion. Proofs
+by induction take the form of recursive functions. We show the
+statement of the lemma, but we do not go into detail about the proof,
+since it follows the handwritten proof closely.
 
 \begin{lstlisting}
 rec closed : [. step M M'] -> Reduce [.A] [.M'] -> Reduce [.A] [.M] = ...
 \end{lstlisting}
 
-Note that we overload $\lambda$; here we use \lstinline!mlam!-abstractions when
-abstracting over an index argument explicitely, while we use
-\lstinline!fn!-abstraction when abstracting 
-over a computation-level variable. 
 Now we arrive at the part of the proof requiring simultaneous
-substitutions. First we define a schema for contexts, describing a
-type of contexts which contains only (typed) term assumptions:
+substitutions. The type of simultaneous substitutions is a new built-in
+type former of the index language: we write \lstinline{g[h]} for the
+type of substitutions which provide, for each variable in the context
+\lstinline{g}, a term in context \lstinline{g}.
 
-We now must state precisely what it means for a substitution to be
+We must state precisely what it means for a substitution to be
 reducible. We do this by employing another indexed recursive type: a predicate
 expressing that the substitution was built up as a list of reducible
-terms. The notation \lstinline{#S} stands for a substitution
-variable. Its type is written \lstinline{g[]}, meaning that it has
-domain \lstinline{g} and empty range, i.e. it takes variables in
-\lstinline{g} to closed terms of the same type. In the base case, the
+terms. This predicate is defined on substitutions of type
+\lstinline{g[]}, i.e. taking variables in \lstinline{g} to closed
+terms of the same type. In the base case, the
 empty substitution is reducible. In the \lstinline{Cons} case, we read
 this as saying: if \lstinline{#S} is a reducible substitution
 (implicitly at type \lstinline{g[]}) and \lstinline{M} is a reducible
@@ -1165,44 +1149,40 @@ datatype RedSub : (g:ctx){#S:g[]} ctype =
 | Cons : RedSub [. #S] -> Reduce [.A] [.M] -> RedSub [. #S, M ];
 \end{lstlisting}
 
-We implicitly quantify over the context \lstinline!g! by using round
-parenthesis writing \lstinline!(g:ctx)!; we explictly quantify over substitution
-variables using curly braces writing \lstinline!{#S:g[]}!. 
+% We implicitly quantify over the context \lstinline!g! by using round
+% parenthesis writing \lstinline!(g:ctx)!; we explictly quantify over substitution
+% variables using curly braces writing \lstinline!{#S:g[]}!. 
 
-Finally, our main lemma is standard and takes the form we would expect
+Finally, our fundamental theorem is standard and takes the form we would expect
 from the handwritten proof: if \lstinline{M} is a well-typed
 term, and we provide a reducible substitution \lstinline{#S} with closed
 instantiations for each of the free variables of \lstinline{M}, then
 \lstinline{M #S} (that is, the application of \lstinline{#S} to
-\lstinline{M}) is reducible. We proceed by induction on the term. When
-it is a variable, we appeal to \lstinline{lookup}. When it is an
-application, we straightforwardly apply the functional argument we obtain
-from the induction hypothesis for \lstinline{M1} to the induction
-hypothesis for \lstinline{M2}. The \lstinline{lam} case is the most
-interesting. Clearly the lambda abstraction halts, as it is a value. To show
-that 
-applying it to any reducible term is reducible, we appeal directly to
+\lstinline{M}) is reducible. We proceed by induction on the
+term. Again we show only the interesting \lstinline{lam} case. Clearly
+the lambda abstraction halts, as it is a value (this is the first,
+boxed argument to \lstinline{Arr} below). To show 
+that applying it to any reducible term is reducible, we appeal directly to
 closure under expansion, and the induction hypothesis for
 \lstinline{M1} with the substitution extended with
 \lstinline{N}. Recall that \lstinline{rN} is a proof that
-\lstinline{N} is reducible. We write \lstinline!_ ! for the type of the variable
-\lstinline!x! and let reconstruction infer it.
-
-Proofs in Beluga are written as recursive
-functions, analyzing the construction of the underlying LF objects,
-making recursive calls for appeals to the induction hypothesis. 
-
-(Here, we proceed by
-unboxing and pattern matching on our arguments...)
+\lstinline{N} is reducible.
 
 \begin{lstlisting}
-rec main : {g:ctx}{M:[g.tm A]} RedSub [. #S] -> Reduce [.A] [. M #S] =
+rec fund : {g:ctx}{M:[g.tm A]} RedSub [. #S] -> Reduce [.A] [. M #S] =
 mlam g => mlam M => fn rs => case [g. M ..] of
 | [g. lam (\x. M1 .. x)] =>
   Arr [. h/val s/refl val/lam]
    (mlam N => fn rN => closed [. s/beta]
-    (main [g,x:tm _] [g,x. M1 .. x] (Cons rs rN)))
+    (fund [g,x] [g,x. M1 .. x] (Cons rs rN)))
 ...
+\end{lstlisting}
+
+Weak normalization is now a trivial corollary, taking \lstinline{M} to be a closed term and
+\lstinline{#S} to be the empty substitution:
+
+\begin{lstlisting}
+rec weakNorm : {M:[. tm A]} [. halts M] = mlam M => main (fund [] [. M] Nil);
 \end{lstlisting}
 
 Notably, we did not have to concern
@@ -1210,17 +1190,33 @@ ourselves with the property of substitutions that we wrote explicitly
 in the paper proof in the \lstinline{lam} case. Using a low-level representation
 of substitution (e.g. de Bruijn indices) one must prove $[\sigma,N/x]M = [N/x][\sigma,x/x]M$
 (where $x \not\in \FV(\sigma)$) by hand, and this is actually a large
-bulk of the proof. We will see that in our setting, it is handled automatically
-by normalization during typechecking: the normal
-form of both sides of this equation is $[\sigma,N/x]M$.
+bulk of the proof. In this setting, it is handled automatically
+by normalization during typechecking. Roughly, the
+term \lstinline{fund [g,x] [g,x. M1 .. x] (Cons rs rN)} proves
+the reducibility of \lstinline{M1[#S, N]}, while
+\lstinline{closed [. s/beta]} is expecting a proof of the reducibility
+of
+\lstinline{M1[#S[$\uparrow$], 1][id, N]}. Our decision procedure for
+equality of index language expressions normalizes both to
+\lstinline{M[#S, N]}, so that this typechecks. In this work, the
+decision procedure for equality is described using the technique of
+\emph{hereditary substitution} \citep{Watkins02tr}. 
 
-Weak normalization is now a trivial corollary, taking \lstinline{M} to be a closed term and
-\lstinline{#S} to be the empty substitution:
 
-\begin{lstlisting}
-rec weakNorm : {M:[. tm A]} [. halts M] =
-mlam M => cr1 (main [] [. M] Nil);
-\end{lstlisting}
+The main technical achievement of this paper is the decidability of
+typechecking in the presence of such equations on substitutions. The
+remarkably succinct machine-checked proof in Beluga serves to
+illustrate the effectiveness and utility of this type system. 
+
+However, still a few issues remain open. The first we have mentioned
+already: giving a fully formal treatment of the definition of the logical
+relation. It cannot be an inductive type, so it must be explained by
+other means. This is straightforward in richer type theories/proof
+assistants in which we have access to a \emph{universe}, but such
+theories and systems do not provide near the same support for
+substitution. Bridging this gap is one component of my proposed
+work. Unfortunately, the technique of hereditary substitution appears
+to not scale to such theories, so a more robust approach is needed.
 
 \subsection{Logical relations in contextual type theory}
 We have developed a larger case study of a formalization
