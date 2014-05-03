@@ -1013,7 +1013,15 @@ By the main lemma, we have that $[\cdot]M\in \mathcal{R}_A$
 and hence that $[\cdot]M$, which is equal to $M$, halts.
 \end{proof}
 
-We wish to draw attention to the use of properties of simultaneous substitutions in the main
+The first point to draw attention to is the quantification
+over the context $\Gamma$ and the quantification over a simultaneous
+substitution $\sigma$ providing instantiations for $\Gamma$. This
+quantification typically cannot be directly expressed in HOAS-based
+systems, since the context is typically ambient, so that direct
+access to the context is impossible. This is the case in Twelf and Delphin.
+
+The second point to draw attention to in this proof is the use of
+properties of simultaneous substitutions in the main
 lemma and its corollary. On paper, these properties look intuitive and
 innocuous, but as explained earlier, these properties are typically a source of
 significant overhead when formalizing such results using various 
