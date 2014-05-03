@@ -337,17 +337,17 @@ of a substantial logical relations proof. In this
 section I briefly explain the main contributions of these papers.
 
 \subsection{Indexed recursive types}
-Recently, we have developed LF-indexed recursive types
-\citep{Cave12}, as a stepping stone to support LF-indexed inductive
-types. This was a first step in exploring how HOAS types can fit
-into a picture with traditional recursive (or inductive..)
-datatypes. This work emphasized ``programming'' applications
+The POPL'12 paper develops a notion of LF-indexed recursive types
+\citep{Cave12}, and describes many useful applications. This was a
+first step in exploring how HOAS types can fit
+into a rich type theory. This work emphasized ``programming'' applications
 as opposed to reasoning, since it was an open problem at the time how
-to support termination analysis in this setting. The techniques
-applied here also improved understanding of how to \emph{reason} about
+to support termination analysis in this setting, which is necessary to
+verify that a recursive function corresponds to an inductive proof. However, the techniques
+developed here also improved understanding of how to \emph{reason} about
 HOAS encodings.
 
-These increase the expressive power of the system: one can express
+Indexed recursive types significantly increase the expressive power of a system: one can express
 predicates on LF objects which were inexpressible before: e.g. that
 certain subexpressions are closed (they do not refer to any free variables), and express relationships between
 contexts. Generally, it gives direct access to properties of
@@ -561,7 +561,7 @@ known approaches. The resulting language is a prime candidate for
 implementing code transformations, algorithms over abstract syntax,
 and (partial) verification.
 
-I briefly recapitulate the main technical aspects of this work. The
+I briefly recap the main technical aspects of this work. The
 language of (computation-level) types is presented below, with the
 most important type formers highlighted. I write $U$ to stand for an index
 language type, $\mu$ contructs indexed recursive types, and $C_1 = C_2
@@ -686,7 +686,7 @@ types, so \lstinline{fold} contructs an inhabitant of such types, and
 they are destructed by pattern matching. Case branches $B$ have a
 \emph{refinement substitution} $\theta$ which describes how variables
 of the index language are refined with more information when a
-particular pattern matches.
+particular pattern matches. \LONGVERSION{TODO: Explain in more detail}
 
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
@@ -861,49 +861,52 @@ sophisticated invariants enforced by the type system. However, it left open a fe
 questions, first how to transition from indexed recursive types to
 \emph{inductive types} over LF representations, and closely related, how to support termination analysis for
 such types. These steps are crucial if we wish to transition from
-programming to \emph{proving}. A third question is whether we can move
+programming to \emph{proving}. Another question is whether we can move
 from indexed types to \emph{dependent types}, which support reasoning
 about the functions we write.
 
-\subsection{First class substitutions}\label{sec:lfmtp13}
-Our work on first-class substitutions \citep{Cave13} allows
-abstraction over simultaneous (sometimes known as parallel)
-substitutions, which is a natural technique used in many proofs
-(logical relations). For example, a typical logical relations proof
-takes a form like the following:
+\subsection{First-class substitutions}\label{sec:lfmtp13}
+The LFMTP'13 paper \citep{Cave13} addresses direct support for
+simultaneous (sometimes known as parallel)
+substitutions, which is a notion that arises in many programming
+language proofs. However, previously this notion had been
+conspicuously absent from work on logical frameworks and HOAS. This is
+likely because this notion arises most commonly in logical relations
+proofs, which are often out of reach of HOAS-based systems. To
+illustrate the benefit from direct support for
+simultaneous substitutions, this paper describes the formalization of such
+a logical relations proof, using one of the simplest
+imaginable such proofs: weak (head) normalization for the
+simply-typed lambda calculus. This formalization appears to be one of
+the most direct and succinct formalizations of a logical relations
+proof to date, which demonstrates that the framework described in the
+paper shows significant promise for formalizing more sophisticated results. I briefly recap
+this formalization here. 
 
-\begin{quote}
-If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
-$[\sigma]M \in \mathcal{R}_A$.
-\end{quote}
+% \begin{quote}
+% If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
+% $[\sigma]M \in \mathcal{R}_A$.
+% \end{quote}
 
-Here we have quantified over all substitutions $\sigma$ providing
-instantiations for all the free variables in $M$. This is a capability
-which is often not present in systems with rich support for
-substitutions, since the context $\Gamma$ is often ambient instead of
-available explicitly. 
+% Here we have quantified over all substitutions $\sigma$ providing
+% instantiations for all the free variables in $M$. This is a capability
+% which is often not present in systems with rich support for
+% substitutions, since the context $\Gamma$ is often ambient instead of
+% available explicitly. 
 
-In such proofs, there is typically a need to
-prove equations about simultaneous substitutions, for example:
-$[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in
-fv(\sigma)$. Our work in \citep{Cave13} solves this issue by embedding
-a decision procedure for these sorts of equations into the proof checker.
+% In such proofs, there is typically a need to
+% prove equations about simultaneous substitutions, for example:
+% $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in
+% fv(\sigma)$. Our work in \citep{Cave13} solves this issue by embedding
+% a decision procedure for these sorts of equations into the proof checker.
 
-Our approach works well for the setting of indexed typed we develop,
-but it does not scale well to dependent types.
+\subsubsection{Hand written proof}
 
-In this work we give the first example of a logical relation proof.
+Here I go over the informal presentation of the proof to explain
+the translation to a HOAS-based formalization.
 
-\subsection{Hand written proof}
-
-We begin by illustrating a typical logical relations proof of weak
-normalization for a simply typed lambda calculus to recap the encoding
-of formal systems and proofs in Beluga, and to emphasize the
-applications of a first-class notion of substitution.
-
-
-The grammar is straightforward: it includes lambda abstractions, variables, application, and a single
-constant of a constant type $\const i$. Lambda abstractions and the
+The grammar for the calculus includes on lambda abstractions, variables, application, and a single
+constant $\const c$ of a constant type $\const i$. Lambda abstractions and the
 constant $\const c$ are considered values.
 
 \newcommand{\stepsto}{\longrightarrow}
@@ -925,7 +928,7 @@ $\Gamma$ describes a typing context.
 \quad
 \infer{\Gamma \entails \lam x M : A \arrow B}
       {\Gamma,x{:}A \der M : B}
-\\[0.4em]
+\quad
 \infer{\Gamma \entails {\const c} : {\const i}}{}
 \quad
 \infer{\Gamma \entails M\; N : B}
@@ -933,31 +936,20 @@ $\Gamma$ describes a typing context.
 \end{array}
 \]
 
-We then define a form of weak head reduction with transitivity and
-reflexivity built in, simply because it is compact
-and convenient for this proof.
+We then define weak head reduction below. We say that a term $M$ halts if there exists a value $V$ such that $M
+\stepsto^* V$. 
 
 \[
 \begin{array}{l}
-\infer[\mathsf{refl}]{M \stepsto M}{}
-\quad
-\infer[\mathsf{trans}]{M \stepsto N}{M \stepsto M' & M' \stepsto N}
-\\[0em]
 \infer[\mathsf{beta}]{(\lam x M) N \stepsto [N/x]M}{}
 \quad
 \infer[\mathsf{app}]{M\;N \stepsto M'\;N}{M \stepsto M'}
 \end{array}
 \]
 
-We say that a term $M$ halts if there exists a value $V$ such that $M
-\stepsto V$.
 
-\begin{lemma}[Halts is closed under expansion]\label{lem:haltsclosed}
-If $M'$ halts, and $M \stepsto M'$ then $M$ halts.
-\end{lemma}
-
-We can now define the notion of reducibility which is typical for logical
-relations proofs. A term is reducible at base type precisely
+We can now define the notion of reducibility which is typical such logical
+relations proofs, which goes back to \cite{Tait67}. A term is reducible at base type precisely
 when it halts. A term $M$ is reducible at arrow type $A \arrow B$ when it halts, and
 for every reducible $N$ at type $A$, the application of $M$ to $N$ is
 reducible at type $B$.
@@ -997,14 +989,6 @@ $[\sigma]M \in \mathcal{R}_A$.
 By induction on the typing derivation. 
 We show only the interesting case:
 
-\begin{enumerate}
-\item $[\sigma]M \in \mathcal{R}_{A \arrow B}$ and $[\sigma]N \in
-  \mathcal{R}_A$ (by I.H.)
-\item For any $N' \in \mathcal{R}_A$ we have
-  $([\sigma]M)\;N' \in \mathcal{R}_B$ (by def of $\mathcal{R}$)
-\item Hence $([\sigma]M)\;([\sigma]N) \in \mathcal{R}_B$ as required.
-\end{enumerate}
-
 Case $\begin{array}{l}\infer{\Gamma \der \lam x M : A \arrow
     B}{\Gamma,x{:}A \der M : B}\end{array}$:
 
@@ -1013,8 +997,8 @@ is a value. Suppose then that we are given $N \in \mathcal{R}_A$.
 
 \begin{enumerate}
 \item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H.)
-\item $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (properties of
-  substitution)
+\item $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (property of
+  substitution; $x$ assumed fresh for $\sigma$)
 \item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
   under expansion)
 \end{enumerate}
@@ -1026,16 +1010,19 @@ If $\der M : A$ then $M$ halts.
 \end{corollary}
 \begin{proof}
 By the main lemma, we have that $[\cdot]M\in \mathcal{R}_A$
-and hence that $[\cdot]M (= M)$ halts.
+and hence that $[\cdot]M$, which is equal to $M$, halts.
 \end{proof}
 
 We wish to draw attention to the use of properties of simultaneous substitutions in the main
-lemma and its corollary. These properties are typically the source of
-the most overhead when formalizing results using various low level
-representations of variables and variable binding. However, we will
-illustrate that these properties are immediate in our framework, as
+lemma and its corollary. On paper, these properties look intuitive and
+innocuous, but as explained earlier, these properties are typically a source of
+significant overhead when formalizing such results using various 
+representations of variables and variable binding. However, these
+properties are immediate in our framework, as
 the equational theory of (simultaneous) substitutions is built into
-our type theory.
+our type theory. This means that the formalization need only implement
+the main content of the proof as it is written on paper, and not these
+technical details.
 
 \subsection{Encoding in Beluga}\label{sec:belugaweaknorm}
 
@@ -1451,6 +1438,13 @@ fundamental theorem with the main lemma to obtain completeness.
 If $\Gamma \vdash M \equiv N : A$ then $\Gamma \vdash M
 \Leftrightarrow N : A$
 \end{corollary}
+
+Our approach works well for the setting of indexed types we develop,
+but it does not scale well to dependent types.
+
+In this work we give the first example of a mechanized logical
+relation proof using HOAS which has computational behaviour: its
+computational content is a normalization algorithm.
 
 \section{Remaining to be done}
 \subsection{Computation in types}
