@@ -343,9 +343,9 @@ first step in exploring how HOAS types can fit
 into a rich type theory. This work emphasized ``programming'' applications
 as opposed to reasoning, since it was an open problem at the time how
 to support termination analysis in this setting, which is necessary to
-verify that a recursive function corresponds to an inductive proof. However, the techniques
+verify that a recursive function corresponds to a genuine inductive proof. However, the techniques
 developed here also improved understanding of how to \emph{reason} about
-HOAS encodings.
+HOAS encodings, even if such proofs are yet not fully formal.
 
 Indexed recursive types significantly increase the expressive power of a system: one can express
 predicates on LF objects which were inexpressible before: e.g. that
@@ -861,7 +861,7 @@ sophisticated invariants enforced by the type system. However, it left open a fe
 questions, first how to transition from indexed recursive types to
 \emph{inductive types} over LF representations, and closely related, how to support termination analysis for
 such types. These steps are crucial if we wish to transition from
-programming to \emph{proving}. Another question is whether we can move
+programming with type-enforced invariants to \emph{proving}. Another question is whether we can move
 from indexed types to \emph{dependent types}, which support reasoning
 about the functions we write.
 
@@ -905,7 +905,7 @@ this formalization here.
 Here I go over the informal presentation of the proof to explain
 the translation to a HOAS-based formalization.
 
-The grammar for the calculus includes on lambda abstractions, variables, application, and a single
+The grammar for the calculus includes lambda abstractions, variables, application, and a single
 constant $\const c$ of a constant type $\const i$. Lambda abstractions and the
 constant $\const c$ are considered values.
 
@@ -1448,6 +1448,12 @@ computational content is a normalization algorithm.
 
 \section{Remaining to be done}
 \subsection{Computation in types}
+Roughly speaking, my goal is to bring the worlds of HOAS-based proof
+assistants together with the world of rich dependent type theory. My
+work to date lays out the groundwork for such a plan, and gives us
+reason to believe it is possible. This requires an explanation of how
+higher-order abstract syntax is actually first-order.
+
 My goal for the future is to integrate a logical framework into
 dependent type theory. This provides an avenue to solve several of the
 above mentioned issues:
