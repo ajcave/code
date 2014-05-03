@@ -1221,7 +1221,13 @@ to not scale to such theories, so a more robust approach is needed.
 \subsection{Logical relations in contextual type theory}
 I am in the process of preparing for submission a larger case study of a formalization
 of a logical relations proof using the techniques developed in 
-POPL'12 and LFMTP13 papers. This work is presented in the draft \citep{Cave14}.
+POPL'12 and LFMTP13 papers. This work is presented in the draft
+\citep{Cave14}. It describes a formalization of a proof of
+completeness of an algorithm for deciding equality of simply-typed
+lambda terms up to $\beta\eta$ equivalence. Such a proof is the core
+of the proof of decidability of typechecking for LF
+\cite{Harper03tocl}, and the general technique is known to scale to
+much richer type theories (e.g. \cite{Abel11}).
 
 I want to draw attention to the aspects of this proof which make it
 challenging to formalize and not worry too much about the details of
@@ -1467,6 +1473,8 @@ intensional type theory is a language of verifiable evidence
 Alternative approaches: may ask why a language design? aren't there
 already tools we can use to do this? e.g. proof by reflection, CoqMT,
 VeriML?
+
+Decidability of conversion with a universe: \cite{Abel07}
 
 \section{Related Work}
 ...
