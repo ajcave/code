@@ -122,9 +122,9 @@ has come at a fairly steep price: most theories and systems
 incorporating higher order abstract syntax have fairly weak
 logics. This is in part because traditionally, it was unclear how to
 reconcile the traditional notions of implication and function spaces with
-the ``weak'' function space used in HOAS as a purely \emph{representational} technique.
+the ``weak function space'' used in HOAS as a purely \emph{representational} technique.
 
-For example, Twelf \cite{Twelf} can only express $\Pi_2$
+For example, Twelf \citep{Pfenning99cade} can only express $\Pi_2$
 statements, i.e. statements of the form $\forall x \exists y. \psi$
 where $\psi$ contains no quantifiers. Beluga (?), Abella (?), and
 Delphin (?) are
@@ -262,6 +262,7 @@ separation between the two levels. This means it is not so clear how
 to support the automated equational theory that makes intensional type
 theory so powerful.
 
+\LONGVERSION{
 Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
 logic (e.g. Abella). 
 
@@ -280,34 +281,23 @@ Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
   into dependent type theory (i.e. no separation between levels) this
   can be accomplished.
 
-Also forgetful maps on contexts (v.s. representation using relations
-and proving totality, etc)
-
-Also to properly justify logical relations arguments and use existing
-understanding of termination. (We ``cheat'' in Beluga to do logical relations)
-
-(Can I claim that the PL community is one of the biggest users of
-proof assistants, hence it makes sense to target?)
-
 Pro of de Bruijn indices and contextual types (vs names, nominal
 logic): purely equational; no ``propositional'' side
 conditions. Compare:
 
-$[N/x]M = M$ if $x \not\in fv(M)$, versus:
-
-$[0 := N]M = M$ if $M = [\uparrow]M'$ for some $M'$.
+$[N/x]M = M$ if $x \not\in fv(M)$, versus: $[\text{id},N][\uparrow]M = M$
 
 This fits better into dependent type theory.
 
-HOAS/contextual types are ``syntax'' on top of de Bruijn indices.
+HOAS/contextual types can be seen as ``syntactic sugar'' on top of de Bruijn indices.
 
 cite structural logical relations: requires auxiliary logic, deviates
 somewhat from the on-paper techniques? \citep{Schurmann08}
 
 In defense of intensional type theory: *smaller* checkable
-witnesses. (both beta and OL substitution equations)
-
-Spells out equality testing -- algorithm, not heuristic.
+witnesses. (both beta and OL substitution equations). Spells out
+equality testing -- algorithm, not heuristic. 
+}
 
 \subsection{Conversion in type theory}
 A central issue in the design of a dependent type theory is
