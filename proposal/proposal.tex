@@ -179,7 +179,7 @@ proof assistant, and this effort seems very likely to offer insight into how to
 incorporate other equational theories from other areas of application.
 
 
-\section{Background}
+\section{Background}\label{sec:background}
 To make the issues involved more concrete, and later to give a sketch
 of proposed work, I briefly describe the
 well-known issues involved in dealing with a first-order representation of
@@ -1326,29 +1326,84 @@ has demonstrated how to incorporate the equational theory of
 simultaneous substitutions into indexed type theory, and its
 applications to logical relations proofs, but it remains to extend
 such a theory to truly dependent types. My work to date represents
-important steps in establishing that such a project is feasible at all.
+important steps in establishing that such a project is feasible at
+all. In this section I give a sketch of the design plan.
 
-Sketch of the design
+The primary value of LF lies in its ability to faithfully represent a wide
+variety of object languages and hypothetical judgments by
+parameterizing it by a signature. I propose that by introducing a
+(first-order, say de Bruijn) encoding of LF into a dependent type
+theory, in much the same way as the intrinsically typed encoding in
+Sec. \ref{sec:background} we effectively obtain the virtues of LF in
+dependent type theory.
 
-This is similar in some regards to Hybrid \citep{Felty12}, although I propose
-direct integration of the logical framework into the (meta)language in order to provide
-more direct support.
+There are two approaches to introducing new types
+into type theory. The first is to use a general mechanism for defining
+(inductive) types within the system e.g. Coq's \verb|Inductive|, Agda's
+\verb|data|, Beluga's \verb|datatype|. This is the technique employed by
+users of the system, since these mechanisms are designed to not
+introduce inconsistency to the system. The second, more radical approach, is to extend the syntax of the
+language with new type formers, introduction forms, and elimination
+forms. This is the language designer's technique. This must be treated
+much more carefully, since for one, it can easily compromise the consistency of
+the theory. However, the practical payoff can be much higher: the language
+can provide more sophisticated support for the type. This is
+particularly so in intensional type theory: built-in type
+formers come with \emph{definitional equalities} which are verified as
+part of typechecking, and users need not concern themselves with
+them. Typically, these are $\beta$ rules (computation rules), and some
+$\eta$ rules (extensionality rules). But one can consider also other rules,
+such as the associativity of addition. To preserve decidability of
+type checking, the combined set of such rules must be a
+\emph{decidable} equational theory.
+
+I have carried out a construction of LF using the first approach (as
+an instance of an inductive type) in Agda, to test the feasibility of
+this idea. The construction works, but requires some very experimental
+features (so-called ``inductive-inductive'' definitions), and attempting to use it quickly
+runs into practical limitations: it required gigantic amounts of
+memory. This does not appear to be an essential problem with the
+idea, but more of a deficiency in Agda's implementation. This
+construction is similar in some regards to the approach taken in
+Hybrid \citep{Felty12}.
+
+I propose that the next step is to perform a construction of the
+second kind, at the language design level. The equational theory of
+substitutions can then be integrated into the \emph{definitional
+ equality}, in much the same way as as associativity of addition
+might. Technically, this is not so
+different from the other language-based approaches to support
+substitution such as Beluga and Abella. Beluga's approach is grounded
+in ideas from modal logic, and Abella's approach is grounded in proof
+theory and cut elimination. What I am proposing is apparently less
+principled in this sense (or perhaps the principles have simply not been
+discovered yet), but it does seem to provide a clear
+picture of how to move from indexed types to dependent types.
+
+By approaching the problem from this angle, I hope to use the
+extensive techniques developed for dependent type theory to aid in
+explaining induction over syntax with binding, universes, and
+termination. \LONGVERSION{(Dependent eliminators)}
+
+The main technical challenge lies in designing an algorithm for the
+resulting definitional equality, and proving its correctness
+(completeness, soundness, and termination). This in fact requires fairly deep theory
+ and sophisticated techniques, since for interesting equational
+ theories, proving this result typically entails also proving
+ consistency of the theory. The known techniques for this problem also
+ prove consistency and normalization as byproducts.
 
 One objection to such a project is that the resulting theory
 will be quite large, complex and specialized. My main defense is
 that my work on developing logical relations with these tools
-provides evidence that such a system would to have significant
+provides evidence that such a system would have significant
 practical value for the programming languages community. It is a more
 long term goal of mine to understand how the resulting theory can be
-understood more generally. In the meantime, I will settle
+understood more deeply and generally. In the meantime, I will settle
 for practical value.
 
-\paragraph{Conversion in type theory}
-A central issue in the design of a dependent type theory is
-conversion: when are two types deemed to be equal? In
-intensional type theories, conversion is decidable, but somewhat
-weak, typically including only $\beta$ laws and perhaps some $\eta$
-laws. There has been substantial work on the design and verification
+\LONGVERSION{
+\paragraph{Conversion in type theory} There has been substantial work on the design and verification
 of algorithms for deciding increasingly richer theories, typically
 with more forms of $\eta$ laws. To take a
 small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
@@ -1356,16 +1411,10 @@ small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
 which are neither $\beta$ nor $\eta$ laws, such as the associativity
 and unit laws for list append. It remains open to establish if 
 these techniques can be applied to rich dependent type theories.
+}
 
 
 \LONGVERSION{
-Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
-logic (e.g. Abella). indexed types mean 
-
-clarify distinction with Hybrid: I'm proposing to use language design
-techniques to give better support (definitional equalities for
-simultaneous substitutions).
-
 Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
   typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
   equivalence \citep{Dreyer11,others}, soundness and completenes of
@@ -1385,7 +1434,9 @@ $[N/x]M = M$ if $x \not\in fv(M)$, versus: $[\text{id},N][\uparrow]M = M$
 
 This fits better into dependent type theory.
 
-HOAS/contextual types can be seen as ``syntactic sugar'' on top of de Bruijn indices.
+HOAS/contextual types can be seen as ``syntactic sugar'' on top of de
+Bruijn indices. An explanation of how
+higher-order abstract syntax can actually be seen as first-order.
 
 cite structural logical relations: requires auxiliary logic, deviates
 somewhat from the on-paper techniques? \citep{Schurmann08}
@@ -1395,64 +1446,15 @@ witnesses. (both beta and OL substitution equations). Spells out
 equality testing -- algorithm, not heuristic. 
 }
 
-\LONGVERSION{
-The wisdom from LF is that if we understand and develop the theory for
-a single, sufficiently powerful language (LF), we have along the way
-developed the tools necessary for a wide variety of languages; we need
-only encode them as ``sublanguages'' of LF: technically, by
-considering a particular LF signature (list of basic constants). The
-``higher-order'' aspect of these encodings is a red herring, and
+\LONGVERSION{The
+``higher-order'' aspect of HOAS is a red herring, and
 in some sense obstructs our understanding of how to do ``standard''
 mathematical analysis of such encodings.
-
-My goal for the future is to integrate a logical framework into
-dependent type theory. This provides an avenue to solve several of the
-above mentioned issues:
-
-
-1) Expressing functional relations on contexts as genuine
-functions. Many other examples of ``computation in types''.
-
-2) An avenue for analyzing termination
-
-3) Justifying the reasonableness of logical relations (universes)
-
-4) Reuse understanding of inductive types
 
 This is necessary to support state-of-the-art proofs involving polymorphism,
 universes, ``generic programming'', dependent types, step indexing.
 
-basic design sketch
-
-So do this *once* for LF, and embed your OL inside
-
-I've prototyped this in Agda, became unfeasible: time to do it
-properly.
-
-And we still have to apply these lemmas manually and often compose
-several of them
-
-
-Solution: build LF datatype into DTT and build lemmas into conversion check
-
-Result: ``dependently typed Beluga''
-
 Analyze LF objects by the induction principle you get from considering an inductive type representing LF
-
-provides ``simple'' approach to semantics, termination (via eliminator
-for LF datatype)?
-
-A side product of this work will be an explanation of how
-higher-order abstract syntax can actually be seen as first-order.
-
-The goal is (success is measured by) an algorithm for typechecking,
-together with a proof of this algorithm's correctness: termination,
-soundness, and completeness. The standard technique for proving this
-kind of result about a dependent type theory also implies a few very
-important corollaries: consistency of the theory, as well as
-normalization of the calculus as a programming language.
-
-This proof is highly non-trivial. This is ``Deep Theory''
 
 technique for induction principle: induct over ``all of LF'' uniformly, permitting mutual definitions, etc.
 
@@ -1461,24 +1463,17 @@ technical results I am aiming to achieve: decidability
 
 Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
 
-Along lines of DML, ATS: specialized for metatheory. ``New equations
-for neutral terms'' \cite{Allais13}
-
 We give up a bit: intend to build around a de Bruijn
 representation. Argue that for proofs it doesn't matter much:
 typically we deal with one or two binders at at time. Scoping is
 enforced by typechecking, which guides you where to insert
 shifts. It actually takes quite a bit of effort to get shifts wrong. 
 
-intensional type theory is a language of verifiable evidence
-(McBride's term?)
-
 Alternative approaches: may ask why a language design? aren't there
 already tools we can use to do this? e.g. proof by reflection, CoqMT,
 VeriML?
 
 Decidability of conversion with a universe: \cite{Abel07}
-
 }
 
 The second main component is to implement a prototype sufficient to
