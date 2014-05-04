@@ -529,8 +529,8 @@ pattern matching and refinement of indices is simpler than other
 known approaches. The resulting language is a prime candidate for
 implementing code transformations, algorithms over abstract syntax,
 and (partial) verification. This claim has since been validated by
-\cite{Belanger13} with the implementation of a type preserving closure
-conversion algorithm and CPS conversion.
+\cite{Belanger13} who implemented a type preserving closure
+conversion algorithm and CPS conversion in the present language.
 
 I briefly recap the main technical aspects of this work. The
 language of (computation level) types is presented below, with the
@@ -580,8 +580,8 @@ quantifier than as a true Martin-L\"of-style $\Pi$ type.
 \end{array}
 \]
 
-Below, I illustrate how to write a type of lists of booleans indexed by their
-length, which we call vectors. The type of vectors is defined
+Below, I illustrate how one writes the type of lists indexed by their
+length (``vectors''). The type of vectors is defined
 recursively: either the index $X$ is 0 and we are at the end of the
 list or there is some $Y$ such that $X$ is the successor of $Y$, then
 a boolean and, recursively, a vector of indexed by $Y$.
@@ -1217,7 +1217,8 @@ assistants in which we have access to a \emph{universe}, but such
 theories and systems do not provide near the same support for
 substitution. Bridging this gap is one component of my proposed
 work. Unfortunately, the technique of hereditary substitution appears
-to not scale to such theories, so a more robust approach is needed.
+to not scale to such theories, so a more robust approach is
+needed. This point is discussed in more detail in later sections.
 
 \subsection{Logical relations in contextual type theory}
 I am in the process of preparing for submission a larger case study of a formalization
@@ -1322,8 +1323,8 @@ proof establishes the main results with essentially no bureaucratic
 manipulation of substitutions:
 
 \begin{theorem}[Fundamental theorem]
-If $\Gamma \vdash M \equiv N : A$ \\ and $\Delta \vdash \sigma_1 \approx
-\sigma_2 : \Gamma$ then $\Delta \vdash M[\sigma_1] \approx
+If $\Gamma \vdash M \equiv N : A$ and $\Delta \vdash \sigma_1 \approx
+\sigma_2 : \Gamma$ \\ then $\Delta \vdash M[\sigma_1] \approx
 N[\sigma_2] : A$
 \end{theorem}
 
@@ -1421,7 +1422,7 @@ the indexed setting, we were able to establish decidability using the
 syntactic technique of hereditary substitution, but in the dependent
 setting, one needs sophisticated \emph{semantic} techniques. In fact,
 for typical notions of definitional equality, a proof of decidability
-of definitional equality typically also results in proofs of
+of typically also produces proofs of
 consistency and (strong) normalization as byproducts.
 
 % One objection to this design is that the resulting theory
@@ -1449,7 +1450,7 @@ same underlying technique of normalization by evaluation.
 I hope to apply these techniques to obtain an extension to
 definitional equality supporting the
 equational theory of simultaneous substitutions. More generally, I
-hope that the techniques I develop towards this goal will be applicable to other sorts
+hope that the techniques I aim to develop for this goal will be applicable to other sorts
 of equational theories (e.g. arithmetic, monad laws). The resulting techniques could then have a
 direct impact on formalization efforts outside the area of programming
 language metatheory.
@@ -1579,15 +1580,15 @@ to POPL in July. More realistically, I should target the ESOP deadline in Octobe
 example formalizations as described in Subsec. \ref{sec:prototype}.
 
 % CoqMT approach to implementation?
-\paragraph{Stage 3: May 2015 to Nov 2015} Writing thesis, for initial submission by
+\paragraph{Stage 3: May 2015 to Nov 2015} Writing my thesis, aiming for initial submission by
 December 2015. This will compile my work on indexed recursive types, first class substitution
 variables, and the results of my proposed work on the transition from indexed types
 to dependent types.
 
-Simultaneously, during stages 1 and 2, I aim to prepare a submission to the TOPLAS journal to
+Concurrently, during stages 1 and 2, I aim to prepare a submission to TOPLAS  to
 describe in more depth the theory and implementation of indexed
 recursive types and first-class substitutions from 
-the POPL'12 and LFMTP'13 work, and to elaborate the draft on algorithmic
+the POPL'12 and LFMTP'13 work, and I aim to elaborate the draft on algorithmic
 equality for a submission to the Journal of Formalized Reasoning.
 
 % backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
@@ -1596,9 +1597,10 @@ equality for a submission to the Journal of Formalized Reasoning.
 Together, my work to date on foundations for mechanizing metatheory
 and the work I propose on bridging the worlds of dependent type theory
 and logical frameworks will be a substantial contribution to
-understanding the mechanization of programming language metatheory,
-and shows promise for making mechanization of state-of-the-art
-metatheory more effective.
+understanding the mechanization of programming language
+metatheory. Moreover, it appears promising that my work will
+contribute to making mechanization of state-of-the-art
+metatheory more practical.
 
 \bibliographystyle{plainnat}
 \bibliography{proposal}
