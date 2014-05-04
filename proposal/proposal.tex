@@ -1316,7 +1316,7 @@ monotonicity to fit the framework. This is significant evidence that
 our methods can scale to modern, sophisticated proofs in programming
 language metatheory.
 
-\section{Proposed work : From Indexed to Dependent Type Theory}
+\section{Proposed work : From Indexed to Dependent Type Theory}\label{sec:proposed}
 As argued in the previous sections, dependent types are a convenient
 feature for developing programming language metatheory. Moreover,
 concepts such as universes (which are often the device used to justify
@@ -1331,7 +1331,7 @@ important steps in establishing that such a project is feasible at
 all. In this section I give a sketch of the design plan, as well as
 describe the example proofs I intend to use as case studies.
 
-\subsection{A sketch of the design plan}
+\subsection{A sketch of the design plan}\label{sec:proposedtheory}
 
 The primary value of LF lies in its ability to faithfully represent a wide
 variety of object languages and hypothetical judgments by
@@ -1454,7 +1454,7 @@ normalization by evaluation.
 % VeriML?
 % }
 
-\subsection{Prototype and case studies}
+\subsection{Prototype and case studies}\label{sec:prototype}
 The next step is the development of a prototype implementation of this
 theory, with the goal of formalizing one or two non-trivial proofs
 which make use of the additional expressive power. 
@@ -1532,31 +1532,31 @@ programming language metatheory.
 % ...
 
 \section{Timeline}
-\paragraph{Stage 1:  May 2014 to Nov 2014} working out the metatheory and examples of computation in
-types. Optimistically, a POPL paper in July. ESOP deadline in
-October?
+In this section, I describe an estimated timeline for the completion
+of the goals described in Sec. \ref{sec:proposed} and the
+completion of my thesis.
 
-\paragraph{Stage 2: Nov 2014 to May 2014} prototype implementation and implementing examples
+\paragraph{Stage 1:  May 2014 to Nov 2014} Working out the
+theory as described in Subsec. \ref{sec:proposedtheory}. Optimistically, I may have preliminary results to submit
+as POPL paper in July. More realistically, I should target the ESOP deadline in October.
 
- - Implementing examples is key to demonstrating the value of this
- approach. I have conducted many such proofs in Agda: There are three
- main practical obstacles to carrying out such proofs 1) one needs a
- sufficient understanding of techniques for dealing with de Bruijn
- indices 2) one of course needs to understanding the proofs 3)
- applying the equational theory of simultaneous substitutions. 1 and 2
- I have tackled, and 3 is still a burden: this is what I propose to
- address
+\paragraph{Stage 2: Nov 2014 to May 2015} Implementing a prototype and
+example formalizations as described in Subsec. \ref{sec:prototype}.
 
-CoqMT approach to implementation?
-\paragraph{Stage 3: May 2015 to Nov 2015} writing thesis.
+% CoqMT approach to implementation?
+\paragraph{Stage 3: May 2015 to Nov 2015} Writing thesis, for initial submission by
+December 2015. This will compile my work on indexed recursive types, first class substitution
+variables, and my results of my proposed work on the transition from indexed types
+to dependent types.
 
-backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
-optional piece: support for (and examples of) step-indexed logical relations
-(Journal version of rec types paper combined with subst. vars?)
+Simultaneously, during stages 1 and 2, I aim to prepare a submission to the TOPLAS journal to
+describe in more depth the theory and implementation of indexed
+recursive types and first-class substitutions from 
+the POPL'12 and LFMTP'13 work, and elaborating the draft on algorithmic
+equality for a submission to the Journal of Formalized Reasoning.
 
-Also: Set aside time for writing up other stuff like journal version
-of paper.
-
+% backup/option: Some kind of ``initial algebra semantics'' for hypothetical judgments?
+% optional piece: support for (and examples of) step-indexed logical relations
 \section{Conclusion}
 ...
 
