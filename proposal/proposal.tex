@@ -823,6 +823,31 @@ programming with type-enforced invariants to \emph{proving}. Another question is
 from indexed types to \emph{dependent types}, which support reasoning
 about the functions we write.
 
+For example, if \lstinline{tm} is a type family indexed by a context of type
+\lstinline{tmctx} containing both term and type variables (as
+described above), and \lstinline{tp} is a type family indexed by a
+context of type \lstinline{tpctx} containing only type variables, one
+can imagine writing a function to infer the type of a term in context
+$\Gamma$ with the following type signature. We use the function $|-|$
+to map from a \lstinline{tmctx} to its corresponding \lstinline{tpctx}
+defined above.
+
+\begin{lstlisting}
+infer : $\Pi$($\Gamma$:tmctx). tm $\Gamma$ -> (tp |$\Gamma$|) option
+\end{lstlisting}
+
+However, in the theory described in this paper, one must
+instead write a type signature like the following, where we must
+express the mapping as a relation and later prove it is total.
+
+\begin{lstlisting}
+infer : $\Pi$($\Gamma$:tmctx). $\Pi$($\Delta$:tpctx). ctx_rel $\Gamma$ $\Delta$ -> tm $\Gamma$ -> (tp $\Delta$) option
+\end{lstlisting}
+
+While it is true that one can typically rewrite a proof using this
+relational style to avoid using such features, dependent types are a
+powerful linguistic mechanism for abstraction with practical impact. 
+
 \subsection{First-class substitutions}\label{sec:lfmtp13}
 The LFMTP'13 paper \citep{Cave13} addresses direct support for
 simultaneous (sometimes known as parallel)
@@ -1291,10 +1316,30 @@ our methods can scale to modern, sophisticated proofs in programming
 language metatheory.
 
 \section{Proposed work : From Indexed to Dependent Type Theory}
-Roughly speaking, my goal is to bring the worlds of HOAS-based proof
-assistants together with the world of rich dependent type theory. My
-work to date lays out the groundwork for such a plan, and gives us
-reason to believe it is feasible. 
+As argued in the previous sections, dependent types are a convenient
+feature for developing programming language metatheory. Moreover,
+concepts such as universes (which are often the device used to justify
+the definition of logical relations) are fairly well-understood in the setting of
+dependent type theory, but they are far less understood in
+theories with powerful support for substitution. My work to date
+has demonstrated how to incorporate the equational theory of
+simultaneous substitutions into indexed type theory, and its
+applications to logical relations proofs, it remains to extend
+such a theory to truly dependent types. My work to date was important in
+understanding 
+
+This is similar in some regards to Hybrid \citep{Felty12}, although I propose
+direct integration of the logical framework into the (meta)language in order to provide
+more direct support.
+
+One objection to such a project is that the resulting theory
+would be quite complex and specialized. My main defense is
+that my work on developing logical relations with these tools
+indicates that such a system is likely to have significant
+practical value for the programming languages community. It is a more
+long term goal of mine to understand how the resulting theory can be
+understood more generally. In the meantime, I will settle
+for practical value.
 
 \paragraph{Conversion in type theory}
 A central issue in the design of a dependent type theory is
@@ -1309,6 +1354,7 @@ small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
 which are neither $\beta$ nor $\eta$ laws, such as the associativity
 and unit laws for list append. It remains open to establish if 
 these techniques can be applied to rich dependent type theories.
+
 
 \LONGVERSION{
 Contrast dependent type theory with indexed types (e.g. Beluga) and first-order
