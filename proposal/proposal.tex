@@ -305,7 +305,6 @@ of a substantial logical relations proof. In this
 section I briefly explain the main contributions of these papers.
 
 \subsection{Indexed recursive types}
-\LONGVERSION{Present tense}
 The POPL'12 paper develops a notion of LF-indexed recursive types
 \citep{Cave12}, and describes many useful applications. This work represents a
 first step in exploring how HOAS types can fit
@@ -532,9 +531,13 @@ language of (computation-level) types is presented below, with the
 most important type formers highlighted. I write $U$ to stand for an index
 language type, $\mu$ contructs indexed recursive types, and $C_1 = C_2
 \wedge T$ expresses an equational constraint on indices together with
-a type.
+a type. We write $\dsum{\wvec{l : T}}$ for a labelled disjoint sum of
+types. The form $\pibox X U T$ quantifies over an index language type
+$U$. Notice that it cannot quantify over a computation level type $T$,
+and so this is not really a dependent type former, it is an
+\emph{indexed} type former: one should think of it more like a
+universal quantifier as in first-order logic.
 
-\LONGVERSION{Explain e.g. labelled sum, etc}
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
 % \mbox{Recursive Type} & S & \bnfas & 
@@ -1560,7 +1563,7 @@ example formalizations as described in Subsec. \ref{sec:prototype}.
 % CoqMT approach to implementation?
 \paragraph{Stage 3: May 2015 to Nov 2015} Writing thesis, for initial submission by
 December 2015. This will compile my work on indexed recursive types, first class substitution
-variables, and my results of my proposed work on the transition from indexed types
+variables, and the results of my proposed work on the transition from indexed types
 to dependent types.
 
 Simultaneously, during stages 1 and 2, I aim to prepare a submission to the TOPLAS journal to
