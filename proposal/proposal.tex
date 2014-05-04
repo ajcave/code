@@ -162,9 +162,18 @@ language metatheory more effective.
 Moreover, there is good reason to believe that the resulting framework
 could be a rich programming
 environment in which to implement programming languages and logics, which allows
-implementation to be carried out jointly with a ``sliding-scale'' of
-verification. \LONGVERSION{(proof carrying code? want to formalize your ``domain specific'' reasoning logic and mechanize
-its metatheory)}
+implementation to be carried out jointly with verification. Dependent
+type systems are known to be capable of providing a wide range of
+guarantees, ranging from lightweight 
+invariants to full-scale verification, depending on how
+much effort one is willing to invest.
+%  Perhaps there are applications
+% to the idea of proof-carrying code \citep{Necula:1997}. The idea
+% is that code from an untrusted source should come with a mechanically
+% checkable proof that it is safe to execute. Often such proofs are
+% carried out in a ``domain specific'' logic
+% \LONGVERSION{(proof carrying code? want to formalize your ``domain specific'' reasoning logic and mechanize
+% its metatheory)}
 
 More generally, I hope that the lessons learned from these efforts can shed some light on how
 to make mechanization of proofs outside of programming languages and
