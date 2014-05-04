@@ -316,24 +316,23 @@ section I briefly explain the main contributions of these papers.
 
 \subsection{Indexed recursive types}
 The POPL'12 paper develops a notion of LF-indexed recursive types
-\citep{Cave12}, and describes many useful applications. This work represents a
-first step in exploring how HOAS types can fit
+\citep{Cave12}, and describes how one can apply such a type system to programming with
+HOAS representations while enforcing sophisticated invariants. This work
+represents an early step in exploring how HOAS types can fit
 into a rich type theory. This work emphasizes ``programming'' applications
 as opposed to reasoning, since it was an open problem at the time how
 to support termination analysis in this setting, which is necessary to
 verify that a recursive function corresponds to a genuine inductive proof. However, the techniques
 developed here also contribute to understanding of how to \emph{reason} about
-HOAS encodings, even if such proofs are not yet fully formal.
+HOAS encodings, even if such proofs are not yet fully formal. 
+I give below a brief overview of the main contributions of this work.
 
-Indexed recursive types significantly increase the expressive power of a system: one can express
-predicates on LF objects which were inexpressible before: e.g. that
-certain subexpressions are closed (they do not refer to any free variables), and express relationships between
-contexts. Generally, it gives direct access to properties of
-contexts. This is similar to Abella, but in contrast to Delphin, and Twelf which do not
-provide such direct access to the context.
-
-In this paper, we described an intrinsically type-preseriving
-normalization by evaluation algorithm. This algorithm is traditionally
+Indexed recursive types add important expressive power: one can express
+new useful forms of predicates and relations on LF objects, e.g. one
+can express relationships between contexts with the type system. To illustrate the unique expressive
+power of this system, the paper describes the implementation of a normalization by evaluation
+algorithm which is guaranteed by the type system to preserve the 
+types of expressions. This algorithm is traditionally 
 difficult or impossible for systems based on HOAS, because it requires
 a comparatively rich computation/reasoning layer in order to define a semantic domain for expressions.
 
@@ -515,11 +514,8 @@ a comparatively rich computation/reasoning layer in order to define a semantic d
 % \label{fig:metatyping}
 % \end{figure}
 
-I give below a brief overview of the results of this work, which
-describes the integration of LF-indexed recursive datatypes into 
-
-Indexed recursive types have been considered before
-by e.g. \cite{Zenger:TCS97} and \cite{Xi99popl}. There are two main
+Our approach to indexed recursive types is based on the approaches by
+\cite{Zenger:TCS97} and \cite{Xi99popl}. There are two main 
 novel aspects of our work:
 %1) A modular description of the index
 %language and the computation language allows one to consider
@@ -537,16 +533,15 @@ and (partial) verification. This claim has since been validated by
 conversion algorithm and CPS conversion.
 
 I briefly recap the main technical aspects of this work. The
-language of (computation-level) types is presented below, with the
+language of (computation level) types is presented below, with the
 most important type formers highlighted. I write $U$ to stand for an index
-language type, $\mu$ contructs indexed recursive types, and $C_1 = C_2
+language type. The type former $\mu$ contructs indexed recursive types, and $C_1 = C_2
 \wedge T$ expresses an equational constraint on indices together with
-a type. We write $\dsum{\wvec{l : T}}$ for a labelled disjoint sum of
-types. The form $\pibox X U T$ quantifies over an index language type
-$U$. Notice that it cannot quantify over a computation level type $T$,
-and so this is not really a dependent type former, it is an
-\emph{indexed} type former: one should think of it more like a
-universal quantifier as in first-order logic.
+a type. Labelled disjoint sums of types are written $\dsum{\wvec{l :
+    T}}$. The form $\pibox X U T$ quantifies over an index language
+type $U$. Notice that it does not quantify over a computation level
+type $T$: one should think of it more like a first-order universal
+quantifier than as a Martin-L\"of-style $\Pi$ type. 
 
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
@@ -645,28 +640,25 @@ y{:}\m{tp} \\
 \end{array}
 \]
 
-This is a typical example of
-functional relation. We will often be obligated to prove manually
-that it is in fact functional, which would be unnecessary if it
-were represented directly as a function, such as the one
-below. However, while the language in this paper supports writing such
-functions, it does not support \emph{reasoning} about them, since they
-cannot occur in indices. So such a function is of limited
-utility; it cannot completely replace the corresponding relation.
-\begin{eqnarray*}
-|-| & : & \text{tmctx} \rightarrow \text{tpctx} \\
-| \psi , x:\text{tm} | & = & | \psi | \\
-| \psi , a:\text{tp} | & = & | \psi | , a:\text{tp}
-\end{eqnarray*}
-
 I present below the syntax for the computation language. The
-corresponding typing rules can be found in Fig. \ref{fig:comptyping}. This
-is mostly standard. The recursive types are \emph{iso-recursive}
+corresponding typing rules can be found in
+Fig. \ref{fig:comptyping}. The language
+is mostly standard, with a few notable exceptions I explain here. The
+recursive types are \emph{iso-recursive}
 types, so \lstinline{fold} contructs an inhabitant of such types, and
 they are destructed by pattern matching. Case branches $B$ have a
 \emph{refinement substitution} $\theta$ which describes how variables
 of the index language are refined with more information in the branch
-of a particular pattern. \LONGVERSION{TODO: Explain in more detail}
+of a particular pattern. The form $\dsum{l=E}$ injects $E$ into the
+labelled disjoint sum using label $l$. The type system is \emph{bidirectional}:
+expressions headed by a variable can typically \emph{synthesize}
+types, while canonical forms typically must be \emph{checked} against
+types. This style allows one to provide a minimal amount of type
+annotations in programs. The typing judgment $\Delta;\Gamma \vdash E
+\chk T$ has two contexts: $\Delta$ contains typing assumptions for variables from the index
+language, while $\Gamma$ contains typing assumptions from the
+computation language. So $\Pi$ adds its assumption $\Delta$ while
+$\arrow$ adds its assumption to $\Gamma$.
 
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
@@ -837,14 +829,29 @@ This work was an important milestone in understanding how HOAS can fit
 into the more general setting of an expressive type theory, and how it
 can be used effectively in implementing algorithms over syntax with
 sophisticated invariants enforced by the type system. However, it left open a few
-questions, first how to transition from indexed recursive types to
+questions. First, how to transition from indexed recursive types to
 \emph{inductive types} over LF representations, and closely related, how to support termination analysis for
 such types. These steps are crucial if we wish to transition from
 programming with type-enforced invariants to \emph{proving}. Another question is whether we can move
 from indexed types to \emph{dependent types}, which support reasoning
 about the functions we write.
 
-For example, if \lstinline{tm} is a type family indexed by a context of type
+For example, \lstinline{Ctx_rel} is a typical example of
+functional relation. We will often be obligated to prove manually
+that it is in fact functional, which would be unnecessary if it
+were represented directly as a function, such as the one
+below. However, while the language in this paper supports writing such
+functions, it does not support \emph{reasoning} about them, since they
+cannot occur in indices. So such a function is of limited
+utility; it cannot completely replace the corresponding relation.
+\begin{eqnarray*}
+|-| & : & \text{tmctx} \rightarrow \text{tpctx} \\
+| \psi , x:\text{tm} | & = & | \psi | \\
+| \psi , a:\text{tp} | & = & | \psi | , a:\text{tp}
+\end{eqnarray*}
+
+To see why it would be desirable to be able to reason using such
+functions, consider the following example: \lstinline{tm} is a type family indexed by a context of type
 \lstinline{tmctx} containing both term and type variables (as
 described above), and \lstinline{tp} is a type family indexed by a
 context of type \lstinline{tpctx} containing only type variables, one
@@ -857,7 +864,7 @@ defined above.
 infer : {$\Gamma$:tmctx} [$\Gamma$ $\vdash$ tm] -> Option [ |$\Gamma$| $\vdash$ tp]
 \end{lstlisting}
 
-However, in the theory described in this paper, one must
+However, in the indexed type theory described in this paper, one must
 instead write a type signature like the following, where we must
 express the mapping as a relation and later prove it is functional.
 
@@ -867,7 +874,8 @@ infer : {$\Gamma$:tmctx}{$\Delta$:tpctx} Ctx_rel [$\Gamma$] [$\Delta$] -> [$\Gam
 
 While it is true that one can typically rewrite a proof using this
 relational style to avoid using such features, dependent types are a
-powerful linguistic mechanism for abstraction with practical impact. 
+powerful linguistic mechanism with practical impact,
+ so it is desirable to support them.
 
 \subsection{First-class substitutions}\label{sec:lfmtp13}
 The LFMTP'13 paper \citep{Cave13} addresses direct support for
