@@ -1413,15 +1413,18 @@ explaining induction over syntax with binding, universes, and
 termination.
 
 The main technical challenge lies in designing an algorithm for the
-resulting definitional equality \LONGVERSION{when we move to
-  dep. theory, notion of definitional equality merges equational
-  substitution theory with computations; previously just ``syntactic''}, and proving its correctness
-(completeness, soundness, and termination). This in fact requires fairly deep theory
- and sophisticated techniques, since for interesting equational
- theories, proving this result typically entails also proving
- consistency of the theory. The known techniques for this problem also
- prove consistency and normalization as
- byproducts. \LONGVERSION{Expand: merge with next paragraph?}.
+resulting definitional equality and proving its correctness
+(completeness, soundness, and termination). This is particularly
+challenging because when we move to intensional dependent type theory,
+the notion of definitional equality includes not only the 
+equational theory of simultaneous substitutions we treated in the
+indexed setting, but also the computation rules of the language. In
+the indexed setting, we were able to establish decidability using the
+syntactic technique of hereditary substitution, but in the dependent
+setting, one needs sophisticated \emph{semantic} techniques. In fact,
+for typical notions of definitional equality, a proof of decidability
+of definitional equality typically also results in proofs of
+consistency and (strong) normalization as byproducts.
 
 % One objection to this design is that the resulting theory
 % will be quite large, complex and specialized. My main defense is
@@ -1433,8 +1436,8 @@ resulting definitional equality \LONGVERSION{when we move to
 % for practical value.
 
 \paragraph{Conversion in type theory} There has been substantial work on the design and verification
-of algorithms for deciding increasingly richer theories, typically
-with more forms of $\eta$ laws. To take a
+of algorithms for deciding increasingly richer notions of definitional
+equality, typically with more forms of $\eta$ laws. To take a
 small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
 \cite{Allais13} have developed promising techniques for incorporating equations
 which are neither $\beta$ nor $\eta$ laws, such as the associativity
@@ -1442,8 +1445,16 @@ and unit laws for list append. It remains open to establish if
 these techniques can be applied to a dependent type theory with a
 universe. But it looks promising, because the approach by
 \cite{Abel07} to verify a conversion test for type theory with a
-universe, and the technique by \cite{Allais13} are both based on
-normalization by evaluation.
+universe, and the technique by \cite{Allais13} are both based on the
+same underlying technique of normalization by evaluation.
+
+I hope to apply these techniques to obtain an extension to
+definitional equality supporting the
+equational theory of simultaneous substitutions. More generally, I
+hope that the techniques I develop towards this goal will be applicable to other sorts
+of equational theories (e.g. arithmetic, monad laws). The resulting techniques could then have a
+direct impact on formalization efforts outside the area of programming
+language metatheory.
 
 % \LONGVERSION{
 % Pro of de Bruijn indices and contextual types (vs names, nominal
