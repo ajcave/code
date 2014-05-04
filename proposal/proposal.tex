@@ -862,8 +862,7 @@ instead write a type signature like the following, where we must
 express the mapping as a relation and later prove it is functional.
 
 \begin{lstlisting}
-infer : {$\Gamma$:tmctx}{$\Delta$:tpctx} Ctx_rel [$\Gamma$] [$\Delta$] -> [$\Gamma$ $\vdash$ tm]
- -> Option [$\Delta$ $\vdash$ tp]
+infer : {$\Gamma$:tmctx}{$\Delta$:tpctx} Ctx_rel [$\Gamma$] [$\Delta$] -> [$\Gamma$ $\vdash$ tm] -> Option [$\Delta$ $\vdash$ tp]
 \end{lstlisting}
 
 While it is true that one can typically rewrite a proof using this
