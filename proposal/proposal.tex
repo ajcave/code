@@ -846,7 +846,7 @@ To see why it would be desirable to be able to reason using such
 functions, consider the following example: \lstinline{tm} is a type family indexed by a context of type
 \lstinline{tmctx} containing both term and type variables (as
 described above), and \lstinline{tp} is a type family indexed by a
-context of type \lstinline{tpctx} containing only type variables, one
+context of type \lstinline{tpctx} containing only type variables. One
 can imagine writing a function to infer the type of a term in context
 $\Gamma$ with the following type signature. We use the function $|-|$
 to map from a \lstinline{tmctx} to its corresponding \lstinline{tpctx}
@@ -865,7 +865,7 @@ infer : {$\Gamma$:tmctx}{$\Delta$:tpctx} Ctx_rel [$\Gamma$] [$\Delta$] -> [$\Gam
 \end{lstlisting}
 
 While it is true that one can typically rewrite a proof using this
-relational style to avoid using such features, dependent types are a
+relational style to avoid using dependent types, it is clear that dependent types are a
 powerful linguistic mechanism with practical impact,
  so it is desirable to support them.
 
