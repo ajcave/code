@@ -153,7 +153,7 @@ with implementation. Moreover, (intensional) dependent type theory
 incorporates automated support for a decidable equational theory in a
 principled way, which allows fully formal proofs to be remarkably
 short (at the cost of a more expensive proof-checking
-procedure). This is an important practical asset for the proposed work. 
+procedure). This is often an important practical asset. 
 
 \LONGVERSION{add citations to NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
 \citep{bertot/casteran:2004} somewhere}
@@ -218,7 +218,7 @@ burdensome, but which I do not discuss below.
 [_]' : sub G' G -> sub G D -> sub G' D = ...
 \end{alltt}
 
-This is sufficient in this case to describe the operational semantics
+This is sufficient to describe the operational semantics
 of our language, but if we wish to prove results about the operational
 semantics (for example, confluence), we quickly find that we need to
 prove some equations about the application of substitutions. Typical
@@ -230,6 +230,7 @@ lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
 lem3 : [ id ]' \(\sigma\) = \(\sigma\)
 lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
 \end{alltt}
+\LONGVERSION{More meaningful names}
 
 For example, \lstinline{lem1} says that the composition of applying
 substitutions is the application of the composition of
@@ -283,7 +284,12 @@ separation, as it is implemented, is too strict to be completely practical. It i
 my thesis to demonstrate that this separation can in fact
 be much more liberal to achieve a more practical theory and system.
 
+\LONGVERSION{Plan is to concentrate on Beluga: contextual types, pair
+  contexts with terms. More explanation of Beluga. Why Beluga is
+  better for our setting: first class contexts?}
+
 \section{Summary of progress to date}
+\LONGVERSION{Explain more in terms of progress than papers?}
 I have published two papers to date in the direction of building a logical
 framework into dependent type theory, and formalizing state-of-the-art
 metatheory. The first
@@ -300,6 +306,7 @@ of a substantial logical relations proof. In this
 section I briefly explain the main contributions of these papers.
 
 \subsection{Indexed recursive types}
+\LONGVERSION{Present tense}
 The POPL'12 paper develops a notion of LF-indexed recursive types
 \citep{Cave12}, and describes many useful applications. This was a
 first step in exploring how HOAS types can fit
@@ -504,7 +511,7 @@ I give below a brief overview of the results of this work, which
 describes the integration of LF-indexed recursive datatypes into 
 
 Indexed recursive types have been considered before
-by e.g. \cite{Zenger:TCS97} and \cite{Xi99popl}. There were two main
+by e.g. \cite{Zenger:TCS97} and \cite{Xi99popl}. There are two main
 novel aspects of our work:
 %1) A modular description of the index
 %language and the computation language allows one to consider
@@ -517,7 +524,8 @@ logics. 2) The treatment of index contraints, and our treatment of
 pattern matching and refinement of indices is simpler than other
 known approaches. The resulting language is a prime candidate for
 implementing code transformations, algorithms over abstract syntax,
-and (partial) verification.
+and (partial) verification. \LONGVERSION{We have illustrated this:
+  Olivier's type preserving closure conversion}
 
 I briefly recap the main technical aspects of this work. The
 language of (computation-level) types is presented below, with the
@@ -526,6 +534,7 @@ language type, $\mu$ contructs indexed recursive types, and $C_1 = C_2
 \wedge T$ expresses an equational constraint on indices together with
 a type.
 
+\LONGVERSION{Explain e.g. labelled sum, etc}
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
 % \mbox{Recursive Type} & S & \bnfas & 
@@ -591,11 +600,12 @@ corresponding form in the core theory.
 % | rsnoc : ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
 % \end{lstlisting}
 
+\LONGVERSION{Use more consistent syntax. Uppercase everywhere}
 \begin{lstlisting}
-datatype ctx_rel : tmctx -> tpctx -> ctype
-| nil : ctx_rel [] []
-| tmsnoc : ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) \phi
-| tpsnoc : ctx_rel \psi$\;$\phi -> ctx_rel (\psi,a:tp) (\phi,a:tp)
+datatype Ctx_rel : tmctx -> tpctx -> ctype
+| nil : Ctx_rel [] []
+| tmsnoc : Ctx_rel \psi$\;$\phi -> Ctx_rel (\psi,x:tm) \phi
+| tpsnoc : Ctx_rel \psi$\;$\phi -> Ctx_rel (\psi,a:tp) (\phi,a:tp)
 \end{lstlisting}
 
 % \[
@@ -832,6 +842,7 @@ $\Gamma$ with the following type signature. We use the function $|-|$
 to map from a \lstinline{tmctx} to its corresponding \lstinline{tpctx}
 defined above.
 
+\LONGVERSION{Fix syntax}
 \begin{lstlisting}
 infer : $\Pi$($\Gamma$:tmctx). tm $\Gamma$ -> (tp |$\Gamma$|) option
 \end{lstlisting}
@@ -981,7 +992,8 @@ First, $[\sigma](\lam x M) = \lam x ([\sigma,x/x]M)$ halts, since it
 is a value. Suppose then that we are given $N \in \mathcal{R}_A$.
 
 \begin{enumerate}
-\item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H.)
+\item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H. \LONGVERSION{Since
+    extending $\sigma$ is reducible})
 \item $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (property of
   substitution; $x$ assumed fresh for $\sigma$)
 \item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
@@ -997,6 +1009,8 @@ If $\der M : A$ then $M$ halts.
 By the main lemma, we have that $[\cdot]M\in \mathcal{R}_A$
 and hence that $[\cdot]M$, which is equal to $M$, halts.
 \end{proof}
+\LONGVERSION{In a system like Abella, would have to describe
+  sim. sub. explicitly}
 
 The first point to draw attention to is the quantification
 over the context $\Gamma$ and the quantification over a simultaneous
@@ -1120,6 +1134,7 @@ appended is a reducible substitution (implicitly at type
 \lstinline{(g,x:tm A)[]} -- the domain has been extended with a
 variable of type \lstinline{A}).
 
+\LONGVERSION{Turn hash S into $\sigma$. Maybe use turnstiles, not g}
 \begin{lstlisting}
 datatype RedSub : (g:ctx){#S:g[]} ctype =
 | Nil : RedSub [. ^$\,$ ]
@@ -1145,6 +1160,7 @@ closure under expansion, and the induction hypothesis for
 \lstinline{N}. Recall that \lstinline{rN} is a proof that
 \lstinline{N} is reducible.
 
+\LONGVERSION{Explain ..}
 \begin{lstlisting}
 rec fund : {g:ctx}{M:[g.tm A]} RedSub [. #S] -> Reduce [.A] [. M #S] =
 mlam g => mlam M => fn rs => case [g. M ..] of
@@ -1335,7 +1351,8 @@ describe the example proofs I intend to use as case studies.
 
 The primary value of LF lies in its ability to faithfully represent a wide
 variety of object languages and hypothetical judgments by
-parameterizing it by a signature. I propose that by introducing a
+parameterizing it by a signature. I propose \LONGVERSION{Better to say
+  explored; want to do it a different way} that by introducing a
 (first-order, say de Bruijn) encoding of LF into a dependent type
 theory, in much the same way as the intrinsically typed encoding in
 Sec. \ref{sec:background} we effectively obtain the virtues of LF in
@@ -1377,11 +1394,11 @@ substitutions can then be integrated into the \emph{definitional
  equality}, in much the same way as as associativity of addition
 might. Technically, this is not so
 different from the other language-based approaches to support
-substitution such as Beluga and Abella. Beluga's approach is grounded
+substitution as found in Beluga. Beluga's approach is grounded
 in ideas from modal logic, and Abella's approach is grounded in proof
-theory and cut elimination. What I am proposing is apparently less
+theory and cut elimination \LONGVERSION{...}. \LONGVERSION{What I am proposing is apparently less
 principled in this sense (or perhaps the principles have simply not been
-discovered yet), but it does seem to provide a clear
+discovered yet), but TAKE OUT} it does seem to provide a clear
 picture of how to move from indexed types to dependent types.
 
 By approaching the problem from this angle, I hope to use the
@@ -1390,21 +1407,24 @@ explaining induction over syntax with binding, universes, and
 termination. \LONGVERSION{(Dependent eliminators)}
 
 The main technical challenge lies in designing an algorithm for the
-resulting definitional equality, and proving its correctness
+resulting definitional equality \LONGVERSION{when we move to
+  dep. theory, notion of definitional equality merges equational
+  substitution theory with computations; previously just ``syntactic''}, and proving its correctness
 (completeness, soundness, and termination). This in fact requires fairly deep theory
  and sophisticated techniques, since for interesting equational
  theories, proving this result typically entails also proving
  consistency of the theory. The known techniques for this problem also
- prove consistency and normalization as byproducts.
+ prove consistency and normalization as
+ byproducts. \LONGVERSION{Expand: merge with next paragraph?}.
 
-One objection to this design is that the resulting theory
-will be quite large, complex and specialized. My main defense is
-that my work on developing logical relations with these tools
-provides evidence that such a system would have significant
-practical value for the programming languages community. It is a more
-long term goal of mine to understand how the resulting theory can be
-understood more deeply and generally. In the meantime, I will settle
-for practical value.
+% One objection to this design is that the resulting theory
+% will be quite large, complex and specialized. My main defense is
+% that my work on developing logical relations with these tools
+% provides evidence that such a system would have significant
+% practical value for the programming languages community. It is a more
+% long term goal of mine to understand how the resulting theory can be
+% understood more deeply and generally. In the meantime, I will settle
+% for practical value.
 
 \paragraph{Conversion in type theory} There has been substantial work on the design and verification
 of algorithms for deciding increasingly richer theories, typically
