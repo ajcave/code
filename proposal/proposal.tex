@@ -1327,7 +1327,10 @@ simultaneous substitutions into indexed type theory, and its
 applications to logical relations proofs, but it remains to extend
 such a theory to truly dependent types. My work to date represents
 important steps in establishing that such a project is feasible at
-all. In this section I give a sketch of the design plan.
+all. In this section I give a sketch of the design plan, as well as
+describe the example proofs I intend to use as case studies
+
+\subsection{A sketch of the design plan}
 
 The primary value of LF lies in its ability to faithfully represent a wide
 variety of object languages and hypothetical judgments by
@@ -1415,17 +1418,6 @@ these techniques can be applied to rich dependent type theories.
 
 
 \LONGVERSION{
-Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
-  typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
-  equivalence \citep{Dreyer11,others}, soundness and completenes of
-  NbE \citep{Dybjer00,Abel07}, all of which require
-  richer logics to express. Sometimes also simple requirements like
-  concatenation of contexts -- can't directly be expressed in Twelf
-  (can in Beluga), can often be worked around, but why not directly? 
-  By giving a more seamless integration of a logical framework
-  into dependent type theory (i.e. no separation between levels) this
-  can be accomplished.
-
 Pro of de Bruijn indices and contextual types (vs names, nominal
 logic): purely equational; no ``propositional'' side
 conditions. Compare:
@@ -1441,9 +1433,6 @@ higher-order abstract syntax can actually be seen as first-order.
 cite structural logical relations: requires auxiliary logic, deviates
 somewhat from the on-paper techniques? \citep{Schurmann08}
 
-In defense of intensional type theory: *smaller* checkable
-witnesses. (both beta and OL substitution equations). Spells out
-equality testing -- algorithm, not heuristic. 
 }
 
 \LONGVERSION{The
@@ -1457,9 +1446,6 @@ universes, ``generic programming'', dependent types, step indexing.
 Analyze LF objects by the induction principle you get from considering an inductive type representing LF
 
 technique for induction principle: induct over ``all of LF'' uniformly, permitting mutual definitions, etc.
-
-technical results I am aiming to achieve: decidability
-  of typechecking, (strong) normalization
 
 Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
 
@@ -1475,6 +1461,8 @@ VeriML?
 
 Decidability of conversion with a universe: \cite{Abel07}
 }
+
+\subsection{Case studies}
 
 The second main component is to implement a prototype sufficient to
 check some non-trivial proofs. I am to formalize 
@@ -1493,11 +1481,24 @@ the main exception of substitutions, which, for these proofs, will be
 entirely handled by support for the equational theory of
 substitutions, as described in Section \ref{sec:lfmtp13}.
 
-If it turns out that such proofs will not work for some reason, there
+If it turns out that such proofs are infeasible for some reason, there
 are alternative candidates to illustrate the point: a logical relation
 for contextual equivalence (parametricity) in the style of
 \cite{Dreyer11} or normalization for (perhaps a predicative variant
 of) System F \citep{ProofsAndTypes,Altenkirch93}.
+
+\LONGVERSION{
+Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
+  typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
+  equivalence \citep{Dreyer11,others}, soundness and completenes of
+  NbE \citep{Dybjer00,Abel07}, all of which require
+  richer logics to express. Sometimes also simple requirements like
+  concatenation of contexts -- can't directly be expressed in Twelf
+  (can in Beluga), can often be worked around, but why not directly? 
+  By giving a more seamless integration of a logical framework
+  into dependent type theory (i.e. no separation between levels) this
+  can be accomplished.
+}
 
 
 \section{Related Work}
