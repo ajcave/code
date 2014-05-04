@@ -1181,7 +1181,8 @@ decision procedure for equality is described using the technique of
 
 
 The main technical achievement of this paper is the decidability of
-typechecking in the presence of such equations on substitutions. The
+typechecking in the presence of such equations on substitutions, and
+the implementation of these ideas as an extension to the Beluga system. The
 remarkably succinct machine-checked proof in Beluga serves to
 illustrate the effectiveness and utility of this type system. 
 
@@ -1418,41 +1419,40 @@ universe. But it looks promising, because the approach by
 universe, and the technique by \cite{Allais13} are both based on
 normalization by evaluation.
 
+% \LONGVERSION{
+% Pro of de Bruijn indices and contextual types (vs names, nominal
+% logic): purely equational; no ``propositional'' side
+% conditions. Compare:
 
-\LONGVERSION{
-Pro of de Bruijn indices and contextual types (vs names, nominal
-logic): purely equational; no ``propositional'' side
-conditions. Compare:
+% $[N/x]M = M$ if $x \not\in fv(M)$, versus: $[\text{id},N][\uparrow]M = M$
 
-$[N/x]M = M$ if $x \not\in fv(M)$, versus: $[\text{id},N][\uparrow]M = M$
+% This fits better into dependent type theory.
 
-This fits better into dependent type theory.
+% HOAS/contextual types can be seen as ``syntactic sugar'' on top of de
+% Bruijn indices. An explanation of how
+% higher-order abstract syntax can actually be seen as first-order.
 
-HOAS/contextual types can be seen as ``syntactic sugar'' on top of de
-Bruijn indices. An explanation of how
-higher-order abstract syntax can actually be seen as first-order.
+% cite structural logical relations: requires auxiliary logic, deviates
+% somewhat from the on-paper techniques? \citep{Schurmann08}
+% }
 
-cite structural logical relations: requires auxiliary logic, deviates
-somewhat from the on-paper techniques? \citep{Schurmann08}
-}
+% \LONGVERSION{
+% % The ``higher-order'' aspect of HOAS is a bit of a red herring, and
+% % in some sense obstructs our understanding of how to do ``standard''
+% % mathematical analysis of such encodings.
 
-\LONGVERSION{
-% The ``higher-order'' aspect of HOAS is a bit of a red herring, and
-% in some sense obstructs our understanding of how to do ``standard''
-% mathematical analysis of such encodings.
+% % Analyze LF objects by the induction principle you get from considering an inductive type representing LF
 
-Analyze LF objects by the induction principle you get from considering an inductive type representing LF
+% % We give up a bit: intend to build around a de Bruijn
+% % representation. This is a bit ugly. Argue that for proofs it doesn't matter much:
+% % typically we deal with one or two binders at at time. Scoping is
+% % enforced by typechecking, which guides you where to insert
+% % shifts. It actually takes quite a bit of effort to get shifts wrong. 
 
-We give up a bit: intend to build around a de Bruijn
-representation. This is a bit ugly. Argue that for proofs it doesn't matter much:
-typically we deal with one or two binders at at time. Scoping is
-enforced by typechecking, which guides you where to insert
-shifts. It actually takes quite a bit of effort to get shifts wrong. 
-
-Alternative approaches: may ask why a language design? aren't there
-already tools we can use to do this? e.g. proof by reflection, CoqMT,
-VeriML?
-}
+% Alternative approaches: may ask why a language design? aren't there
+% already tools we can use to do this? e.g. proof by reflection, CoqMT,
+% VeriML?
+% }
 
 \subsection{Prototype and case studies}
 The next step is the development of a prototype implementation of this
@@ -1474,7 +1474,7 @@ adapting the implementation from indexed
 types to dependent types: merging the context of the index language
 (LF) and the context of the computation language. This was a sweeping
 change to the implementation that touched many components, but it turned
-out to be fairly straightforward, which indicates that this is a
+out to be fairly straightforward, which suggests that this is a
 promising direction to carry out the rest of the
 implementation.
 \item I now have experience with the Beluga
@@ -1494,14 +1494,14 @@ additional expressive power. I have two promising candidates for these examples:
 as presented by \cite{Dybjer00}. 
 \end{itemize}
 
-I have a several reasons to prefer these proofs:
+I have a several reasons to prefer these proofs and to believe they
+are feasible to formalize:
 
 \begin{itemize}
 \item The additional power of dependent type theory (relative to indexed
 types) really appears to be essential for these proofs. The second,
 for example, is reasoning about a computation-level function,
  which is not possible in the world of indexed types.
-\item Both rely extensively on the equational theory of substitutions
 \item I have partially formalized both in Agda, leaving lemmas related
   to substitutions unproved. This means that I have already carried
   out the first important step: understanding these proofs in sufficient
@@ -1523,8 +1523,13 @@ for contextual equivalence in the style of
 \cite{Dreyer11} and normalization for (perhaps a predicative variant
 of) System F \citep{ProofsAndTypes,Altenkirch93}.
 
-\section{Related Work}
-...
+If I can successfully formalize one these proofs using the tools from
+this theory, it will be substantial evidence that such a theory really
+can have a positive impact on the mechanization of state-of-the-art
+programming language metatheory.
+
+% \section{Related Work}
+% ...
 
 \section{Timeline}
 \paragraph{Stage 1:  May 2014 to Nov 2014} working out the metatheory and examples of computation in
