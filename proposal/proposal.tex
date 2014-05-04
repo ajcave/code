@@ -1405,7 +1405,6 @@ long term goal of mine to understand how the resulting theory can be
 understood more deeply and generally. In the meantime, I will settle
 for practical value.
 
-\LONGVERSION{
 \paragraph{Conversion in type theory} There has been substantial work on the design and verification
 of algorithms for deciding increasingly richer theories, typically
 with more forms of $\eta$ laws. To take a
@@ -1413,8 +1412,11 @@ small selection: \cite{Coquand91,Harper05,Abel11}. Recently,
 \cite{Allais13} have developed promising techniques for incorporating equations
 which are neither $\beta$ nor $\eta$ laws, such as the associativity
 and unit laws for list append. It remains open to establish if 
-these techniques can be applied to rich dependent type theories.
-}
+these techniques can be applied to a dependent type theory with a
+universe. But it looks promising, because the approach by
+\cite{Abel07} to verify a conversion test for type theory with a
+universe, and the technique by \cite{Allais13} are both based on
+normalization by evaluation.
 
 
 \LONGVERSION{
@@ -1432,25 +1434,17 @@ higher-order abstract syntax can actually be seen as first-order.
 
 cite structural logical relations: requires auxiliary logic, deviates
 somewhat from the on-paper techniques? \citep{Schurmann08}
-
 }
 
-\LONGVERSION{The
-``higher-order'' aspect of HOAS is a red herring, and
-in some sense obstructs our understanding of how to do ``standard''
-mathematical analysis of such encodings.
-
-This is necessary to support state-of-the-art proofs involving polymorphism,
-universes, ``generic programming'', dependent types, step indexing.
+\LONGVERSION{
+% The ``higher-order'' aspect of HOAS is a bit of a red herring, and
+% in some sense obstructs our understanding of how to do ``standard''
+% mathematical analysis of such encodings.
 
 Analyze LF objects by the induction principle you get from considering an inductive type representing LF
 
-technique for induction principle: induct over ``all of LF'' uniformly, permitting mutual definitions, etc.
-
-Algorithm for typechecking: \citep{Coquand91,Harper05,Abel11}
-
 We give up a bit: intend to build around a de Bruijn
-representation. Argue that for proofs it doesn't matter much:
+representation. This is a bit ugly. Argue that for proofs it doesn't matter much:
 typically we deal with one or two binders at at time. Scoping is
 enforced by typechecking, which guides you where to insert
 shifts. It actually takes quite a bit of effort to get shifts wrong. 
@@ -1458,8 +1452,6 @@ shifts. It actually takes quite a bit of effort to get shifts wrong.
 Alternative approaches: may ask why a language design? aren't there
 already tools we can use to do this? e.g. proof by reflection, CoqMT,
 VeriML?
-
-Decidability of conversion with a universe: \cite{Abel07}
 }
 
 \subsection{Case studies}
@@ -1471,6 +1463,9 @@ check some non-trivial proofs. I am to formalize
 
 soundness and completeness of a normalization by evaluation algorithm
 as presented by \cite{Dybjer00}. 
+
+The additional power of dependent type theory (relative to indexed
+types) really appears to be essential for these proofs.
 
 These are substantial proofs which, to the best of my knowledge, have never been
 formalized in a proof assistant with sufficient support for
@@ -1488,16 +1483,9 @@ for contextual equivalence (parametricity) in the style of
 of) System F \citep{ProofsAndTypes,Altenkirch93}.
 
 \LONGVERSION{
-Citations? parametricity \citep{Reynolds,morerecent?}, decidability of
-  typechecking \citep{Coquand?}, (step-indexed) logical relations for contextual
+Citations? parametricity \citep{Reynolds,morerecent?}, (step-indexed) logical relations for contextual
   equivalence \citep{Dreyer11,others}, soundness and completenes of
-  NbE \citep{Dybjer00,Abel07}, all of which require
-  richer logics to express. Sometimes also simple requirements like
-  concatenation of contexts -- can't directly be expressed in Twelf
-  (can in Beluga), can often be worked around, but why not directly? 
-  By giving a more seamless integration of a logical framework
-  into dependent type theory (i.e. no separation between levels) this
-  can be accomplished.
+  NbE \citep{Dybjer00,Abel07}
 }
 
 
