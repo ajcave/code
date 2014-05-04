@@ -1396,7 +1396,7 @@ resulting definitional equality, and proving its correctness
  consistency of the theory. The known techniques for this problem also
  prove consistency and normalization as byproducts.
 
-One objection to such a project is that the resulting theory
+One objection to this design is that the resulting theory
 will be quite large, complex and specialized. My main defense is
 that my work on developing logical relations with these tools
 provides evidence that such a system would have significant
@@ -1454,41 +1454,74 @@ already tools we can use to do this? e.g. proof by reflection, CoqMT,
 VeriML?
 }
 
-\subsection{Case studies}
-\LONGVERSION{This section and the next are still really drafty}
+\subsection{Prototype and case studies}
+The next step is the development of a prototype implementation of this
+theory, with the goal of formalizing one or two non-trivial proofs
+which make use of the additional expressive power. 
+The most practical and promising direction for the implementation
+appears to be to adapt the existing Beluga implementation. This is for
+several reasons:
 
-The second main component is to implement a prototype sufficient to
-check some non-trivial proofs. I am to formalize 
+\begin{itemize}
+\item The Beluga implementation already implements several practical
+features for proof development, namely implicit arguments, elaboration, and pattern
+matching which would be burdensome to implement from scratch, and
+unwieldy to live without.
+\item Many of the requirements are already implemented: LF, and
+the computation language.
+\item I have already carried out a first step in
+adapting the implementation from indexed
+types to dependent types: merging the context of the index language
+(LF) and the context of the computation language. This was a sweeping
+change to the implementation that touched many components, but it turned
+out to be fairly straightforward, which indicates that this is a
+promising direction to carry out the rest of the
+implementation.
+\item I now have experience with the Beluga
+code base, which makes adapting Beluga a more viable option than 
+adapting e.g. the Agda implementation, which I am unfamiliar with.
+\end{itemize}
 
-\cite{Coquand98} normalization proof for Martin-L\"of type theory with a universe
+To support the claim that the theory makes mechanization of
+state-of-the-art programming language metatheory more effective, the
+next step is to formalize interesting results which make use of the
+additional expressive power. I have two promising candidates for these examples:
 
-soundness and completeness of a normalization by evaluation algorithm
+\begin{itemize}
+\item A normalization proof for Martin-L\"of type theory with
+  a universe as presented by \cite{Coquand98}.
+\item Soundness and completeness of a normalization by evaluation algorithm
 as presented by \cite{Dybjer00}. 
+\end{itemize}
 
-The additional power of dependent type theory (relative to indexed
-types) really appears to be essential for these proofs.
+I have a several reasons to prefer these proofs:
 
-These are substantial proofs which, to the best of my knowledge, have never been
+\begin{itemize}
+\item The additional power of dependent type theory (relative to indexed
+types) really appears to be essential for these proofs. The second,
+for example, is reasoning about a computation-level function,
+ which is not possible in the world of indexed types.
+\item Both rely extensively on the equational theory of substitutions
+\item I have partially formalized both in Agda, leaving lemmas related
+  to substitutions unproved. This means that I have already carried
+  out the first important step: understanding these proofs in sufficient
+  detail to formalize them. I have found that both proofs are quite
+  manageable once they are understood, with the main exception of
+  substitutions, which become quite unwieldy.
+\item It was clear from this effort that both proofs rely
+  extensively on the equational theory of substitutions, and so would
+  benefit substantially from the support for substitutions I aim to provide.
+\end{itemize} 
+
+These are substantial proofs which have not previously been
 formalized in a proof assistant with sufficient support for
-substitution and binding. I aim to do these proofs because I have carried out these formalizations in
-Agda, with gaps in the proof pertaining to substitutions. I have found
-that these proofs are quite manageable once they are understood, with
-the main exception of substitutions, which, for these proofs, will be
-entirely handled by support for the equational theory of
-substitutions, as described in Section \ref{sec:lfmtp13}.
-
-If it turns out that such proofs are infeasible for some reason, there
-are alternative candidates to illustrate the point: a logical relation
-for contextual equivalence (parametricity) in the style of
-\cite{Dreyer11} or normalization for (perhaps a predicative variant
+substitution and binding. There are alternative candidates for such
+proofs, which will likely be left to future work, as I have not yet
+gone through the effort of understanding them in sufficient detail to
+formalize them: a logical relation
+for contextual equivalence in the style of
+\cite{Dreyer11} and normalization for (perhaps a predicative variant
 of) System F \citep{ProofsAndTypes,Altenkirch93}.
-
-\LONGVERSION{
-Citations? parametricity \citep{Reynolds,morerecent?}, (step-indexed) logical relations for contextual
-  equivalence \citep{Dreyer11,others}, soundness and completenes of
-  NbE \citep{Dybjer00,Abel07}
-}
-
 
 \section{Related Work}
 ...
