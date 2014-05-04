@@ -669,22 +669,21 @@ of a particular pattern. \LONGVERSION{TODO: Explain in more detail}
 
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
-\mbox{Expressions} & I  & \bnfas & y 
+\mbox{Synth. Expr} & I  & \bnfas & y 
   \bnfalt \app I E % \bnfalt \fst I \bnfalt \snd I 
   \bnfalt \app I \ctxi C 
 %  \bnfalt \unfold I
-   \bnfalt  (E : T)\\
-\mbox{~(synth.)} & & & 
+   \bnfalt  (E : T)
 % \Bnfalt  \letpack{u}{x}{e}{e'}
 \\[2pt]
-\mbox{Expressions} & E & \bnfas &  I 
+\mbox{Checked Expr} & E & \bnfas &  I 
 %  \bnfalt \boxm{\Psihat}{R} 
   \bnfalt C % \tbox\, C
   \bnfalt \fn{y}{E}
   \bnfalt \mlam{X}{E} 
   \bnfalt \rec{f}{E} 
   \bnfalt \m{unit}\\
-\mbox{~(checked)}& & &   \bnfalt \fold E  \bnfalt \dsum{l=E}   \bnfalt \pack (C , E) \\
+& & &   \bnfalt \fold E  \bnfalt \dsum{l=E}   \bnfalt \pack (C , E) \\
 % & & &   \bnfalt \letpack {(X , y) = I} E
 &&&  \bnfalt (E_1, E_2) \bnfalt \casebox{I}{\vec{B}} \\
 \mbox{Pattern } & {pat} & \bnfas & x \bnfalt C \bnfalt \m{unit} \bnfalt \fold {pat} \bnfalt \dsum{l = {pat}} \\
@@ -709,11 +708,10 @@ of a particular pattern. \LONGVERSION{TODO: Explain in more detail}
 \infer{\Delta ; \Gamma \der I \syn T}{
        \Delta ; \Gamma \der I \syn C = C \andalso T
 }
- \\[0.8em]
  ~~~
 \infer
  {\Delta ; \Gamma \entails I\;E \syn T}{
-  \Delta ; \Gamma \entails I \syn T_2 \arrow T ~~&~~
+  \Delta ; \Gamma \entails I \syn T_2 \arrow T &
   \Delta ; \Gamma \entails E \chk T_2 }
  \\[0.8em]
  \quad
@@ -753,6 +751,10 @@ of a particular pattern. \LONGVERSION{TODO: Explain in more detail}
 \infer
  {\Delta ; \Gamma \entails \mlam{X}{E} \chk \Pibox X{:}U.T }
  {\Delta, X{:}U ; \Gamma \entails E \chk T }
+\quad
+\infer
+  {\Delta ; \Gamma \entails I \chk T' }
+  {\Delta ; \Gamma \entails I \syn T & T = T'}
 \\[0.8em]
 %\quad
 \infer{\Delta ; \Gamma \der (E_1,E_2) \chk T_1 \times T_2}{
@@ -760,11 +762,7 @@ of a particular pattern. \LONGVERSION{TODO: Explain in more detail}
        \Delta ; \Gamma \der E_2 \chk T_2
 }
 \quad
-\infer
-  {\Delta ; \Gamma \entails I \chk T' }
-  {\Delta ; \Gamma \entails I \syn T & T = T'}
 %\\[0.8em]
-\\[0.8em]
 % \infer{\Delta ; \Gamma \der \inl E \chk T_l + T_r}{\Delta ; \Gamma \der E \chk T_l }
 % \quad
 %  \infer{\Delta ; \Gamma \der \inr E \chk T_l + T_r}{\Delta ; \Gamma \der E \chk T_r}
@@ -774,10 +772,6 @@ of a particular pattern. \LONGVERSION{TODO: Explain in more detail}
        \Delta \der C \chk U & 
        \Delta ; \Gamma \der E \chk \msub{C/X}T
 }
-\quad
- \infer{\Delta; \Gamma \entails % \tbox\,
-          C \chk U}
-       {\Delta \entails C \chk U }
 \\[0.8em]
 \infer{\Delta ; \Gamma \der \fold E \chk  (\mu Z. \mlam {\vec X}  S)\;{\vec C}}{
 %       T = \mu Z. \mlam {\vec X} . S& 
@@ -787,6 +781,10 @@ of a particular pattern. \LONGVERSION{TODO: Explain in more detail}
 \infer{\Delta ; \Gamma \der E \chk C = C \andalso T}{
        \Delta ; \Gamma \der E \chk T
 }
+\quad
+\infer{\Delta; \Gamma \entails % \tbox\,
+          C \chk U}
+       {\Delta \entails C \chk U }
 \\[0.8em]
 % \infer{\Delta ; \Gamma \der \letpack {(X,y) = I} E \chk T}{
 %        \Delta ; \Gamma \der I \syn \sigmabox X U S & 
