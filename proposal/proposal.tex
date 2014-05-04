@@ -535,13 +535,17 @@ conversion algorithm and CPS conversion.
 I briefly recap the main technical aspects of this work. The
 language of (computation level) types is presented below, with the
 most important type formers highlighted. I write $U$ to stand for an index
-language type. The type former $\mu$ contructs indexed recursive types, and $C_1 = C_2
-\wedge T$ expresses an equational constraint on indices together with
+language type; I do not go into substantial detail about the index
+language here. For the present purpose, it suffices to know that there
+are two main types of index expressions: 1) LF contexts, typically denoted
+$\psi$, and 2) LF expressions in an associated context, which we write
+as $[\psi \vdash M]$. The type former $\mu$ contructs indexed 
+recursive types, and $C_1 = C_2 \wedge T$ expresses an equational constraint on indices together with
 a type. Labelled disjoint sums of types are written $\dsum{\wvec{l :
     T}}$. The form $\pibox X U T$ quantifies over an index language
-type $U$. Notice that it does not quantify over a computation level
+type $U$. Notice that the domain of quantification is \emph{not} a computation level
 type $T$: one should think of it more like a first-order universal
-quantifier than as a Martin-L\"of-style $\Pi$ type. 
+quantifier than as a true Martin-L\"of-style $\Pi$ type. 
 
 \[
 \begin{array}{l@{~}r@{~}c@{~}l}
@@ -595,7 +599,7 @@ a boolean and, recursively, a vector of indexed by $Y$.
 
 For our purposes, we are interested in using such indexed recursive
 types to enforce invariants about syntax and related notions such as contexts.
-For example, one often has the need to express the notion of a relation
+For example, one often has the need to express a relationship
 between contexts when relating two languages. A typical example might relate a context
 which lists both term variables and type variables to a corresponding
 context which lists only the type variables (e.g. when representing
@@ -615,18 +619,7 @@ datatype Ctx_rel : tmctx -> tpctx -> ctype
 | tpsnoc : Ctx_rel [\psi]$\;$[\phi] -> Ctx_rel [\psi,a:tp] [\phi,a:tp]
 \end{lstlisting}
 
-% \[
-% \begin{array}{r@{\;}c@{\;}l@{}l}
-% \mu \text{Ctx\_rel}. \lambda \psi\lambda \phi. & \langle & \m{nil}\; &:  \psi
-% = \cdot \andalso \phi = \cdot \andalso \tunit\;, \\
-% &  & \m{snoc} & : \Sigma \psi'{:}{\m{ctx}}. \Sigma \phi'{:}{\m{cctx}}.\\ 
-% &&& \psi = \psi', x{:}\m{tm} ~\andalso~ \phi = \phi', y{:}\m{ctm} \\
-% &&& \andalso\;\text{Ctx\_rel}\;\psi'\;\phi' \;\rangle 
-% \end{array}
-% \]
-
 Here is its corresponding representation in the core language: 
-
 \[
 \begin{array}{r@{\;}c@{\;}l@{}l}
 \mu \text{Ctx\_rel}. \lambda \psi\lambda \phi. & \langle & \m{nil}\; &:  \psi
@@ -655,9 +648,9 @@ expressions headed by a variable can typically \emph{synthesize}
 types, while canonical forms typically must be \emph{checked} against
 types. This style allows one to provide a minimal amount of type
 annotations in programs. The typing judgment $\Delta;\Gamma \vdash E
-\chk T$ has two contexts: $\Delta$ contains typing assumptions for variables from the index
+\chk T$ makes use of two contexts: $\Delta$ contains typing assumptions for variables from the index
 language, while $\Gamma$ contains typing assumptions from the
-computation language. So $\Pi$ adds its assumption $\Delta$ while
+computation language. So $\Pi$ adds its assumption to $\Delta$ while
 $\arrow$ adds its assumption to $\Gamma$.
 
 \[
@@ -839,8 +832,7 @@ about the functions we write.
 For example, \lstinline{Ctx_rel} is a typical example of
 functional relation. We will often be obligated to prove manually
 that it is in fact functional, which would be unnecessary if it
-were represented directly as a function, such as the one
-below. However, while the language in this paper supports writing such
+were represented directly as a function, below. However, while the language in this paper supports writing such
 functions, it does not support \emph{reasoning} about them, since they
 cannot occur in indices. So such a function is of limited
 utility; it cannot completely replace the corresponding relation.
