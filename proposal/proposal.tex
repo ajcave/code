@@ -91,9 +91,6 @@ even to automatically generate the list of cases for the human prover
 to consider, so that constructing a proof becomes an interactive
 effort.
 
-\LONGVERSION{(proof carrying code? want to formalize your ``domain specific'' reasoning logic and mechanize
-its metatheory)}
-
 However, formalizing such proofs can still be tedious for at least one reason,
 namely giving a formal treatment of variable binding and
 substitution. \cite{Altenkirch93} writes (about
@@ -155,9 +152,6 @@ principled way, which allows fully formal proofs to be remarkably
 short (at the cost of a more expensive proof-checking
 procedure). This is often an important practical asset. 
 
-\LONGVERSION{add citations to NuPRL \citep{NuPRL} Agda \citep{Norell:phd07} Coq
-\citep{bertot/casteran:2004} somewhere}
-
 The main claim I aim to support with my thesis work is the following:
 
 \begin{quote}Building a logical framework into dependent type
@@ -169,7 +163,8 @@ Moreover, there is good reason to believe that the resulting framework
 could be a rich programming
 environment in which to implement programming languages and logics, which allows
 implementation to be carried out jointly with a ``sliding-scale'' of
-verification.
+verification. \LONGVERSION{(proof carrying code? want to formalize your ``domain specific'' reasoning logic and mechanize
+its metatheory)}
 
 More generally, I hope that the lessons learned from these efforts can shed some light on how
 to make mechanization of proofs outside of programming languages and
@@ -178,13 +173,12 @@ incorporation of a (particular) rich, decidable equational theory into a
 proof assistant, and this effort seems very likely to offer insight into how to
 incorporate other equational theories from other areas of application.
 
-
 \section{Background}\label{sec:background}
 To make the issues involved more concrete, and later to give a sketch
 of proposed work, I briefly describe the
 well-known issues involved in dealing with a first-order representation of
 syntax. Below I sketch an intrinsically typed encoding of the
-simply typed lambda calculus in a simplified Agda-like notation. This
+simply typed lambda calculus in a simplified Agda-like notation \citep{Norell:phd07}. This
 is a well-known technique (see e.g. \citep{Benton:12}) for
 economically describing well-typed expressions, and enforcing some
 invariants about them in a lightweight way.
@@ -225,12 +219,11 @@ prove some equations about the application of substitutions. Typical
 results we may need are listed below:
 
 \begin{alltt}
-lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
-lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
-lem3 : [ id ]' \(\sigma\) = \(\sigma\)
-lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
+compositional : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
+projection    : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
+identityLeft  : [ id ]' \(\sigma\) = \(\sigma\)
+combination   : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
 \end{alltt}
-\LONGVERSION{More meaningful names}
 
 For example, \lstinline{lem1} says that the composition of applying
 substitutions is the application of the composition of
@@ -284,12 +277,17 @@ separation, as it is implemented, is too strict to be completely practical. It i
 my thesis to demonstrate that this separation can in fact
 be much more liberal to achieve a more practical theory and system.
 
-\LONGVERSION{Plan is to concentrate on Beluga: contextual types, pair
-  contexts with terms. More explanation of Beluga. Why Beluga is
-  better for our setting: first class contexts?}
+In the Beluga system, if \lstinline{M} is an LF term of type
+\lstinline{exp A} in context \lstinline{$\Psi$}, we package it
+together with its context, forming a \emph{contextual object} \lstinline{[$\Psi$ $\vdash$ M]} of
+type \lstinline{[$\Psi$ $\vdash$ exp A]}, which we can use an index to
+a computation level type in order to reason
+about it. This means that one has direct access to inspect and manipulate
+contexts, in contrast to Twelf and Delphin. This capability is important for mechanizing state-of-the-art
+metatheory. This point will be described in more depth in the following
+sections.
 
 \section{Summary of progress to date}
-\LONGVERSION{Explain more in terms of progress than papers?}
 I have published two papers to date in the direction of building a logical
 framework into dependent type theory, and formalizing state-of-the-art
 metatheory. The first
@@ -308,9 +306,9 @@ section I briefly explain the main contributions of these papers.
 \subsection{Indexed recursive types}
 \LONGVERSION{Present tense}
 The POPL'12 paper develops a notion of LF-indexed recursive types
-\citep{Cave12}, and describes many useful applications. This was a
+\citep{Cave12}, and describes many useful applications. This work represents a
 first step in exploring how HOAS types can fit
-into a rich type theory. This work emphasized ``programming'' applications
+into a rich type theory. This work emphasizes ``programming'' applications
 as opposed to reasoning, since it was an open problem at the time how
 to support termination analysis in this setting, which is necessary to
 verify that a recursive function corresponds to a genuine inductive proof. However, the techniques
@@ -524,8 +522,9 @@ logics. 2) The treatment of index contraints, and our treatment of
 pattern matching and refinement of indices is simpler than other
 known approaches. The resulting language is a prime candidate for
 implementing code transformations, algorithms over abstract syntax,
-and (partial) verification. \LONGVERSION{We have illustrated this:
-  Olivier's type preserving closure conversion}
+and (partial) verification. This claim has since been validated by
+\cite{Belanger13} with the implementation of a type preserving closure
+conversion algorithm and CPS conversion.
 
 I briefly recap the main technical aspects of this work. The
 language of (computation-level) types is presented below, with the
@@ -586,7 +585,7 @@ a boolean and, recursively, a vector of indexed by $Y$.
 \]
 
 For our purposes, we are interested in using such indexed recursive
-types enforcing invariants about syntax and related notions such as contexts.
+types to enforce invariants about syntax and related notions such as contexts.
 For example, one often has the need to express the notion of a relation
 between contexts when relating two languages. A typical example might relate a context
 which lists both term variables and type variables to a corresponding
@@ -600,12 +599,11 @@ corresponding form in the core theory.
 % | rsnoc : ctx_rel \psi$\;$\phi -> ctx_rel (\psi,x:tm) (\phi,x:ctm)
 % \end{lstlisting}
 
-\LONGVERSION{Use more consistent syntax. Uppercase everywhere}
 \begin{lstlisting}
 datatype Ctx_rel : tmctx -> tpctx -> ctype
 | nil : Ctx_rel [] []
-| tmsnoc : Ctx_rel \psi$\;$\phi -> Ctx_rel (\psi,x:tm) \phi
-| tpsnoc : Ctx_rel \psi$\;$\phi -> Ctx_rel (\psi,a:tp) (\phi,a:tp)
+| tmsnoc : Ctx_rel [\psi]$\;$[\phi] -> Ctx_rel [\psi,x:tm] [\phi]
+| tpsnoc : Ctx_rel [\psi]$\;$[\phi] -> Ctx_rel [\psi,a:tp] [\phi,a:tp]
 \end{lstlisting}
 
 % \[
@@ -635,7 +633,7 @@ y{:}\m{tp} \\
 
 This is a typical example of
 functional relation. We will often be obligated to prove manually
-that it is total and deterministic, which would be unnecessary if it
+that it is in fact functional, which would be unnecessary if it
 were represented directly as a function, such as the one
 below. However, while the language in this paper supports writing such
 functions, it does not support \emph{reasoning} about them, since they
@@ -820,7 +818,8 @@ particular pattern matches. \LONGVERSION{TODO: Explain in more detail}
 \end{figure}
 
 The main technical result in this paper is a machine-checked proof of type
-soundness for this language, which I developed in the Coq proof assistant.
+soundness for this language, which I developed in the Coq proof
+assistant \citep{bertot/casteran:2004}.
 
 This work was an important milestone in understanding how HOAS can fit
 into the more general setting of an expressive type theory, and how it
@@ -842,17 +841,17 @@ $\Gamma$ with the following type signature. We use the function $|-|$
 to map from a \lstinline{tmctx} to its corresponding \lstinline{tpctx}
 defined above.
 
-\LONGVERSION{Fix syntax}
 \begin{lstlisting}
-infer : $\Pi$($\Gamma$:tmctx). tm $\Gamma$ -> (tp |$\Gamma$|) option
+infer : {$\Gamma$:tmctx} [$\Gamma$ $\vdash$ tm] -> Option [ |$\Gamma$| $\vdash$ tp]
 \end{lstlisting}
 
 However, in the theory described in this paper, one must
 instead write a type signature like the following, where we must
-express the mapping as a relation and later prove it is total.
+express the mapping as a relation and later prove it is functional.
 
 \begin{lstlisting}
-infer : $\Pi$($\Gamma$:tmctx). $\Pi$($\Delta$:tpctx). ctx_rel $\Gamma$ $\Delta$ -> tm $\Gamma$ -> (tp $\Delta$) option
+infer : {$\Gamma$:tmctx}{$\Delta$:tpctx} Ctx_rel [$\Gamma$] [$\Delta$] -> [$\Gamma$ $\vdash$ tm]
+ -> Option [$\Delta$ $\vdash$ tp]
 \end{lstlisting}
 
 While it is true that one can typically rewrite a proof using this
@@ -992,8 +991,8 @@ First, $[\sigma](\lam x M) = \lam x ([\sigma,x/x]M)$ halts, since it
 is a value. Suppose then that we are given $N \in \mathcal{R}_A$.
 
 \begin{enumerate}
-\item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H. \LONGVERSION{Since
-    extending $\sigma$ is reducible})
+\item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H. since extending
+  $\sigma$ with $N$ is reducible)
 \item $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (property of
   substitution; $x$ assumed fresh for $\sigma$)
 \item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
@@ -1009,8 +1008,6 @@ If $\der M : A$ then $M$ halts.
 By the main lemma, we have that $[\cdot]M\in \mathcal{R}_A$
 and hence that $[\cdot]M$, which is equal to $M$, halts.
 \end{proof}
-\LONGVERSION{In a system like Abella, would have to describe
-  sim. sub. explicitly}
 
 The first point to draw attention to is the quantification
 over the context $\Gamma$ and the quantification over a simultaneous
@@ -1018,14 +1015,15 @@ substitution $\sigma$ providing instantiations for $\Gamma$. This
 quantification typically cannot be directly expressed in HOAS-based
 systems, since the context is typically ambient, so that direct
 access to the context is impossible. This is the case in Twelf and
-Delphin.
+Delphin. In Abella, one has to construct the notion of simultaneous
+substitutions, and manually prove properties of them.
 
 The second point to draw attention to in this proof is the use of
 properties of simultaneous substitutions in the main
 lemma and its corollary. On paper, these properties look intuitive and
 innocuous, but as explained earlier, these properties are typically a source of
-significant overhead when formalizing such results using various 
-representations of variables and variable binding. However, these
+significant overhead when formalizing such results using various first-order 
+representations of variable binding. However, these
 properties are immediate in our framework, as
 the equational theory of (simultaneous) substitutions is built into
 our type theory. This means that the formalization need only implement
@@ -1077,17 +1075,17 @@ Once again, a term of type \lstinline{i} is reducible if it halts, and a term
 \lstinline{M} of
 type \lstinline{arr A B} is reducible if it halts, and moreover for every
 reducible \lstinline{N} of type \lstinline{A}, the application
-\lstinline{app M N} is reducible. We write \lstinline!{N:[.tm A]}!
+\lstinline{app M N} is reducible. We write \lstinline!{N:[$\vdash$ tm A]}!
 for explicit $\Pi$-quantification over \lstinline{N}, a closed term of type
-\lstinline!A!. To the left of the dot in \lstinline{[.tm A]} is where
+\lstinline!A!. To the left of the turnstile in \lstinline{[$\vdash$ tm A]} is where
 one writes the context the term is defined in -- in this case, it is empty.
 
 \begin{lstlisting}
-datatype Reduce : {A:[.tp]} {M:[.tm A]} ctype =
-| I   : [. halts M] -> Reduce [. i] [. M]
-| Arr : [. halts M] ->
-        ({N:[.tm A]} Reduce [. A] [. N] -> Reduce [. B] [. app M N])
-        -> Reduce [. arr A B] [. M];
+datatype Reduce : {A:[$\vdash$ tp]} {M:[$\vdash$ tm A]} ctype =
+| I   : [$\vdash$ halts M] -> Reduce [$\vdash$ i] [$\vdash$ M]
+| Arr : [$\vdash$ halts M] ->
+        ({N:[$\vdash$ tm A]} Reduce [$\vdash$ A] [$\vdash$ N] -> Reduce [$\vdash$ B] [$\vdash$ app M N])
+        -> Reduce [$\vdash$ arr A B] [$\vdash$ M];
 \end{lstlisting}
 
 In this definition, the arrows represent the usual computational
@@ -1111,7 +1109,7 @@ statement of the lemma, but we do not go into detail about the proof,
 since it follows the handwritten proof closely.
 
 \begin{lstlisting}
-rec closed : [. step M M'] -> Reduce [.A] [.M'] -> Reduce [.A] [.M] = ...
+rec closed : [$\vdash$ step M M'] -> Reduce [$\vdash$ A] [$\vdash$ M'] -> Reduce [$\vdash$ A] [$\vdash$ M]
 \end{lstlisting}
 
 Now we arrive at the part of the proof requiring simultaneous
@@ -1124,21 +1122,20 @@ We must state precisely what it means for a substitution to be
 reducible. We do this by employing another indexed recursive type: a predicate
 expressing that the substitution was built up as a list of reducible
 terms. This predicate is defined on substitutions of type
-\lstinline{g[]}, i.e. taking variables in \lstinline{g} to closed
+\lstinline{[$\vdash$ g]}, i.e. taking variables in \lstinline{g} to closed
 terms of the same type. In the base case, the
 empty substitution is reducible. In the \lstinline{Cons} case, we read
-this as saying: if \lstinline{#S} is a reducible substitution
-(implicitly at type \lstinline{g[]}) and \lstinline{M} is a reducible
-term at type \lstinline{A}, then \lstinline{#S} with \lstinline{M}
+this as saying: if \lstinline{$\sigma$} is a reducible substitution
+(implicitly at type \lstinline{[$\vdash$ g]}) and \lstinline{M} is a reducible
+term at type \lstinline{A}, then \lstinline{$\sigma$} with \lstinline{M}
 appended is a reducible substitution (implicitly at type
-\lstinline{(g,x:tm A)[]} -- the domain has been extended with a
+\lstinline{[$\vdash$ g,x:tm A]} -- the domain has been extended with a
 variable of type \lstinline{A}).
 
-\LONGVERSION{Turn hash S into $\sigma$. Maybe use turnstiles, not g}
 \begin{lstlisting}
-datatype RedSub : (g:ctx){#S:g[]} ctype =
-| Nil : RedSub [. ^$\,$ ]
-| Cons : RedSub [. #S] -> Reduce [.A] [.M] -> RedSub [. #S, M ];
+datatype RedSub : (g:ctx){$\sigma$:[$\vdash$ g]} ctype =
+| Nil : RedSub [$\vdash$ ^$\,$ ]
+| Cons : RedSub [$\vdash$ $\sigma$ ] -> Reduce [$\vdash$ A] [$\vdash$ M] -> RedSub [$\vdash$ $\sigma$, M ];
 \end{lstlisting}
 
 % We implicitly quantify over the context \lstinline!g! by using round
@@ -1147,9 +1144,9 @@ datatype RedSub : (g:ctx){#S:g[]} ctype =
 
 Finally, our fundamental theorem is standard and takes the form we would expect
 from the handwritten proof: if \lstinline{M} is a well-typed
-term, and we provide a reducible substitution \lstinline{#S} with closed
+term, and we provide a reducible substitution \lstinline{$\sigma$} with closed
 instantiations for each of the free variables of \lstinline{M}, then
-\lstinline{M #S} (that is, the application of \lstinline{#S} to
+\lstinline{M $\sigma$} (that is, the application of \lstinline{$\sigma$} to
 \lstinline{M}) is reducible. We proceed by induction on the
 term. Again we show only the interesting \lstinline{lam} case. Clearly
 the lambda abstraction halts, as it is a value (this is the first,
@@ -1160,14 +1157,13 @@ closure under expansion, and the induction hypothesis for
 \lstinline{N}. Recall that \lstinline{rN} is a proof that
 \lstinline{N} is reducible.
 
-\LONGVERSION{Explain ..}
 \begin{lstlisting}
-rec fund : {g:ctx}{M:[g.tm A]} RedSub [. #S] -> Reduce [.A] [. M #S] =
-mlam g => mlam M => fn rs => case [g. M ..] of
-| [g. lam (\x. M1 .. x)] =>
-  Arr [. h/val s/refl val/lam]
-   (mlam N => fn rN => closed [. s/beta]
-    (fund [g,x] [g,x. M1 .. x] (Cons rs rN)))
+rec fund : {g:ctx}{M:[g $\vdash$ tm A]} RedSub [$\vdash$ $\sigma$] -> Reduce [$\vdash$ A] [$\vdash$ M $\sigma$] =
+mlam g => mlam M => fn rs => case M of
+| [g $\vdash$ lam (\x. M1)] =>
+  Arr [$\vdash$ h/val s/refl val/lam]
+   (mlam N => fn rN => closed [$\vdash$ s/beta]
+    (fund [g,x] [g,x $\vdash$ M1] (Cons rs rN)))
 ...
 \end{lstlisting}
 
@@ -1175,7 +1171,7 @@ Weak normalization is now a trivial corollary, taking \lstinline{M} to be a clos
 \lstinline{#S} to be the empty substitution:
 
 \begin{lstlisting}
-rec weakNorm : {M:[. tm A]} [. halts M] = mlam M => main (fund [] [. M] Nil);
+norm : {M:[$\vdash$ tm A]} [$\vdash$ halts M] = mlam M => main (fund [] [$\vdash$ M] Nil)
 \end{lstlisting}
 
 Notably, we did not have to concern
@@ -1185,13 +1181,13 @@ of substitution (e.g. de Bruijn indices) one must prove $[\sigma,N/x]M = [N/x][\
 (where $x \not\in \FV(\sigma)$) by hand, and this is actually a large
 bulk of the proof. In this setting, it is handled automatically
 by normalization during typechecking. Roughly, the
-term \lstinline{fund [g,x] [g,x. M1 .. x] (Cons rs rN)} proves
-the reducibility of \lstinline{M1[#S, N]}, while
-\lstinline{closed [. s/beta]} is expecting a proof of the reducibility
+term \lstinline{fund [g,x] [g,x $\vdash$ M1] (Cons rs rN)} proves
+the reducibility of \lstinline{M1[$\sigma$, N]}, while
+\lstinline{closed [$\vdash$ s/beta]} is expecting a proof of the reducibility
 of
-\lstinline{M1[#S[$\uparrow$], 1][id, N]}. Our decision procedure for
+\lstinline{M1[$\sigma$[$\uparrow$], 1][id, N]}. Our decision procedure for
 equality of index language expressions normalizes both to
-\lstinline{M[#S, N]}, so that this typechecks. In this work, the
+\lstinline{M[$\sigma$, N]}, so that this typechecks. In this work, the
 decision procedure for equality is described using the technique of
 \emph{hereditary substitution} \citep{Watkins02tr}. 
 
@@ -1351,14 +1347,14 @@ describe the example proofs I intend to use as case studies.
 
 The primary value of LF lies in its ability to faithfully represent a wide
 variety of object languages and hypothetical judgments by
-parameterizing it by a signature. I propose \LONGVERSION{Better to say
-  explored; want to do it a different way} that by introducing a
-(first-order, say de Bruijn) encoding of LF into a dependent type
-theory, in much the same way as the intrinsically typed encoding in
-Sec. \ref{sec:background} we effectively obtain the virtues of LF in
-dependent type theory.
+parameterizing it by a signature. One can attempt to
+gain the virtues of LF in dependent type theory by defining a
+first-order (say de Bruijn) encoding of LF as an inductive type, in
+much the same way as the intrinsically typed encoding in 
+Sec. \ref{sec:background}, and encoding languages of interest
+inside of it.
 
-There are two approaches to introducing new types
+However, there are two approaches to introducing new types
 into type theory. The first is to use a general mechanism for defining
 (inductive) types within the system e.g. Coq's \verb|Inductive|, Agda's
 \verb|data|, Beluga's \verb|datatype|. This is the technique employed by
@@ -1392,13 +1388,10 @@ I propose that the next step is to perform a construction of the
 second kind, at the language design level. The equational theory of
 substitutions can then be integrated into the \emph{definitional
  equality}, in much the same way as as associativity of addition
-might. Technically, this is not so
-different from the other language-based approaches to support
-substitution as found in Beluga. Beluga's approach is grounded
-in ideas from modal logic, and Abella's approach is grounded in proof
-theory and cut elimination \LONGVERSION{...}. \LONGVERSION{What I am proposing is apparently less
-principled in this sense (or perhaps the principles have simply not been
-discovered yet), but TAKE OUT} it does seem to provide a clear
+might. In some sense, this is not so
+different from the language-based approach to support
+substitution as found in Beluga, and this perspective appears to
+provide a reasonably clear
 picture of how to move from indexed types to dependent types.
 
 By approaching the problem from this angle, I hope to use the

@@ -1,5 +1,3 @@
-all: doc pres
-
 doc:
 	pdflatex proposal.tex
 	bibtex proposal
