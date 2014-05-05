@@ -236,7 +236,7 @@ identityLeft  : [ id ]' \(\sigma\) = \(\sigma\)
 combination   : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
 \end{alltt}
 
-For example, \lstinline{lem1} says that the composition of applying
+For example, \lstinline{compositional} says that the composition of applying
 substitutions is the application of the composition of
 substitutions. I have only listed four of these lemmas, and only the
 ones pertaining to substitution, not to weakening. In all, one
@@ -276,6 +276,16 @@ about this here. To clarify, one cannot view this signature literally as an indu
 definition, since the apparently negative occurrence of
 \lstinline{exp} prevents one from doing so.
 
+In the Beluga system, if \lstinline{M} is an LF term of type
+\lstinline{exp A} in context \lstinline{$\Psi$}, we package it
+together with its context, forming a \emph{contextual object} \lstinline{[$\Psi$ $\vdash$ M]} of
+type \lstinline{[$\Psi$ $\vdash$ exp A]}, which we can use as an index to
+a computation level type in order to reason
+about it \citep{Pientka:2008,Nanevski:2008}. This means that one has direct access to inspect and manipulate
+contexts, in contrast to Twelf and Delphin. This capability is important for mechanizing state-of-the-art
+metatheory. This point will be described in more depth in the following
+sections.
+
 The challenging aspect of HOAS is then how to give this definition the same
 status as a first-order representation. That is, we wish to somehow
 perform induction over a HOAS representation. The
@@ -287,16 +297,6 @@ levels: the specification level (e.g. LF) and the reasoning level. In many ways,
 separation, as it is implemented, is too strict to be completely practical. It is one goal of
 my thesis to demonstrate that this separation can in fact
 be much more liberal to achieve a more practical theory and system.
-
-In the Beluga system, if \lstinline{M} is an LF term of type
-\lstinline{exp A} in context \lstinline{$\Psi$}, we package it
-together with its context, forming a \emph{contextual object} \lstinline{[$\Psi$ $\vdash$ M]} of
-type \lstinline{[$\Psi$ $\vdash$ exp A]}, which we can use an index to
-a computation level type in order to reason
-about it. This means that one has direct access to inspect and manipulate
-contexts, in contrast to Twelf and Delphin. This capability is important for mechanizing state-of-the-art
-metatheory. This point will be described in more depth in the following
-sections.
 
 \section{Summary of progress to date}
 I have published two papers to date in the direction of building a logical
@@ -1125,26 +1125,26 @@ rec closed : [$\vdash$ step M M'] -> Reduce [$\vdash$ A] [$\vdash$ M'] -> Reduce
 
 Now we arrive at the part of the proof requiring simultaneous
 substitutions. The type of simultaneous substitutions is a new built-in
-type former of the index language: we write \lstinline{g[h]} for the
+type former of the index language: we write \lstinline{[$\Psi$ $\vdash$ $\Phi$]} for the
 type of substitutions which provide, for each variable in the context
-\lstinline{g}, a term in context \lstinline{g}.
+\lstinline{$\Phi$}, a term in context \lstinline{$\Psi$}.
 
 We must state precisely what it means for a substitution to be
 reducible. We do this by employing another indexed recursive type: a predicate
 expressing that the substitution was built up as a list of reducible
 terms. This predicate is defined on substitutions of type
-\lstinline{[$\vdash$ g]}, i.e. taking variables in \lstinline{g} to closed
+\lstinline{[$\vdash$ $\Psi$]}, i.e. taking variables in \lstinline{$\Psi$} to closed
 terms of the same type. In the base case, the
 empty substitution is reducible. In the \lstinline{Cons} case, we read
 this as saying: if \lstinline{$\sigma$} is a reducible substitution
-(implicitly at type \lstinline{[$\vdash$ g]}) and \lstinline{M} is a reducible
+(implicitly at type \lstinline{[$\vdash$ $\Psi$]}) and \lstinline{M} is a reducible
 term at type \lstinline{A}, then \lstinline{$\sigma$} with \lstinline{M}
 appended is a reducible substitution (implicitly at type
-\lstinline{[$\vdash$ g,x:tm A]} -- the domain has been extended with a
+\lstinline{[$\vdash$ $\Psi$,x:tm A]} -- the domain has been extended with a
 variable of type \lstinline{A}).
 
 \begin{lstlisting}
-datatype RedSub : (g:ctx){$\sigma$:[$\vdash$ g]} ctype =
+datatype RedSub : ($\psi$:ctx){$\sigma$:[$\vdash$ $\psi$]} ctype =
 | Nil : RedSub [$\vdash$ ^$\,$ ]
 | Cons : RedSub [$\vdash$ $\sigma$ ] -> Reduce [$\vdash$ A] [$\vdash$ M] -> RedSub [$\vdash$ $\sigma$, M ];
 \end{lstlisting}
@@ -1169,17 +1169,17 @@ closure under expansion, and the induction hypothesis for
 \lstinline{N} is reducible.
 
 \begin{lstlisting}
-rec fund : {g:ctx}{M:[g $\vdash$ tm A]} RedSub [$\vdash$ $\sigma$] -> Reduce [$\vdash$ A] [$\vdash$ M $\sigma$] =
-mlam g => mlam M => fn rs => case M of
-| [g $\vdash$ lam (\x. M1)] =>
+rec fund : {$\psi$:ctx}{M:[$\psi$ $\vdash$ tm A]} RedSub [$\vdash$ $\sigma$] -> Reduce [$\vdash$ A] [$\vdash$ M $\sigma$] =
+mlam $\psi$ => mlam M => fn rs => case M of
+| [$\psi$ $\vdash$ lam (\x. M1)] =>
   Arr [$\vdash$ h/val s/refl val/lam]
    (mlam N => fn rN => closed [$\vdash$ s/beta]
-    (fund [g,x] [g,x $\vdash$ M1] (Cons rs rN)))
+    (fund [$\psi$,x] [$\psi$,x $\vdash$ M1] (Cons rs rN)))
 ...
 \end{lstlisting}
 
 Weak normalization is now a trivial corollary, taking \lstinline{M} to be a closed term and
-\lstinline{#S} to be the empty substitution:
+\lstinline{$\sigma$} to be the empty substitution:
 
 \begin{lstlisting}
 norm : {M:[$\vdash$ tm A]} [$\vdash$ halts M] = mlam M => main (fund [] [$\vdash$ M] Nil)
