@@ -1133,14 +1133,14 @@ We must state precisely what it means for a substitution to be
 reducible. We do this by employing another indexed recursive type: a predicate
 expressing that the substitution was built up as a list of reducible
 terms. This predicate is defined on substitutions of type
-\lstinline{[$\vdash$ $\Psi$]}, i.e. taking variables in \lstinline{$\Psi$} to closed
+\lstinline{[$\vdash$ $\psi$]}, i.e. taking variables in \lstinline{$\psi$} to closed
 terms of the same type. In the base case, the
 empty substitution is reducible. In the \lstinline{Cons} case, we read
 this as saying: if \lstinline{$\sigma$} is a reducible substitution
-(implicitly at type \lstinline{[$\vdash$ $\Psi$]}) and \lstinline{M} is a reducible
+(implicitly at type \lstinline{[$\vdash$ $\psi$]}) and \lstinline{M} is a reducible
 term at type \lstinline{A}, then \lstinline{$\sigma$} with \lstinline{M}
 appended is a reducible substitution (implicitly at type
-\lstinline{[$\vdash$ $\Psi$,x:tm A]} -- the domain has been extended with a
+\lstinline{[$\vdash$ $\psi$,x:tm A]} -- the domain has been extended with a
 variable of type \lstinline{A}).
 
 \begin{lstlisting}
@@ -1192,7 +1192,7 @@ of substitution (e.g. de Bruijn indices) one must prove $[\sigma,N/x]M = [N/x][\
 (where $x \not\in \FV(\sigma)$) by hand, and this is actually a large
 bulk of the proof. In this setting, it is handled automatically
 by normalization during typechecking. Roughly, the
-term \lstinline{fund [g,x] [g,x $\vdash$ M1] (Cons rs rN)} proves
+term \lstinline{fund [$\psi$,x] [$\psi$,x $\vdash$ M1] (Cons rs rN)} proves
 the reducibility of \lstinline{M1[$\sigma$, N]}, while
 \lstinline{closed [$\vdash$ s/beta]} is expecting a proof of the reducibility
 of
