@@ -42,10 +42,10 @@ mutual
   _⇒_ : (T S : Γ ⊢ tp) -> Γ ⊢ tp
   Π : (T : (Γ , tp) ⊢ tp) -> Γ ⊢ tp
   ▹ : ∀ {d} (X : var Γ d) -> Γ ⊢ d
-  ƛ : ∀ {T S} -> (Γ , tm T) ⊢ (tm ([ ↑ ] S)) -> Γ ⊢ (tm (T ⇒ S))
-  _·_ : ∀ {T S} -> Γ ⊢ (tm (T ⇒ S)) -> Γ ⊢ (tm T) -> Γ ⊢ (tm S)
-  Λ : ∀ {T} -> (Γ , tp) ⊢ (tm T) -> Γ ⊢ (tm (Π T))
-  _$_ : ∀ {T} -> Γ ⊢ (tm (Π T)) -> (S : Γ ⊢ tp) -> Γ ⊢ (tm ([ idtsub , S ]t T))
+  ƛ : ∀ {T S} -> (Γ , tm T) ⊢ tm ([ ↑ ] S) -> Γ ⊢ tm (T ⇒ S)
+  _·_ : ∀ {T S} -> Γ ⊢ tm (T ⇒ S) -> Γ ⊢ tm T -> Γ ⊢ tm S
+  Λ : ∀ {T} -> (Γ , tp) ⊢ tm T -> Γ ⊢ tm (Π T)
+  _$_ : ∀ {T} -> Γ ⊢ tm (Π T) -> (S : Γ ⊢ tp) -> Γ ⊢ tm ([ idtsub , S ]t T)
 
  [_] : ∀ {Δ Γ} -> (π : vsub Δ Γ) -> {d : _} -> Γ ⊢ d -> Δ ⊢([ π ]d d)
  [_] π (t ⇒ t₁) = ([ π ] t) ⇒ ([ π ] t₁)
@@ -53,8 +53,8 @@ mutual
  [_] π (▹ X) = ▹ ([ π ]v X)
  [_] {Δ} {Γ} π (ƛ {t} {t₁} t₂) = ƛ (subst (λ α → _ ⊢ (tm α)) trustMe ([ extvsub {Δ} {Γ} {tm t} π ] t₂))
  [_] π  (_·_ {t} {t₁} t₂ t₃) = ([ π ] t₂) · ([ π ] t₃)
- [_] π  (Λ {t} t₁) = Λ (subst (λ α → _ ⊢ (tm α)) trustMe ([ extvsub π ] t₁))
- [_] π  (_$_ {t} t₁ t₂) = subst (λ α → _ ⊢ (tm α)) trustMe ([ π ] t₁ $ [ π ] t₂)
+ [_] π  (Λ {t} t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ extvsub π ] t₁))
+ [_] π  (_$_ {t} t₁ t₂) = subst (λ α → _ ⊢ tm α) trustMe ([ π ] t₁ $ [ π ] t₂)
  
  [_]v : ∀ {Δ Γ d} -> (π : vsub Δ Γ) -> var Γ d -> var Δ ([ π ]d d)
  [_]v (π , y) top = subst (var _) trustMe y
@@ -78,7 +78,10 @@ mutual
  [_]t σ (T ⇒ T₁) = ([ σ ]t T) ⇒ ([ σ ]t T₁)
  [_]t σ (Π T) = Π ([ exttsub σ ]t T)
  [_]t σ (▹ X) = [ σ ]tv X
- [_]t σ _ = {!!}
+ [_]t {Δ} {Γ} σ (ƛ {t} {t₁} t₂) = ƛ (subst (λ α → _ ⊢ tm α) trustMe ([ exttsub {Δ} {Γ} {tm t} σ ]t t₂))
+ [_]t σ (t₂ · t₃) = ([ σ ]t t₂) · ([ σ ]t t₃)
+ [_]t σ (Λ t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ exttsub σ ]t t₁))
+ [_]t σ (t₁ $ t₂) = subst (λ α → _ ⊢ tm α) trustMe (([ σ ]t t₁) $ ([ σ ]t t₂))
 
  [_]tv : ∀ {Δ Γ d} -> (σ : tsub Δ Γ) -> var Γ d -> Δ ⊢ ([ σ ]td d)
  [_]tv {Δ} {Γ , d} {._} (σ , t) top = subst (_⊢_ Δ) {[ σ ]td d} {[ σ , t ]td ([ ↑ ]d d)} trustMe t
