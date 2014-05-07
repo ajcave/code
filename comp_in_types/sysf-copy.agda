@@ -130,7 +130,7 @@ mutual
  copydecl (`tm T) = `tm (copytp T)
 
  copyvar : ∀ {Γ d} -> var Γ d -> var (copyctx Γ) (copydecl d)
- copyvar (top {Γ} {d} ) = subst (var (copyctx Γ , copydecl d)) {!sym (lem ↑ d)!} top
+ copyvar (top) = {!!}
  copyvar (pop X) = {!!}
 
  copytp : ∀ {Γ} -> tp Γ -> tp (copyctx Γ)
