@@ -26,18 +26,27 @@ mutual
   _⇒_ : (T S : tp Γ) -> tp Γ
   Π : (T : tp (Γ , `tp)) -> tp Γ
   ▹ : (X : var Γ `tp) -> tp Γ
+ 
+ tsub : (Δ Γ : ctx) -> Set
+ tsub Δ ⊡ = Unit
+ tsub Δ (Γ , d) = Σ (tsub Δ Γ) (λ σ → fam Δ ([ σ ]td d))
+ 
+ [_]td : ∀ {Δ Γ} -> tsub Δ Γ -> decl Γ -> decl Δ
+ [_]td σ `tp = `tp
+ [_]td σ (`tm T) = `tm ([ σ ]t T)
+
+ -- Ok this is interesting...
+ -- Try to use this as an index to the datatype and see what it looks like.. need to compute index type
+ fam : (Γ : ctx) -> (d : decl Γ) -> Set
+ fam Γ `tp = tp Γ
+ fam Γ (`tm T) = tm Γ T
 
  data tm (Γ : ctx) : tp Γ -> Set where
   ▹ : ∀ {T} (x : var Γ (`tm T)) -> tm Γ T
   ƛ : ∀ {T S} -> tm (Γ , `tm T) ([ ↑ ] S) -> tm Γ (T ⇒ S)
   _·_ : ∀ {T S} -> tm Γ (T ⇒ S) -> tm Γ T -> tm Γ S
   Λ : ∀ {T} -> tm (Γ , `tp) T -> tm Γ (Π T)
-  _$_ : ∀ {T S} -> tm Γ (Π T) -> tp Γ -> tm Γ {!!}
-
- -- Ok this is interesting...
- fam : (Γ : ctx) -> (d : decl Γ) -> Set
- fam Γ `tp = tp Γ
- fam Γ (`tm T) = tm Γ T
+  _$_ : ∀ {T} -> tm Γ (Π T) -> (S : tp Γ) -> tm Γ ([ idtsub , S ]t T)
 
  vsub : (Δ Γ : ctx) -> Set
  vsub Δ ⊡ = Unit
@@ -62,7 +71,7 @@ mutual
  [_]fam π (`tm ._) (ƛ t) = ƛ (subst (tm _) trustMe ([ extvsub π ]fam (`tm _) t))
  [_]fam π (`tm ._) (_·_ t t₁) = ([ π ]fam (`tm _) t) · ([ π ]fam (`tm _) t₁)
  [_]fam π (`tm ._) (Λ t) = Λ (subst (tm _) trustMe ([ extvsub π ]fam (`tm _) t))
- [_]fam π (`tm ._) (t $ x) = {!!}
+ [_]fam π (`tm ._) (t $ S) = subst (tm _) trustMe ([ π ]fam (`tm _) t $ ([ π ]fam `tp S))
  
  [_]v : ∀ {Δ Γ d} -> (π : vsub Δ Γ) -> var Γ d -> var Δ ([ π ]d d)
  [_]v (π , y) top = subst (var _) trustMe y
@@ -82,31 +91,31 @@ mutual
  ↑ : ∀ {Γ d} -> vsub (Γ ,' d) Γ
  ↑ = wknvsubf idvsub
 
- tsub : (Δ Γ : ctx) -> Set
- tsub Δ ⊡ = Unit
- tsub Δ (Γ , d) = Σ (tsub Δ Γ) (λ σ → fam Δ ([ σ ]td d))
-
- [_]td : ∀ {Δ Γ} -> tsub Δ Γ -> decl Γ -> decl Δ
- [_]td σ `tp = `tp
- [_]td σ (`tm T) = `tm ([ σ ]t T)
-
  [_]t : ∀ {Δ Γ} -> tsub Δ Γ -> tp Γ -> tp Δ
  [_]t σ (T ⇒ T₁) = ([ σ ]t T) ⇒ ([ σ ]t T₁)
- [_]t σ (Π T) = Π {!!}
+ [_]t σ (Π T) = Π ([ exttsub σ ]t T)
  [_]t σ (▹ X) = [ σ ]tv X
 
  [_]tv : ∀ {Δ Γ d} -> (σ : tsub Δ Γ) -> var Γ d -> fam Δ ([ σ ]td d)
- [_]tv (σ , t) top = subst (fam _) trustMe t
- [_]tv (σ , t) (pop x) = subst (fam _) trustMe ([ σ ]tv x)
+ [_]tv {Δ} {Γ , d} {._} (σ , t) top = subst (fam Δ) {[ σ ]td d} {[ σ , t ]td ([ ↑ ]d d)} trustMe t
+ [_]tv {Δ} {Γ , d} {._} (σ , t) (pop {._} {d'} x) = subst (fam Δ) {[ σ ]td d'} {[ σ , t ]td ([ ↑ ]d d')} trustMe ([ σ ]tv x)
+
+ ftop : ∀ {Γ} d -> fam (Γ ,' d) ([ ↑ ]d d)
+ ftop `tp = ▹ top
+ ftop (`tm T) = ▹ top
 
  idtsub : ∀ {Γ} -> tsub Γ Γ
  idtsub {⊡} = tt
- idtsub {Γ , d} = wkntsubf idtsub , {!need a "top" for fam...!} --subst (fam (Γ , d)) trustMe (▹ top)
+ idtsub {Γ , d} = wkntsubf idtsub , subst (fam (Γ , d)) {[ ↑ ]d d} {[ wkntsubf idtsub ]td d} trustMe (ftop d)
+
+ exttsub : ∀ {Δ Γ d} -> (σ : tsub Δ Γ) -> tsub (Δ ,' ([ σ ]td d)) (Γ ,' d)
+ exttsub {Δ} {Γ} {d} σ = wkntsubf σ , subst (fam (Δ , [ σ ]td d)) {[ ↑ ]d ([ σ ]td d)} {[ wkntsubf σ ]td d} trustMe (ftop ([ σ ]td d))
+
 
  wkntsubf : ∀ {Δ Γ d} -> tsub Δ Γ -> tsub (Δ ,' d) Γ
  wkntsubf {Δ} {⊡} σ = tt
- wkntsubf {Δ} {Γ , d} (σ , t) = wkntsubf σ , subst (fam _) trustMe ([ ↑ ]fam _ t)
-
+ wkntsubf {Δ} {Γ , d} {d'} (σ , t) = wkntsubf σ , subst (fam (Δ , d')) {[ wknvsubf idvsub ]d ([ σ ]td d)} {[ wkntsubf σ ]td d} trustMe ([ ↑ ]fam ([ σ ]td d) t)
+-- TODO: Try the thing above!
 
 
 
