@@ -9,97 +9,97 @@ open import Relation.Binary.PropositionalEquality.TrustMe
 mutual
  data ctx : Set where
   ⊡ : ctx
-  _,_ : (Γ : ctx) -> (d : decl Γ) -> ctx
+  _,_ : (Γ : ctx) -> (J : judgment Γ) -> ctx
  
- data decl (Γ : ctx) : Set where
-  tp : decl Γ
-  tm : (T : Γ ⊢ tp) -> decl Γ
+ data judgment (Γ : ctx) : Set where
+  tp : judgment Γ
+  tm : (T : Γ ⊢ tp) -> judgment Γ
 
- _,'_ : (Γ : ctx) -> (d : decl Γ) -> ctx
+ _,'_ : (Γ : ctx) -> (J : judgment Γ) -> ctx
  _,'_ = _,_
 
- data var : (Γ : ctx) -> decl Γ -> Set where
-  top : ∀ {Γ d} -> var (Γ , d) ([ ↑ ]d d)
-  pop : ∀ {Γ d d'} -> var Γ d -> var (Γ , d') ([ ↑ ]d d)
+ data var : (Γ : ctx) -> judgment Γ -> Set where
+  top : ∀ {Γ J} -> var (Γ , J) ([ ↑ ]j J)
+  pop : ∀ {Γ J J'} -> var Γ J -> var (Γ , J') ([ ↑ ]j J)
  
  tsub : (Δ Γ : ctx) -> Set
  tsub Δ ⊡ = Unit
- tsub Δ (Γ , d) = Σ (tsub Δ Γ) (λ σ → Δ ⊢ ([ σ ]td d))
+ tsub Δ (Γ , J) = Σ (tsub Δ Γ) (λ σ → Δ ⊢ ([ σ ]tj J))
  
- [_]td : ∀ {Δ Γ} -> tsub Δ Γ -> decl Γ -> decl Δ
- [_]td σ tp = tp
- [_]td σ (tm T) = tm ([ σ ]t T)
+ [_]tj : ∀ {Δ Γ} -> tsub Δ Γ -> judgment Γ -> judgment Δ
+ [_]tj σ tp = tp
+ [_]tj σ (tm T) = tm ([ σ ]t T)
 
  vsub : (Δ Γ : ctx) -> Set
  vsub Δ ⊡ = Unit
- vsub Δ (Γ , d) = Σ (vsub Δ Γ) (λ π → var Δ ([ π ]d d))
+ vsub Δ (Γ , J) = Σ (vsub Δ Γ) (λ π → var Δ ([ π ]j J))
 
- [_]d : ∀ {Δ Γ} -> vsub Δ Γ -> decl Γ -> decl Δ
- [_]d π tp = tp
- [_]d π (tm T) = tm ([ π ] T)
+ [_]j : ∀ {Δ Γ} -> vsub Δ Γ -> judgment Γ -> judgment Δ
+ [_]j π tp = tp
+ [_]j π (tm T) = tm ([ π ] T)
 
- data _⊢_ (Γ : ctx) : (d : decl Γ) -> Set where 
+ data _⊢_ (Γ : ctx) : (J : judgment Γ) -> Set where 
   _⇒_ : (T S : Γ ⊢ tp) -> Γ ⊢ tp
   Π : (T : (Γ , tp) ⊢ tp) -> Γ ⊢ tp
-  ▹ : ∀ {d} (X : var Γ d) -> Γ ⊢ d
+  ▹ : ∀ {J} (X : var Γ J) -> Γ ⊢ J
   ƛ : ∀ {T S} -> (Γ , tm T) ⊢ tm ([ ↑ ] S) -> Γ ⊢ tm (T ⇒ S)
   _·_ : ∀ {T S} -> Γ ⊢ tm (T ⇒ S) -> Γ ⊢ tm T -> Γ ⊢ tm S
   Λ : ∀ {T} -> (Γ , tp) ⊢ tm T -> Γ ⊢ tm (Π T)
-  _$_ : ∀ {T} -> Γ ⊢ tm (Π T) -> (S : Γ ⊢ tp) -> Γ ⊢ tm ([ idtsub , S ]t T)
+  _$_ : ∀ {T} -> Γ ⊢ tm (Π T) -> (S : Γ ⊢ tp) -> Γ ⊢ tm ([ id , S ]t T)
 
- [_] : ∀ {Δ Γ} -> (π : vsub Δ Γ) -> {d : _} -> Γ ⊢ d -> Δ ⊢([ π ]d d)
+ [_] : ∀ {Δ Γ} -> (π : vsub Δ Γ) -> {J : _} -> Γ ⊢ J -> Δ ⊢ ([ π ]j J)
  [_] π (t ⇒ t₁) = ([ π ] t) ⇒ ([ π ] t₁)
- [_] π (Π t) = Π ([ extvsub π ] t)
+ [_] π (Π t) = Π ([ π ⊗ tp ] t)
  [_] π (▹ X) = ▹ ([ π ]v X)
- [_] {Δ} {Γ} π (ƛ {t} {t₁} t₂) = ƛ (subst (λ α → _ ⊢ (tm α)) trustMe ([ extvsub {Δ} {Γ} {tm t} π ] t₂))
- [_] π  (_·_ {t} {t₁} t₂ t₃) = ([ π ] t₂) · ([ π ] t₃)
- [_] π  (Λ {t} t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ extvsub π ] t₁))
- [_] π  (_$_ {t} t₁ t₂) = subst (λ α → _ ⊢ tm α) trustMe ([ π ] t₁ $ [ π ] t₂)
+ [_] π (ƛ {t} t₂) = ƛ (subst (λ α → _ ⊢ (tm α)) trustMe ([ π ⊗ tm t ] t₂))
+ [_] π  (_·_ t₂ t₃) = ([ π ] t₂) · ([ π ] t₃)
+ [_] π  (Λ t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ π ⊗ tp ] t₁))
+ [_] π  (_$_ t₁ t₂) = subst (λ α → _ ⊢ tm α) trustMe ([ π ] t₁ $ [ π ] t₂)
  
- [_]v : ∀ {Δ Γ d} -> (π : vsub Δ Γ) -> var Γ d -> var Δ ([ π ]d d)
+ [_]v : ∀ {Δ Γ J} -> (π : vsub Δ Γ) -> var Γ J -> var Δ ([ π ]j J)
  [_]v (π , y) top = subst (var _) trustMe y
  [_]v (π , y) (pop x) = subst (var _) trustMe ([ π ]v x)
 
- idvsub : ∀ {Γ} -> vsub Γ Γ
- idvsub {⊡} = tt
- idvsub {Γ , d} = wknvsubf idvsub , subst (var _) trustMe top
+ idv : ∀ {Γ} -> vsub Γ Γ
+ idv {⊡} = tt
+ idv {Γ , J} = wknvsubf idv , subst (var _) trustMe top
 
- extvsub : ∀ {Δ Γ d} -> (π : vsub Δ Γ) -> vsub (Δ ,' ([ π ]d d)) (Γ ,' d)
- extvsub π = (wknvsubf π) , subst (var _) trustMe top
+ _⊗_ : ∀ {Δ Γ} -> (π : vsub Δ Γ) -> ∀ J -> vsub (Δ ,' ([ π ]j J)) (Γ ,' J)
+ π ⊗ J = (wknvsubf π) , subst (var _) trustMe top
 
- wknvsubf : ∀ {Δ Γ d} -> vsub Δ Γ -> vsub (Δ ,' d) Γ
+ wknvsubf : ∀ {Δ Γ J} -> vsub Δ Γ -> vsub (Δ ,' J) Γ
  wknvsubf {Δ} {⊡} σ = tt
- wknvsubf {Δ} {Γ , d} (σ , x) = (wknvsubf σ) , subst (var _) trustMe (pop x)
+ wknvsubf {Δ} {Γ , J} (σ , x) = (wknvsubf σ) , subst (var _) trustMe (pop x)
 
- ↑ : ∀ {Γ d} -> vsub (Γ ,' d) Γ
- ↑ = wknvsubf idvsub
+ ↑ : ∀ {Γ J} -> vsub (Γ ,' J) Γ
+ ↑ = wknvsubf idv
 
- [_]t : ∀ {Δ Γ} -> (σ : tsub Δ Γ) -> {d : _} -> Γ ⊢ d -> Δ ⊢ ([ σ ]td d)
+ [_]t : ∀ {Δ Γ} -> (σ : tsub Δ Γ) -> {J : _} -> Γ ⊢ J -> Δ ⊢ ([ σ ]tj J)
  [_]t σ (T ⇒ T₁) = ([ σ ]t T) ⇒ ([ σ ]t T₁)
- [_]t σ (Π T) = Π ([ exttsub σ ]t T)
+ [_]t σ (Π T) = Π ([ σ 〉 tp ]t T)
  [_]t σ (▹ X) = [ σ ]tv X
- [_]t {Δ} {Γ} σ (ƛ {t} {t₁} t₂) = ƛ (subst (λ α → _ ⊢ tm α) trustMe ([ exttsub {Δ} {Γ} {tm t} σ ]t t₂))
+ [_]t σ (ƛ {t} t₂) = ƛ (subst (λ α → _ ⊢ tm α) trustMe ([ σ 〉 tm t ]t t₂))
  [_]t σ (t₂ · t₃) = ([ σ ]t t₂) · ([ σ ]t t₃)
- [_]t σ (Λ t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ exttsub σ ]t t₁))
+ [_]t σ (Λ t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ σ 〉 tp ]t t₁))
  [_]t σ (t₁ $ t₂) = subst (λ α → _ ⊢ tm α) trustMe (([ σ ]t t₁) $ ([ σ ]t t₂))
 
- [_]tv : ∀ {Δ Γ d} -> (σ : tsub Δ Γ) -> var Γ d -> Δ ⊢ ([ σ ]td d)
- [_]tv {Δ} {Γ , d} {._} (σ , t) top = subst (_⊢_ Δ) {[ σ ]td d} {[ σ , t ]td ([ ↑ ]d d)} trustMe t
- [_]tv {Δ} {Γ , d} {._} (σ , t) (pop {._} {d'} x) = subst (_⊢_ Δ) {[ σ ]td d'} {[ σ , t ]td ([ ↑ ]d d')} trustMe ([ σ ]tv x)
+ [_]tv : ∀ {Δ Γ J} -> (σ : tsub Δ Γ) -> var Γ J -> Δ ⊢ ([ σ ]tj J)
+ [_]tv {Δ} {Γ , J} {._} (σ , t) top = subst (_⊢_ Δ) {[ σ ]tj J} {[ σ , t ]tj ([ ↑ ]j J)} trustMe t
+ [_]tv {Δ} {Γ , J} {._} (σ , t) (pop {._} {J'} x) = subst (_⊢_ Δ) {[ σ ]tj J'} {[ σ , t ]tj ([ ↑ ]j J')} trustMe ([ σ ]tv x)
 
- ftop : ∀ {Γ} d -> (Γ ,' d) ⊢ ([ ↑ ]d d)
+ ftop : ∀ {Γ} J -> (Γ ,' J) ⊢ ([ ↑ ]j J)
  ftop tp = ▹ top
  ftop (tm T) = ▹ top
 
- idtsub : ∀ {Γ} -> tsub Γ Γ
- idtsub {⊡} = tt
- idtsub {Γ , d} = wkntsubf idtsub , subst (_⊢_ (Γ , d)) {[ ↑ ]d d} {[ wkntsubf idtsub ]td d} trustMe (ftop d)
+ id : ∀ {Γ} -> tsub Γ Γ
+ id {⊡} = tt
+ id {Γ , J} = wkntsubf id , subst (_⊢_ (Γ , J)) {[ ↑ ]j J} {[ wkntsubf id ]tj J} trustMe (ftop J)
 
- exttsub : ∀ {Δ Γ d} -> (σ : tsub Δ Γ) -> tsub (Δ ,' ([ σ ]td d)) (Γ ,' d)
- exttsub {Δ} {Γ} {d} σ = wkntsubf σ , subst (_⊢_ (Δ , [ σ ]td d)) {[ ↑ ]d ([ σ ]td d)} {[ wkntsubf σ ]td d} trustMe (ftop ([ σ ]td d))
+ _〉_ : ∀ {Δ Γ} -> (σ : tsub Δ Γ) -> ∀ J -> tsub (Δ ,' ([ σ ]tj J)) (Γ ,' J)
+ σ 〉 J = wkntsubf σ , subst (_⊢_ (_ , [ σ ]tj J)) {[ ↑ ]j ([ σ ]tj J)} {[ wkntsubf σ ]tj J} trustMe (ftop ([ σ ]tj J))
 
 
- wkntsubf : ∀ {Δ Γ d} -> tsub Δ Γ -> tsub (Δ ,' d) Γ
+ wkntsubf : ∀ {Δ Γ J} -> tsub Δ Γ -> tsub (Δ ,' J) Γ
  wkntsubf {Δ} {⊡} σ = tt
- wkntsubf {Δ} {Γ , d} {d'} (σ , t) = wkntsubf σ , subst (_⊢_ (Δ , d')) {[ wknvsubf idvsub ]d ([ σ ]td d)} {[ wkntsubf σ ]td d} trustMe ([ ↑ ] t)
+ wkntsubf {Δ} {Γ , J} {J'} (σ , t) = wkntsubf σ , subst (_⊢_ (Δ , J')) {[ wknvsubf idv ]j ([ σ ]tj J)} {[ wkntsubf σ ]tj J} trustMe ([ ↑ ] t)
 
