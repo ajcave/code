@@ -117,7 +117,48 @@ mutual
  wkntsubf {Δ} {Γ , d} {d'} (σ , t) = wkntsubf σ , subst (fam (Δ , d')) {[ wknvsubf idvsub ]d ([ σ ]td d)} {[ wkntsubf σ ]td d} trustMe ([ ↑ ]fam ([ σ ]td d) t)
 -- TODO: Try the thing above!
 
+data _≡'_ {A : Set} (x : A) : {B : Set} -> (b : B) -> Set where
+ refl : x ≡' x
 
+mutual
+ copyctx : ctx -> ctx
+ copyctx ⊡ = ⊡
+ copyctx (Γ , d) = copyctx Γ , copydecl d
+
+ copydecl : ∀ {Γ} -> decl Γ -> decl (copyctx Γ)
+ copydecl `tp = `tp
+ copydecl (`tm T) = `tm (copytp T)
+
+ copyvar : ∀ {Γ d} -> var Γ d -> var (copyctx Γ) (copydecl d)
+ copyvar (top {Γ} {d} ) = subst (var (copyctx Γ , copydecl d)) {!sym (lem ↑ d)!} top
+ copyvar (pop X) = {!!}
+
+ copytp : ∀ {Γ} -> tp Γ -> tp (copyctx Γ)
+ copytp (T ⇒ T₁) = copytp T ⇒ copytp T₁
+ copytp (Π T) = Π (copytp T)
+ copytp (▹ X) = ▹ (copyvar X)
+
+ copyvsub : ∀ {Δ Γ} -> vsub Δ Γ -> vsub (copyctx Δ) (copyctx Γ)
+ copyvsub {Δ} {⊡} tt = tt
+ copyvsub {Δ} {Γ , d} (π , x) = (copyvsub π) , subst (var (copyctx Δ)) (lem π d) (copyvar x)
+  
+ lem : ∀ {Δ Γ} (π : vsub Δ Γ) d -> copydecl ([ π ]d d) ≡ [ copyvsub π ]d (copydecl d)
+ lem π `tp = refl
+ lem π (`tm T) = cong `tm (lemtp π T)
+
+ lemtp : ∀ {Δ Γ} (π : vsub Δ Γ) T -> copytp ([ π ] T) ≡ [ copyvsub π ] (copytp T)
+ lemtp π (T ⇒ T₁) = cong₂ _⇒_ (lemtp π T) (lemtp π T₁)
+ lemtp π (Π T) = cong Π {!!}
+ lemtp π (▹ X) = cong ▹ {!!}
+
+copytm : ∀ {Γ} {T : tp Γ} -> tm Γ T -> tm (copyctx Γ) (copytp T)
+copytm (▹ x) = ▹ (copyvar x)
+copytm (ƛ t) with copytm t
+... | q = ƛ {!!}
+copytm (t · t₁) = (copytm t) · (copytm t₁)
+copytm (Λ t) = Λ (copytm t)
+copytm (t $ S) with copytm t | copytp S
+... | q1 | q2 = {!!}
 
 
 
