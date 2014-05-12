@@ -28,6 +28,7 @@
 \setbeamertemplate{itemize item}{\scriptsize\raise1.25pt\hbox{\donotcoloroutermaths$\blacktriangleright$}}
 \setbeamertemplate{itemize subitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$\bullet$}}
 \setbeamertemplate{itemize subsubitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$-$}}
+\definecolor{light-gray}{gray}{0.5}
 
 \author{Andrew Cave}
 \title[{\makebox[.45\paperwidth]{Dependent Type Theory for Contextual Reasoning\hfill%
@@ -135,8 +136,8 @@ judgments using HOAS
 connection to computer programming.
 \item Rich environment supports both proofs and programs.
 \item A proof is an algorithm!
-\item Theory and implementation, hand in hand!
-\item Intensional dependent type theory includes a decidable equational theory
+\item Theory and implementation, hand in hand
+% \item Intensional dependent type theory includes a decidable equational theory
 \item No direct support for substitution
 \end{itemize}
 \end{frame}
@@ -336,6 +337,7 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 \item certain subexpressions are \emph{closed}
 \item relations between contexts
 \end{itemize}
+\item Technical result: type soundness and decidability of typechecking
 \item Good for \emph{programming}
 \item Not so good for \emph{reasoning}: naive treatment is logically inconsistent
 \item Allows us to experiment with defining logical relations
@@ -347,6 +349,7 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 \begin{itemize}
 \item Adds special built-in type of simultaneous substitutions $\sigma$
 \item Equational theory is \textbf{built-in} to type checking: user does not need to prove any equations about substitutions
+\item Technical result: decidability of typechecking including equational theory of substitutions
 \item Example application: Allows us to write remarkably succinct logical relations proof of weak normalization
 \begin{itemize}
 \item Uses ``unsound in general'' recursive types to define logical relation
@@ -431,6 +434,17 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Proposed work: From indexed to dependent types}{Step 1: How? cont'd}
+\begin{itemize}
+\item This is similar to the approach taken in Beluga, but dependent type theory introduces complications:
+\item Definitional equality now includes also \textbf{computation} rules
+\item Proving decidability typically also results in proofs of normalization and logical consistency
+\item Proof requires more sophisticated \textbf{semantic} techniques
+\item Approach: adapt proof for ``plain'' dependent type theory with a universe [Abel '11] to include equational theory of substitutions
+\item Follow approach by Allais et al. '13 for incorporating ``non-computational'' laws
+\end{itemize}
+\end{frame}
+
 \begin{frame}{Proposed work: From indexed to dependent types}{Step 2: Implementation and use cases}
 \begin{itemize}
 \item Prototype implementation: adapt Beluga implementation
@@ -474,7 +488,11 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 % \end{frame}
 
 \begin{frame}{Conclusion}
-
+\begin{itemize}
+\item Building a logical framework into dependent type theory using the two-level approach appears feasible
+\item Substantial benefits: formalizing advanced results in programming language theory become within reach
+\item Hopefully provides insights into how to incoporate other equational theories from other areas of application?
+\end{itemize}
 \end{frame}
 
 \end{document}
