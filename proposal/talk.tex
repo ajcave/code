@@ -415,7 +415,7 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 
 % \end{frame}
 
-\begin{frame}{Proposed work: From indexed to dependent types}{How?}
+\begin{frame}{Proposed work: From indexed to dependent types}{Step 1: How?}
 \begin{itemize}
 \item Type formers in (intensional) dependent type theory come with \textbf{definitional equalities}
 \begin{itemize}
@@ -427,6 +427,19 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 \begin{itemize}
 \item Include equational theory of substitutions in definitional equality
 \item Technical challenge: design an algorithm for deciding the resulting definitional equality and prove it correct
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Proposed work: From indexed to dependent types}{Step 2: Implementation and use cases}
+\begin{itemize}
+\item Prototype implementation: adapt Beluga implementation
+\item Use prototype to formalize advanced proofs e.g.:
+\begin{itemize}
+\item Soundness and completeness of a normalization by evaluation algorithm [Dybjer and Filinski '00]
+\item Normalization for Martin-L\"of type theory with a universe [Coquand '98]
+\item Logical relation for contextual equivalence [Dreyer et al '11]
+\item Normalization for System F [Girard '89]
 \end{itemize}
 \end{itemize}
 \end{frame}
@@ -445,19 +458,23 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 % \end{itemize}
 % \end{frame}
 
-\begin{frame}{The metric for success}
-\begin{itemize}
-\item Algorithm for typechecking (decidability, soundness, completeness)
-\item Consequences: normalization, consistency
-\item Prototype implementation
-\item Formalize non-trivial proofs, e.g.
-\begin{itemize}
-\item C. Coquand's normalization proof for MLTT with a universe
-\item logical relation for contextual equivalence (parametricity)
-\item soundness and completeness of NbE
-\item normalization for System F?
-\end{itemize}
-\end{itemize}
+% \begin{frame}{The metric for success}
+% \begin{itemize}
+% \item Algorithm for typechecking (decidability, soundness, completeness)
+% \item Consequences: normalization, consistency
+% \item Prototype implementation
+% \item Formalize non-trivial proofs, e.g.
+% \begin{itemize}
+% \item C. Coquand's normalization proof for MLTT with a universe
+% \item logical relation for contextual equivalence (parametricity)
+% \item soundness and completeness of NbE
+% \item normalization for System F?
+% \end{itemize}
+% \end{itemize}
+% \end{frame}
+
+\begin{frame}{Conclusion}
+
 \end{frame}
 
 \end{document}
