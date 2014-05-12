@@ -138,6 +138,7 @@ connection to computer programming.
 \item A proof is an algorithm!
 \item Theory and implementation, hand in hand
 % \item Intensional dependent type theory includes a decidable equational theory
+\item Can, in principle, express advanced results, but...
 \item No direct support for substitution
 \end{itemize}
 \end{frame}
@@ -150,6 +151,7 @@ connection to computer programming.
 \item Rich logic/type theory at the next
 \end{itemize}
 \item Abella, Beluga, Delphin are roughly indexed type theory/first-order logic with induction
+\item Still not enough to directly express advanced results in programming language theory...
 \pause \item Question: can we have dependent type theory?
 \end{itemize}
 \end{frame}
@@ -192,7 +194,7 @@ A term $M$ halts if there exists a value $V$ such that $M
 \begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Weak normalization}
 \begin{itemize}
 \item Goal: If $\vdash M : A$ then $M$ halts
-\item Typical structure:
+\pause \item Typical structure:
 \begin{enumerate}
 \item Define predicate $\mathcal{R}_A$
 % \item Show if $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
@@ -338,6 +340,7 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 \item relations between contexts
 \end{itemize}
 \item Technical result: type soundness and decidability of typechecking
+\item Implemented in the Beluga system
 \item Good for \emph{programming}
 \item Not so good for \emph{reasoning}: naive treatment is logically inconsistent
 \item Allows us to experiment with defining logical relations
@@ -376,7 +379,7 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 
 \begin{frame}{Proposed work: From indexed to dependent types}
 \begin{itemize}
-\item Goal: move from indexed type theory to dependent type theory
+\item Goal: move from indexed type theory (Beluga) to dependent type theory
 \item Allows us to fill in \good $\,$ for last two problems?
 \begin{itemize}
 \item ``Universes'' to properly define logical relations
