@@ -52,9 +52,9 @@ mutual
  [_] π (Π t) = Π ([ π ⊗ tp ] t)
  [_] π (▹ X) = ▹ ([ π ]v X)
  [_] π (ƛ {t} t₂) = ƛ (subst (λ α → _ ⊢ (tm α)) trustMe ([ π ⊗ tm t ] t₂))
- [_] π  (_·_ t₂ t₃) = ([ π ] t₂) · ([ π ] t₃)
- [_] π  (Λ t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ π ⊗ tp ] t₁))
- [_] π  (_$_ t₁ t₂) = subst (λ α → _ ⊢ tm α) trustMe ([ π ] t₁ $ [ π ] t₂)
+ [_] π (_·_ t₂ t₃) = ([ π ] t₂) · ([ π ] t₃)
+ [_] π (Λ t₁) = Λ (subst (λ α → _ ⊢ tm α) trustMe ([ π ⊗ tp ] t₁))
+ [_] π (_$_ t₁ t₂) = subst (λ α → _ ⊢ tm α) trustMe ([ π ] t₁ $ [ π ] t₂)
  
  [_]v : ∀ {Δ Γ J} -> (π : vsub Δ Γ) -> var Γ J -> var Δ ([ π ]j J)
  [_]v (π , y) top = subst (var _) trustMe y

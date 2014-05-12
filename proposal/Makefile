@@ -1,3 +1,6 @@
+pres: talk.tex
+	pdflatex talk.tex
+
 doc:
 	pdflatex proposal.tex
 	bibtex proposal
@@ -5,5 +8,3 @@ doc:
 	pdflatex proposal.tex
 	pdflatex proposal.tex
 
-pres: talk.tex
-	pdflatex talk.tex

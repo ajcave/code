@@ -13,12 +13,16 @@
 
 \providecommand{\term}[1]{\mbox{\small{\textsf{#1}}}}
 
-\providecommand{\always}{\square}
-\providecommand{\eventually}{\Diamond}
-\providecommand{\tnext}{\bigcirc}
-\providecommand{\nexti}{\bullet}
-\providecommand{\until}{\mathrel{\mathcal{U}}}
-\providecommand{\onceuntil}{\mathrel{\hat{\mathcal{U}}}}
+\newcommand{\const}[1]{\textbf{#1}}
+\newcommand{\bnfas}{\mathrel{::=}}
+\newcommand{\bnfalt}{\mathrel{\mid}}
+\newcommand{\arrow}{\to}
+\newcommand{\lam}[1]{\lambda #1. }
+\usepackage{proof}
+\newcommand{\entails}{\vdash}
+\newcommand{\der}{\vdash}
+\newcommand{\stepsto}{\longrightarrow}
+\newcommand{\id}{\text{id}}
 \setbeamertemplate{itemize item}{\scriptsize\raise1.25pt\hbox{\donotcoloroutermaths$\blacktriangleright$}}
 \setbeamertemplate{itemize subitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$\bullet$}}
 \setbeamertemplate{itemize subsubitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$-$}}
@@ -34,43 +38,73 @@
 
 \begin{frame}{Introduction}
 \begin{itemize}
-\item Increasingly, desire to write computer checked proofs
-\item Results in programming languages appear to be prime
-candidates:
+\item Proofs can be long and error-prone to check by hand
+\pause
+\item e.g. Feit Thompson theorem: proof spans 2 books, 350 pages
+\pause
+\item Lots of work on languages for machine-checkable proofs (Automath, Mizar, Coq, ...)
+\pause \item {\color{green} Pro:} coming up with proofs can be \emph{interactive}
 \begin{itemize}
-\item Formalizing inductive reasoning is well understood.
-\item Abundance of cases means that such proofs can be
-tedious and error-prone to write and to verify by hand.
+\item System: ``Goal is X''
+\item Human prover: ``Use lemma foo''
+\item System: ``New subgoals: Y and Z''
+\end{itemize}
+\pause \item {\color{red} Con:} on paper we like to elide details
+\begin{itemize}
+\item How can we do the same for machine-checked formalizations?
+\item Need to somehow equip proof checker with domain-specific procedures
 \end{itemize}
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Introduction cont'd}
 \begin{itemize}
-\item Such proofs can still be tedious: giving a formal treatment of variable binding and
+\item Proofs in programming language theory: prime
+candidates for formalization?
+\begin{itemize}
+\item Inductive reasoning is well understood
+\item Lots of cases! Can be
+tedious and error-prone to write \& verify by hand.
+\end{itemize}
+\pause
+\item Burdensome part: giving a formal treatment of variable binding and
 substitution.
 \end{itemize}
+\pause
 \begin{quote}
 When doing the formalization, I discovered that the core part of the
-proof (here proving the lemmas about CR) is fairly straightforward and
+proof [...] is fairly straightforward and
 only requires a good understanding of the paper version. However, in
 completing the proof I observed that in certain places I had to invest
 much more work than expected, e.g. proving lemmas about substitution
-and weakening.
-
--- Thorsten Altenkirch, 1993
+and weakening. -- Thorsten Altenkirch, 1993
 
    (formalizing normalization of System F)
 \end{quote}
 \pause
+% \begin{itemize}
+% \item 20 years later: This proof still hasn't been done in a less painful way(?!)
+% \end{itemize}
+\end{frame}
+
+\begin{frame}{Thesis}
+\begin{quote}Building a logical framework into dependent type
+theory is possible and makes mechanization of state-of-the-art programming
+language metatheory more effective.
+\end{quote}
 \begin{itemize}
-\item 20 years later: This proof still hasn't been done in a less painful way(?!)
+\pause
+\item More generally: Learn some lessons on how
+to make mechanization of proofs outside of programming languages and
+logic more practical?
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Proof environments designed for the task}
+\begin{frame}{Background: Support for binding and substitution}
 \begin{itemize}
-\item LF is well-suited for representing
+\item Lots of approaches to support binding and substitution
+\item Higher-order abstract syntax (HOAS) one of the most effective
+\item The logical framework LF is well-suited for representing
 programming language syntax, logics and hypothetical
 judgments.
 \item Less clear how to formulate induction
@@ -81,7 +115,7 @@ over HOAS representations
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Dependent type theory}
+\begin{frame}{Background: Dependent type theory}
 \begin{itemize}
 \item Approaches to logics/languages for
 machine checked proofs: Higher order logic, set theory, and dependent
@@ -96,19 +130,107 @@ programs.
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Thesis}
-\begin{quote}Building a logical framework into dependent type
-theory is possible and makes mechanization of state-of-the-art programming
-language metatheory more effective.
-\end{quote}
-\begin{itemize}
+
+\begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Simply-typed lambda calculus definition}
+\[
+\begin{array}{lrcl}
+\mbox{Types} & A,B & \bnfas & {\const b} \bnfalt A \arrow B \\
+\mbox{Terms} & M,N & \bnfas & {\const c} \bnfalt x \bnfalt \lam x M \bnfalt M\;N \\
+\mbox{Values} & V & \bnfas & {\const c} \bnfalt \lam x M
+\end{array}
+\]
 \pause
-\item Hopefully more generally: Learn some lessons on how
-to make mechanization of proofs outside of programming languages and
-logic more practical?
-\end{itemize}
+\[
+\begin{array}{l}
+\infer{\Gamma \vdash x : A}{\Gamma(x) = A}
+\quad
+\infer{\Gamma \entails \lam x M : A \arrow B}
+      {\Gamma,x{:}A \der M : B}
+\\[0.4em]
+\infer{\Gamma \entails {\const c} : {\const b}}{}
+\quad
+\infer{\Gamma \entails M\; N : B}
+      {\Gamma \entails M : A \arrow B & \Gamma \entails N : A}
+\end{array}
+\]
+\pause
+\[
+\begin{array}{l}
+\infer[\mathsf{beta}]{(\lam x M) N \stepsto [N/x]M}{}
+\quad
+\infer[\mathsf{app}]{M\;N \stepsto M'\;N}{M \stepsto M'}
+\end{array}
+\]
+
+A term $M$ halts if there exists a value $V$ such that $M
+\stepsto^* V$.
 \end{frame}
 
+\begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Weak normalization}
+\begin{itemize}
+\item Goal: If $\vdash M : A$ then $M$ halts
+\item Typical structure:
+\begin{enumerate}
+\item Define predicate $\mathcal{R}_A$ (``logical relation'')
+% \item Show if $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
+\item Show if $M \in \mathcal{R}_A$ then $M$ halts
+\item Show if $\vdash M : A$ then $M \in \mathcal{R}_A$
+\pause
+
+Generalize: If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then $[\sigma]M \in \mathcal{R}_A$
+\end{enumerate}
+\end{itemize}
+% We prove the more general result that every term of type $A$ is \textbf{reducible} at type $A$, where reducibility is defined:
+% \[
+% \begin{array}{l}
+% \mathcal{R}_{\const i} = \{M\; |\; M \text{ halts}\} \\
+% \mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } \forall N
+% \in \mathcal{R}_A, (M\; N) \in \mathcal{R}_B \}
+% \end{array}
+% \]
+
+% \pause
+% \begin{lemma}[Backward closure]
+% If $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
+% \end{lemma}
+\end{frame}
+
+\begin{frame}{Motivating Example: Proof by logical relations}{Definition of $\mathcal{R}$}
+\[
+\begin{array}{l}
+\mathcal{R}_{\const b} = \{M\; |\; M \text{ halts}\} \\
+\mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } \forall N
+\in \mathcal{R}_A, (M\; N) \in \mathcal{R}_B \}
+\end{array}
+\]
+\end{frame}
+
+\begin{frame}{Motivating Example: Proof by logical relations}{Main lemma}
+
+\begin{theorem}[Fundamental theorem]
+If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
+$[\sigma]M \in \mathcal{R}_A$.
+\end{theorem}
+\pause
+\begin{proof}
+By induction on the typing derivation. 
+Case $\begin{array}{l}\infer{\Gamma \der \lam x M : A \arrow
+    B}{\Gamma,x{:}A \der M : B}\end{array}$:
+
+First, {\color{purple} $[\sigma](\lam x M) = \lam x ([\sigma,x/x]M)$} halts, since it
+is a value. Suppose then that we are given $N \in \mathcal{R}_A$.
+
+\begin{enumerate}
+\item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H. since extending
+  $\sigma$ with $N$ is reducible)
+\item {\color{purple} $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (property of
+  substitution; $x$ assumed fresh for $\sigma$)}
+\item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
+  under expansion)
+\end{enumerate}
+Hence $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ (by definition)
+\end{proof}
+\end{frame}
 
 \begin{frame}{Indexed recursive types}
 \begin{itemize}
