@@ -5,7 +5,9 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows,automata}
 \setbeamertemplate{navigation symbols}{}%remove navigation symbols
-
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
 
 \usepackage{srcltx}
 \usepackage[tikz]{bclogo}
@@ -100,36 +102,53 @@ logic more practical?
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Background: Support for binding and substitution}
+\begin{frame}{Background: Higher-order abstract syntax}
 \begin{itemize}
 \item Lots of approaches to support binding and substitution
 \item Higher-order abstract syntax (HOAS) one of the most effective
 \item The logical framework LF is well-suited for representing
 programming language syntax, logics and hypothetical
-judgments.
-\item Less clear how to formulate induction
-over HOAS representations
-\item Steep price: fairly weak logics (Twelf: $\forall\exists$; Beluga: better...)
-\item Abella: first order logic (weak)
-\item Hybrid, nominal logic, locally nameless, etc: less support for substitution
+judgments using HOAS
+\item Twelf [Pfenning and Sch\"urmann '99] implements LF
+\begin{itemize}
+\item Very effective for basic results in programming language theory (type soundness, confluence)
+% \item Less clear how to formulate induction
+% over HOAS representations
+\item Steep price: very weak logic. Can only express $\forall\exists$ statements
+% \item Abella: first order logic (weak)
+% \item Hybrid, nominal logic, locally nameless, etc: less support for substitution
+\item Cannot express advanced results (normalization, parametricity)
+\end{itemize}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Background: Dependent type theory}
+\begin{frame}{Background: Dependent type theory [Martin-L\"of '73]}
 \begin{itemize}
-\item Approaches to logics/languages for
-machine checked proofs: Higher order logic, set theory, and dependent
-type theory
-\item Dependent type theory comes equipped with a direct
+\item Very rich logic (on par with set theory and higher-order logic)
+% \item Approaches to logics/languages for
+% machine checked proofs: Higher order logic, set theory, and dependent
+% type theory
+\item Comes equipped with a direct
 connection to computer programming.
-\item Rich environment supports both proofs and
-programs.
-\item A proof in dependent type theory is an algorithm
+\item Rich environment supports both proofs and programs.
+\item A proof is an algorithm!
 \item Theory and implementation, hand in hand!
 \item Intensional dependent type theory includes a decidable equational theory
+\item No direct support for substitution
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Background: Two-level approaches}
+\begin{itemize}
+\item A two-level approach as in Abella [Gacek'08], Beluga [Pientka'08], Delphin [Poswolsky and Sch\"urmann '08] looks promising
+\begin{itemize}
+\item HOAS representation on one level (e.g. LF)
+\item Rich logic/type theory at the next
+\end{itemize}
+\item Abella, Beluga, Delphin are roughly indexed type theory/first-order logic with induction
+\pause \item Question: can we have dependent type theory?
+\end{itemize}
+\end{frame}
 
 \begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Simply-typed lambda calculus definition}
 \[
@@ -171,14 +190,16 @@ A term $M$ halts if there exists a value $V$ such that $M
 \item Goal: If $\vdash M : A$ then $M$ halts
 \item Typical structure:
 \begin{enumerate}
-\item Define predicate $\mathcal{R}_A$ (``logical relation'')
+\item Define predicate $\mathcal{R}_A$
 % \item Show if $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
 \item Show if $M \in \mathcal{R}_A$ then $M$ halts
 \item Show if $\vdash M : A$ then $M \in \mathcal{R}_A$
 \pause
 
-Generalize: If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then $[\sigma]M \in \mathcal{R}_A$
+Generalize: \only<2>{If $x_1{:}B_1,...,x_n{:}B_n \vdash M : A$ and $N_1 \in \mathcal{R}_{B_1},...,N_n \in \mathcal{R}_{B_n}$ then $[N_1/x_1,...,N_n/x_n]M \in \mathcal{R}_A$}
+\only<3>{{\color{purple}If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then $[\sigma]M \in \mathcal{R}_A$}}
 \end{enumerate}
+\pause \item Representative of wide variety of advanced proofs (logical relations)
 \end{itemize}
 % We prove the more general result that every term of type $A$ is \textbf{reducible} at type $A$, where reducibility is defined:
 % \[
@@ -218,51 +239,126 @@ Case $\begin{array}{l}\infer{\Gamma \der \lam x M : A \arrow
     B}{\Gamma,x{:}A \der M : B}\end{array}$:
 
 First, {\color{purple} $[\sigma](\lam x M) = \lam x ([\sigma,x/x]M)$} halts, since it
-is a value. Suppose then that we are given $N \in \mathcal{R}_A$.
+is a value. \pause Suppose then that we are given $N \in \mathcal{R}_A$.
 
 \begin{enumerate}
-\item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H. since extending
+\pause \item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H. since extending
   $\sigma$ with $N$ is reducible)
-\item {\color{purple} $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (property of
+\pause \item {\color{purple} $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (property of
   substitution; $x$ assumed fresh for $\sigma$)}
-\item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
+\pause \item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
   under expansion)
 \end{enumerate}
 Hence $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ (by definition)
 \end{proof}
 \end{frame}
 
-\begin{frame}{Indexed recursive types}
+% \begin{frame}{Motivating Example: Proof by logical relations}{Problems to solve in a formalization}
+% \begin{itemize}
+% \item Representing binding: $\lambda x. M$?
+% \item Definition of $\mathcal{R}$?
+% \item Definition of substitution $[\sigma]M$?
+% \item Quantification over contexts $\Gamma$?
+% \item Proving equations: $[N/x][\sigma,x/x]M = [\sigma,N/x]M$?
+% \end{itemize}
+% \end{frame}
+
+\newcommand{\good}{{\color{green}\textbf{\checkmark}}}
+\newcommand{\bad}{{\color{red}\textbf{\xmark}}}
+
+
+\begin{frame}[fragile]{Support from proof environments}
+\begin{tabular}{| p{4.4cm} | l | l | l |}
+\hline
+ & Type theory & Twelf & Two-level\\ \hline
+Def. Binding: $\lambda x. M$ & OK & \good & \good \\ \hline
+Def. of $\mathcal{R}$ & \good & \bad & \only<1>{?}\only<2>{OK$^1$} \\ \hline
+Def. subst. $[N/x]M$ & OK & \good & \good \\ \hline
+Def. subst. $[\sigma]M$ & OK & OK & \only<1>{?}\only<2>{\good$^2$} \\ \hline
+Quantify over contexts & \good & \bad & \good \\ \hline
+Equations e.g. \begin{small}$[N/x][\sigma,x/x]M = [\sigma,N/x]M$\end{small} & \bad & OK & \only<1>{?}\only<2>{\good$^2$} \\ \hline
+Reasoning about functions & \good & \bad & ? \\ \hline
+\end{tabular}
+
+$\,$
+
+\only<2>{$^1$ Indexed recursive types [Cave and Pientka '12]
+
+$^2$ First-class substitutions [Cave and Pientka '13]}
+\end{frame}
+
+% \begin{frame}{Motivating Example: Proof by logical relations}{Properties of substitution}
+% \begin{itemize}
+% \item First, names are tricky.
+% \item de Bruijn indices tend to work better for brute-force formalization than names
+% \begin{lemma}
+% $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ (provided $x$ fresh for $\sigma$)
+% \end{lemma}
+% becomes
+% \begin{lemma}
+% $[ id , N ] [ \uparrow \sigma, 1 ] M = [ \sigma , N ] M$
+% \end{lemma}
+% \end{itemize}
+% % \begin{lemma}
+% %  [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
+% % \end{lemma}
+% % lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
+% % lem3 : [ id ]' \(\sigma\) = \(\sigma\)
+% % lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
+% % ...
+% % \end{alltt}
+% This is tedious to do for each language we study!
+% \end{frame}
+
+
+% \begin{frame}{My progress to date}
+% \begin{itemize}
+% \item Indexed recursive types [Cave and Pientka '12]:  
+% \begin{itemize}
+% \item Part way to supporting definition of $\mathcal{R}$
+% \end{itemize}
+% \item First-class substitutions [Cave and Pientka '13]:
+% \begin{itemize}
+% \item 
+% \end{itemize}
+% \end{itemize}
+% \end{frame}
+
+\begin{frame}{Progress to date}{Indexed recursive types [Cave and Pientka '12]}
 \begin{itemize}
-\item Adds LF-indexed recursive types [Cave and Pientka 2012]
-\item Proof theoretic strength: richer forms of induction
+\item Adds LF-indexed recursive types to two-level system
+\item Richer forms of induction
 \item Can express forms of predicates that LF can't e.g.
 \begin{itemize}
 \item certain subexpressions are \emph{closed}
 \item relations between contexts
 \end{itemize}
+\item Good for \emph{programming}
+\item Not so good for \emph{reasoning}: naive treatment is logically inconsistent
+\item Allows us to experiment with defining logical relations
 \item Not ideal: relations between contexts are typically \emph{functional} relations: why not treat them as \emph{functions}
-\item \emph{Too much} strength: new ways to prove false!
 \end{itemize}
 \end{frame}
 
-\begin{frame}{First class substitutions}
+\begin{frame}{Progress to date}{First class substitutions [Cave and Pientka '13]}
 \begin{itemize}
-\item Special built-in type of substitutions with equational theory [Cave and Pientka 2013]
-\item Convenient for logical relations: need to quantify over ``closing substitutions''
-\begin{theorem}[Fundamental theorem]
-If $\Gamma \vdash M : A$ {\color{purple} and $\sigma \in \mathcal{R}_\Gamma$} then
-$[\sigma]M \in \mathcal{R}_A$.
-\end{theorem}
-\item New equations to solve: $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in fv(\sigma)$
+\item Adds special built-in type of simultaneous substitutions $\sigma$
+\item Equational theory is \textbf{built-in} to type checking: user does not need to prove any equations about substitutions
+\item Example application: Allows us to write remarkably succinct logical relations proof of weak normalization
+% \item Convenient for logical relations: need to quantify over ``closing substitutions''
+% \begin{theorem}[Fundamental theorem]
+% If $\Gamma \vdash M : A$ {\color{purple} and $\sigma \in \mathcal{R}_\Gamma$} then
+% $[\sigma]M \in \mathcal{R}_A$.
+% \end{theorem}
+% \item New equations to solve: $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in fv(\sigma)$
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Logical relations in contextual type theory}
+\begin{frame}{Progress to date}{Logical relations in contextual type theory (draft)}
 \begin{itemize}
-\item Completeness of algorithmic equality for STLC
+\item Formalizes more involved logical relations proof (completeness of an algorithmic equality for simply-typed lambda calculus)
 \item Proof is ``easy'': lemmas about substitutions are simple and few in number
-\item Lacks check that definitions are reasonable (positivity)
+% \item Lacks check that definitions are reasonable (positivity)
 \end{itemize}
 \end{frame}
 
@@ -281,18 +377,18 @@ $[\sigma]M \in \mathcal{R}_A$.
 \end{frame}
 
 \begin{frame}[fragile]{The problem with first order encodings}
-\begin{verbatim}
-data exp (G : ctx) : tp -> Set where
- v : var G T -> exp G T
- app : exp G (arr T S) -> exp G T -> exp G S
- lam : exp (G , T) S -> exp G (arr T S)
-\end{verbatim}
-\pause
-\begin{alltt}
-[_] : sub G' G -> exp G T -> exp G' T
-[_]' : sub G' G -> sub G D -> sub G' D
-\end{alltt}
-\pause
+% \begin{verbatim}
+% data exp (G : ctx) : tp -> Set where
+%  v : var G T -> exp G T
+%  app : exp G (arr T S) -> exp G T -> exp G S
+%  lam : exp (G , T) S -> exp G (arr T S)
+% \end{verbatim}
+% \pause
+% \begin{alltt}
+% [_] : sub G' G -> exp G T -> exp G' T
+% [_]' : sub G' G -> sub G D -> sub G' D
+% \end{alltt}
+% \pause
 \begin{alltt}
 lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
 lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
