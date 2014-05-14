@@ -728,7 +728,7 @@
        datacon,datasort,exists,indexconstant,indexfun,indexpred,indexsort,primitive,%
        eqtype,exception,fn,fun,functor,handle,if,in,include,infix,%
        infixr,let,local,nonfix,of,op,orelse,raise,rec,sharing,sig,%
-       signature,struct,structure,then,type,with,withtype,while,%
+       signature,struct,structure,then,type,val,with,withtype,while,%
        box,sbox,FN,fst,snd,pack},%
 %   otherkeywords={refinement, BRzipper},%
 %
@@ -737,6 +737,25 @@
    morestring=[b]"%
   }[keywords,comments,strings]%
 %
+% Ltl
+%
+%
+\lst@definelanguage{Ltl}%
+  { morekeywords={abstype,and,andalso,some,schema,case,do,data,codata,else,end,%
+       datacon,datasort,exists,indexconstant,indexfun,indexpred,indexsort,primitive,%
+       eqtype,exception,fn,fun,functor,handle,mutual,if,in,inl,inr,include,infix,%
+       infixr,let,local,nonfix,of,op,orelse,raise,rec,sharing,sig,%
+       signature,struct,structure,then,type,val,where,with,withtype,while,%
+       box,sbox,FN,fst,snd,pack},%
+%   otherkeywords={refinement, BRzipper},%
+%
+   sensitive,%
+   morecomment=[l]--,%
+   morecomment=[n]{\{-}{-\}},%
+   morestring=[b]"%
+  }[keywords,comments,strings]%
+%
+
 %
 %
 %
