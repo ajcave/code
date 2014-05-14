@@ -8,6 +8,7 @@
 \usepackage{pifont}% http://ctan.org/pkg/pifont
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
+\usepackage{ textcomp }
 
 \usepackage{srcltx}
 \usepackage[tikz]{bclogo}
@@ -46,16 +47,17 @@
 \item e.g. Feit Thompson theorem: proof spans 2 books, 350 pages
 \pause
 \item Lots of work on languages for machine-checkable proofs (Automath, Mizar, Coq, ...)
+\pause \item {\color{green} Pro:} machine-checked proofs can be easier to trust
 \pause \item {\color{green} Pro:} coming up with proofs can be \emph{interactive}
-\begin{itemize}
-\item System: ``Goal is X''
-\item Human prover: ``Use lemma foo''
-\item System: ``New subgoals: Y and Z''
-\end{itemize}
+% \begin{itemize}
+% \item System: ``Goal is X''
+% \item Human prover: ``Use lemma foo''
+% \item System: ``New subgoals: Y and Z''
+% \end{itemize}
 \pause \item {\color{red} Con:} on paper we like to elide details
 \begin{itemize}
 \item How can we do the same for machine-checked formalizations?
-\item Need to somehow equip proof checker with domain-specific procedures
+% \item Need to somehow equip proof checker with domain-specific procedures
 \end{itemize}
 \end{itemize}
 \end{frame}
@@ -232,30 +234,28 @@ Generalize: \only<2>{If $x_1{:}B_1,...,x_n{:}B_n \vdash M : A$ and $N_1 \in \mat
 \]
 \end{frame}
 
-\begin{frame}{Motivating Example: Proof by logical relations}{Main lemma}
+\begin{frame}{Motivating Example: Proof by logical relations}
 
-\begin{theorem}[Fundamental theorem]
+\begin{theorem}
 If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
 $[\sigma]M \in \mathcal{R}_A$.
 \end{theorem}
 \pause
 \begin{proof}
-By induction on the typing derivation. 
+By induction. 
 Case $\begin{array}{l}\infer{\Gamma \der \lam x M : A \arrow
-    B}{\Gamma,x{:}A \der M : B}\end{array}$:
-
-First, {\color{purple} $[\sigma](\lam x M) = \lam x ([\sigma,x/x]M)$} halts, since it
-is a value. \pause Suppose then that we are given $N \in \mathcal{R}_A$.
+    B}{\Gamma,x{:}A \der M : B}\end{array}$: Given $N \in \mathcal{R}_A$.
 
 \begin{enumerate}
-\pause \item $[\sigma,N/x]M \in \mathcal{R}_B$ (by I.H. since extending
-  $\sigma$ with $N$ is reducible)
-\pause \item {\color{purple} $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ (property of
-  substitution; $x$ assumed fresh for $\sigma$)}
-\pause \item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ (by closure
-  under expansion)
+\pause \item $(\sigma,N/x) \in \mathcal{R}_{\Gamma,x:A}$ \hfill (by definition)
+\pause \item $[\sigma,N/x]M \in \mathcal{R}_B$ \hfill (by I.H.)
+\pause \item {\color{purple} $[\sigma,N/x]M = [N/x][\sigma,x/x]M$ \hfill (property of substitution)}
+\pause \item $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ \hfill (previous lines)
+\pause \item $(\lam x ([\sigma,x/x]M))\; N \longrightarrow [N/x][\sigma,x/x]M$ \hfill ($\beta$ reduction)
+\pause \item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ \hfill (backward closure)
+\pause \item $(\lam x ([\sigma,x/x]M)) \in \mathcal{R}_{A \arrow B}$ \hfill (by definition)
+\pause \item {\color{purple} $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ \hfill (property of substitution)}
 \end{enumerate}
-Hence $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ (by definition)
 \end{proof}
 \end{frame}
 
@@ -271,26 +271,28 @@ Hence $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ (by definition)
 
 \newcommand{\good}{{\color{green}\textbf{\checkmark}}}
 \newcommand{\bad}{{\color{red}\textbf{\xmark}}}
-
+\newcommand{\ok}{{\color{orange}$\mathbf{\sim}$}}
 
 \begin{frame}[fragile]{Support from proof environments}
 \begin{tabular}{| p{4.4cm} | l | l | l |}
 \hline
- & Type theory & Twelf & Two-level\\ \hline
-Def. Binding: $\lambda x. M$ & OK & \good & \good \\ \hline
-Def. of $\mathcal{R}$ & \good & \bad & \only<1>{?}\only<2>{OK$^1$} \\ \hline
-Def. subst. $[N/x]M$ & OK & \good & \good \\ \hline
-Def. subst. $[\sigma]M$ & OK & OK & \only<1>{?}\only<2>{\good$^2$} \\ \hline
+ & Type theory & Twelf & Two-level \\
+ & (Coq) & & (Beluga) \\ \hline
+Def. Binding: $\lambda x. M$ & \ok & \good & \good \\ \hline
+Ind. predicates e.g. $\mathcal{R}_{\Gamma}$ & \good & \bad & \only<1>{?}\only<2>{\good$^1$} \\ \hline
+Def. of $\mathcal{R}_A$ & \good & \bad & \only<1>{?}\only<2>{\ok$^1$} \\ \hline
+Def. subst. $[N/x]M$ & \ok & \good & \good \\ \hline
+Def. subst. $[\sigma]M$ & \ok & \ok & \only<1>{?}\only<2>{\good$^2$} \\ \hline
 Quantify over contexts & \good & \bad & \good \\ \hline
-Equations e.g. \begin{small}$[N/x][\sigma,x/x]M = [\sigma,N/x]M$\end{small} & \bad & OK & \only<1>{?}\only<2>{\good$^2$} \\ \hline
+Equations e.g. \begin{small}$[N/x][\sigma,x/x]M = [\sigma,N/x]M$\end{small} & \bad & \ok & \only<1>{?}\only<2>{\good$^2$} \\ \hline
 Reasoning about functions & \good & \bad & ? \\ \hline
 \end{tabular}
 
 $\,$
 
-\only<2>{$^1$ Indexed recursive types [Cave and Pientka '12]
+\only<2>{$^1$ Indexed recursive types [Cave and Pientka POPL'12]
 
-$^2$ First-class substitutions [Cave and Pientka '13]}
+$^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 \end{frame}
 
 % \begin{frame}{Motivating Example: Proof by logical relations}{Properties of substitution}
@@ -330,7 +332,7 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 % \end{itemize}
 % \end{frame}
 
-\begin{frame}{Progress to date}{Indexed recursive types [Cave and Pientka '12]}
+\begin{frame}{Progress to date}{Indexed recursive types [Cave and Pientka POPL'12]}
 \begin{itemize}
 \item Adds LF-indexed recursive types to two-level system
 \item Richer forms of induction
@@ -348,7 +350,7 @@ $^2$ First-class substitutions [Cave and Pientka '13]}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Progress to date}{First class substitutions [Cave and Pientka '13]}
+\begin{frame}{Progress to date}{First class substitutions [Cave and Pientka LFMTP'13]}
 \begin{itemize}
 \item Adds special built-in type of simultaneous substitutions $\sigma$
 \item Equational theory is \textbf{built-in} to type checking: user does not need to prove any equations about substitutions
