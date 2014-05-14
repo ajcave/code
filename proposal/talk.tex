@@ -9,6 +9,7 @@
 \newcommand{\cmark}{\ding{51}}%
 \newcommand{\xmark}{\ding{55}}%
 \usepackage{ textcomp }
+\usepackage{array}
 
 \usepackage{srcltx}
 \usepackage[tikz]{bclogo}
@@ -159,53 +160,46 @@ connection to computer programming.
 \end{frame}
 
 \begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Simply-typed lambda calculus definition}
-\[
-\begin{array}{lrcl}
+\begin{tabular}{p{2.8cm}l}
+\fbox{Syntax}\vfill &
+\begin{array}[t]{lrcl}
 \mbox{Types} & A,B & \bnfas & {\const b} \bnfalt A \arrow B \\
 \mbox{Terms} & M,N & \bnfas & {\const c} \bnfalt x \bnfalt \lam x M \bnfalt M\;N \\
 \mbox{Values} & V & \bnfas & {\const c} \bnfalt \lam x M
 \end{array}
-\]
+\\[3em]
 \pause
-\[
-\begin{array}{l}
-\infer{\Gamma \vdash x : A}{\Gamma(x) = A}
-\quad
-\infer{\Gamma \entails \lam x M : A \arrow B}
-      {\Gamma,x{:}A \der M : B}
+\vspace{-2.3em}\fbox{Typing $\Gamma \vdash M : A$} &
+\begin{array}[t]{l}
+\infer{\Gamma \vdash x : A}{\Gamma(x) = A} \quad
+\infer{\Gamma \entails \lam x M : A \arrow B}{\Gamma,x{:}A \der M : B}
 \\[0.4em]
 \infer{\Gamma \entails {\const c} : {\const b}}{}
 \quad
-\infer{\Gamma \entails M\; N : B}
-      {\Gamma \entails M : A \arrow B & \Gamma \entails N : A}
+\infer{\Gamma \entails M\; N : B}{\Gamma \entails M : A \arrow B \quad \Gamma \entails N : A}
 \end{array}
-\]
+\\[3em]
 \pause
-\[
-\begin{array}{l}
-\infer[\mathsf{beta}]{(\lam x M) N \stepsto [N/x]M}{}
-\quad
-\infer[\mathsf{app}]{M\;N \stepsto M'\;N}{M \stepsto M'}
-\end{array}
-\]
+\vspace{-2.3em}\fbox{Op. Sem.} & 
+$\infer{M\;N \stepsto M'\;N}{M \stepsto M'} \quad \infer{(\lam x M) N \stepsto [N/x]M}{} $ \\[2em]
+\end{tabular}
 
-A term $M$ halts if there exists a value $V$ such that $M
-\stepsto^* V$.
+\hfill $M$ halts if $\exists V$ such that $M \stepsto^* V$ \hfill
 \end{frame}
 
 \begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Weak normalization}
 \begin{itemize}
 \item Goal: If $\vdash M : A$ then $M$ halts
-\item Typical structure:
 \begin{enumerate}
 \item Define predicate $\mathcal{R}_A$
 % \item Show if $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
-\item Show if $M \in \mathcal{R}_A$ then $M$ halts
-\item Show if $\vdash M : A$ then $M \in \mathcal{R}_A$
+\item If $M \in \mathcal{R}_A$ then $M$ halts
+\item If $\vdash M : A$ then $M \in \mathcal{R}_A$
 \pause
 
-Generalize: \only<2>{If $x_1{:}B_1,...,x_n{:}B_n \vdash M : A$ and $N_1 \in \mathcal{R}_{B_1},...,N_n \in \mathcal{R}_{B_n}$ then $[N_1/x_1,...,N_n/x_n]M \in \mathcal{R}_A$}
-\only<3>{{\color{purple}If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then $[\sigma]M \in \mathcal{R}_A$}}
+Generalize: {\color{purple}If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then $[\sigma]M \in \mathcal{R}_A$}
+
+(where $\Gamma$ of the form $x_1{:}B_1,...,x_n{:}B_n$ and $\sigma$ of the form $N_1/x_1,...,N_n/x_n$ and $\sigma \in \mathcal{R}_\Gamma$ means $N_1 \in \mathcal{R}_{B_1},...,N_n \in \mathcal{R}_{B_n}$)
 \end{enumerate}
 \pause \item Representative of wide variety of advanced proofs (logical relations)
 \end{itemize}
