@@ -111,13 +111,14 @@
 \pause
 \item Lots of work on languages for machine-checkable proofs (Automath, Mizar, Coq, ...)
 \pause \item {\color{green} Pro:} machine-checked proofs can be easier to trust
+\pause \item {\color{green} Pro:} forces rigorous thinking
 \pause \item {\color{green} Pro:} coming up with proofs can be \emph{interactive}
 % \begin{itemize}
 % \item System: ``Goal is X''
 % \item Human prover: ``Use lemma foo''
 % \item System: ``New subgoals: Y and Z''
 % \end{itemize}
-\pause \item {\color{red} Con:} Often need substantial infrastructure for a proof where on paper we elided the details
+\pause \item {\color{red} Con:} can require substantial ``boilerplate''
 \begin{itemize}
 \item How can this be improved?
 % \item Need to somehow equip proof checker with domain-specific procedures
@@ -125,19 +126,18 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Introduction cont'd}
+\begin{frame}{Formalizing programming language theory}
 \begin{itemize}
-\item Proofs in programming language theory: prime
-candidates for formalization? (see POPLMark challenge)
+\item Seems promising!
+\item Lots of interest already (e.g. POPLMark challenge)
 % \begin{itemize}
 % \item Inductive reasoning is well understood
 % \item Lots of cases! Can be
 % tedious and error-prone to write \& verify by hand.
 % \end{itemize}
-\item More interest in formalization in PL than in math
+\item More interest than in math
 \pause
-\item Burdensome part: giving a formal treatment of variable binding and
-substitution.
+\item Overhead: formalizing variable binding and substitution
 \end{itemize}
 \pause
 \begin{quote}
@@ -169,7 +169,7 @@ logic more practical?
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{Example: Simply-typed lambda calculus definition}
+\begin{frame}[fragile]{Representing languages: The basics}
 % Focus here on tal
 \begin{tabular}{p{2.8cm}l}
 \fbox{Syntax}\vfill &
@@ -201,13 +201,11 @@ $\infer{M\;N \stepsto M'\;N}{M \stepsto M'} \quad \infer{(\lam x M) N \stepsto [
 \begin{frame}{Background: Higher-order abstract syntax}
 \begin{itemize}
 \item Lots of approaches to support binding and substitution
-\item Higher-order abstract syntax (HOAS) one of the most effective
+\item Higher-order abstract syntax (HOAS) very effective
 \begin{itemize}
 \item Idea: represent binding and substitution using functions and application from a meta-language
 \end{itemize}
-\item The logical framework LF is well-suited for representing
-programming language syntax, logics and hypothetical
-judgments using HOAS
+\item The logical framework LF employs HOAS
 \item Twelf [Pfenning and Sch\"urmann '99] implements LF
 \begin{itemize}
 \item Very effective for basic results in programming language theory (type soundness, confluence)
@@ -259,12 +257,8 @@ step/beta : step (app (lam M) N) (M N).
 % \item Approaches to logics/languages for
 % machine checked proofs: Higher order logic, set theory, and dependent
 % type theory
-\item Comes equipped with a direct
-connection to computer programming.
-\item Rich environment supports both proofs and programs.
-\item A proof is an algorithm!
+\item Unifies programming and proving!
 \item Theory and implementation, hand in hand
-% \item Intensional dependent type theory includes a decidable equational theory
 \item Can, in principle, express advanced results, but...
 \item No direct support for substitution
 \end{itemize}
@@ -272,13 +266,11 @@ connection to computer programming.
 
 \begin{frame}{Background: Two-level approaches}
 \begin{itemize}
-\item e.g. Abella [Gacek'08], Beluga [Pientka'08], Delphin [Poswolsky and Sch\"urmann '08]
-\begin{itemize}
 \item HOAS representation on one level (e.g. LF)
 \item Rich logic/type theory at the next
-\end{itemize}
-\item Roughly indexed type theory/first-order logic with induction
-\item Still not enough to directly express advanced results in programming language theory...
+\item e.g. implemented in Abella [Gacek'08], Beluga [Pientka'08], Delphin [Poswolsky and Sch\"urmann '08]
+\item $\approx$ indexed type theory/first-order logic with induction
+\item Still not enough to directly express advanced results...
 \pause \item Question: can we have dependent type theory?
 \end{itemize}
 \end{frame}
