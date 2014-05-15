@@ -107,8 +107,8 @@
 \begin{itemize}
 \item Proofs can be long and error-prone to check by hand
 \pause \item e.g. Feit Thompson theorem: proof spans 2 books, 350 pages
-\pause \item Lots of work on languages for machine-checkable proofs (Automath, Mizar, Coq, ...)
-\pause \item Is writing machine-checkable proofs viable?
+\pause \item Lots of work on languages for machine-checkable proofs (Automath, Mizar, NuPRL, Coq, ...)
+\pause \item Is writing machine-checkable proofs a good idea?
 \pause \item {\color{green} Pro:} can be easier to trust
 \pause \item {\color{green} Pro:} force rigorous thinking
 \pause \item {\color{green} Pro:} coming up with proofs can be \emph{interactive}
@@ -285,8 +285,8 @@ $\,$
 % \[
 % \begin{array}{l}
 % \mathcal{R}_{\const i} = \{M\; |\; M \text{ halts}\} \\
-% \mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } \forall N
-% \in \mathcal{R}_A, (M\; N) \in \mathcal{R}_B \}
+% \mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } {\color{purple} \forall N
+% \in \mathcal{R}_A}, (M\; N) \in \mathcal{R}_B \}
 % \end{array}
 % \]
 
@@ -300,8 +300,8 @@ $\,$
 \[
 \begin{array}{l}
 \mathcal{R}_{\const b} = \{M\; |\; M \text{ halts}\} \\
-\mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } \forall N
-\in \mathcal{R}_A, (M\; N) \in \mathcal{R}_B \}
+\mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } {\color{purple}\forall N
+\in \mathcal{R}_A}, (M\; N) \in \mathcal{R}_B \}
 \end{array}
 \]
 \end{frame}
@@ -470,14 +470,13 @@ mlam M => fn rs => case M of
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Proposal: Move from indexed types to dependent types}{Why?}
+\begin{frame}{Proposal: Move from indexed types to dependent types}
 \begin{itemize}
 \item \emph{Some} richer theory is necessary
 \item Dependent type theory [Martin-L\"of '73] unifies programming with proving!
 \item On par with set theory and higher-order logic
-\item Includes \emph{definitional equality}
+\item Includes \emph{definitional equalities}: checked automatically!
 \begin{itemize}
-\item Equalities which are checked automatically
 \item Extremely convenient!
 \item Computation ($\beta$) rules
 \item Conceivably other rules?
