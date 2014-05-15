@@ -106,12 +106,11 @@
 \begin{frame}{Introduction}
 \begin{itemize}
 \item Proofs can be long and error-prone to check by hand
-\pause
-\item e.g. Feit Thompson theorem: proof spans 2 books, 350 pages
-\pause
-\item Lots of work on languages for machine-checkable proofs (Automath, Mizar, Coq, ...)
-\pause \item {\color{green} Pro:} machine-checked proofs can be easier to trust
-\pause \item {\color{green} Pro:} forces rigorous thinking
+\pause \item e.g. Feit Thompson theorem: proof spans 2 books, 350 pages
+\pause \item Lots of work on languages for machine-checkable proofs (Automath, Mizar, Coq, ...)
+\pause \item Is writing machine-checkable proofs viable?
+\pause \item {\color{green} Pro:} can be easier to trust
+\pause \item {\color{green} Pro:} force rigorous thinking
 \pause \item {\color{green} Pro:} coming up with proofs can be \emph{interactive}
 % \begin{itemize}
 % \item System: ``Goal is X''
@@ -161,12 +160,10 @@ and weakening. -- Thorsten Altenkirch, 1993
 theory is possible and makes mechanization of state-of-the-art programming
 language metatheory more effective.
 \end{quote}
-\begin{itemize}
-\pause
-\item More generally: Learn some lessons on how
+
+\pause\begin{quote}{\normalfont More generally: Learn something about how
 to make mechanization of proofs outside of programming languages and
-logic more practical?
-\end{itemize}
+logic more practical?}\end{quote}
 \end{frame}
 
 \begin{frame}[fragile]{Representing languages: The basics}
@@ -175,7 +172,7 @@ logic more practical?
 \fbox{Syntax}\vfill &
 \begin{array}[t]{lrcl}
 \mbox{Types} & A,B & \bnfas & {\const b} \bnfalt A \arrow B \\
-\mbox{Terms} & M,N & \bnfas & {\const c} \bnfalt x \bnfalt \lam x M \bnfalt M\;N \\
+\mbox{Terms} & M,N & \bnfas & {\const c} \bnfalt {\color{purple}x} \bnfalt {\color{purple} \lam x M} \bnfalt M\;N \\
 \mbox{Values} & V & \bnfas & {\const c} \bnfalt \lam x M
 \end{array}
 \\[3em]
@@ -183,7 +180,7 @@ logic more practical?
 \vspace{-2.3em}\fbox{Typing $\Gamma \vdash M : A$} &
 \begin{array}[t]{l}
 \infer{\Gamma \vdash x : A}{\Gamma(x) = A} \quad
-\infer{\Gamma \entails \lam x M : A \arrow B}{\Gamma,x{:}A \der M : B}
+\infer{\Gamma \entails \lam x M : A \arrow B}{\color{purple}\Gamma,x{:}A \der M : B}
 \\[0.4em]
 \infer{\Gamma \entails {\const c} : {\const b}}{}
 \quad
@@ -192,7 +189,7 @@ logic more practical?
 \\[3em]
 \pause
 \vspace{-2.3em}\fbox{Op. Sem.} & 
-$\infer{M\;N \stepsto M'\;N}{M \stepsto M'} \quad \infer{(\lam x M) N \stepsto [N/x]M}{} $ \\[2em]
+$\infer{M\;N \stepsto M'\;N}{M \stepsto M'} \quad \infer{(\lam x M) N \stepsto {\color{purple}[N/x]M}}{} $ \\[2em]
 \end{tabular}
 
 \hfill $M$ halts if $\exists V.\, M \stepsto^* V$ \hfill
@@ -227,7 +224,7 @@ b : tp.
 _=>_ : tp -> tp -> tp.
 
 c : tm.
-lam : (tm -> tm) -> tm.
+lam : ${\color{purple}(\text{tm} \rightarrow \text{tm})}$ -> tm.
 app : tm -> tm -> tm.
 \end{lstlisting}
 \\[3em]
@@ -235,7 +232,7 @@ app : tm -> tm -> tm.
 \vspace{-2.7em}\fbox{Typing \lstinline{oft M T}} &
 \begin{lstlisting}
 oft/b : oft c b.
-oft/lam : ({x:tm} oft x A -> oft (M x) B)
+oft/lam : ${\color{purple}\text{(\{x:tm\} oft x A -> oft (M x) B)}}$
           -> oft (lam M) (A => B).
 oft/app : oft M (A => B) -> oft N A
           -> oft (app M N) B.
@@ -246,7 +243,7 @@ oft/app : oft M (A => B) -> oft N A
 \begin{lstlisting}
 step/app : step M M'
         -> step (app M N) (app M' N).
-step/beta : step (app (lam M) N) (M N).
+step/beta : step (app (lam M) N) $\color{purple}\text{(M N)}$.
 \end{lstlisting}
 \end{tabular}
 \end{frame}
@@ -585,8 +582,8 @@ Some progress already:
 
 \begin{frame}{Conclusion}
 \begin{itemize}
-\item Building a logical framework into dependent type theory using the two-level approach appears feasible
-\item Substantial benefits: formalizing advanced results in programming language theory becomes within reach
+\item Building a logical framework into dependent type theory appears feasible
+\item Substantial benefits: formalizing advanced results in programming language theory becomes more practical
 \item Hopefully provides insights into how to incoporate other equational theories from other areas of application?
 \end{itemize}
 \end{frame}
