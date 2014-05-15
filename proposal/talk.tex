@@ -345,6 +345,7 @@ Case $\begin{array}{l}\infer{\Gamma \der \lam x M : A \arrow
 \pause \item {\color{purple} $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ \hfill (property of substitution)}
 \end{enumerate}
 \end{proof}
+Proving these properties of substitution requires $\approx$ dozen lemmas!
 \end{frame}
 
 % \begin{frame}{Motivating Example: Proof by logical relations}{Problems to solve in a formalization}
@@ -371,7 +372,7 @@ Ind. predicates e.g. $\mathcal{R}_{\Gamma}$ & \good & \bad & \only<1>{?}\only<2>
 Def. of $\mathcal{R}_A$ & \good & \bad & \only<1>{?}\only<2>{\ok$^1$} \\ \hline
 Def. subst. $[N/x]M$ & \ok & \good & \good \\ \hline
 Def. subst. $[\sigma]M$ & \ok & \ok & \only<1>{?}\only<2>{\good$^2$} \\ \hline
-Quantify over contexts & \good & \bad & \good \\ \hline
+Directly inspect contexts & \good & \bad & \good \\ \hline
 Equations e.g. \begin{small}$[N/x][\sigma,x/x]M = [\sigma,N/x]M$\end{small} & \bad & \ok & \only<1>{?}\only<2>{\good$^2$} \\ \hline
 Reasoning about functions & \good & \bad & ? \\ \hline
 \end{tabular}
@@ -472,12 +473,35 @@ mlam M => fn rs => case M of
 \item completeness of an algorithmic equality for simply-typed lambda calculus
 \end{itemize}
 \item This proof is the core of many more advanced results (decidability of typechecking)
-\item Formalization is ``easy''! lemmas about substitutions are simple and few in number
+\item Formalization is ``easy''!
+\item Substantially smaller than other formalizations
+\item Reasons to believe it's not easily done in other two-level systems
 % \item Lacks check that definitions are reasonable (positivity)
 \item Demonstrates that previous work scales to more advanced proofs
 \end{itemize}
 \end{frame}
 
+
+\begin{frame}{Proposed work: Dependent Type Theory for Contextual Reasoning}
+\begin{enumerate}
+\item Theory
+\begin{itemize}
+\item Move from indexed types (Beluga) to dependent types
+\item Design algorithm for \emph{definitional equality} incorporating equational theory of substitutions
+\item Prove soundness, completeness, and termination of algorithm
+\end{itemize}
+\item Prototype implementation
+\begin{itemize}
+\item Adapt Beluga implementation to dependent types
+\item Implement algorithm for definitional equality
+\end{itemize}
+\item Case studies
+\begin{itemize}
+\item Formalize advanced proofs using the prototype
+\end{itemize}
+% Say: Allows us to fill in checkmarks for last two problems?
+\end{enumerate}
+\end{frame}
 
 \begin{frame}{Proposed work: From indexed to dependent types}
 \begin{itemize}
