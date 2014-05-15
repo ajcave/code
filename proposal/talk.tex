@@ -119,6 +119,7 @@
 % \end{itemize}
 \pause \item {\color{red} Con:} can require substantial ``boilerplate''
 \begin{itemize}
+\item Makes proofs harder to write \emph{and} read
 \item How can this be improved?
 % \item Need to somehow equip proof checker with domain-specific procedures
 \end{itemize}
@@ -248,33 +249,21 @@ step/beta : step (app (lam M) N) $\color{purple}\text{(M N)}$.
 \end{tabular}
 \end{frame}
 
-\begin{frame}{Background: Dependent type theory [Martin-L\"of '73]}
-\begin{itemize}
-\item Very rich logic (on par with set theory and higher-order logic)
-% \item Approaches to logics/languages for
-% machine checked proofs: Higher order logic, set theory, and dependent
-% type theory
-\item Unifies programming and proving!
-\item Theory and implementation, hand in hand
-\item Can, in principle, express advanced results, but...
-\item No direct support for substitution
-\end{itemize}
-\end{frame}
-
 \begin{frame}{Background: Two-level approaches}
 \begin{itemize}
 \item HOAS representation on one level (e.g. LF)
-\item Rich logic/type theory at the next
+\item Richer logic/type theory at the next
 \item e.g. implemented in Abella [Gacek'08], Beluga [Pientka'08], Delphin [Poswolsky and Sch\"urmann '08]
 \item $\approx$ indexed type theory/first-order logic with induction
-\item Still not enough to directly express advanced results...
-\pause \item Question: can we have dependent type theory?
+\item Still not enough to directly express many advanced results...
+\pause \item Question: can we have more powerful logics?
 \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]{Example: Weak normalization}
 \begin{itemize}
-\item Goal: If $\vdash M : A$ then $M$ halts
+\item Theorem: If $\vdash M : A$ then $M$ halts
+\pause
 \begin{enumerate}
 \item Define predicate $\mathcal{R}_A$
 % \item Show if $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
@@ -284,9 +273,13 @@ step/beta : step (app (lam M) N) $\color{purple}\text{(M N)}$.
 
 Generalize: {\color{purple}If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then $[\sigma]M \in \mathcal{R}_A$}
 
+$\,$
+
 (where $\Gamma$ of the form $x_1{:}B_1,...,x_n{:}B_n$ and $\sigma$ of the form $N_1/x_1,...,N_n/x_n$ and $\sigma \in \mathcal{R}_\Gamma$ means $N_1 \in \mathcal{R}_{B_1},...,N_n \in \mathcal{R}_{B_n}$)
 \end{enumerate}
-\pause \item Representative of wide variety of advanced proofs (logical relations)
+\pause \item Representative of wide variety of advanced proofs
+
+(logical relations)
 \end{itemize}
 % We prove the more general result that every term of type $A$ is \textbf{reducible} at type $A$, where reducibility is defined:
 % \[
@@ -418,25 +411,22 @@ $^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 \item relations between contexts
 \end{itemize}
 \item Richer forms of induction
-\item Technical result: type soundness and decidability of typechecking
+\item Result: type soundness and decidability of typechecking
 \item Implemented in the Beluga system
 \item Good for \emph{programming}
-\item Not so good for \emph{reasoning}: naive treatment is logically inconsistent
-\item Allows us to experiment with defining logical relations
+\item Not so good for \emph{reasoning}: naive treatment is inconsistent!
+\item \textbf{But} enables \textbf{experimental} definitions of logical relations
 \item Not ideal: relations between contexts are typically \emph{functional} relations: why not treat them as \emph{functions}
 \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]{First class substitutions [Cave and Pientka LFMTP'13]}
 \begin{itemize}
-\item Adds special built-in type of simultaneous substitutions $\sigma$
-\item Equational theory is \textbf{built-in} to type checking: user does not need to prove any equations about substitutions
-\item Technical result: decidability of typechecking including equational theory of substitutions
-\item Example application: Allows us to write remarkably succinct logical relations proof of weak normalization
-\begin{itemize}
-\item Uses ``unsound in general'' recursive types to define logical relation
-\item Future work: fix this
-\end{itemize}
+\item Adds distinguished type of substitutions $\sigma$
+\item Equational theory \textbf{built-in} to type checking
+\item User does not need to prove any equations!
+\item Result: Decidability of typechecking w/ equational theory
+\item Example: remarkably succinct proof of weak normalization!
 \begin{lstlisting}
 rec thm : {M:[$\psi$ $\vdash$ tm A]} RedS [$\vdash$ $\sigma$] -> Red [$\vdash$ A] [$\vdash$ M $\sigma$] =
 mlam M => fn rs => case M of
@@ -446,6 +436,8 @@ mlam M => fn rs => case M of
     (thm [$\psi$,x $\vdash$ M1] (Cons rs rN)))
 ...
 \end{lstlisting}
+\item Uses ``unsound in general'' recursive types to define $\mathcal{R}_A$
+\item Future work: fix this
 % \item Convenient for logical relations: need to quantify over ``closing substitutions''
 % \begin{theorem}[Fundamental theorem]
 % If $\Gamma \vdash M : A$ {\color{purple} and $\sigma \in \mathcal{R}_\Gamma$} then
@@ -459,14 +451,14 @@ mlam M => fn rs => case M of
 \begin{itemize}
 \item Formalizes more involved logical relations proof
 \begin{itemize}
-\item completeness of an algorithmic equality for simply-typed lambda calculus
+\item completeness of an algorithmic equality for STLC
 \end{itemize}
-\item This proof is the core of many more advanced results (decidability of typechecking)
+\item Core of more advanced results (decidability of typechecking)
 \item Formalization is ``easy''!
 \item Substantially smaller than other formalizations
-\item Reasons to believe it's not easily done in other two-level systems
+\item Not easily done in other two-level systems
 % \item Lacks check that definitions are reasonable (positivity)
-\item Demonstrates that previous work scales to more advanced proofs
+\item Demonstrates that previous work scales
 \end{itemize}
 \end{frame}
 
@@ -481,7 +473,9 @@ mlam M => fn rs => case M of
 \begin{frame}{Proposal: Move from indexed types to dependent types}{Why?}
 \begin{itemize}
 \item \emph{Some} richer theory is necessary
-\item DTT includes \emph{definitional equality}
+\item Dependent type theory [Martin-L\"of '73] unifies programming with proving!
+\item On par with set theory and higher-order logic
+\item Includes \emph{definitional equality}
 \begin{itemize}
 \item Equalities which are checked automatically
 \item Extremely convenient!
@@ -522,11 +516,11 @@ mlam M => fn rs => case M of
 \begin{itemize}
 \item LFMTP'13 describes syntactic algorithm for equational theory of substitutions
 \item Hurdle: definitional equality includes \textbf{computation} rules
-\item Proof requires \textbf{semantic} techniques
+\item DTT proof requires \textbf{semantic} techniques
 \item Approach:
 \begin{itemize}
 \item Adapt proof for ``plain'' dependent type theory with a universe (e.g. [Abel '11])
-\item Follow Allais et al. '13 to incorporate ``non-computational'' laws
+\item Follow Allais et al. '13 to include ``non-computational'' laws
 \item Byproducts of proof: normalization and consistency!
 \end{itemize}
 \end{itemize}
@@ -543,11 +537,22 @@ Some progress already:
 \end{frame}
 
 \begin{frame}{Case studies: Some advanced proofs to target}
-\begin{itemize}
+\begin{enumerate}
 \item Soundness and completeness of a normalization by evaluation algorithm [Dybjer and Filinski '00]
 \item Normalization for Martin-L\"of type theory with a universe [Coquand '98]
 \item Logical relation for contextual equivalence [Dreyer et al '11]
 \item Normalization for System F [Girard '89]
+\end{enumerate}
+
+$\,$
+
+\begin{itemize}
+\item Challenging. 2\&{}3 have not been fully formalized (?)
+\item Feasible. I have partially formalized 1\&{}2 in Agda
+\item Significant fragments of real systems
+\item 3 is cutting-edge: researchers \emph{want} to be able to formalize
+\item Require expressive power beyond Beluga today
+\item Would benefit a lot from proposed support for substitutions!
 \end{itemize}
 \end{frame}
 
@@ -584,7 +589,7 @@ Some progress already:
 \begin{itemize}
 \item Building a logical framework into dependent type theory appears feasible
 \item Substantial benefits: formalizing advanced results in programming language theory becomes more practical
-\item Hopefully provides insights into how to incoporate other equational theories from other areas of application?
+\item Hopefully provides insights into how to incorporate other equational theories from other areas of application?
 \end{itemize}
 \end{frame}
 
