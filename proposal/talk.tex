@@ -117,9 +117,9 @@
 % \item Human prover: ``Use lemma foo''
 % \item System: ``New subgoals: Y and Z''
 % \end{itemize}
-\pause \item {\color{red} Con:} on paper we like to elide details
+\pause \item {\color{red} Con:} Often need substantial infrastructure for a proof where on paper we elided the details
 \begin{itemize}
-\item How can we do the same for machine-checked formalizations?
+\item How can this be improved?
 % \item Need to somehow equip proof checker with domain-specific procedures
 \end{itemize}
 \end{itemize}
@@ -128,12 +128,13 @@
 \begin{frame}{Introduction cont'd}
 \begin{itemize}
 \item Proofs in programming language theory: prime
-candidates for formalization?
-\begin{itemize}
-\item Inductive reasoning is well understood
-\item Lots of cases! Can be
-tedious and error-prone to write \& verify by hand.
-\end{itemize}
+candidates for formalization? (see POPLMark challenge)
+% \begin{itemize}
+% \item Inductive reasoning is well understood
+% \item Lots of cases! Can be
+% tedious and error-prone to write \& verify by hand.
+% \end{itemize}
+\item More interest in formalization in PL than in math
 \pause
 \item Burdensome part: giving a formal treatment of variable binding and
 substitution.
@@ -168,60 +169,8 @@ logic more practical?
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Background: Higher-order abstract syntax}
-\begin{itemize}
-\item Lots of approaches to support binding and substitution
-\item Higher-order abstract syntax (HOAS) one of the most effective
-\begin{itemize}
-\item Idea: represent binding and substitution using functions and application from a meta-language
-\end{itemize}
-\item The logical framework LF is well-suited for representing
-programming language syntax, logics and hypothetical
-judgments using HOAS
-\item Twelf [Pfenning and Sch\"urmann '99] implements LF
-\begin{itemize}
-\item Very effective for basic results in programming language theory (type soundness, confluence)
-% \item Less clear how to formulate induction
-% over HOAS representations
-\item Steep price: very weak logic. Can only express $\forall\exists$ statements
-% \item Abella: first order logic (weak)
-% \item Hybrid, nominal logic, locally nameless, etc: less support for substitution
-\item Cannot express advanced results (normalization, parametricity)
-\end{itemize}
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Background: Dependent type theory [Martin-L\"of '73]}
-\begin{itemize}
-\item Very rich logic (on par with set theory and higher-order logic)
-% \item Approaches to logics/languages for
-% machine checked proofs: Higher order logic, set theory, and dependent
-% type theory
-\item Comes equipped with a direct
-connection to computer programming.
-\item Rich environment supports both proofs and programs.
-\item A proof is an algorithm!
-\item Theory and implementation, hand in hand
-% \item Intensional dependent type theory includes a decidable equational theory
-\item Can, in principle, express advanced results, but...
-\item No direct support for substitution
-\end{itemize}
-\end{frame}
-
-\begin{frame}{Background: Two-level approaches}
-\begin{itemize}
-\item A two-level approach as in Abella [Gacek'08], Beluga [Pientka'08], Delphin [Poswolsky and Sch\"urmann '08] looks promising
-\begin{itemize}
-\item HOAS representation on one level (e.g. LF)
-\item Rich logic/type theory at the next
-\end{itemize}
-\item Abella, Beluga, Delphin are roughly indexed type theory/first-order logic with induction
-\item Still not enough to directly express advanced results in programming language theory...
-\pause \item Question: can we have dependent type theory?
-\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Simply-typed lambda calculus definition}
+\begin{frame}[fragile]{Example: Simply-typed lambda calculus definition}
+% Focus here on tal
 \begin{tabular}{p{2.8cm}l}
 \fbox{Syntax}\vfill &
 \begin{array}[t]{lrcl}
@@ -249,7 +198,30 @@ $\infer{M\;N \stepsto M'\;N}{M \stepsto M'} \quad \infer{(\lam x M) N \stepsto [
 \hfill $M$ halts if $\exists V.\, M \stepsto^* V$ \hfill
 \end{frame}
 
-\begin{frame}[fragile]{Motivating Example: Proof by logical relations}{HOAS encoding}
+\begin{frame}{Background: Higher-order abstract syntax}
+\begin{itemize}
+\item Lots of approaches to support binding and substitution
+\item Higher-order abstract syntax (HOAS) one of the most effective
+\begin{itemize}
+\item Idea: represent binding and substitution using functions and application from a meta-language
+\end{itemize}
+\item The logical framework LF is well-suited for representing
+programming language syntax, logics and hypothetical
+judgments using HOAS
+\item Twelf [Pfenning and Sch\"urmann '99] implements LF
+\begin{itemize}
+\item Very effective for basic results in programming language theory (type soundness, confluence)
+% \item Less clear how to formulate induction
+% over HOAS representations
+\item Steep price: very weak logic. Can only express $\forall\exists$ statements
+% \item Abella: first order logic (weak)
+% \item Hybrid, nominal logic, locally nameless, etc: less support for substitution
+\item Cannot express advanced results (normalization, parametricity)
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Example: HOAS encoding}
 \begin{tabular}{p{3.2cm}l}
 \vspace{-2.7em}\fbox{Syntax} &
 \begin{lstlisting}
@@ -281,7 +253,37 @@ step/beta : step (app (lam M) N) (M N).
 \end{tabular}
 \end{frame}
 
-\begin{frame}[fragile]{Motivating Example: Proof by logical relations}{Weak normalization}
+\begin{frame}{Background: Dependent type theory [Martin-L\"of '73]}
+\begin{itemize}
+\item Very rich logic (on par with set theory and higher-order logic)
+% \item Approaches to logics/languages for
+% machine checked proofs: Higher order logic, set theory, and dependent
+% type theory
+\item Comes equipped with a direct
+connection to computer programming.
+\item Rich environment supports both proofs and programs.
+\item A proof is an algorithm!
+\item Theory and implementation, hand in hand
+% \item Intensional dependent type theory includes a decidable equational theory
+\item Can, in principle, express advanced results, but...
+\item No direct support for substitution
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Background: Two-level approaches}
+\begin{itemize}
+\item e.g. Abella [Gacek'08], Beluga [Pientka'08], Delphin [Poswolsky and Sch\"urmann '08]
+\begin{itemize}
+\item HOAS representation on one level (e.g. LF)
+\item Rich logic/type theory at the next
+\end{itemize}
+\item Roughly indexed type theory/first-order logic with induction
+\item Still not enough to directly express advanced results in programming language theory...
+\pause \item Question: can we have dependent type theory?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Example: Weak normalization}
 \begin{itemize}
 \item Goal: If $\vdash M : A$ then $M$ halts
 \begin{enumerate}
@@ -312,7 +314,7 @@ Generalize: {\color{purple}If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_
 % \end{lemma}
 \end{frame}
 
-\begin{frame}{Motivating Example: Proof by logical relations}{Definition of $\mathcal{R}$}
+\begin{frame}{Definition of $\mathcal{R}$}
 \[
 \begin{array}{l}
 \mathcal{R}_{\const b} = \{M\; |\; M \text{ halts}\} \\
@@ -322,12 +324,10 @@ Generalize: {\color{purple}If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_
 \]
 \end{frame}
 
-\begin{frame}{Motivating Example: Proof by logical relations}
+\begin{frame}{Main theorem}
 
-\begin{theorem}
 If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
 $[\sigma]M \in \mathcal{R}_A$.
-\end{theorem}
 \pause
 \begin{proof}
 By induction. 
@@ -420,15 +420,14 @@ $^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 % \end{itemize}
 % \end{frame}
 
-\begin{frame}{Progress to date}{Indexed recursive types [Cave and Pientka POPL'12]}
+\begin{frame}{Indexed recursive types [Cave and Pientka POPL'12]}
 \begin{itemize}
-\item Adds LF-indexed recursive types to two-level system
-\item Richer forms of induction
 \item Can express forms of predicates that LF can't e.g.
 \begin{itemize}
 \item certain subexpressions are \emph{closed}
 \item relations between contexts
 \end{itemize}
+\item Richer forms of induction
 \item Technical result: type soundness and decidability of typechecking
 \item Implemented in the Beluga system
 \item Good for \emph{programming}
@@ -438,7 +437,7 @@ $^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Progress to date}{First class substitutions [Cave and Pientka LFMTP'13]}
+\begin{frame}[fragile]{First class substitutions [Cave and Pientka LFMTP'13]}
 \begin{itemize}
 \item Adds special built-in type of simultaneous substitutions $\sigma$
 \item Equational theory is \textbf{built-in} to type checking: user does not need to prove any equations about substitutions
@@ -448,6 +447,15 @@ $^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 \item Uses ``unsound in general'' recursive types to define logical relation
 \item Future work: fix this
 \end{itemize}
+\begin{lstlisting}
+rec thm : {M:[$\psi$ $\vdash$ tm A]} RedS [$\vdash$ $\sigma$] -> Red [$\vdash$ A] [$\vdash$ M $\sigma$] =
+mlam M => fn rs => case M of
+| [$\psi$ $\vdash$ lam (\x. M1)] =>
+  Arr [$\vdash$ h/val s/refl val/lam]
+   (mlam N => fn rN => closed [$\vdash$ s/beta]
+    (thm [$\psi$,x $\vdash$ M1] (Cons rs rN)))
+...
+\end{lstlisting}
 % \item Convenient for logical relations: need to quantify over ``closing substitutions''
 % \begin{theorem}[Fundamental theorem]
 % If $\Gamma \vdash M : A$ {\color{purple} and $\sigma \in \mathcal{R}_\Gamma$} then
@@ -457,10 +465,14 @@ $^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Progress to date}{Logical relations in contextual type theory (draft)}
+\begin{frame}{Draft: Logical relations in contextual type theory}
 \begin{itemize}
-\item Formalizes more involved logical relations proof (completeness of an algorithmic equality for simply-typed lambda calculus)
-\item Proof is ``easy'': lemmas about substitutions are simple and few in number
+\item Formalizes more involved logical relations proof
+\begin{itemize}
+\item completeness of an algorithmic equality for simply-typed lambda calculus
+\end{itemize}
+\item This proof is the core of many more advanced results (decidability of typechecking)
+\item Formalization is ``easy''! lemmas about substitutions are simple and few in number
 % \item Lacks check that definitions are reasonable (positivity)
 \item Demonstrates that previous work scales to more advanced proofs
 \end{itemize}
@@ -510,6 +522,13 @@ $^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 % This is tedious to do for each language we study!
 
 % \end{frame}
+
+\begin{frame}{Open problems}
+\begin{itemize}
+\item Reasoning about functions
+\end{itemize}
+\end{frame}
+
 
 \begin{frame}{Proposed work: From indexed to dependent types}{Step 1: How?}
 \begin{itemize}
