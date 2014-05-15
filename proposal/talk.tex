@@ -481,12 +481,38 @@ mlam M => fn rs => case M of
 \end{itemize}
 \end{frame}
 
+\begin{frame}{Open problems}
+\begin{itemize}
+\item Properly justify definition of logical relations
+\item Direct reasoning about functions
+\item Scale to even more interesting proofs
+\end{itemize}
+\end{frame}
 
-\begin{frame}{Proposed work: Dependent Type Theory for Contextual Reasoning}
+\begin{frame}{Proposal: Move from indexed types to dependent types}{Why?}
+\begin{itemize}
+\item \emph{Some} richer theory is necessary
+\item DTT includes \emph{definitional equality}
+\begin{itemize}
+\item Equalities which are checked automatically
+\item Extremely convenient!
+\item Computation ($\beta$) rules
+\item Conceivably other rules?
+\end{itemize}
+\item Direct reasoning about functions
+\begin{itemize}
+\item Major practical impact!
+\item e.g. concatenation of contexts
+\end{itemize}
+\item \emph{Universes} to properly define logical relations
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Outline}
 \begin{enumerate}
 \item Theory
 \begin{itemize}
-\item Move from indexed types (Beluga) to dependent types
+\item Design a DTT with built-in type of LF derivations
 \item Design algorithm for \emph{definitional equality} incorporating equational theory of substitutions
 \item Prove soundness, completeness, and termination of algorithm
 \end{itemize}
@@ -503,94 +529,36 @@ mlam M => fn rs => case M of
 \end{enumerate}
 \end{frame}
 
-\begin{frame}{Proposed work: From indexed to dependent types}
+\begin{frame}{Theory: Sketch}
 \begin{itemize}
-\item Goal: move from indexed type theory (Beluga) to dependent type theory
-\item Allows us to fill in \good $\,$ for last two problems?
+\item LFMTP'13 describes syntactic algorithm for equational theory of substitutions
+\item Hurdle: definitional equality includes \textbf{computation} rules
+\item Proof requires \textbf{semantic} techniques
+\item Approach:
 \begin{itemize}
-\item ``Universes'' to properly define logical relations
-\item Directly supports reasoning about functions
-
- e.g. concatenation of contexts, functions from contexts to contexts instead of relations
-\end{itemize}
-\item My work to date provides reason to believe this is feasible
-
-% \item We can represent intrinsically well-typed object logics with inductive types, but it's repetitive to do define and prove properties of substitution for each object logic. Solution: Implement one, canonical forms LF, in which many others fit. (e.g. show intrinsically typed STLC?)
-% \item Refinement: Build this datatype and related operations into the theory so we can support an equational theory for it.
-% \item Resulting theory looks like \textbf{dependently typed} Beluga
-% \item Support universes (``necessary'' to justify logical relations)
-% \item (predicative) polymorphism
-\end{itemize}
-\end{frame}
-
-% \begin{frame}[fragile]{The problem with first order encodings}
-% % \begin{verbatim}
-% % data exp (G : ctx) : tp -> Set where
-% %  v : var G T -> exp G T
-% %  app : exp G (arr T S) -> exp G T -> exp G S
-% %  lam : exp (G , T) S -> exp G (arr T S)
-% % \end{verbatim}
-% % \pause
-% % \begin{alltt}
-% % [_] : sub G' G -> exp G T -> exp G' T
-% % [_]' : sub G' G -> sub G D -> sub G' D
-% % \end{alltt}
-% % \pause
-% \begin{alltt}
-% lem1 : [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
-% lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
-% lem3 : [ id ]' \(\sigma\) = \(\sigma\)
-% lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
-% ...
-% \end{alltt}
-% This is tedious to do for each language we study!
-
-% \end{frame}
-
-\begin{frame}{Open problems}
-\begin{itemize}
-\item Reasoning about functions
-\end{itemize}
-\end{frame}
-
-
-\begin{frame}{Proposed work: From indexed to dependent types}{Step 1: How?}
-\begin{itemize}
-\item Type formers in (intensional) dependent type theory come with \textbf{definitional equalities}
-\begin{itemize}
-\item Equalities which are proven automatically during proof checking
-\item Definitional equality must be \emph{decidable} in order for type checking to be decidable
-\end{itemize}
-\item LF has proven to be well-suited for encoding binding and substitution
-\item Proposed approach: provide a special built-in type of LF derivations in a dependent type theory
-\begin{itemize}
-\item Include equational theory of substitutions in definitional equality
-\item Technical challenge: design an algorithm for deciding the resulting definitional equality and prove it correct
+\item Adapt proof for ``plain'' dependent type theory with a universe (e.g. [Abel '11])
+\item Follow Allais et al. '13 to incorporate ``non-computational'' laws
+\item Byproducts of proof: normalization and consistency!
 \end{itemize}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Proposed work: From indexed to dependent types}{Step 1: How? cont'd}
+\begin{frame}{Prototype implementation: Adapting Beluga}
+Some progress already:
 \begin{itemize}
-\item This is similar to the approach taken in Beluga, but dependent type theory introduces complications:
-\item Definitional equality now includes also \textbf{computation} rules
-\item Proving decidability typically also results in proofs of normalization and logical consistency
-\item Proof requires more sophisticated \textbf{semantic} techniques
-\item Approach: adapt proof for ``plain'' dependent type theory with a universe [Abel '11] to include equational theory of substitutions
-\item Follow approach by Allais et al. '13 for incorporating ``non-computational'' laws
+\item Merging index and computation language contexts \good
+\item Allowing indices to mention computations: in progress
+\item Extending definitional equality: to do
+\item Implementing universes: to do
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Proposed work: From indexed to dependent types}{Step 2: Implementation and use cases}
-\begin{itemize}
-\item Prototype implementation: adapt Beluga implementation
-\item Use prototype to formalize advanced proofs e.g.:
+\begin{frame}{Case studies: Some advanced proofs to target}
 \begin{itemize}
 \item Soundness and completeness of a normalization by evaluation algorithm [Dybjer and Filinski '00]
 \item Normalization for Martin-L\"of type theory with a universe [Coquand '98]
 \item Logical relation for contextual equivalence [Dreyer et al '11]
 \item Normalization for System F [Girard '89]
-\end{itemize}
 \end{itemize}
 \end{frame}
 
