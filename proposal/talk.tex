@@ -160,7 +160,7 @@ and weakening. -- Thorsten Altenkirch, 1993
 \begin{quote}Building a logical framework into dependent type
 theory is possible and makes mechanization of state-of-the-art programming
 language metatheory more effective.
-\end{quote}
+\end{quote} % Say: i.e. we want to be able to formalize our results without substantially more effort than we would have to invest on paper
 
 \pause\begin{quote}{\normalfont More generally: Learn something about how
 to make mechanization of proofs outside of programming languages and
@@ -428,12 +428,12 @@ $^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
 \item Result: Decidability of typechecking w/ equational theory
 \item Example: remarkably succinct proof of weak normalization!
 \begin{lstlisting}
-rec thm : {M:[$\psi$ $\vdash$ tm A]} RedS [$\vdash$ $\sigma$] -> Red [$\vdash$ A] [$\vdash$ M $\sigma$] =
+rec thm : {M:[$\Gamma$ $\vdash$ tm A]} RedS [$\vdash$ $\sigma$] -> Red [$\vdash$ A] [$\vdash$ M $\sigma$] =
 mlam M => fn rs => case M of
-| [$\psi$ $\vdash$ lam (\x. M1)] =>
+| [$\Gamma$ $\vdash$ lam (\x. M1)] =>
   Arr [$\vdash$ h/val s/refl val/lam]
    (mlam N => fn rN => closed [$\vdash$ s/beta]
-    (thm [$\psi$,x $\vdash$ M1] (Cons rs rN)))
+    (thm [$\Gamma$,x $\vdash$ M1] (Cons rs rN)))
 ...
 \end{lstlisting}
 \item Uses ``unsound in general'' recursive types to define $\mathcal{R}_A$
@@ -463,11 +463,11 @@ mlam M => fn rs => case M of
 \end{frame}
 
 \begin{frame}{Open problems}
-\begin{itemize}
+\begin{enumerate}
 \item Properly justify definition of logical relations
 \item Direct reasoning about functions
 \item Scale to even more interesting proofs
-\end{itemize}
+\end{enumerate}
 \end{frame}
 
 \begin{frame}{Proposal: Move from indexed types to dependent types}
@@ -588,6 +588,7 @@ $\,$
 \begin{itemize}
 \item Building a logical framework into dependent type theory appears feasible
 \item Substantial benefits: formalizing advanced results in programming language theory becomes more practical
+\item Hopefully not much more effort than writing a paper proof!
 \item Hopefully provides insights into how to incorporate other equational theories from other areas of application?
 \end{itemize}
 \end{frame}
