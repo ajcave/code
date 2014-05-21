@@ -80,7 +80,7 @@ tctx' (Γ , a) = ⊥
 
 copyv' : ∀ {Γ} -> ⦃ p : tctx' Γ ⦄ -> var Γ exp -> var (copyctx Γ) exp
 copyv' {⊡} ()
-copyv' {Γ , .exp} top = top
+copyv' {Γ , exp} top = top
 copyv' {Γ , exp} (pop x₂) = pop (copyv' x₂)
 copyv' {Γ , a} ⦃ () ⦄ x
 
