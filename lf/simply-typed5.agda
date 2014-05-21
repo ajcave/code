@@ -40,20 +40,21 @@ module Sig (sigtp : Set) (Con : List (tpF sigtp) -> sigtp -> Set) where
    _·_ : ∀ {τs τ} (c : Con τs τ) -> spine' Γ τs -> tm Γ τ
    ▹ : ∀ {T} (x : var Γ T) -> tm Γ T
 
-data expSigtp : Set  where exp : expSigtp
+data expSigtp : Set  where exp a : expSigtp
 data expSigCon : List (tpF expSigtp) -> expSigtp -> Set where
  lam : expSigCon (((exp ∷ []) ⇒ exp) ∷ []) exp
  app : expSigCon ([] ⇒ exp ∷ [] ⇒ exp ∷ []) exp
+ c : expSigCon [] a
 
 open module SigExp = Sig expSigtp expSigCon
 
 idtm : tm ⊡ exp
 idtm = lam · (▹ top)
 
-copy : ∀ {Γ α} -> tm Γ α -> tm Γ α
-copy (lam · M) = lam · (copy M)
-copy (app · (M , N)) = app · (copy M , copy N)
-copy (▹ x) = ▹ x
+-- copy : ∀ {Γ α} -> tm Γ α -> tm Γ α
+-- copy (lam · M) = lam · (copy M)
+-- copy (app · (M , N)) = app · (copy M , copy N)
+-- copy (▹ x) = ▹ x
 
 data tctx : ctx expSigtp -> Set where
  ⊡ : tctx ⊡
@@ -72,11 +73,13 @@ copy' Γ (▹ x) = ▹ (copyv Γ x)
 tctx' : ctx expSigtp -> Set
 tctx' ⊡ = ⊤
 tctx' (Γ , exp) = tctx' Γ
+tctx' (Γ , a) = ⊥
 
 copyv' : ∀ {Γ} -> ⦃ p : tctx' Γ ⦄ -> var Γ exp -> var Γ exp
 copyv' {⊡} ()
 copyv' {Γ , .exp} top = top
 copyv' {Γ , exp} (pop x₂) = pop (copyv' x₂)
+copyv' {Γ , a} ⦃ () ⦄ x
 
 copy'' : ∀ {γ} -> ⦃ p : tctx' γ ⦄ -> tm γ exp -> tm γ exp
 copy'' (lam · M) = lam · (copy'' M)
