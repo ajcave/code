@@ -1,4 +1,4 @@
-module simply-typed3 where
+module simply-typed4 where
 open import Data.List
 open import Data.Empty
 open import Data.Unit
@@ -9,18 +9,13 @@ data ctx (α : Set) : Set where
  ⊡ : ctx α
  _,_ : ctx α -> α -> ctx α
 
-data varOpt (α : Set) : Set where
- top : varOpt α
- pop : (x : α) -> varOpt α
+data varOpt {β} (α : β -> Set) (τ : β) : β -> Set where
+ top : varOpt α τ τ
+ pop : ∀ {τ₁} (x : α τ) -> varOpt α τ τ₁
 
-var : ∀ {α} -> ctx α -> Set
-var ⊡ = ⊥
-var (Γ , τ) = varOpt (var Γ)
-
-lookup : ∀ {α} -> (Γ : ctx α) -> var Γ -> α
-lookup ⊡ ()
-lookup (Γ , x) top = x
-lookup (Γ , x) (pop x₁) = lookup Γ x₁
+var : ∀ {α} -> ctx α -> α -> Set
+var ⊡ _ = ⊥
+var (Γ , τ) τ₁ = varOpt (var Γ) τ τ₁
 
 _<<_ : ∀ {A} -> ctx A -> List A -> ctx A
 Γ << [] = Γ
@@ -43,7 +38,7 @@ module Sig (sigtp : Set) (Con : Set) (sigtm : Con -> sigTm sigtp) where
 
   data tm (Γ : ctx sigtp) : sigtp -> Set where
    _·_ : ∀ (c : Con) -> spine' Γ (proj₁ (sigtm c)) -> tm Γ (proj₂ (sigtm c))
-   ▹ : ∀ (x : var Γ) -> tm Γ (lookup Γ x)
+   ▹ : ∀ {T} (x : var Γ T) -> tm Γ T
 
 data expSigtp : Set  where exp : expSigtp
 data expSigCon : Set where lam app : expSigCon
