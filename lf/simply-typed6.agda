@@ -1,4 +1,4 @@
-module simply-typed5 where
+module simply-typed6 where
 open import Data.List
 open import Data.Empty
 open import Data.Unit
@@ -40,44 +40,48 @@ data expSigCon : List (tpF expSigtp) -> expSigtp -> Set where
  app : expSigCon ([] ⇒ exp ∷ [] ⇒ exp ∷ []) exp
  c : expSigCon [] a
 
-open module SigExp = Sig expSigtp expSigCon
+data expSigtp' : Set  where exp a : expSigtp'
+data expSigCon' : List (tpF expSigtp') -> expSigtp' -> Set where
+ lam : expSigCon' (((exp ∷ []) ⇒ exp) ∷ []) exp
+ app : expSigCon' ([] ⇒ exp ∷ [] ⇒ exp ∷ []) exp
+ c : expSigCon' [] a
 
-idtm : tm ⊡ exp
-idtm = lam · (▹ top)
-
--- copy : ∀ {Γ α} -> tm Γ α -> tm Γ α
--- copy (lam · M) = lam · (copy M)
--- copy (app · (M , N)) = app · (copy M , copy N)
--- copy (▹ x) = ▹ x
+module L = Sig expSigtp expSigCon
+module M = Sig expSigtp' expSigCon'
 
 data tctx : ctx expSigtp -> Set where
  ⊡ : tctx ⊡
  _,exp : ∀ {Γ} -> tctx Γ -> tctx (Γ , exp)
 
-copyv : ∀ {Γ} -> tctx Γ -> var Γ exp -> var Γ exp
+copyctx : ∀ (γ : ctx expSigtp) -> ctx expSigtp'
+copyctx ⊡ = ⊡
+copyctx (γ , x) = copyctx γ , exp
+-- Subtle bit: We will often need to prove that the copied context is of a corresponding schema
+
+copyv : ∀ {Γ} -> tctx Γ -> var Γ exp -> var (copyctx Γ) exp
 copyv ⊡ ()
 copyv (Γ₁ ,exp) top = top
 copyv (Γ₁ ,exp) (pop x) = pop (copyv Γ₁ x)
 
-copy' : ∀ {γ} -> tctx γ -> tm γ exp -> tm γ exp
-copy' Γ (lam · M) = lam · (copy' (Γ ,exp) M)
-copy' Γ (app · (M , N)) = app · (copy' Γ M , copy' Γ N)
-copy' Γ (▹ x) = ▹ (copyv Γ x)
+copy' : ∀ {γ} -> tctx γ -> L.tm γ exp -> M.tm (copyctx γ) exp
+copy' Γ (lam L.· M) = lam M.· (copy' (Γ ,exp) M)
+copy' Γ (app L.· (M , N)) = app M.· (copy' Γ M , copy' Γ N)
+copy' Γ (L.▹ x) = M.▹ (copyv Γ x)
 
 -- Different approach using instance arguments
-tctx' : ctx expSigtp -> Set
-tctx' ⊡ = ⊤
-tctx' (Γ , exp) = tctx' Γ
-tctx' (Γ , a) = ⊥
+-- tctx' : ctx expSigtp -> Set
+-- tctx' ⊡ = ⊤
+-- tctx' (Γ , exp) = tctx' Γ
+-- tctx' (Γ , a) = ⊥
 
-copyv' : ∀ {Γ} -> ⦃ p : tctx' Γ ⦄ -> var Γ exp -> var Γ exp
-copyv' {⊡} ()
-copyv' {Γ , .exp} top = top
-copyv' {Γ , exp} (pop x₂) = pop (copyv' x₂)
-copyv' {Γ , a} ⦃ () ⦄ x
+-- copyv' : ∀ {Γ} -> ⦃ p : tctx' Γ ⦄ -> var Γ exp -> var Γ exp
+-- copyv' {⊡} ()
+-- copyv' {Γ , .exp} top = top
+-- copyv' {Γ , exp} (pop x₂) = pop (copyv' x₂)
+-- copyv' {Γ , a} ⦃ () ⦄ x
 
-copy'' : ∀ {γ} -> ⦃ p : tctx' γ ⦄ -> tm γ exp -> tm γ exp
-copy'' (lam · M) = lam · (copy'' M)
-copy'' (app · (M , N)) = app · (copy'' M , copy'' N)
-copy'' (▹ x) = ▹ (copyv' x)
+-- copy'' : ∀ {γ} -> ⦃ p : tctx' γ ⦄ -> Ltm γ exp -> tm γ exp
+-- copy'' (lam · M) = lam · (copy'' M)
+-- copy'' (app · (M , N)) = app · (copy'' M , copy'' N)
+-- copy'' (▹ x) = ▹ (copyv' x)
 

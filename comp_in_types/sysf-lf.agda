@@ -95,6 +95,8 @@ mutual
  id {⊡} = tt
  id {Γ , J} = wkntsubf id , subst (_⊢_ (Γ , J)) {[ ↑ ]j J} {[ wkntsubf id ]tj J} trustMe (ftop J)
 
+
+
  _〉_ : ∀ {Δ Γ} -> (σ : tsub Δ Γ) -> ∀ J -> tsub (Δ ,' ([ σ ]tj J)) (Γ ,' J)
  σ 〉 J = wkntsubf σ , subst (_⊢_ (_ , [ σ ]tj J)) {[ ↑ ]j ([ σ ]tj J)} {[ wkntsubf σ ]tj J} trustMe (ftop ([ σ ]tj J))
 
@@ -102,4 +104,28 @@ mutual
  wkntsubf : ∀ {Δ Γ J} -> tsub Δ Γ -> tsub (Δ ,' J) Γ
  wkntsubf {Δ} {⊡} σ = tt
  wkntsubf {Δ} {Γ , J} {J'} (σ , t) = wkntsubf σ , subst (_⊢_ (Δ , J')) {[ wknvsubf idv ]j ([ σ ]tj J)} {[ wkntsubf σ ]tj J} trustMe ([ ↑ ] t)
+
+
+tp' : ∀ {Γ} -> judgment Γ
+tp' = tp
+tm' : ∀ {Γ} (T : Γ ⊢ tp') -> judgment Γ
+tm' = tm
+Π' : ∀ {Γ} (T : (Γ ,' tp') ⊢ tp') -> Γ ⊢ tp'
+Π' = Π
+
+data _≈_ {A : Set} (x : A) : A -> Set where
+ reflexivity : x ≈ x
+
+mutual
+ _$'_ : ∀ {Γ T} -> Γ ⊢ tm' (Π' T) -> (S : Γ ⊢ tp') -> {R : Γ ⊢ tp'} -> ⦃ pf : R ≈ [ id , S ]t T ⦄ -> Γ ⊢ tm' R
+ _$'_ M S {._} ⦃ reflexivity ⦄ = M $ S
+ [_]t' : ∀ {C : Set} {Δ Γ} -> (σ : tsub Δ Γ) -> {J : _} -> Γ ⊢ J -> (∀ {R} -> ⦃ pf : ([ σ ]tj J) ≈ R ⦄ -> Δ ⊢ R -> C) -> C
+ [_]t' σ (_$_ {T} t₁ t₂) ret = ret (([ σ ]t'' t₁) $ ([ σ ]t'' t₂))
+  where lem0 : ∀ {σ t₂} -> tm ([ σ ]t ([ id , t₂ ]t T)) ≈ tm ([ id , [ σ ]t'' t₂ ]t ([ σ 〉 tp ]t T))
+        lem0 = {!!}
+  
+ [ σ ]t' _ ref = {!!}
+
+ [_]t'' : ∀ {Δ Γ} -> (σ : tsub Δ Γ) -> {J : _} -> Γ ⊢ J -> Δ ⊢ [ σ ]tj J
+ [ σ ]t'' t = [ σ ]t' t (λ x → {!!})
 
