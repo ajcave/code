@@ -4,6 +4,7 @@ open import Data.Empty
 open import Data.Unit
 open import Data.Product
 
+
 data ctx (α : Set) : Set where
  ⊡ : ctx α
  _,_ : ctx α -> α -> ctx α
@@ -33,17 +34,20 @@ module Sig (sigtp : Set) (Con : List (tpF sigtp) -> sigtp -> Set) where
   data tm (Γ : ctx sigtp) : sigtp -> Set where
    _·_ : ∀ {τs τ} (c : Con τs τ) -> spine' Γ τs -> tm Γ τ
    ▹ : ∀ {T} (x : var Γ T) -> tm Γ T
+ 
+〈_〉 : ∀ {A : Set} -> A -> tpF A
+〈 τ 〉 = [] ⇒ τ
 
 data expSigtp : Set  where exp a : expSigtp
 data expSigCon : List (tpF expSigtp) -> expSigtp -> Set where
- lam : expSigCon (((exp ∷ []) ⇒ exp) ∷ []) exp
- app : expSigCon ([] ⇒ exp ∷ [] ⇒ exp ∷ []) exp
+ lam : expSigCon [ [ exp ] ⇒ exp ] exp
+ app : expSigCon ( 〈 exp 〉 ∷ 〈 exp 〉 ∷ []) exp
  c : expSigCon [] a
 
 data expSigtp' : Set  where exp a : expSigtp'
 data expSigCon' : List (tpF expSigtp') -> expSigtp' -> Set where
- lam : expSigCon' (((exp ∷ []) ⇒ exp) ∷ []) exp
- app : expSigCon' ([] ⇒ exp ∷ [] ⇒ exp ∷ []) exp
+ lam : expSigCon' [ [ exp ] ⇒ exp ] exp
+ app : expSigCon' ( 〈 exp 〉 ∷ 〈 exp 〉 ∷ []) exp
  c : expSigCon' [] a
 
 open module L = Sig expSigtp expSigCon
