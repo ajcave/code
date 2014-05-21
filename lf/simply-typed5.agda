@@ -3,7 +3,6 @@ open import Data.List
 open import Data.Empty
 open import Data.Unit
 open import Data.Product
-open import Relation.Binary.PropositionalEquality
 
 data ctx (α : Set) : Set where
  ⊡ : ctx α
@@ -24,14 +23,9 @@ _<<_ : ∀ {A} -> ctx A -> List A -> ctx A
 data tpF (sigtp : Set) : Set where
   _⇒_ : List sigtp -> sigtp -> tpF sigtp
 
-sigTm : Set -> Set
-sigTm sigtp = List (tpF sigtp) × sigtp
-
 module Sig (sigtp : Set) (Con : List (tpF sigtp) -> sigtp -> Set) where
- tp1 = tpF sigtp
-
  mutual
-  spine' : (Γ : ctx sigtp) (A : List tp1) -> Set
+  spine' : (Γ : ctx sigtp) (A : List (tpF sigtp)) -> Set
   spine' Γ [] = ⊤
   spine' Γ ((τs ⇒ τ) ∷ []) = tm (Γ << τs) τ
   spine' Γ ((τs ⇒ τ) ∷ Δ) = tm (Γ << τs) τ × spine' Γ Δ
@@ -70,6 +64,7 @@ copy' Γ (lam · M) = lam · (copy' (Γ ,exp) M)
 copy' Γ (app · (M , N)) = app · (copy' Γ M , copy' Γ N)
 copy' Γ (▹ x) = ▹ (copyv Γ x)
 
+-- Different approach using instance arguments
 tctx' : ctx expSigtp -> Set
 tctx' ⊡ = ⊤
 tctx' (Γ , exp) = tctx' Γ
