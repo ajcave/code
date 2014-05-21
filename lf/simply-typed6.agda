@@ -53,14 +53,14 @@ data expSigCon' : List (tpF expSigtp') -> expSigtp' -> Set where
 open module L = Sig expSigtp expSigCon
 module M = Sig expSigtp' expSigCon'
 
-data tctx : ctx expSigtp -> Set where
- ⊡ : tctx ⊡
- _,exp : ∀ {Γ} -> tctx Γ -> tctx (Γ , exp)
-
 copyctx : ∀ (γ : ctx expSigtp) -> ctx expSigtp'
 copyctx ⊡ = ⊡
 copyctx (γ , x) = copyctx γ , exp
 -- Subtle bit: We will often need to prove that the copied context is of a corresponding schema
+
+data tctx : ctx expSigtp -> Set where
+ ⊡ : tctx ⊡
+ _,exp : ∀ {Γ} -> tctx Γ -> tctx (Γ , exp)
 
 copyv : ∀ {Γ} -> tctx Γ -> var Γ exp -> var (copyctx Γ) exp
 copyv ⊡ ()
@@ -73,19 +73,19 @@ copy' Γ (app · (M , N)) = app M.· (copy' Γ M , copy' Γ N)
 copy' Γ (▹ x) = M.▹ (copyv Γ x)
 
 -- Different approach using instance arguments
--- tctx' : ctx expSigtp -> Set
--- tctx' ⊡ = ⊤
--- tctx' (Γ , exp) = tctx' Γ
--- tctx' (Γ , a) = ⊥
+tctx' : ctx expSigtp -> Set
+tctx' ⊡ = ⊤
+tctx' (Γ , exp) = tctx' Γ
+tctx' (Γ , a) = ⊥
 
--- copyv' : ∀ {Γ} -> ⦃ p : tctx' Γ ⦄ -> var Γ exp -> var Γ exp
--- copyv' {⊡} ()
--- copyv' {Γ , .exp} top = top
--- copyv' {Γ , exp} (pop x₂) = pop (copyv' x₂)
--- copyv' {Γ , a} ⦃ () ⦄ x
+copyv' : ∀ {Γ} -> ⦃ p : tctx' Γ ⦄ -> var Γ exp -> var (copyctx Γ) exp
+copyv' {⊡} ()
+copyv' {Γ , .exp} top = top
+copyv' {Γ , exp} (pop x₂) = pop (copyv' x₂)
+copyv' {Γ , a} ⦃ () ⦄ x
 
--- copy'' : ∀ {γ} -> ⦃ p : tctx' γ ⦄ -> Ltm γ exp -> tm γ exp
--- copy'' (lam · M) = lam · (copy'' M)
--- copy'' (app · (M , N)) = app · (copy'' M , copy'' N)
--- copy'' (▹ x) = ▹ (copyv' x)
+copy'' : ∀ {γ} -> ⦃ p : tctx' γ ⦄ -> L.tm γ exp -> M.tm (copyctx γ) exp
+copy'' (lam · M) = lam M.· (copy'' M)
+copy'' (app · (M , N)) = app M.· (copy'' M , copy'' N)
+copy'' (▹ x) = M.▹ (copyv' x)
 
