@@ -46,7 +46,7 @@ data expSigCon' : List (tpF expSigtp') -> expSigtp' -> Set where
  app : expSigCon' ([] ⇒ exp ∷ [] ⇒ exp ∷ []) exp
  c : expSigCon' [] a
 
-module L = Sig expSigtp expSigCon
+open module L = Sig expSigtp expSigCon
 module M = Sig expSigtp' expSigCon'
 
 data tctx : ctx expSigtp -> Set where
@@ -64,9 +64,9 @@ copyv (Γ₁ ,exp) top = top
 copyv (Γ₁ ,exp) (pop x) = pop (copyv Γ₁ x)
 
 copy' : ∀ {γ} -> tctx γ -> L.tm γ exp -> M.tm (copyctx γ) exp
-copy' Γ (lam L.· M) = lam M.· (copy' (Γ ,exp) M)
-copy' Γ (app L.· (M , N)) = app M.· (copy' Γ M , copy' Γ N)
-copy' Γ (L.▹ x) = M.▹ (copyv Γ x)
+copy' Γ (lam · M) = lam M.· (copy' (Γ ,exp) M)
+copy' Γ (app · (M , N)) = app M.· (copy' Γ M , copy' Γ N)
+copy' Γ (▹ x) = M.▹ (copyv Γ x)
 
 -- Different approach using instance arguments
 -- tctx' : ctx expSigtp -> Set
