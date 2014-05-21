@@ -69,3 +69,16 @@ copy' Γ (lam · M) = lam · (copy' (Γ ,exp) M)
 copy' Γ (app · (M , N)) = app · (copy' Γ M , copy' Γ N)
 copy' Γ (▹ x) = ▹ (copyv Γ x)
 
+tctx' : ctx expSigtp -> Set
+tctx' ⊡ = ⊤
+tctx' (Γ , exp) = tctx' Γ
+
+copyv' : ∀ {Γ} -> ⦃ p : tctx' Γ ⦄ -> var Γ exp -> var Γ exp
+copyv' {⊡} ()
+copyv' {Γ , .exp} top = top
+copyv' {Γ , exp} (pop x₂) = pop (copyv' x₂)
+
+copy'' : ∀ {γ} -> ⦃ p : tctx' γ ⦄ -> tm γ exp -> tm γ exp
+copy'' (lam · M) = lam · (copy'' M)
+copy'' (app · (M , N)) = app · (copy'' M , copy'' N)
+copy'' (▹ x) = ▹ (copyv' x)
