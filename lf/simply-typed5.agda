@@ -55,3 +55,17 @@ copy (lam · M) = lam · (copy M)
 copy (app · (M , N)) = app · (copy M , copy N)
 copy (▹ x) = ▹ x
 
+data tctx : ctx expSigtp -> Set where
+ ⊡ : tctx ⊡
+ _,exp : ∀ {Γ} -> tctx Γ -> tctx (Γ , exp)
+
+copyv : ∀ {Γ} -> tctx Γ -> var Γ exp -> var Γ exp
+copyv ⊡ ()
+copyv (Γ₁ ,exp) top = top
+copyv (Γ₁ ,exp) (pop x) = pop (copyv Γ₁ x)
+
+copy' : ∀ {γ} -> tctx γ -> tm γ exp -> tm γ exp
+copy' Γ (lam · M) = lam · (copy' (Γ ,exp) M)
+copy' Γ (app · (M , N)) = app · (copy' Γ M , copy' Γ N)
+copy' Γ (▹ x) = ▹ (copyv Γ x)
+
