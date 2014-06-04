@@ -1,4 +1,4 @@
-open AbsSyntax
+open IntSyntax
 
 type signature = SigEmp | SigComma of signature*(ident*exp*exp)
 type ctx = Emp | Comma of ctx * (exp * exp)

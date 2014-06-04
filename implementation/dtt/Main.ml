@@ -20,7 +20,8 @@ let main () =
       let tree = parse channel in
         print_string (showTree tree);
         flush stdout;
-	if (Typecheck.chkMod tree)
+	let itree = Desugar.index tree in
+	if (Typecheck.chkMod itree)
 	then Printf.printf "Yep\n"
 	else Printf.printf "Nope\n"
     with BNFC_Util.Parse_error (start_pos, end_pos) ->
