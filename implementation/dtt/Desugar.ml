@@ -16,16 +16,17 @@ and index_var vars x =
   in index_var' Int.Top vars
 
 and index_exp vars = function
-  | Abs.Pi (x, a, b) -> Int.Pi (x, index_exp vars a, index_exp (x::vars) b)
-  | Abs.Sigma (x, a, b) -> Int.Sigma (x, index_exp vars a, index_exp (x::vars) b)
+  | Abs.Pi (x, a, b) -> Int.Pi (index_exp vars a, (x, index_exp (x::vars) b))
+  | Abs.Sigma (x, a, b) -> Int.Sigma (index_exp vars a, (x, index_exp (x::vars) b))
   | Abs.Nat -> Int.Nat
   | Abs.Set -> Int.Set
   | Abs.Unit -> Int.Unit
-  | Abs.Lam (x, t) -> Int.Lam (x, index_exp (x::vars) t)
+  | Abs.Lam a -> Int.Lam (index_abstr vars a)
   | Abs.App (t1, t2) -> Int.App (index_exp vars t1, index_exp vars t2)
   | Abs.Var x -> Int.Var (index_var vars x)
   | Abs.Zero -> Int.Zero
   | Abs.Suc t -> Int.Suc (index_exp vars t)
   | Abs.Plus (t1, t2) -> Int.Plus (index_exp vars t1, index_exp vars t2)
-  | Abs.NatRec (t1, t2, x, t3) -> Int.NatRec (index_exp vars t1, index_exp vars t2, x, index_exp (x::vars) t3)
-
+  | Abs.NatRec (tn, aC, tz, x, ih, eS) -> Int.NatRec (index_exp vars tn, index_abstr vars aC, index_exp vars tz, (x, ih, index_exp (ih::x::vars) eS))
+and index_abstr vars = function 
+  | Abs.Abstr (x,t) -> (x, index_exp (x::vars) t)
