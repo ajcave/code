@@ -1,4 +1,5 @@
 open IntSyntax
+open Error
 module Norm = Whnf
 
 type signature = SigEmp | SigComma of signature*(ident*exp*exp)

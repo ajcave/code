@@ -56,6 +56,7 @@ and subst s b = Subst (s, b)
 and do_shift1 e = subst shift1 e
 
 and abstr_subst s (x,e) = (x, subst (ext1 s) e)
+let abstr_subst1 e1 (x,e) = (x, subst1 e1 e)
 
 (* Push a substitution under one constructor *)
 let rec whsubst s = function
