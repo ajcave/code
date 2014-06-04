@@ -1,6 +1,7 @@
 
 type ident = AbsSyntax.ident
 type idx = Top | Pop of idx
+
 and moduleT =
    Mod of ident * decl list
 
@@ -17,6 +18,7 @@ and exp =
  | Lam of abstr
  | App of exp * exp
  | Var of idx
+ | Const of ident
  | Zero
  | Suc of exp
  | Plus of exp * exp
@@ -28,6 +30,8 @@ and nat = NZero | NSuc of nat
 and subst =
   | Shift of nat
   | Dot of subst * exp
+
+type signature = decl list
 
 let idsub = Shift NZero
 let shift1 = Shift (NSuc NZero)
@@ -71,6 +75,7 @@ let rec whsubst s = function
   | Lam a -> Lam (abstr_subst s a)
   | App (e1,e2) -> App (subst s e1, subst s e2)
   | Var x -> substvar s x
+  | Const c -> Const c
   | Plus (e1,e2) -> Plus (subst s e1, subst s e2)
   | Subst (s1, e) -> whsubst (comp s s1) e
   | NatRec (en,aC,ez,(x,ih,eS)) ->

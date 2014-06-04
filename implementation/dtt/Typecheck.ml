@@ -2,20 +2,19 @@ open IntSyntax
 open Error
 module Norm = Whnf
 
-type signature = SigEmp | SigComma of signature*(ident*exp*exp)
 type ctx = Emp | Comma of ctx * exp
 
 type type_error = CheckSet | CheckPi | InferMismatch of exp * exp
 		  | NotInferrable
 
 exception IllTyped of type_error
-exception Violation of string
 
 let rec equal sigma e1 e2 =
   let rec equal e1 e2 =
   let e1 = Norm.whnf sigma e1 in
   let e2 = Norm.whnf sigma e2 in
   match (e1,e2) with
+    | Const c1, Const c2 -> c1 = c2
     | (Pi (t1,a1), Pi (t2,a2)) | (Sigma (t1,a1), Sigma (t2,a2))
       -> equal t1 t2 && equal_abstr a1 a2
     | Nat,Nat | Set,Set | Unit,Unit | Zero,Zero | Tt, Tt -> true
@@ -26,16 +25,16 @@ let rec equal sigma e1 e2 =
     | NatRec (en,aC,ez,(x,ih,eS)), NatRec (en',aC',ez',(x',ih',eS')) ->
       equal en en' && equal_abstr aC aC' && equal ez ez' && equal eS eS'
     | Var x, Var y -> x = y
-    | (Pi _ | Sigma _ | Nat | Set | Unit | Lam _ | App _ | Var _ | Zero | Suc _ | Plus _ | NatRec _ | Tt), _ -> false
+    | (Pi _ | Sigma _ | Nat | Set | Unit | Lam _ | App _
+        | Var _ | Zero | Suc _ | Plus _ | NatRec _ | Tt | Const _), _ -> false
     | Subst _ , _  -> raise (Violation "Subst should not appear in weak head normal terms")
-  and equal_abstr a1 a2 = match (a1,a2) with
-    | (x,e1), (y,e2) -> equal e1 e2
+  and equal_abstr (x,e1) (y,e2) = equal e1 e2
   in equal e1 e2
 
 let rec chk_pi sigma e =
   match Norm.whnf sigma e with
     | Pi (t, (x,b)) -> (t,b)
-    | Sigma _ | Nat | Set | Unit | Lam _ | Zero | Tt
+    | Sigma _ | Nat | Set | Unit | Lam _ | Zero | Tt | Const _
     | App _ | Var _ | Suc _ | Plus _ | NatRec _ -> raise (IllTyped CheckPi)
     | Subst _ -> raise (Violation "Subst should not appear in weak head normal terms")
 
@@ -43,6 +42,10 @@ let rec lookup_ty gamma x = match (gamma,x) with
   | Emp, x -> raise (Violation "variable out of bounds")
   | Comma (gamma, a), Top -> a
   | Comma (gamma, a), (Pop x) -> lookup_ty gamma x
+
+let rec lookup_const sigma c = match sigma with
+  | [] -> raise (Violation "undefined constant")
+  | (k,a,_)::ds -> if k = c then a else lookup_const ds c
 
 let rec chk ((sigma,gamma) as ctxs) e tp = match e with
   | Lam (x, e1) ->
@@ -60,6 +63,7 @@ and infer ((sigma,gamma) as ctxs) e = match e with
   | Suc t -> chk ctxs t Nat; Nat
   | Pi (a,(x,b)) | Sigma (a,(x,b)) -> chk ctxs a Set; chk (sigma, Comma (gamma, a)) b Set; Set
   | Var x -> lookup_ty gamma x
+  | Const c -> lookup_const sigma c
   | App (e1,e2) ->
     let (a,b) = chk_pi sigma (infer ctxs e1) in
     chk ctxs e2 a; subst1 e2 b
@@ -79,9 +83,9 @@ let rec chkDeclList (sigma,gamma) defs = match defs with
   | [] -> true
   | ((Def (n,t,b)) as d::ds) ->
     chkDecl (sigma,gamma) d;
-    chkDeclList (SigComma (sigma,(n,t,b)), gamma) ds
+    chkDeclList ((n,t,b)::sigma, gamma) ds
 
-let chkMod (Mod (name,defs)) = chkDeclList (SigEmp,Emp) defs
+let chkMod (Mod (name,defs)) = chkDeclList ([],Emp) defs
 
 
 
