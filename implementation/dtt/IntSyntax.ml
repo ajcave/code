@@ -13,6 +13,7 @@ and exp =
  | Nat
  | Set
  | Unit
+ | Tt
  | Lam of abstr
  | App of exp * exp
  | Var of idx
@@ -47,14 +48,24 @@ let rec shiftComp s1 n = match (s1,n) with
 let rec comp s1 = function
   | Shift n -> shiftComp s1 n
   | Dot (s2,e) -> Dot (comp s1 s2, subst s1 e)
+
+and ext1 s = Dot (comp shift1 s, Var Top)
+and sub1 e = Dot (idsub, e)
+and subst1 e b = Subst (sub1 e, b)
+and subst s b = Subst (s, b)
+and do_shift1 e = subst shift1 e
+
+and abstr_subst s (x,e) = (x, subst (ext1 s) e)
+
 (* Push a substitution under one constructor *)
-and whsubst s = function
+let rec whsubst s = function
   | Pi (t, a) -> Pi (subst s t, abstr_subst s a)
   | Sigma (t, a) -> Sigma (subst s t, abstr_subst s a)
   | Nat -> Nat
   | Unit -> Unit
   | Set -> Set
   | Zero -> Zero
+  | Tt -> Tt
   | Suc e -> Suc (subst s e)
   | Lam a -> Lam (abstr_subst s a)
   | App (e1,e2) -> App (subst s e1, subst s e2)
@@ -63,9 +74,4 @@ and whsubst s = function
   | Subst (s1, e) -> whsubst (comp s s1) e
   | NatRec (en,aC,ez,(x,ih,eS)) ->
     NatRec (subst s en, abstr_subst s aC, subst s ez, (x,ih, subst (ext1 (ext1 s)) eS))
-and abstr_subst s (x,e) = (x, subst (ext1 s) e)
-and ext1 s = Dot (comp shift1 s, Var Top)
-and sub1 e = Dot (idsub, e)
-and subst1 e b = Subst (sub1 e, b)
-and subst s b = Subst (s, b)
-and do_shift1 e = subst shift1 e
+

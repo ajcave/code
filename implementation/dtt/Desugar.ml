@@ -21,6 +21,7 @@ and index_exp vars = function
   | Abs.Nat -> Int.Nat
   | Abs.Set -> Int.Set
   | Abs.Unit -> Int.Unit
+  | Abs.Tt -> Int.Tt
   | Abs.Lam a -> Int.Lam (index_abstr vars a)
   | Abs.App (t1, t2) -> Int.App (index_exp vars t1, index_exp vars t2)
   | Abs.Var x -> Int.Var (index_var vars x)

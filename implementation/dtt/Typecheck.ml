@@ -17,7 +17,7 @@ let rec equal sigma e1 e2 =
   match (e1,e2) with
     | (Pi (t1,a1), Pi (t2,a2)) | (Sigma (t1,a1), Sigma (t2,a2))
       -> equal t1 t2 && equal_abstr a1 a2
-    | (Nat,Nat) | (Set,Set) | (Unit,Unit) | (Zero,Zero) -> true
+    | Nat,Nat | Set,Set | Unit,Unit | Zero,Zero | Tt, Tt -> true
     | (Lam a1, Lam a2) -> equal_abstr a1 a2
     | (Suc e1, Suc e2) -> equal e1 e2
     | (App (ea1,ea2), App (eb1, eb2)) | Plus (ea1, ea2), Plus (eb1, eb2) ->
@@ -25,7 +25,7 @@ let rec equal sigma e1 e2 =
     | NatRec (en,aC,ez,(x,ih,eS)), NatRec (en',aC',ez',(x',ih',eS')) ->
       equal en en' && equal_abstr aC aC' && equal ez ez' && equal eS eS'
     | Var x, Var y -> x = y
-    | (Pi _ | Sigma _ | Nat | Set | Unit | Lam _ | App _ | Var _ | Zero | Suc _ | Plus _ | NatRec _), _ -> false
+    | (Pi _ | Sigma _ | Nat | Set | Unit | Lam _ | App _ | Var _ | Zero | Suc _ | Plus _ | NatRec _ | Tt), _ -> false
     | Subst _ , _  -> raise (Violation "Subst should not appear in weak head normal terms")
   and equal_abstr a1 a2 = match (a1,a2) with
     | (x,e1), (y,e2) -> equal e1 e2
@@ -34,7 +34,7 @@ let rec equal sigma e1 e2 =
 let rec chk_pi sigma e =
   match Norm.whnf sigma e with
     | Pi (t, (x,b)) -> (t,b)
-    | Sigma _ | Nat | Set | Unit | Lam _ | Zero
+    | Sigma _ | Nat | Set | Unit | Lam _ | Zero | Tt
     | App _ | Var _ | Suc _ | Plus _ | NatRec _ -> raise (IllTyped CheckPi)
     | Subst _ -> raise (Violation "Subst should not appear in weak head normal terms")
 
@@ -55,6 +55,7 @@ let rec chk ((sigma,gamma) as ctxs) e tp = match e with
 and infer ((sigma,gamma) as ctxs) e = match e with
   | Set | Nat | Unit -> Set
   | Zero -> Nat
+  | Tt -> Unit
   | Suc t -> chk ctxs t Nat; Nat
   | Pi (a,(x,b)) | Sigma (a,(x,b)) -> chk ctxs a Set; chk (sigma, Comma (gamma, a)) b Set; Set
   | Var x -> lookup_ty gamma x
