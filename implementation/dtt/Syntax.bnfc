@@ -4,6 +4,7 @@ separator Decl ";" ;
 Def. Decl ::= Ident ":" Exp "=" Exp; 
 
 Pi.  Exp ::= "(" Ident ":" Exp ")" "->" Exp ;
+Arr. Exp ::= Exp1 "->" Exp;
 Sigma. Exp ::= "(" Ident ":" Exp ")" "*" Exp ;
 Nat. Exp2 ::= "Nat";
 Set. Exp2 ::= "Set";

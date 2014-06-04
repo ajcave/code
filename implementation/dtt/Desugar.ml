@@ -24,6 +24,7 @@ and index_var (sigma,vars) x =
 
 and index_exp vars = function
   | Abs.Pi (x, a, b) -> Int.Pi (index_exp vars a, (x, index_exp (cons_var x vars) b))
+  | Abs.Arr (a, b) -> Int.Pi (index_exp vars a, (dummy, index_exp (cons_var dummy vars) b))
   | Abs.Sigma (x, a, b) -> Int.Sigma (index_exp vars a, (x, index_exp (cons_var x vars) b))
   | Abs.Nat -> Int.Nat
   | Abs.Set -> Int.Set
@@ -39,3 +40,4 @@ and index_exp vars = function
 and index_abstr vars = function 
   | Abs.Abstr (x,t) -> (x, index_exp (cons_var x vars) t)
 and cons_var x (sigma,vars) = sigma, x::vars
+and dummy = Abs.Ident "_"
