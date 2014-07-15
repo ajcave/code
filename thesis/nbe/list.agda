@@ -1,6 +1,8 @@
 module list where
 open import Data.List hiding (sum)
 
+-- Based on Allais et al's New Equations for Neutral Terms
+
 record _*_ (A B : Set) : Set where
  constructor _,_
  field
