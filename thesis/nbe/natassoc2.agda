@@ -1,4 +1,4 @@
-module natassoc where
+module natassoc2 where
 open import Data.List hiding (sum)
 
 record _*_ (A B : Set) : Set where
@@ -33,7 +33,7 @@ mutual
   _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
   π₁ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ T
   π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S
-  iter : ∀ {C} -> List (rtm Γ nat) -> ntm Γ (C ⇝ C) -> ntm Γ C -> rtm Γ C
+  iter : ∀ {C} -> List (rtm Γ nat) -> ntm (Γ , C) C -> ntm Γ C -> rtm Γ C
  data ntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
   suc : ntm Γ nat -> ntm Γ nat
@@ -61,7 +61,7 @@ mutual
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
  rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
- rappSubst σ (iter xs f b) = iter (rlSubst σ xs) (nappSubst σ f) (nappSubst σ b)
+ rappSubst σ (iter xs f b) = iter (rlSubst σ xs) (nappSubst (ext σ) f) (nappSubst σ b)
 
  rlSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> List (rtm Δ S) -> List (rtm Γ S)
  rlSubst σ [] = []
@@ -105,6 +105,9 @@ subst Γ Δ = ∀ {T} -> var Γ T -> sem Δ T
 extend : ∀ {Γ Δ T} -> subst Γ Δ -> sem Δ T -> subst (Γ , T) Δ
 extend θ M z = M
 extend θ M (s y) = θ y
+
+ext' : ∀ {Γ Δ T} -> subst Γ Δ -> subst (Γ , T) (Δ , T)
+ext' σ = extend (λ x → appSubst _ s (σ x)) (reflect (v z))
 
 -- -- Here we have admissibility of cut for ntm. Not necessary for nbe,
 -- -- but nice to state.
@@ -156,7 +159,7 @@ data tm (Γ : ctx) : (T : tp) -> Set where
  suc : tm Γ nat -> tm Γ nat
  zero : tm Γ nat
  _+'_ : tm Γ nat -> tm Γ nat -> tm Γ nat
- iter : ∀ {C} -> tm Γ nat -> tm Γ (C ⇝ C) -> tm Γ C -> tm Γ C
+ iter : ∀ {C} -> tm Γ nat -> tm (Γ , C) C -> tm Γ C -> tm Γ C
 
 -- complete : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 -- complete (v y) = nv y
@@ -172,25 +175,27 @@ suc n ⊕ m = suc (n ⊕ m)
 n ⊕ suc m = suc (n ⊕ m)
 sum x ⊕ sum x₁ = sum (x ++ x₁)
 
-iter' : ∀ {Γ} {T} -> ntm Γ nat -> (sem Γ (T ⇝ T)) -> sem Γ T -> sem Γ T
-iter' (suc n) f b = f _ id (iter' n f b)
-iter' (sum []) f b = b
-iter' (sum (x ∷ x₁)) f b = reflect (iter (x ∷ x₁) (reify f) (reify b))
+arr : ∀ Γ T -> Set
+arr Γ T = ∀ {Δ} -> subst Γ Δ -> sem Δ T
 
--- Traditional nbe
-eval : ∀ {Γ Δ T} -> subst Γ Δ -> tm Γ T -> sem Δ T
-eval θ (v y) = θ y
-eval θ (M · N) = eval θ M _ id (eval θ N)
-eval θ (ƛ M) = λ _ σ s -> eval (extend (λ x → appSubst _ σ (θ x)) s) M
-eval θ (π₁ M) = _*_.fst (eval θ M)
-eval θ (π₂ N) = _*_.snd (eval θ N)
-eval θ < M , N > = eval θ M , eval θ N
-eval θ tt = tt
-eval θ (suc n) = suc (eval θ n)
-eval θ zero = sum []
-eval θ (m +' n) = (eval θ m) ⊕ (eval θ n)
-eval θ (iter xs f b) = iter' (eval θ xs) (eval θ f) (eval θ b)
+iter'' : ∀ {Γ T} -> arr (Γ , T) T -> arr Γ T -> ∀ {Δ} -> subst Γ Δ -> sem Δ nat -> sem Δ T
+iter'' f b σ (suc n) = f (extend σ (iter'' f b σ n))
+iter'' f b σ (sum []) = b σ
+iter'' f b σ (sum (x ∷ x₁)) = reflect (iter (x ∷ x₁) (reify (f (ext' σ))) (reify (b σ)))
+
+eval : ∀ {Γ T} -> tm Γ T -> arr Γ T
+eval (v y) θ = θ y
+eval (M · N) θ = eval M θ _ id (eval N θ)
+eval (ƛ M) θ = λ _ σ s -> eval M (extend (λ x → appSubst _ σ (θ x)) s)
+eval (π₁ M) θ = _*_.fst (eval M θ)
+eval (π₂ N) θ = _*_.snd (eval N θ)
+eval < M , N > θ = eval M θ , eval N θ
+eval tt θ = tt
+eval (suc n) θ = suc (eval n θ)
+eval zero θ = sum []
+eval (m +' n) θ = (eval m θ) ⊕ (eval n θ)
+eval (iter xs f b) θ = iter'' (eval f) (eval b) θ (eval xs θ)
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe M = reify (eval (λ x → reflect (v x)) M) 
+nbe M = reify (eval M (λ x → reflect (v x))) 
 
