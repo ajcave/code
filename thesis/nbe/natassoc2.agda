@@ -33,7 +33,7 @@ mutual
   _·_ : ∀ {T S} -> rtm Γ (T ⇝ S) -> ntm Γ T -> rtm Γ S
   π₁ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ T
   π₂ : ∀ {T S} -> rtm Γ (T × S) -> rtm Γ S
-  iter : ∀ {C} -> List (rtm Γ nat) -> ntm (Γ , C) C -> ntm Γ C -> rtm Γ C
+  iter : ∀ {C} -> rtm Γ nat * List (rtm Γ nat) -> ntm (Γ , C) C -> ntm Γ C -> rtm Γ C
  data ntm (Γ : ctx) : (T : tp) -> Set where
   ƛ : ∀ {T S} -> ntm (Γ , T) S -> ntm Γ (T ⇝ S)
   suc : ntm Γ nat -> ntm Γ nat
@@ -61,7 +61,7 @@ mutual
  rappSubst σ (R · N) = rappSubst σ R · nappSubst σ N
  rappSubst σ (π₁ R) = π₁ (rappSubst σ R)
  rappSubst σ (π₂ R) = π₂ (rappSubst σ R)
- rappSubst σ (iter xs f b) = iter (rlSubst σ xs) (nappSubst (ext σ) f) (nappSubst σ b)
+ rappSubst σ (iter (x , xs) f b) = iter (rappSubst σ x , rlSubst σ xs) (nappSubst (ext σ) f) (nappSubst σ b)
 
  rlSubst : ∀ {Γ Δ S} -> vsubst Δ Γ -> List (rtm Δ S) -> List (rtm Γ S)
  rlSubst σ [] = []
@@ -133,7 +133,7 @@ arr Γ T = ∀ {Δ} -> subst Γ Δ -> sem Δ T
 iter' : ∀ {Γ T} -> arr (Γ , T) T -> arr Γ T -> ∀ {Δ} -> subst Γ Δ -> sem Δ nat -> sem Δ T
 iter' f b σ (suc n) = f (extend σ (iter' f b σ n))
 iter' f b σ (sum []) = b σ
-iter' f b σ (sum (x ∷ x₁)) = reflect (iter (x ∷ x₁) (reify (f (ext' σ))) (reify (b σ)))
+iter' f b σ (sum (x ∷ x₁)) = reflect (iter (x , x₁) (reify (f (ext' σ))) (reify (b σ)))
 
 eval : ∀ {Γ T} -> tm Γ T -> arr Γ T
 eval (v y) θ = θ y
