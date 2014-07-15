@@ -178,10 +178,10 @@ sum x ⊕ sum x₁ = sum (x ++ x₁)
 arr : ∀ Γ T -> Set
 arr Γ T = ∀ {Δ} -> subst Γ Δ -> sem Δ T
 
-iter'' : ∀ {Γ T} -> arr (Γ , T) T -> arr Γ T -> ∀ {Δ} -> subst Γ Δ -> sem Δ nat -> sem Δ T
-iter'' f b σ (suc n) = f (extend σ (iter'' f b σ n))
-iter'' f b σ (sum []) = b σ
-iter'' f b σ (sum (x ∷ x₁)) = reflect (iter (x ∷ x₁) (reify (f (ext' σ))) (reify (b σ)))
+iter' : ∀ {Γ T} -> arr (Γ , T) T -> arr Γ T -> ∀ {Δ} -> subst Γ Δ -> sem Δ nat -> sem Δ T
+iter' f b σ (suc n) = f (extend σ (iter' f b σ n))
+iter' f b σ (sum []) = b σ
+iter' f b σ (sum (x ∷ x₁)) = reflect (iter (x ∷ x₁) (reify (f (ext' σ))) (reify (b σ)))
 
 eval : ∀ {Γ T} -> tm Γ T -> arr Γ T
 eval (v y) θ = θ y
@@ -194,7 +194,7 @@ eval tt θ = tt
 eval (suc n) θ = suc (eval n θ)
 eval zero θ = sum []
 eval (m +' n) θ = (eval m θ) ⊕ (eval n θ)
-eval (iter xs f b) θ = iter'' (eval f) (eval b) θ (eval xs θ)
+eval (iter xs f b) θ = iter' (eval f) (eval b) θ (eval xs θ)
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
 nbe M = reify (eval M (λ x → reflect (v x))) 
