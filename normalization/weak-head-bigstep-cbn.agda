@@ -91,10 +91,6 @@ mutual
  redclo : ∀ T -> clo T -> Set
  redclo T t = ∃ (λ w -> (t ⇓ w) × redval T w)
 
--- reduce : ∀ T -> clo T -> Set
--- reduce atom t = halts t
--- reduce (T ⇝ S) t = ∃ (λ Γ -> Σ (tm (Γ , T) S) (λ t' -> Σ (sub Γ) (λ σ -> t ⇓ (ƛ t' [ σ ]) × (∀ (x : clo T) -> reduce T x -> reduce S (t' [ σ ,, x ]' )))))
-
 reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> clo U} (θ : ∀ {U} (x : var Γ U) -> redclo U (σ x)) {T} {t : clo T} (w : redclo T t) ->
  ∀ {U} (x : var (Γ , T) U) -> redclo U ((σ ,, t) x)
 reduce-ext θ w z = w
@@ -117,4 +113,3 @@ norm t with thm ⊡' (λ ()) t
 ... | v1 , p1 , r1 = v1 , p1
 
 -- What about proving soundness and completeness w.r.t equational theory?
--- What about a cbn evaluation strategy?
