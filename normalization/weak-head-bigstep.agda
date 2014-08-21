@@ -6,9 +6,6 @@ open import Data.Product
 record Unit : Set where
  constructor tt
 
-postulate
- atomic_tp : Set
-
 data tp : Set where
  atom : tp
  _⇝_ : (T : tp) -> (S : tp) -> tp
@@ -94,3 +91,13 @@ thm σ θ (t · t₁) with thm σ θ t | thm σ θ t₁
 thm σ θ (t · t₁) | (ƛ v1 [ σ' ]) , pf1 , r1 | v2 , pf2 , r2 with r1 v2 r2
 thm σ θ (t · t₁) | ƛ v1 [ σ' ] , pf1 , r1 | v2 , pf2 , r2 | v3 , pf3 , r3 = v3 , ((app pf1 pf2 pf3) , r3)
 thm σ θ (ƛ {T} {S} t) = ƛ t [ σ ] , (ƛ , (λ v1 r -> thm (σ ,, v1) (reduce-ext θ r) t))
+
+⊡' : sub ⊡
+⊡' ()
+
+norm : ∀ {T} -> (t : tm ⊡ T) -> ∃ (λ v -> t [ ⊡' ]⇓ v)
+norm t with thm ⊡' (λ ()) t
+norm t | proj₁ , proj₂ , proj₃ = proj₁ , proj₂
+
+-- What about proving soundness and completeness w.r.t equational theory?
+-- What about a cbn evaluation strategy?
