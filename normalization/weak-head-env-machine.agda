@@ -91,7 +91,7 @@ thm σ θ (ƛ t) K = ƛ t [ σ ] , ((lam , refl) , (λ x K' x' → thm (σ ,, x)
 
 norm : ∀ {T} (t : tm ⊡ T) {C} (K : cont T C) -> ∃ (λ v -> (K ▹ t [ ⊡' ]) ⟶* (K ◅ v))
 norm t K with thm ⊡' (λ ()) t K
-norm t K | proj₁ , proj₂ , proj₃ = proj₁ , proj₂
+norm t K | v1 , p1 , _ = v1 , p1
 
 -- What about proving soundness and completeness w.r.t equational theory?
 -- What about a cbn evaluation strategy?
