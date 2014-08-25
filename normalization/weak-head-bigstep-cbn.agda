@@ -113,3 +113,4 @@ norm t with thm ⊡' (λ ()) t
 ... | v1 , p1 , r1 = v1 , p1
 
 -- What about proving soundness and completeness w.r.t equational theory?
+-- what about an environment-based abstract machine semantics? (environment small step)
