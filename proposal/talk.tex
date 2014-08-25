@@ -1,0 +1,596 @@
+\documentclass[usenames,dvipsnames]{beamer}
+\setbeamertemplate{footline}[frame number]
+\usepackage{alltt}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata}
+\setbeamertemplate{navigation symbols}{}%remove navigation symbols
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+\usepackage{ textcomp }
+\usepackage{array}
+
+\usepackage{srcltx}
+\usepackage[tikz]{bclogo}
+
+
+\providecommand{\term}[1]{\mbox{\small{\textsf{#1}}}}
+\usepackage{listings}
+
+\newcommand{\const}[1]{\textbf{#1}}
+\newcommand{\bnfas}{\mathrel{::=}}
+\newcommand{\bnfalt}{\mathrel{\mid}}
+\newcommand{\arrow}{\to}
+\newcommand{\lam}[1]{\lambda #1. }
+\usepackage{proof}
+\newcommand{\entails}{\vdash}
+\newcommand{\der}{\vdash}
+\newcommand{\stepsto}{\longrightarrow}
+\newcommand{\id}{\text{id}}
+\setbeamertemplate{itemize item}{\scriptsize\raise1.25pt\hbox{\donotcoloroutermaths$\blacktriangleright$}}
+\setbeamertemplate{itemize subitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$\bullet$}}
+\setbeamertemplate{itemize subsubitem}{\tiny\raise1.5pt\hbox{\donotcoloroutermaths$-$}}
+\definecolor{light-gray}{gray}{0.5}
+
+\lstloadlanguages{Ltl}
+\lstset{language=Ltl}  % Added to local lstlang2.sty
+
+% Set up listings "literate" keyword stuff (for \lstset below)
+\newdimen\zzlistingsize
+\newdimen\zzlistingsizedefault
+\zzlistingsizedefault=9pt
+\zzlistingsize=\zzlistingsizedefault
+\global\def\InsideComment{0}
+\newcommand{\Lstbasicstyle}{\fontsize{\zzlistingsize}{1.05\zzlistingsize}\ttfamily}
+\newcommand{\keywordFmt}{\fontsize{0.9\zzlistingsize}{1.0\zzlistingsize}\bf}
+\newcommand{\smartkeywordFmt}{\if0\InsideComment\keywordFmt\fi}
+\newcommand{\commentFmt}{\def\InsideComment{1}\fontsize{0.95\zzlistingsize}{1.0\zzlistingsize}\rmfamily\slshape}
+
+\newcommand{\LST}{\setlistingsize{\zzlistingsizedefault}}
+
+\newlength{\zzlstwidth}
+\newcommand{\setlistingsize}[1]{\zzlistingsize=#1%
+\settowidth{\zzlstwidth}{{\Lstbasicstyle~}}}
+\setlistingsize{\zzlistingsizedefault}
+\renewcommand{\bar}{\overline}
+
+% The order of the "literate" definitions is significant:
+%   later definitions shadow earlier ones.  The \\Pi definition must come
+%   *after* the \\ definition, or the first part of \\Pi --- that is, \\ --- will
+%   be matched, and instead of $\Pi$ you'll get $\lambda Pi$.
+%
+\lstset{literate={->}{{$\rightarrow~$}}1 %
+                 {=>}{{$\Rightarrow~$}}2 %
+                 {id}{{{\smartkeywordFmt id}}}1 % 3 $~$
+                 {\\}{{$\lambda$}}1 %
+                 {\\bullet}{{$\bullet$}}1 %
+                 {\\always}{{$\always$}}1 %
+                 {\\next}{{$\next$}}1 %
+                 {\\andop}{{$\andop$}}1 %
+                 {\\nexti}{{$\nexti$}}1 %
+                 {\\eventually}{{$\eventually$}}1 %
+                 {\\until}{{$\until$}}2 %
+                 {\\onceuntil}{{$\onceuntil$}}2 %
+                 {\\orop}{{$\orop$}}1 %
+                 {\\times}{{$\times$}}1 %
+%                 {mlam}{{$\lambda^{\scriptscriptstyle\Box}$}}1 %
+                 {mlam}{{$\lambda$}}1 %
+                 {FN}{{$\Lambda$}}1 %
+                 {<<}{\color{red}}1 %
+                 {>>}{\color{black}}1 %
+               ,
+               columns=[l]flexible,keepspaces,
+               basewidth=\zzlstwidth,
+               basicstyle=\Lstbasicstyle,
+               keywordstyle=\keywordFmt,
+               identifierstyle=\relax,
+%               stringstyle=\relax,
+               commentstyle=\commentFmt,
+               breaklines=true,
+               breakatwhitespace=true,   % doesn't do anything (?!)
+               mathescape=true,   % interprets $...$ in listing as math mode
+%               tabsize=8,
+               texcl=false}
+
+
+\author{Andrew Cave}
+\title[{\makebox[.45\paperwidth]{Dependent Type Theory for Contextual Reasoning\hfill%
+       \insertframenumber/\inserttotalframenumber}}]{Dependent Type Theory for Contextual Reasoning} 
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{Introduction}
+\begin{itemize}
+\item Proofs can be long and error-prone to check by hand
+\pause \item e.g. Feit Thompson theorem: proof spans 2 books, 350 pages
+\pause \item Lots of work on languages for machine-checkable proofs (Automath, Mizar, NuPRL, Coq, ...)
+\pause \item Is writing machine-checkable proofs a good idea?
+\pause \item {\color{green} Pro:} can be easier to trust
+\pause \item {\color{green} Pro:} force rigorous thinking
+\pause \item {\color{green} Pro:} coming up with proofs can be \emph{interactive}
+% \begin{itemize}
+% \item System: ``Goal is X''
+% \item Human prover: ``Use lemma foo''
+% \item System: ``New subgoals: Y and Z''
+% \end{itemize}
+\pause \item {\color{red} Con:} can require substantial ``boilerplate''
+\begin{itemize}
+\item Makes proofs harder to write \emph{and} read
+\item How can this be improved?
+% \item Need to somehow equip proof checker with domain-specific procedures
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Formalizing programming language theory}
+\begin{itemize}
+\item Seems promising!
+\item Lots of interest already (e.g. POPLMark challenge)
+% \begin{itemize}
+% \item Inductive reasoning is well understood
+% \item Lots of cases! Can be
+% tedious and error-prone to write \& verify by hand.
+% \end{itemize}
+\item More interest than in math
+\pause
+\item Overhead: formalizing variable binding and substitution
+\end{itemize}
+\pause
+\begin{quote}
+When doing the formalization, I discovered that the core part of the
+proof [...] is fairly straightforward and
+only requires a good understanding of the paper version. However, in
+completing the proof I observed that in certain places I had to invest
+much more work than expected, e.g. proving lemmas about substitution
+and weakening. -- Thorsten Altenkirch, 1993
+
+   (formalizing normalization of System F)
+\end{quote}
+% \pause
+% \begin{itemize}
+% \item 20 years later: This proof still hasn't been done in a less painful way(?!)
+% \end{itemize}
+\end{frame}
+
+\begin{frame}{Thesis}
+\begin{quote}Building a logical framework into dependent type
+theory is possible and makes mechanization of state-of-the-art programming
+language metatheory more effective.
+\end{quote} % Say: i.e. we want to be able to formalize our results without substantially more effort than we would have to invest on paper
+
+\pause\begin{quote}{\normalfont More generally: Learn something about how
+to make mechanization of proofs outside of programming languages and
+logic more practical?}\end{quote}
+\end{frame}
+
+\begin{frame}[fragile]{Representing languages: The basics}
+% Focus here on tal
+\begin{tabular}{p{2.8cm}l}
+\fbox{Syntax}\vfill &
+\begin{array}[t]{lrcl}
+\mbox{Types} & A,B & \bnfas & {\const b} \bnfalt A \arrow B \\
+\mbox{Terms} & M,N & \bnfas & {\const c} \bnfalt {\color{purple}x} \bnfalt \lambda {\color{purple} x.} M \bnfalt M\;N \\
+\mbox{Values} & V & \bnfas & {\const c} \bnfalt \lam x M
+\end{array}
+\\[3em]
+\pause
+\vspace{-2.3em}\fbox{Typing $\Gamma \vdash M : A$} &
+\begin{array}[t]{l}
+\infer{\Gamma \vdash x : A}{\Gamma(x) = A} \quad
+\infer{\Gamma \entails \lam x M : A \arrow B}{\color{purple}\Gamma,x{:}A \der M : B}
+\\[0.4em]
+\infer{\Gamma \entails {\const c} : {\const b}}{}
+\quad
+\infer{\Gamma \entails M\; N : B}{\Gamma \entails M : A \arrow B \quad \Gamma \entails N : A}
+\end{array}
+\\[3em]
+\pause
+\vspace{-2.3em}\fbox{Op. Sem.} & 
+$\infer{M\;N \stepsto M'\;N}{M \stepsto M'} \quad \infer{(\lam x M) N \stepsto {\color{purple}[N/x]M}}{} $ \\[2em]
+\end{tabular}
+
+\hfill $M$ halts if $\exists V.\, M \stepsto^* V$ \hfill
+\end{frame}
+
+\begin{frame}{Background: Higher-order abstract syntax}
+\begin{itemize}
+\item Lots of approaches to support binding and substitution
+\item Higher-order abstract syntax (HOAS) very effective
+\begin{itemize}
+\item Idea: represent binding and substitution using functions and application from a meta-language
+\end{itemize}
+\item The logical framework LF employs HOAS
+\item Twelf [Pfenning and Sch\"urmann '99] implements LF
+\begin{itemize}
+\item Very effective for basic results in programming language theory (type soundness, confluence)
+% \item Less clear how to formulate induction
+% over HOAS representations
+\item Steep price: very weak logic. Can only express $\forall\exists$ statements
+% \item Abella: first order logic (weak)
+% \item Hybrid, nominal logic, locally nameless, etc: less support for substitution
+\item Cannot express advanced results (normalization, parametricity)
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Example: HOAS encoding}
+\begin{tabular}{p{3.2cm}l}
+\vspace{-2.7em}\fbox{Syntax} &
+\begin{lstlisting}
+b : tp.
+_=>_ : tp -> tp -> tp.
+
+c : tm.
+lam : ${\color{purple}(\text{tm} \rightarrow \text{tm})}$ -> tm.
+app : tm -> tm -> tm.
+\end{lstlisting}
+\\[3em]
+\pause
+\vspace{-2.7em}\fbox{Typing \lstinline{oft M T}} &
+\begin{lstlisting}
+oft/b : oft c b.
+oft/lam : ${\color{purple}\text{(\{x:tm\} oft x A -> oft (M x) B)}}$
+          -> oft (lam M) (A => B).
+oft/app : oft M (A => B) -> oft N A
+          -> oft (app M N) B.
+\end{lstlisting}
+\\[3em]
+\pause
+\vspace{-2em}\fbox{Op. Sem. \lstinline{step M N}} & 
+\begin{lstlisting}
+step/app : step M M'
+        -> step (app M N) (app M' N).
+step/beta : step (app (lam M) N) $\color{purple}\text{(M N)}$.
+\end{lstlisting}
+\end{tabular}
+\end{frame}
+
+\begin{frame}{Background: Two-level approaches}
+\begin{itemize}
+\item HOAS representation on one level (e.g. LF)
+\item Richer logic/type theory at the next
+\item e.g. implemented in Abella [Gacek'08], Beluga [Pientka'08], Delphin [Poswolsky and Sch\"urmann '08]
+\item $\approx$ indexed type theory/first-order logic with induction
+\item Still not enough to directly express many advanced results...
+\pause \item Question: can we have more powerful logics?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Example: Weak normalization}
+\begin{itemize}
+\item Theorem: If $\vdash M : A$ then $M$ halts
+\pause
+\begin{enumerate}
+\item Define predicate $\mathcal{R}_A$
+% \item Show if $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
+\item If $M \in \mathcal{R}_A$ then $M$ halts
+\item If $\vdash M : A$ then $M \in \mathcal{R}_A$
+\pause
+
+Generalize: {\color{purple}If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then $[\sigma]M \in \mathcal{R}_A$}
+
+$\,$
+
+(where $\Gamma$ of the form $x_1{:}B_1,...,x_n{:}B_n$ and $\sigma$ of the form $N_1/x_1,...,N_n/x_n$ and $\sigma \in \mathcal{R}_\Gamma$ means $N_1 \in \mathcal{R}_{B_1},...,N_n \in \mathcal{R}_{B_n}$)
+\end{enumerate}
+\pause \item Representative of wide variety of advanced proofs
+
+(logical relations)
+\end{itemize}
+% We prove the more general result that every term of type $A$ is \textbf{reducible} at type $A$, where reducibility is defined:
+% \[
+% \begin{array}{l}
+% \mathcal{R}_{\const i} = \{M\; |\; M \text{ halts}\} \\
+% \mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } {\color{purple} \forall N
+% \in \mathcal{R}_A}, (M\; N) \in \mathcal{R}_B \}
+% \end{array}
+% \]
+
+% \pause
+% \begin{lemma}[Backward closure]
+% If $M' \in \mathcal{R}_A$ and $M \stepsto M'$ then $M \in \mathcal{R}_A$
+% \end{lemma}
+\end{frame}
+
+\begin{frame}{Definition of $\mathcal{R}$}
+\[
+\begin{array}{l}
+\mathcal{R}_{\const b} = \{M\; |\; M \text{ halts}\} \\
+\mathcal{R}_{A \arrow B} = \{M\; |\; M \text{ halts and } {\color{purple}\forall N
+\in \mathcal{R}_A}, (M\; N) \in \mathcal{R}_B \}
+\end{array}
+\]
+\end{frame}
+
+\begin{frame}{Main theorem}
+
+If $\Gamma \vdash M : A$ and $\sigma \in \mathcal{R}_\Gamma$ then
+$[\sigma]M \in \mathcal{R}_A$.
+\pause
+\begin{proof}
+By induction. 
+Case $\begin{array}{l}\infer{\Gamma \der \lam x M : A \arrow
+    B}{\Gamma,x{:}A \der M : B}\end{array}$: Given $N \in \mathcal{R}_A$.
+
+\begin{enumerate}
+\pause \item $(\sigma,N/x) \in \mathcal{R}_{\Gamma,x:A}$ \hfill (by definition)
+\pause \item $[\sigma,N/x]M \in \mathcal{R}_B$ \hfill (by I.H.)
+\pause \item {\color{purple} $[\sigma,N/x]M = [N/x][\sigma,x/x]M$ \hfill (property of substitution)}
+\pause \item $[N/x][\sigma,x/x]M \in \mathcal{R}_B$ \hfill (previous lines)
+\pause \item $(\lam x ([\sigma,x/x]M))\; N \longrightarrow [N/x][\sigma,x/x]M$ \hfill ($\beta$ reduction)
+\pause \item $(\lam x ([\sigma,x/x]M))\; N \in \mathcal{R}_B$ \hfill (backward closure)
+\pause \item $(\lam x ([\sigma,x/x]M)) \in \mathcal{R}_{A \arrow B}$ \hfill (by definition)
+\pause \item {\color{purple} $[\sigma](\lam x M) \in \mathcal{R}_{A \arrow B}$ \hfill (property of substitution)}
+\end{enumerate}
+\end{proof}
+Proving these properties of substitution requires $\approx$ dozen lemmas!
+\end{frame}
+
+% \begin{frame}{Motivating Example: Proof by logical relations}{Problems to solve in a formalization}
+% \begin{itemize}
+% \item Representing binding: $\lambda x. M$?
+% \item Definition of $\mathcal{R}$?
+% \item Definition of substitution $[\sigma]M$?
+% \item Quantification over contexts $\Gamma$?
+% \item Proving equations: $[N/x][\sigma,x/x]M = [\sigma,N/x]M$?
+% \end{itemize}
+% \end{frame}
+
+\newcommand{\good}{{\color{green}\textbf{\checkmark}}}
+\newcommand{\bad}{{\color{red}\textbf{\xmark}}}
+\newcommand{\ok}{{\color{orange}$\mathbf{\sim}$}}
+
+\begin{frame}[fragile]{Support from proof environments}
+\begin{tabular}{| p{4.4cm} | l | l | l |}
+\hline
+ & Type theory & Twelf & Two-level \\
+ & (Coq) & & (Beluga) \\ \hline
+Def. Binding: $\lambda x. M$ & \ok & \good & \good \\ \hline
+Ind. predicates e.g. $\mathcal{R}_{\Gamma}$ & \good & \bad & \only<1>{?}\only<2>{\good$^1$} \\ \hline
+Def. of $\mathcal{R}_A$ & \good & \bad & \only<1>{?}\only<2>{\ok$^1$} \\ \hline
+Def. subst. $[N/x]M$ & \ok & \good & \good \\ \hline
+Def. subst. $[\sigma]M$ & \ok & \ok & \only<1>{?}\only<2>{\good$^2$} \\ \hline
+Directly inspect contexts & \good & \bad & \good \\ \hline
+Equations e.g. \begin{small}$[N/x][\sigma,x/x]M = [\sigma,N/x]M$\end{small} & \bad & \ok & \only<1>{?}\only<2>{\good$^2$} \\ \hline
+Reasoning about functions & \good & \bad & ? \\ \hline
+\end{tabular}
+
+$\,$
+
+\only<2>{$^1$ Indexed recursive types [Cave and Pientka POPL'12]
+
+$^2$ First-class substitutions [Cave and Pientka LFMTP'13]}
+\end{frame}
+
+% \begin{frame}{Motivating Example: Proof by logical relations}{Properties of substitution}
+% \begin{itemize}
+% \item First, names are tricky.
+% \item de Bruijn indices tend to work better for brute-force formalization than names
+% \begin{lemma}
+% $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ (provided $x$ fresh for $\sigma$)
+% \end{lemma}
+% becomes
+% \begin{lemma}
+% $[ id , N ] [ \uparrow \sigma, 1 ] M = [ \sigma , N ] M$
+% \end{lemma}
+% \end{itemize}
+% % \begin{lemma}
+% %  [ [ \(\sigma1\) ]' \(\sigma2\) ] = [ \(\sigma1\) ] \(\circ\) [ \(\sigma2\) ]
+% % \end{lemma}
+% % lem2 : [ \(\sigma\) , M ] \(\circ\) \(\uparrow\) = [ \(\sigma\) ]
+% % lem3 : [ id ]' \(\sigma\) = \(\sigma\)
+% % lem4 : [ id , N ] \(\circ\) [ \(\uparrow\) \(\sigma\), 1 ] = [ \(\sigma\) , N ]
+% % ...
+% % \end{alltt}
+% This is tedious to do for each language we study!
+% \end{frame}
+
+
+% \begin{frame}{My progress to date}
+% \begin{itemize}
+% \item Indexed recursive types [Cave and Pientka '12]:  
+% \begin{itemize}
+% \item Part way to supporting definition of $\mathcal{R}$
+% \end{itemize}
+% \item First-class substitutions [Cave and Pientka '13]:
+% \begin{itemize}
+% \item 
+% \end{itemize}
+% \end{itemize}
+% \end{frame}
+
+\begin{frame}{Indexed recursive types [Cave and Pientka POPL'12]}
+\begin{itemize}
+\item Can express forms of predicates that LF can't e.g.
+\begin{itemize}
+\item certain subexpressions are \emph{closed}
+\item relations between contexts
+\end{itemize}
+\item Richer forms of induction
+\item Result: type soundness and decidability of typechecking
+\item Implemented in the Beluga system
+\item Good for \emph{programming}
+\item Not so good for \emph{reasoning}: naive treatment is inconsistent!
+\item \textbf{But} enables \textbf{experimental} definitions of logical relations
+\item Not ideal: relations between contexts are typically \emph{functional} relations: why not treat them as \emph{functions}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{First class substitutions [Cave and Pientka LFMTP'13]}
+\begin{itemize}
+\item Adds distinguished type of substitutions $\sigma$
+\item Equational theory \textbf{built-in} to type checking
+\item User does not need to prove any equations!
+\item Result: Decidability of typechecking w/ equational theory
+\item Example: remarkably succinct proof of weak normalization!
+\begin{lstlisting}
+rec thm : {M:[$\Gamma$ $\vdash$ tm A]} RedS [$\vdash$ $\sigma$] -> Red [$\vdash$ A] [$\vdash$ M $\sigma$] =
+mlam M => fn rs => case M of
+| [$\Gamma$ $\vdash$ lam (\x. M1)] =>
+  Arr [$\vdash$ h/val s/refl val/lam]
+   (mlam N => fn rN => closed [$\vdash$ s/beta]
+    (thm [$\Gamma$,x $\vdash$ M1] (Cons rs rN)))
+...
+\end{lstlisting}
+\item Uses ``unsound in general'' recursive types to define $\mathcal{R}_A$
+\item Future work: fix this
+% \item Convenient for logical relations: need to quantify over ``closing substitutions''
+% \begin{theorem}[Fundamental theorem]
+% If $\Gamma \vdash M : A$ {\color{purple} and $\sigma \in \mathcal{R}_\Gamma$} then
+% $[\sigma]M \in \mathcal{R}_A$.
+% \end{theorem}
+% \item New equations to solve: $[N/x][\sigma,x/x]M = [\sigma,N/x]M$ provided $x \not\in fv(\sigma)$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Draft: Logical relations in contextual type theory}
+\begin{itemize}
+\item Formalizes more involved logical relations proof
+\begin{itemize}
+\item completeness of an algorithmic equality for STLC
+\end{itemize}
+\item Core of more advanced results (decidability of typechecking)
+\item Formalization is ``easy''!
+\item Substantially smaller than other formalizations
+\item Not easily done in other two-level systems
+% \item Lacks check that definitions are reasonable (positivity)
+\item Demonstrates that previous work scales
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Open problems}
+\begin{enumerate}
+\item Properly justify definition of logical relations
+\item Direct reasoning about functions
+\item Scale to even more interesting proofs
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Proposal: Move from indexed types to dependent types}
+\begin{itemize}
+\item \emph{Some} richer theory is necessary
+\item Dependent type theory [Martin-L\"of '73] unifies programming with proving!
+\item On par with set theory and higher-order logic
+\item Includes \emph{definitional equalities}: checked automatically!
+\begin{itemize}
+\item Extremely convenient!
+\item Computation ($\beta$) rules
+\item Conceivably other rules?
+\end{itemize}
+\item Direct reasoning about functions
+\begin{itemize}
+\item Major practical impact!
+\item e.g. concatenation of contexts
+\end{itemize}
+\item \emph{Universes} to properly define logical relations
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Outline}
+\begin{enumerate}
+\item Theory
+\begin{itemize}
+\item Design a DTT with built-in type of LF derivations
+\item Design algorithm for \emph{definitional equality} incorporating equational theory of substitutions
+\item Prove soundness, completeness, and termination of algorithm
+\end{itemize}
+\item Prototype implementation
+\begin{itemize}
+\item Adapt Beluga implementation to dependent types
+\item Implement algorithm for definitional equality
+\end{itemize}
+\item Case studies
+\begin{itemize}
+\item Formalize advanced proofs using the prototype
+\end{itemize}
+% Say: Allows us to fill in checkmarks for last two problems?
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Theory: Sketch}
+\begin{itemize}
+\item LFMTP'13 describes syntactic algorithm for equational theory of substitutions
+\item Hurdle: definitional equality includes \textbf{computation} rules
+\item DTT proof requires \textbf{semantic} techniques
+\item Approach:
+\begin{itemize}
+\item Adapt proof for ``plain'' dependent type theory with a universe (e.g. [Abel '11])
+\item Follow Allais et al. '13 to include ``non-computational'' laws
+\item Byproducts of proof: normalization and consistency!
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Prototype implementation: Adapting Beluga}
+Some progress already:
+\begin{itemize}
+\item Merging index and computation language contexts \good
+\item Allowing indices to mention computations: in progress
+\item Extending definitional equality: to do
+\item Implementing universes: to do
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Case studies: Some advanced proofs to target}
+\begin{enumerate}
+\item Soundness and completeness of a normalization by evaluation algorithm [Dybjer and Filinski '00]
+\item Normalization for Martin-L\"of type theory with a universe [Coquand '98]
+\item Logical relation for contextual equivalence [Dreyer et al '11]
+\item Normalization for System F [Girard '89]
+\end{enumerate}
+
+$\,$
+
+\begin{itemize}
+\item Challenging. 2\&{}3 have not been fully formalized (?)
+\item Feasible. I have partially formalized 1\&{}2 in Agda
+\item Would benefit a lot from proposed support for substitutions!
+\item Significant fragments of real systems
+\item 3 is cutting-edge: researchers \emph{want} to be able to formalize
+\item Require expressive power beyond Beluga today
+\end{itemize}
+\end{frame}
+
+% \begin{frame}{A solution?}
+% \begin{itemize}
+% \pause \item We know that LF works well to encode object languages...
+% \pause \item So do this *once* for LF, and embed your OL inside
+% \pause \item I've prototyped this in Agda
+% \pause \item $>$48GB of memory to typecheck an example
+% \pause \item And we still have to apply these lemmas manually and often compose several of them
+% \pause \item Solution: build LF datatype into DTT and build lemmas into conversion check
+% \pause \item Result: ``dependently typed Beluga''
+% \pause \item Analyze LF objects by the induction principle you get from considering an inductive type representing LF
+% \pause \item provides ``simple'' approach to semantics, termination (via eliminator for LF datatype)?
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}{The metric for success}
+% \begin{itemize}
+% \item Algorithm for typechecking (decidability, soundness, completeness)
+% \item Consequences: normalization, consistency
+% \item Prototype implementation
+% \item Formalize non-trivial proofs, e.g.
+% \begin{itemize}
+% \item C. Coquand's normalization proof for MLTT with a universe
+% \item logical relation for contextual equivalence (parametricity)
+% \item soundness and completeness of NbE
+% \item normalization for System F?
+% \end{itemize}
+% \end{itemize}
+% \end{frame}
+
+\begin{frame}{Conclusion}
+\begin{itemize}
+\item Building a logical framework into dependent type theory appears feasible
+\item Substantial benefits: formalizing advanced results in programming language theory becomes more practical
+\item Hopefully not much more effort than writing a paper proof!
+\item Hopefully provides insights into how to incorporate other equational theories from other areas of application?
+\end{itemize}
+\end{frame}
+
+\end{document}

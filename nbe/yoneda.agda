@@ -75,8 +75,9 @@ record Cat : Set where
        pair  : ∀ {X Y Z} → Hom X Y → Hom X Z → Hom X (Y × Z)
        π₁β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₁ (pair f g) ≡ f 
        π₂β   : ∀ {X Y Z}{f : Hom X Y}{g : Hom X Z} -> comp π₂ (pair f g) ≡ g
-       η     : ∀ {X Y Z}{f : Hom X (Y × Z)} -> f ≡ (pair (comp π₁ f) (comp π₂ f))  
-       !     : ∀ {X}{f g : Hom X ⊤} -> f ≡ g
+       η     : ∀ {X Y Z}{f : Hom X (Y × Z)} -> f ≡ (pair (comp π₁ f) (comp π₂ f))
+       !     : ∀ {X} -> Hom X ⊤
+       !η    : ∀ {X}{f g : Hom X ⊤} -> f ≡ g
 open Cat
 
 --Now, Yoneda's embedding says that we can view morphism in C as the following polymorphic function:
@@ -89,6 +90,7 @@ Y {C} f = λ Z g → comp C g f
 Y-1 : ∀{C A B} → (∀ Z → Hom C B Z → Hom C A Z) → Hom C A B
 Y-1 {C}{A}{B} α = α B (iden C)
 
+-- Homs which give us the β and η laws
 
 HomI : ∀ C (X Y : Obj (Base C)) -> Set
 HomI C X (▹ B) = Hom C X (▹ B)
@@ -101,20 +103,54 @@ CatY : Cat → Cat
 CatY C = record {
  Base  = Base C;
  Hom   = λ X Y → ∀ Z → HomI C Z X → HomI C Z Y;
- iden  = λ X → id;
- comp  = λ α β Z → α Z ◦ β Z;
+ iden  = λ Z -> id;
+ comp  = λ α β Z → (α Z) ◦ (β Z);
  idl   = refl;
  idr   = refl;
  ass   = refl;
- π₁    = λ Z → _*_.fst;
- π₂    = λ Z → _*_.snd;
- pair = λ f g Z' x → (f Z' x , g Z' x);
+ π₁    = λ Z -> _*_.fst;
+ π₂    = λ Z -> _*_.snd;
+ pair  = λ f g Z x → (f Z x , g Z x);
  π₁β   = refl;
  π₂β   = refl;
  η     = refl;
- !     = refl
+ !     = λ Z x → tt;
+ !η    = refl
  }
 
+-- Notice that we get the β and η laws for free
+
+postulate
+ C : Cat
+
+CY = CatY C
+
+HomC : Obj (Base CY) -> Obj (Base CY) -> Set
+HomC X Y = Hom CY X Y
+
+_∘_ : ∀ {X Y Z} (f : HomC Y Z) (g : HomC X Y) -> HomC X Z
+_∘_ {X} {Y} {Z} f g = comp CY {X} {Y} {Z} f g
+
+〈_,_〉 : ∀ {X Y Z} (f : HomC X Y) (g : HomC X Z) -> HomC X (Y × Z)
+〈_,_〉 {X} {Y} {Z} f g = pair CY {X} {Y} {Z} f g
+
+ide : ∀ {X} -> HomC X X
+ide {X} = iden CY {X}
+
+π1 : ∀ {X Y} -> HomC (X × Y) X
+π1 {X} {Y} = π₁ CY {X} {Y}
+
+π2 : ∀ {X Y} -> HomC (X × Y) Y
+π2 {X} {Y} = π₂ CY {X} {Y}
+
+test : ∀ Γ Δ S T (σ : HomC Δ Γ) (N : HomC Γ T) (M : HomC (Γ × T) S)
+        -> (_∘_ {Δ} {Γ × T} {S} M (_∘_ {Δ} {Γ} {Γ × T} (〈_,_〉 {Γ} {Γ} {T} (ide {Γ}) N) σ))
+         ≡ (_∘_ {Δ} {Γ × T} {S} M (_∘_ {Δ} {Δ × T} {Γ × T} (〈_,_〉 {Δ × T} {Γ} {T} (_∘_ {Δ × T} {Δ} {Γ} σ (π1 {Δ} {T})) (π2 {Δ} {T})) (〈_,_〉 {Δ} {Δ} {T} (ide {Δ}) (_∘_ {Δ} {Γ} {T} N σ))))
+test Γ Δ S T σ N M = refl
+
+test2 : ∀ {Γ Δ S T} {σ : HomC Δ Γ} {N : HomC Γ T} {M : HomC (Γ × T) S}
+        -> (M ∘ (〈 ide , N 〉 ∘ σ)) ≡ ((M ∘ 〈 σ ∘ π1 , π2 〉) ∘ 〈 ide , (N ∘ σ) 〉)
+test2 = {!!}
 {-module foo (C : Cat) where
 
  open Cat (CatY C) using (Hom)
