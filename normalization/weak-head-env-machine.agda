@@ -63,27 +63,35 @@ data _⟶*_ {C} : config C -> config C -> Set where
  refl : ∀ {c} -> c ⟶* c
  _,_ : ∀ {c1 c2 c3} -> c1 ⟶ c2 -> c2 ⟶* c3 -> c1 ⟶* c3
 
+⟶*-trans : ∀ {C} {c1 c2 c3 : config C} -> c1 ⟶* c2 -> c2 ⟶* c3 -> c1 ⟶* c3
+⟶*-trans refl t = t
+⟶*-trans (t1 , t2) t3 = t1 , (⟶*-trans t2 t3)
+
 reduce : ∀ T -> val T -> Set
 reduce atom t = Unit
-reduce (T ⇝ S) (ƛ t [ σ ]) = {!!} --∀ (x : val T) -> reduce T x -> Σ (val S) (λ w -> (t [ σ ,, x ]⇓ w) × reduce S w)
+reduce (T ⇝ S) (ƛ t [ σ ]) = ∀ (x : val T) {C} (K : cont S C) -> reduce T x -> Σ (val S) (λ w -> ((K ▹ t [ σ ,, x ]) ⟶* (K ◅ w)) × reduce S w)
 
--- reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> val U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : val T} (w : reduce T t) ->
---  ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
--- reduce-ext θ w z = w
--- reduce-ext θ w (s y) = θ y
+reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> val U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : val T} (w : reduce T t) ->
+ ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
+reduce-ext θ w z = w
+reduce-ext θ w (s y) = θ y
 
+-- I think we could do this whole thing in the empty continuation, and have a lemma that lets us reduce in contexts?
 thm : ∀ {Γ T} (σ : sub Γ) (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) (t : tm Γ T) {C} (K : cont T C)
-  -> Σ (val C) (λ w -> ((K ▹ t [ σ ]) ⟶* (⊡ ◅ w)) × reduce C w)
-thm σ θ (v x) K = {!!}
-thm σ θ (t · t₁) K = {!!}
-thm σ θ (ƛ t) K = {!!}
+  -> Σ (val T) (λ w -> ((K ▹ t [ σ ]) ⟶* (K ◅ w)) × reduce T w)
+thm σ θ (v x) K = (σ x) , ((v , refl) , (θ x))
+thm σ θ (t · t₁) K with thm σ θ t (K , ap1 t₁ σ)
+... | (ƛ v1 [ σ' ]) , p1 , r1 with thm σ θ t₁ (K , ap2 v1 σ')
+... | v2 , p2 , r2 with r1 v2 K r2
+... | v3 , p3 , r3 = v3 , (⟶*-trans (ap1 , p1) (⟶*-trans (ap2 , p2) (β , p3)) , r3)
+thm σ θ (ƛ t) K = ƛ t [ σ ] , ((lam , refl) , (λ x K' x' → thm (σ ,, x) (reduce-ext θ x') t K'))
 
--- ⊡' : sub ⊡
--- ⊡' ()
+⊡' : sub ⊡
+⊡' ()
 
--- norm : ∀ {T} -> (t : tm ⊡ T) -> ∃ (λ v -> t [ ⊡' ]⇓ v)
--- norm t with thm ⊡' (λ ()) t
--- norm t | proj₁ , proj₂ , proj₃ = proj₁ , proj₂
+norm : ∀ {T} (t : tm ⊡ T) {C} (K : cont T C) -> ∃ (λ v -> (K ▹ t [ ⊡' ]) ⟶* (K ◅ v))
+norm t K with thm ⊡' (λ ()) t K
+norm t K | proj₁ , proj₂ , proj₃ = proj₁ , proj₂
 
 -- What about proving soundness and completeness w.r.t equational theory?
 -- What about a cbn evaluation strategy?
