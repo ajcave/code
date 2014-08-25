@@ -1,4 +1,4 @@
-module weak-head-env-machine where
+module weak-head-env-machine2 where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Product
 
@@ -69,31 +69,29 @@ data _⟶*_ {C} : config C -> config C -> Set where
 
 reduce : ∀ T -> val T -> Set
 reduce atom t = Unit
-reduce (T ⇝ S) (ƛ t [ σ ]) = ∀ (x : val T) {C} (K : cont S C) -> reduce T x -> Σ (val S) (λ w -> ((K ▹ t [ σ ,, x ]) ⟶* (K ◅ w)) × reduce S w)
+reduce (T ⇝ S) (ƛ t [ σ ]) = ∀ (x : val T) -> reduce T x -> Σ (val S) (λ w -> (∀ {C} (K : cont S C) -> ((K ▹ t [ σ ,, x ]) ⟶* (K ◅ w))) × reduce S w)
 
 reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> val U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : val T} (w : reduce T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
 reduce-ext θ w z = w
 reduce-ext θ w (s y) = θ y
 
-
--- Could move the quantification over K inside... (I do this in the next file...)
 -- I think we could do this whole thing in the empty continuation, and have a lemma that lets us reduce in contexts?
-thm : ∀ {Γ T} (σ : sub Γ) (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) (t : tm Γ T) {C} (K : cont T C)
-  -> Σ (val T) (λ w -> ((K ▹ t [ σ ]) ⟶* (K ◅ w)) × reduce T w)
-thm σ θ (v x) K = (σ x) , ((v , refl) , (θ x))
-thm σ θ (t · t₁) K with thm σ θ t (K , ap1 t₁ σ)
-... | (ƛ v1 [ σ' ]) , p1 , r1 with thm σ θ t₁ (K , ap2 v1 σ')
-... | v2 , p2 , r2 with r1 v2 K r2
-... | v3 , p3 , r3 = v3 , (⟶*-trans (ap1 , p1) (⟶*-trans (ap2 , p2) (β , p3)) , r3)
-thm σ θ (ƛ t) K = ƛ t [ σ ] , ((lam , refl) , (λ x K' x' → thm (σ ,, x) (reduce-ext θ x') t K'))
+thm : ∀ {Γ T} (σ : sub Γ) (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) (t : tm Γ T)
+  -> Σ (val T) (λ w -> (∀ {C} (K : cont T C) -> ((K ▹ t [ σ ]) ⟶* (K ◅ w))) × reduce T w)
+thm σ θ (v x) = (σ x) , ((λ _ -> v , refl) , (θ x))
+thm σ θ (t · t₁) with thm σ θ t
+... | (ƛ v1 [ σ' ]) , p1 , r1 with thm σ θ t₁ 
+... | v2 , p2 , r2 with r1 v2 r2
+... | v3 , p3 , r3 = v3 , (λ K -> (⟶*-trans (ap1 , p1 (K , ap1 t₁ σ)) (⟶*-trans (ap2 , p2 (K , ap2 v1 σ')) (β , p3 K)))) , r3
+thm σ θ (ƛ t) = ƛ t [ σ ] , ((λ _ -> lam , refl) , (λ x x' → thm (σ ,, x) (reduce-ext θ x') t))
 
 ⊡' : sub ⊡
 ⊡' ()
 
-norm : ∀ {T} (t : tm ⊡ T) {C} (K : cont T C) -> ∃ (λ v -> (K ▹ t [ ⊡' ]) ⟶* (K ◅ v))
-norm t K with thm ⊡' (λ ()) t K
-norm t K | v1 , p1 , _ = v1 , p1
+norm : ∀ {T} (t : tm ⊡ T) -> ∃ (λ v -> (⊡ ▹ t [ ⊡' ]) ⟶* (⊡ ◅ v))
+norm t with thm ⊡' (λ ()) t
+norm t | v1 , p1 , _ = v1 , (p1 ⊡)
 
 -- What about proving soundness and completeness w.r.t equational theory?
 -- What about a cbn evaluation strategy?
