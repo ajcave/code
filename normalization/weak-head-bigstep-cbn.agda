@@ -2,12 +2,8 @@ module weak-head-bigstep-cbn where
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Product
 
-
 record Unit : Set where
  constructor tt
-
-postulate
- atomic_tp : Set
 
 data tp : Set where
  atom : tp
@@ -21,39 +17,10 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
  z : ∀ {Γ T} -> var (Γ , T) T
  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
 
-vsubst : ctx -> ctx -> Set 
-vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
-
-_∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
-(σ1 ∘ σ2) x = σ1 (σ2 x)
-
-_∘₁_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
-(f ∘₁ g) x = f (g x)
-
-ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
-ext σ z = z
-ext σ (s y) = s (σ y)
-
-id : ∀ {Γ} -> vsubst Γ Γ
-id x = x
-
-ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> ext id x ≡ x
-ext-id z = refl
-ext-id (s y) = refl
-
-wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn = s
-
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
-
-[_]v : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
-[_]v σ (v y) = v (σ y)
-[_]v σ (M · N) = [ σ ]v M · [ σ ]v N
-[_]v σ (ƛ M) = ƛ ([ ext σ ]v M)
-
 
 mutual
  data clo : tp -> Set where
@@ -68,7 +35,6 @@ data val : tp -> Set where
 _,,_ : ∀ {Γ1 T} -> sub Γ1 -> clo T -> sub (Γ1 , T)
 (σ ,, M) z = M
 (σ ,, M) (s y) = σ y
-
 
 data _⇓_ : ∀ {T} -> clo T -> val T -> Set where
  app : ∀ {Γ T S} {M : tm Γ (T ⇝ S)} {N : tm Γ T} {σ : sub Γ} {Γ'} {M' : tm (Γ' , T) S}

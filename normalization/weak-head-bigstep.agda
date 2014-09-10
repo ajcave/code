@@ -18,38 +18,10 @@ data var : (Γ : ctx) -> (T : tp) -> Set where
  z : ∀ {Γ T} -> var (Γ , T) T
  s : ∀ {Γ T S} -> var Γ T -> var (Γ , S) T
 
-vsubst : ctx -> ctx -> Set 
-vsubst Δ Γ = ∀ {U} -> var Δ U -> var Γ U
-
-_∘_ : ∀ {Δ Γ ψ} -> vsubst Δ Γ -> vsubst ψ Δ -> vsubst ψ Γ
-(σ1 ∘ σ2) x = σ1 (σ2 x)
-
-_∘₁_ : ∀ {A B C : Set} (f : B -> C) (g : A -> B) -> A -> C
-(f ∘₁ g) x = f (g x)
-
-ext : ∀ {Γ Δ T} -> vsubst Γ Δ -> vsubst (Γ , T) (Δ , T)
-ext σ z = z
-ext σ (s y) = s (σ y)
-
-id : ∀ {Γ} -> vsubst Γ Γ
-id x = x
-
-ext-id : ∀ {Γ T U} (x : var (Γ , T) U) -> ext id x ≡ x
-ext-id z = refl
-ext-id (s y) = refl
-
-wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
-wkn = s
-
 data tm (Γ : ctx) : (T : tp) -> Set where
  v : ∀ {T} -> var Γ T -> tm Γ T
  _·_ : ∀ {T S} -> tm Γ (T ⇝ S) -> tm Γ T -> tm Γ S
  ƛ : ∀ {T S} -> tm (Γ , T) S -> tm Γ (T ⇝ S)
-
-[_]v : ∀ {Γ1 Γ2 T} (σ : vsubst Γ1 Γ2) -> (M : tm Γ1 T) -> tm Γ2 T
-[_]v σ (v y) = v (σ y)
-[_]v σ (M · N) = [ σ ]v M · [ σ ]v N
-[_]v σ (ƛ M) = ƛ ([ ext σ ]v M)
 
 mutual
  data val : tp -> Set where
@@ -79,7 +51,7 @@ reduce : ∀ T -> val T -> Set
 reduce atom t = Unit
 reduce (T ⇝ S) (ƛ t [ σ ]) = ∀ (x : val T) -> reduce T x -> Σ (val S) (λ w -> (t [ σ ,, x ]⇓ w) × reduce S w)
 
-reduce-ext : ∀ {Γ} {σ : ∀ {U} (x : var Γ U) -> val U} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : val T} (w : reduce T t) ->
+reduce-ext : ∀ {Γ} {σ : sub Γ} (θ : ∀ {U} (x : var Γ U) -> reduce U (σ x)) {T} {t : val T} (w : reduce T t) ->
  ∀ {U} (x : var (Γ , T) U) -> reduce U ((σ ,, t) x)
 reduce-ext θ w z = w
 reduce-ext θ w (s y) = θ y
