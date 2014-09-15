@@ -29,7 +29,7 @@ mutual
     -> (↑[ Π A F ] e) · a ↘ ↑[ F' ] (e · ↓[ A ] a)
  data rec_,_,_,_↘_ : Exp -> Exp -> Exp -> Val -> Val -> Set where
   zero : ∀ {T tz ts dz} -> ⟦ tz ⟧ ⊡ ↘ dz -> rec T , tz , ts , zero ↘ dz
-  suc : ∀ {T tz ts dn a f b} -> rec T , tz , ts , dn ↘ a -> ⟦ ts ⟧ (⊡ , dn) ↘ f -> f · a ↘ b
+  suc : ∀ {T tz ts dn a b} -> rec T , tz , ts , dn ↘ a -> ⟦ ts ⟧ ((⊡ , dn) , a) ↘ b
     -> rec T , tz , ts , (suc dn) ↘ b
   ne : ∀ {T T' A tz ts e} 
    -> ⟦ T ⟧ (⊡ , ↑[ A ] e) ↘ T'
@@ -39,8 +39,10 @@ mutual
  -- I think this is like Martin-Lof's "weak" treatment of λ. No congruence rule.
  -- Note that the "usual" rec combinator can still be defined (admissible?) by abstracting over Gamma
  -- I think that the bodies need to be closed in order to keep type soundness? Did Martin-Lof
- -- not have this problem? Why not?
+ -- not have this problem? Why not? No substitution into body of lambda? Kept a closure?
  -- Hmm, actually we may be able to keep *one* closure ρ associated with the normal form of rec
+ -- Does this approach also simplify other methods for decidability? e.g. completeness and soundness
+ -- of an "efficient algorithm(ic) equality"?
 
  -- x:N |- T type    |- tz : T[zero/n]  n:N,p:T n |- ts : T[suc n/x]  G |- tn : N
  -- -----------------------------------------------------------------------------
