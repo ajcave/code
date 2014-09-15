@@ -102,4 +102,4 @@ eval θ (M · N) = eval θ M _ id (eval θ N)
 eval θ (ƛ M) = λ Δ' σ s -> eval (extend (λ {T} x → appSubst T σ (θ x)) s) M
 
 nbe : ∀ {Γ T} -> tm Γ T -> ntm Γ T
-nbe M = reify (eval (λ x → reflect (λ π → v (π x))) M) id --reify (eval (λ x → reflect (v x)) M) 
+nbe M = reify (eval (λ x → reflect (λ π → v (π x))) M) id
