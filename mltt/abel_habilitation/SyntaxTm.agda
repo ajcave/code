@@ -6,7 +6,7 @@ mutual
   ƛ : (t : Exp) -> Exp
   Nat zero SetZ : Exp
   suc : (t : Exp) -> Exp
-  rec : (tz ts tn : Exp) -> Exp
+  rec : (T tz ts tn : Exp) -> Exp
   idx : (x : ℕ) -> Exp
   _·_ : (r s : Exp) -> Exp
   _[_] : (t : Exp) -> (σ : Subst) -> Exp
