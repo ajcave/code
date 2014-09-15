@@ -15,7 +15,7 @@ module Syn (Tm : Set) where
    suc : (a : Val) -> Val
    Π : (A : Val) -> (B : Val) -> Val
    Nat : Val
-   SetZ : Val
+   Set* : Val
 
   data Env : Set where
    ⊡ : Env

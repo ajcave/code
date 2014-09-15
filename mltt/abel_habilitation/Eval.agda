@@ -22,6 +22,9 @@ mutual
    -> ⟦ tn ⟧ ρ ↘ dn
    -> rec T , tz , ts , dn ↘ d
    -> ⟦ rec T tz ts tn ⟧ ρ ↘ d
+  Set* : ∀ {ρ} -> ⟦ Set* ⟧ ρ ↘ Set*
+  Π : ∀ {A A' F ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ Π A F ⟧ ρ ↘ Π A' (ƛ F ρ)
+  Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
  data _·_↘_ : Val -> Val -> Val -> Set where 
   ƛ : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> (ƛ t ρ) · a ↘ b
   ↑ : ∀ {A F e a F'}
@@ -47,3 +50,19 @@ mutual
  -- x:N |- T type    |- tz : T[zero/n]  n:N,p:T n |- ts : T[suc n/x]  G |- tn : N
  -- -----------------------------------------------------------------------------
  --                G |- rec (x. T) tz (n,p. ts) tn : T[n/x]
+
+mutual
+ data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Nf -> Set where
+  Π : ∀ {n f b A B B' v} -> f · ↑[ A ] (lvl n) ↘ b -> B · ↑[ A ] (lvl n) ↘ B' -> Rnf (suc n) , b ∶ B' ↘ v
+     -> Rnf n , f ∶ Π A B ↘ ƛ v
+  Nat : ∀ {n} -> Rnf n , Nat ∶ Set* ↘ Nat
+  SetZ : ∀ {n} -> Rnf n , Set* ∶ Set* ↘ Set* -- !! Todo: will this work?
+  Fun : ∀ {n A A' B B' B''} -> Rnf n , A ∶ Set* ↘ A' -> B · ↑[ A ] (lvl n) ↘ B'
+    -> Rnf (suc n) , B ∶ Set* ↘ B''
+  Neut : ∀ {n e v B B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
+  zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
+  suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
+ data Rne_,_↘_ : ℕ -> Dne -> Ne -> Set where
+--  lvl : TODO: arithmetic to turn level into index
+  _·_ : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
+  rec : ∀ {n e u T tz ts} -> Rne n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
