@@ -61,15 +61,31 @@ mutual
 
 --syntax El _≈_∈⟦_⟧_ : Val -> Val -> 
 
+⟦_⟧tp : ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set -> REL
+⟦ vT ⟧tp = El (⟦_⟧_≈⟦_⟧_∈_.rel vT)
+
 _≈_∈⟦_⟧tp : Val -> Val -> ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set -> Set
 a ≈ a' ∈⟦ pT ⟧tp = El (⟦_⟧_≈⟦_⟧_∈_.rel pT) a a'
 
 mutual
- ⊨ : Ctx -> Set
- ⊨ ⊡ = ⊤
- ⊨ (Γ , T) = Σ (⊨ Γ) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧ → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set)
+ ⊨_ctx : Ctx -> Set
+ ⊨ ⊡ ctx = ⊤
+ ⊨ (Γ , T) ctx = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧ → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set)
 
- _≈_∈⟦_,_⟧ : Env -> Env -> (Γ : Ctx) -> ⊨ Γ -> Set
+ _≈_∈⟦_,_⟧ : Env -> Env -> (Γ : Ctx) -> ⊨ Γ ctx -> Set
  ⊡ ≈ ⊡ ∈⟦ ⊡ , vΓ ⟧ = ⊤
  (ρ , a) ≈ ρ' , a' ∈⟦ (Γ , T) , (vΓ , vT) ⟧ = Σ (ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) (λ vρ → a ≈ a' ∈⟦ vT vρ ⟧tp)
  _ ≈ _ ∈⟦ _ , _ ⟧ = ⊥
+
+_⊨_type : Ctx -> Exp -> Set
+Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set)
+
+_⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
+Γ ⊨ t ≈ t' ∶ T = Σ (Γ ⊨ T type)
+  (λ {(vΓ , vT) -> ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) → ⟦ t ⟧ ρ ≈⟦ t' ⟧ ρ' ∈ ⟦ vT vρ ⟧tp })
+
+_⊨_∶_ : Ctx -> Exp -> Exp -> Set
+Γ ⊨ t ∶ T    =    Γ ⊨ t ≈ t ∶ T
+
+
+
