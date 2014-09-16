@@ -30,6 +30,7 @@ EnvREL : Set₁
 EnvREL = Env -> Env -> Set
 
 record _·_≈_·_∈App_ (f a f' a' : Val) (B : REL) : Set where
+ constructor inj
  field
   b1 : Val
   b2 : Val

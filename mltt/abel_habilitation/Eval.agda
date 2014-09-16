@@ -69,6 +69,6 @@ mutual
   zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
  data Rne_,_↘_ : ℕ -> Dne -> Ne -> Set where
---  lvl : TODO: arithmetic to turn level into index
+  lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
   _·_ : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
   rec : ∀ {n e u T tz ts} -> Rne n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
