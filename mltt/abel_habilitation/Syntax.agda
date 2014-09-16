@@ -10,7 +10,7 @@ module Syn (Tm : Set) where
  mutual
   data Val : Set where
    ƛ : (t : Tm) -> (ρ : Env) -> Val
-   ↑[_]_ : (A : Val) -> (e : Dne) -> Val
+   ↑[_] : (A : Val) -> (e : Dne) -> Val
    zero : Val
    suc : (a : Val) -> Val
    Π : (A : Val) -> (B : Val) -> Val

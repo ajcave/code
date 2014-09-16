@@ -36,7 +36,7 @@ mutual
     -> rec T , tz , ts , (suc dn) ↘ b
   ne : ∀ {T T' A tz ts e} 
    -> ⟦ T ⟧ (⊡ , ↑[ A ] e) ↘ T'
-   -> rec T , tz , ts , (↑[ A ] e) ↘ (↑[ T' ] rec T tz ts e)
+   -> rec T , tz , ts , (↑[ A ] e) ↘ (↑[ T' ] (rec T tz ts e))
  -- We diverge from Abel in the treatment of rec.
  -- We treat it "opaquely", like a definition by pattern matching in Agda. No congruence rules, closed body
  -- I think this is like Martin-Lof's "weak" treatment of λ. No congruence rule.
