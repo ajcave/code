@@ -13,3 +13,6 @@ data ⌊_⌋ (A : Val) (U : REL) : REL where
         -> A₁ ≈ A ∈ U
         -> A₂ ≈ A ∈ U
         -> e₁ ≈ e₁ ∈ ⊥' -> (↑[ A₁ ] e₁) ≈ (↑[ A₂ ] e₂) ∈ (⌊ A ⌋ U)
+
+⌈_⌉ : Val -> REL -> REL
+⌈ A ⌉ U a1 a2 = ∀ {A₁ A₂} -> A₁ ≈ A ∈ U -> A₂ ≈ A ∈ U -> (↓[ A₁ ] a1 ≈ ↓[ A₂ ] a2 ∈ ⊤')
