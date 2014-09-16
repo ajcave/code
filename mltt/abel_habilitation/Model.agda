@@ -4,6 +4,8 @@ open import SyntaxTm
 open Syn Exp
 open import Eval
 open import Data.Product
+open import Data.Unit
+open import Data.Empty
 
 _≈_∈⊤ : Dnf -> Dnf -> Set
 ↓[ A ] a ≈ ↓[ A₁ ] a₁ ∈⊤ = ∀ n → ∃ (λ v → Rnf n , a ∶ A ↘ v × Rnf n , a₁ ∶ A₁ ↘ v)
@@ -27,6 +29,14 @@ record _·_≈_·_∈App_ (f a f' a' : Val) (B : REL) : Set where
   red2 : f' · a' ↘ b2
   rel : B b1 b2
 
+record ⟦_⟧_≈⟦_⟧_∈_ t ρ t' ρ' (B : REL) : Set where
+ field
+  b1 : Val
+  b2 : Val
+  red1 : ⟦ t  ⟧ ρ  ↘ b1
+  red2 : ⟦ t' ⟧ ρ' ↘ b2
+  rel : B b1 b2
+
 ΠREL : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
 ΠREL A F f f' = ∀ {a a'} -> (p : A a a') -> f · a ≈ f' · a' ∈App (F p)
 
@@ -48,3 +58,18 @@ mutual
  El (Neu x) = NeuRel
  El Nat = _≈_∈Nat
  El (Π pA pF) = ΠREL (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
+
+--syntax El _≈_∈⟦_⟧_ : Val -> Val -> 
+
+_≈_∈⟦_⟧tp : Val -> Val -> ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set -> Set
+a ≈ a' ∈⟦ pT ⟧tp = El (⟦_⟧_≈⟦_⟧_∈_.rel pT) a a'
+
+mutual
+ ⊨ : Ctx -> Set
+ ⊨ ⊡ = ⊤
+ ⊨ (Γ , T) = Σ (⊨ Γ) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧ → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set)
+
+ _≈_∈⟦_,_⟧ : Env -> Env -> (Γ : Ctx) -> ⊨ Γ -> Set
+ ⊡ ≈ ⊡ ∈⟦ ⊡ , vΓ ⟧ = ⊤
+ (ρ , a) ≈ ρ' , a' ∈⟦ (Γ , T) , (vΓ , vT) ⟧ = Σ (ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) (λ vρ → a ≈ a' ∈⟦ vT vρ ⟧tp)
+ _ ≈ _ ∈⟦ _ , _ ⟧ = ⊥
