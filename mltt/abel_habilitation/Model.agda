@@ -70,13 +70,14 @@ mutual
  El Nat = _≈_∈Nat
  El (Π pA pF) = ΠREL (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
 
---syntax El _≈_∈⟦_⟧_ : Val -> Val -> 
-
 ⟦_⟧tp : ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set -> REL
 ⟦ vT ⟧tp = El (⟦_⟧_≈⟦_⟧_∈_.rel vT)
 
 _≈_∈⟦_⟧tp : Val -> Val -> ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set -> Set
 a ≈ a' ∈⟦ pT ⟧tp = ⟦ pT ⟧tp a a'
+
+-- TODO: I could probably make the notation a little less idiosyncratic
+-- Just a ≈ b ∈ A as notation for A a b
 
 mutual
  ⊨_ctx : Ctx -> Set
