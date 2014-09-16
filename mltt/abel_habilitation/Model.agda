@@ -21,6 +21,9 @@ data _≈_∈Nat : Val -> Val -> Set where
 REL : Set₁
 REL = Val -> Val -> Set
 
+EnvREL : Set₁
+EnvREL = Env -> Env -> Set
+
 record _·_≈_·_∈App_ (f a f' a' : Val) (B : REL) : Set where
  field
   b1 : Val
@@ -36,6 +39,14 @@ record ⟦_⟧_≈⟦_⟧_∈_ t ρ t' ρ' (B : REL) : Set where
   red1 : ⟦ t  ⟧ ρ  ↘ b1
   red2 : ⟦ t' ⟧ ρ' ↘ b2
   rel : B b1 b2
+
+record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
+ field
+  ρ1 : Env
+  ρ2 : Env
+  red1 : ⟦ σ  ⟧s ρ  ↘ ρ1
+  red2 : ⟦ σ' ⟧s ρ' ↘ ρ2
+  rel : B ρ1 ρ2
 
 ΠREL : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
 ΠREL A F f f' = ∀ {a a'} -> (p : A a a') -> f · a ≈ f' · a' ∈App (F p)
@@ -65,17 +76,20 @@ mutual
 ⟦ vT ⟧tp = El (⟦_⟧_≈⟦_⟧_∈_.rel vT)
 
 _≈_∈⟦_⟧tp : Val -> Val -> ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set -> Set
-a ≈ a' ∈⟦ pT ⟧tp = El (⟦_⟧_≈⟦_⟧_∈_.rel pT) a a'
+a ≈ a' ∈⟦ pT ⟧tp = ⟦ pT ⟧tp a a'
 
 mutual
  ⊨_ctx : Ctx -> Set
  ⊨ ⊡ ctx = ⊤
  ⊨ (Γ , T) ctx = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧ → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set)
 
+ ⟦_,_⟧ctx : (Γ : Ctx) -> ⊨ Γ ctx -> EnvREL
+ ⟦_,_⟧ctx ⊡ tt ⊡ ⊡ = ⊤
+ ⟦_,_⟧ctx (Γ , T) (vΓ , vT) (ρ , a) (ρ' , a') = Σ (ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) (λ vρ → a ≈ a' ∈⟦ vT vρ ⟧tp)
+ ⟦_,_⟧ctx _ _ _ _ = ⊥
+
  _≈_∈⟦_,_⟧ : Env -> Env -> (Γ : Ctx) -> ⊨ Γ ctx -> Set
- ⊡ ≈ ⊡ ∈⟦ ⊡ , vΓ ⟧ = ⊤
- (ρ , a) ≈ ρ' , a' ∈⟦ (Γ , T) , (vΓ , vT) ⟧ = Σ (ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) (λ vρ → a ≈ a' ∈⟦ vT vρ ⟧tp)
- _ ≈ _ ∈⟦ _ , _ ⟧ = ⊥
+ ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧ = ⟦ Γ , vΓ ⟧ctx ρ ρ'
 
 _⊨_type : Ctx -> Exp -> Set
 Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ _≈_∈Set)
@@ -87,5 +101,7 @@ _⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
 _⊨_∶_ : Ctx -> Exp -> Exp -> Set
 Γ ⊨ t ∶ T    =    Γ ⊨ t ≈ t ∶ T
 
-
+_⊨s_≈_∶_ : Ctx -> Subst -> Subst -> Ctx -> Set
+Γ ⊨s σ ≈ σ' ∶ Δ = Σ (⊨ Γ ctx) (λ vΓ → Σ (⊨ Δ ctx) (λ vΔ →
+  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈⟦ Γ , vΓ ⟧) → ⟦ σ ⟧s ρ ≈⟦ σ' ⟧s ρ' ∈ ⟦ Δ , vΔ ⟧ctx))
 
