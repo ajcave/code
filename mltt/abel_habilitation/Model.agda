@@ -93,6 +93,7 @@ mutual
  ⟦_,_⟧ctx (Γ , T) (vΓ , vT) (ρ , a) (ρ' , a') = Σ (ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) (λ vρ → a ≈ a' ∈ ⟦ vT vρ ⟧tp)
  ⟦_,_⟧ctx _ _ _ _ = ⊥
 
+-- Can we package these the other way? Taking well-formedness as input?
 _⊨_type : Ctx -> Exp -> Set
 Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ SetR)
 
