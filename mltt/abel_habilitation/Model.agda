@@ -32,6 +32,10 @@ record _·_≈_·_∈App_ (f a f' a' : Val) (B : REL) : Set where
 
 syntax ΠREL A F f f' = f ≈ f' ∈Π A , F
 
+data NeuRel : REL where
+ inj : ∀ {e1 E1 e2 E2} -- -> E1 ≈ E ∈⊥ -> E2 ≈ E ∈⊥  -- TODO! ?
+     -> e1 ≈ e2 ∈⊥ -> NeuRel (↑[ E1 ] e1) (↑[ E2 ] e2)
+
 mutual
  data _≈_∈Set : Val -> Val -> Set where
   Neu : ∀ {E E'} -> E ≈ E' ∈⊥ -> ↑[ Set* ] E ≈ ↑[ Set* ] E' ∈Set
@@ -41,6 +45,6 @@ mutual
    -> (Π A F) ≈ (Π A' F') ∈Set
 
  El : ∀ {A A'} -> A ≈ A' ∈Set -> REL
- El (Neu x) = {!!}
+ El (Neu x) = NeuRel
  El Nat = _≈_∈Nat
  El (Π pA pF) = ΠREL (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
