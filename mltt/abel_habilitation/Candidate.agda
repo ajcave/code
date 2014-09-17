@@ -10,9 +10,6 @@ open import Model
 open import Data.Nat
 open import WfNat
 
--- ⌈_⌉ : Val -> REL -> REL
--- ⌈ A ⌉ U a1 a2 = ∀ {A₁ A₂} -> A₁ ≈ A ∈ U -> A₂ ≈ A ∈ U -> (↓[ A₁ ] a1 ≈ ↓[ A₂ ] a2 ∈ ⊤')
-
 open SetF
 
 reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'

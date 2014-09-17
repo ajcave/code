@@ -59,12 +59,6 @@ record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
 ΠR : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
 ΠR A F f f' = ∀ {a a'} -> (p : A a a') -> f · a ≈ f' · a' ∈App (F p)
 
--- data ⌊_⌋ (A : Val) (U : REL) : REL where
---  inj : ∀ {e₁ e₂ A₁ A₂}
---         -> A₁ ≈ A ∈ U
---         -> A₂ ≈ A ∈ U
---         -> e₁ ≈ e₁ ∈ ⊥' -> (↑[ A₁ ] e₁) ≈ (↑[ A₂ ] e₂) ∈ (⌊ A ⌋ U)
-
 -- Should this somehow just be ⌊ E ⌋?
 data NeuRel : REL where
  inj : ∀ {e1 E1 e2 E2} -- -> E1 ≈ E ∈⊥ -> E2 ≈ E ∈⊥  -- TODO! ?
@@ -85,10 +79,6 @@ module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
   El Nat = NatR
   El (Π pA pF) = ΠR (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
   El (Set* j<k) = SetP j<k
-
-isNonZero : ℕ -> Set
-isNonZero zero = ⊥
-isNonZero (suc n) = ⊤
 
 SetU' : {n : ℕ} -> Acc n -> REL
 SetU' {n} (inj f) = SetF.SetR n (λ p → SetU' (f p))
