@@ -57,11 +57,11 @@ record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
 ΠR : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
 ΠR A F f f' = ∀ {a a'} -> (p : A a a') -> f · a ≈ f' · a' ∈App (F p)
 
-data ⌊_⌋ (A : Val) (U : REL) : REL where
- inj : ∀ {e₁ e₂ A₁ A₂}
-        -> A₁ ≈ A ∈ U
-        -> A₂ ≈ A ∈ U
-        -> e₁ ≈ e₁ ∈ ⊥' -> (↑[ A₁ ] e₁) ≈ (↑[ A₂ ] e₂) ∈ (⌊ A ⌋ U)
+-- data ⌊_⌋ (A : Val) (U : REL) : REL where
+--  inj : ∀ {e₁ e₂ A₁ A₂}
+--         -> A₁ ≈ A ∈ U
+--         -> A₂ ≈ A ∈ U
+--         -> e₁ ≈ e₁ ∈ ⊥' -> (↑[ A₁ ] e₁) ≈ (↑[ A₂ ] e₂) ∈ (⌊ A ⌋ U)
 
 -- Should this somehow just be ⌊ E ⌋?
 data NeuRel : REL where

@@ -8,8 +8,8 @@ open import Data.Unit
 open import Data.Empty
 open import Model
 
-⌈_⌉ : Val -> REL -> REL
-⌈ A ⌉ U a1 a2 = ∀ {A₁ A₂} -> A₁ ≈ A ∈ U -> A₂ ≈ A ∈ U -> (↓[ A₁ ] a1 ≈ ↓[ A₂ ] a2 ∈ ⊤')
+-- ⌈_⌉ : Val -> REL -> REL
+-- ⌈ A ⌉ U a1 a2 = ∀ {A₁ A₂} -> A₁ ≈ A ∈ U -> A₂ ≈ A ∈ U -> (↓[ A₁ ] a1 ≈ ↓[ A₂ ] a2 ∈ ⊤')
 
 mutual
  reflect : ∀ {e e' A A'} -> (pA : A ≈ A' ∈ SetR) -> e ≈ e' ∈ ⊥' -> ↑[ A ] e ≈ ↑[ A' ] e' ∈ (El pA)
