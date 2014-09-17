@@ -21,6 +21,8 @@ reifyNat (suc x) n with reifyNat x n
 reifyNat (suc x) n | _ , (q1 , q2) = , suc q1 , suc q2
 reifyNat (neu x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
 
+-- Types of reify and reflect, parameterized for convenience
+-- Really these should just abstract over a universe U and an interpretation function ElU
 Reflect : (k : ℕ) (acck : Acc k) -> Set
 Reflect k acck = ∀ {e e' A A'} -> (pA : A ≈ A' ∈ (SetU' acck)) -> e ≈ e' ∈ ⊥' -> ↑[ A ] e ≈ ↑[ A' ] e' ∈ (ElU' acck pA)
 
@@ -33,9 +35,10 @@ ReifySet k acck = ∀ {a a'} -> a ≈ a' ∈ (SetU' acck) -> ↓[ Set* k ] a ≈
 ReflectSet : (k : ℕ) (acck : Acc k) -> Set
 ReflectSet k acck = ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* k ] E ≈ ↑[ Set* k ] E' ∈ (SetU' acck)
 
+-- To help the termination checker
 module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
            (reifySet<   : ∀ {j} -> (p : j < k) -> ReifySet   j (akf p))
-           (reflectSet< : ∀ {j} -> (p : j < k) ->  ReflectSet j (akf p)) where
+           (reflectSet< : ∀ {j} -> (p : j < k) -> ReflectSet j (akf p)) where
 
  mutual
   reflect : Reflect k (inj akf)
@@ -66,6 +69,7 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   ... | qA | q2 = , Fun (proj₁ (proj₂ (qA n))) red1 (proj₁ (proj₂ (q2 (suc n)))) , Fun (proj₂ (proj₂ (qA n))) red2 (proj₂ (proj₂ (q2 (suc n))))
   reifySet (Set* j<k) n = , SetZ , SetZ
 
+-- There's nicer ways to factor this, but I can't be bothered at the moment.
 mutual
  reflectω' : ∀ {k} (acck : Acc k) -> Reflect k acck
  reflectω' (inj akf) = RRF.reflect _ akf (λ j<k → reifySetω' (akf j<k)) (λ p → reflectSetω' (akf p))
