@@ -1,4 +1,3 @@
-{-# OPTIONS --no-termination-check #-} -- This is only for speed.
 module Candidate where
 open import Syntax
 open import SyntaxTm
@@ -15,6 +14,12 @@ open import Data.Nat
 
 open SetF
 
+reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
+reifyNat zero n = , zero , zero
+reifyNat (suc x) n with reifyNat x n
+reifyNat (suc x) n | _ , (q1 , q2) = , suc q1 , suc q2
+reifyNat (neu x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
+
 mutual
  reflect : ∀ {k e e' A A'} -> (pA : A ≈ A' ∈ (SetU k)) -> e ≈ e' ∈ ⊥' -> ↑[ A ] e ≈ ↑[ A' ] e' ∈ (ElU k pA)
  reflect (Neu x) d = inj d
@@ -30,21 +35,21 @@ mutual
 
  reify : ∀ {k a a' A A'} (pA : A ≈ A' ∈ (SetU k)) -> a ≈ a' ∈ (ElU k pA) -> ↓[ A ] a ≈ ↓[ A' ] a' ∈ ⊤'
  reify (Neu x) (inj d) n = , (Neut (proj₁ (proj₂ (d n))) , Neut (proj₂ (proj₂ (d n))))
- reify Nat zero n = zero , (zero , zero)
- reify {k} Nat (suc x) n with reify {k} Nat x n
- ... | _ , (q1 , q2) = _ , ((suc q1) , (suc q2))
- reify Nat (neu x) n = _ , ((Neut (proj₁ (proj₂ (x n)))) , (Neut (proj₂ (proj₂ (x n)))))
+ reify Nat p n = reifyNat p n
  reify (Π pA pF) d n with reflect pA (λ n₁ → , lvl n , lvl n)
  ... | q with pF q | d q
  reify (Π pA pF) d n | q | inj b1 b2 red1 red2 rel | inj b3 b4 red3 red4 rel₁ with reify rel rel₁
  ... | q1 = _ , ((Π red3 red1 (proj₁ (proj₂ (q1 _)))) , (Π red4 red2 (proj₂ (proj₂ (q1 _)))))
- reify {zero} Set* (inj x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
- reify {suc k} Set* (Neu x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
- reify {suc k} Set* Nat n = , Nat , Nat
- reify {suc k} Set* (Π pA pF) n with reflect pA (λ n₁ -> , lvl n , lvl n)
- ... | q with pF q
- reify {suc k} Set* (Π pA pF) n | q | inj b1 b2 red1 red2 rel with reify Set* pA | reify Set* rel
- ... | qA | q2 = , Fun (proj₁ (proj₂ (qA n))) red1 (proj₁ (proj₂ (q2 (suc n)))) , Fun (proj₂ (proj₂ (qA n))) red2 (proj₂ (proj₂ (q2 (suc n))))
- reify {suc k} Set* Set* n = , SetZ , SetZ
+ reify Set* d n = reifySet' d n
 
- -- I think refactoring this would make it typecheck faster?
+ reifySet : ∀ {k a a'}  -> a ≈ a' ∈ (SetU k) -> ↓[ Set* ] a ≈ ↓[ Set* ] a' ∈ ⊤'
+ reifySet (Neu x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
+ reifySet Nat n = , Nat , Nat
+ reifySet (Π pA pF) n with pF (reflect pA (λ n₁ -> , lvl n , lvl n))
+ reifySet (Π pA pF) n | inj b1 b2 red1 red2 rel with reifySet pA | reifySet rel
+ ... | qA | q2 = , Fun (proj₁ (proj₂ (qA n))) red1 (proj₁ (proj₂ (q2 (suc n)))) , Fun (proj₂ (proj₂ (qA n))) red2 (proj₂ (proj₂ (q2 (suc n))))
+ reifySet Set* n = , SetZ , SetZ
+
+ reifySet' : ∀ {k a a'}  -> a ≈ a' ∈ (SetU' k) -> ↓[ Set* ] a ≈ ↓[ Set* ] a' ∈ ⊤'
+ reifySet' {zero} (inj x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
+ reifySet' {suc k} p n = reifySet p n
