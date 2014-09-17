@@ -101,7 +101,7 @@ Type : REL
 Type A B = ∃ (λ n → SetU n A B)
 
 ElU : (n : ℕ) -> ∀ {A A'} -> A ≈ A' ∈ (SetU n) -> REL
-ElU n = SetF.El _
+ElU n = SetF.El (SetU' n)
 
 [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 [ n , pA ] = ElU n pA

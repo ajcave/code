@@ -63,8 +63,9 @@ mutual
      -> Rnf n , f ∶ Π A B ↘ ƛ v
   Nat : ∀ {n} -> Rnf n , Nat ∶ Set* ↘ Nat
   SetZ : ∀ {n} -> Rnf n , Set* ∶ Set* ↘ Set* -- !! Todo: will this work?
-  Fun : ∀ {n A A' B B' B''} -> Rnf n , A ∶ Set* ↘ A' -> B · ↑[ A ] (lvl n) ↘ B'
-    -> Rnf (suc n) , B ∶ Set* ↘ B''
+  Fun : ∀ {n A A' F B B'} -> Rnf n , A ∶ Set* ↘ A' -> F · ↑[ A ] (lvl n) ↘ B
+   -> Rnf (suc n) , B ∶ Set* ↘ B'
+   -> Rnf n , (Π A F) ∶ Set* ↘ (Π A' (ƛ B'))
   Neut : ∀ {n e v B B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
   zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v

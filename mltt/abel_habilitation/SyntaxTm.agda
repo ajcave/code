@@ -25,6 +25,7 @@ mutual
  data Nf : Set where
   ƛ : (t : Nf) -> Nf
   Nat zero Set* : Nf
+  Π : Nf -> Nf -> Nf
   suc : (t : Nf) -> Nf
   ne : (u : Ne) -> Nf
  data Ne : Set where
