@@ -22,7 +22,7 @@ mutual
    -> ⟦ tn ⟧ ρ ↘ dn
    -> rec T , tz , ts , dn ↘ d
    -> ⟦ rec T tz ts tn ⟧ ρ ↘ d
-  Set* : ∀ {ρ} -> ⟦ Set* ⟧ ρ ↘ Set*
+  Set* : ∀ {ρ i} -> ⟦ Set* i ⟧ ρ ↘ Set* i
   Π : ∀ {A A' F ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ Π A F ⟧ ρ ↘ Π A' (ƛ F ρ)
   Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
   _[_] : ∀ {t σ ρ ρ' d} -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t ⟧ ρ' ↘ d -> ⟦ t [ σ ] ⟧ ρ ↘ d
@@ -61,11 +61,11 @@ mutual
  data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Nf -> Set where
   Π : ∀ {n f b A B B' v} -> f · ↑[ A ] (lvl n) ↘ b -> B · ↑[ A ] (lvl n) ↘ B' -> Rnf (suc n) , b ∶ B' ↘ v
      -> Rnf n , f ∶ Π A B ↘ ƛ v
-  Nat : ∀ {n} -> Rnf n , Nat ∶ Set* ↘ Nat
-  SetZ : ∀ {n} -> Rnf n , Set* ∶ Set* ↘ Set* -- !! Todo: will this work?
-  Fun : ∀ {n A A' F B B'} -> Rnf n , A ∶ Set* ↘ A' -> F · ↑[ A ] (lvl n) ↘ B
-   -> Rnf (suc n) , B ∶ Set* ↘ B'
-   -> Rnf n , (Π A F) ∶ Set* ↘ (Π A' (ƛ B'))
+  Nat : ∀ {n i} -> Rnf n , Nat ∶ Set* i ↘ Nat
+  SetZ : ∀ {n i j} -> Rnf n , Set* i ∶ Set* j ↘ Set* i -- !! Todo: will this work?
+  Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> F · ↑[ A ] (lvl n) ↘ B
+   -> Rnf (suc n) , B ∶ Set* i ↘ B'
+   -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
   Neut : ∀ {n e v B B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
   zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v

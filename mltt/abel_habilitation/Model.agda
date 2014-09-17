@@ -7,6 +7,7 @@ open import Data.Product
 open import Data.Unit
 open import Data.Empty
 open import Data.Nat
+open import WfNat
 
 PREL : Set -> Set₁
 PREL α = α -> α -> Set
@@ -69,39 +70,40 @@ data NeuRel : REL where
  inj : ∀ {e1 E1 e2 E2} -- -> E1 ≈ E ∈⊥ -> E2 ≈ E ∈⊥  -- TODO! ?
      -> e1 ≈ e2 ∈ ⊥' -> NeuRel (↑[ E1 ] e1) (↑[ E2 ] e2)
 
-module SetF (SetP : REL) where
+module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
  mutual
   data SetR : Val -> Val -> Set where
-   Neu : ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* ] E ≈ ↑[ Set* ] E' ∈ SetR
+   Neu : ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* k ] E ≈ ↑[ Set* k ] E' ∈ SetR
    Nat : Nat ≈ Nat ∈ SetR
    Π : ∀ {A A' F F'} (pA : A ≈ A' ∈ SetR)
     -> F ≈ F' ∈ ΠR (El pA) (λ _ -> SetR)
     -> (Π A F) ≈ (Π A' F') ∈ SetR
-   Set* : Set* ≈ Set* ∈ SetR
+   Set* : ∀ {j} -> j < k -> Set* j ≈ Set* j ∈ SetR
 
   El : ∀ {A A'} -> A ≈ A' ∈ SetR -> REL
   El (Neu {E} x) = NeuRel
   El Nat = NatR
   El (Π pA pF) = ΠR (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
-  El (Set*) = SetP
+  El (Set* j<k) = SetP j<k
 
 isNonZero : ℕ -> Set
 isNonZero zero = ⊥
 isNonZero (suc n) = ⊤
 
-mutual
- SetU' : ℕ -> REL
- SetU' zero = NeuRel
- SetU' (suc n) = SetF.SetR (SetU' n)
+SetU' : {n : ℕ} -> Acc n -> REL
+SetU' {n} (inj f) = SetF.SetR n (λ p → SetU' (f p))
 
- SetU : ℕ -> REL
- SetU n = SetU' (suc n)
+SetU : ℕ -> REL
+SetU n = SetU' (nat-acc {n})
 
 Type : REL
 Type A B = ∃ (λ n → SetU n A B)
 
+ElU' : {n : ℕ} (p : Acc n) -> ∀ {A A'} -> A ≈ A' ∈ (SetU' p) -> REL
+ElU' {n} (inj p) = SetF.El n (λ q → SetU' (p q))
+
 ElU : (n : ℕ) -> ∀ {A A'} -> A ≈ A' ∈ (SetU n) -> REL
-ElU n = SetF.El (SetU' n)
+ElU n = ElU' (nat-acc {n})
 
 [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 [ n , pA ] = ElU n pA

@@ -4,13 +4,14 @@ open import Data.Nat
 mutual
  data Exp : Set where
   ƛ : (t : Exp) -> Exp
-  Nat zero Set* : Exp
+  Nat zero : Exp
   suc : (t : Exp) -> Exp
   rec : (T tz ts tn : Exp) -> Exp
   idx : (x : ℕ) -> Exp
   _·_ : (r s : Exp) -> Exp
   _[_] : (t : Exp) -> (σ : Subst) -> Exp
   Π : (A F : Exp) -> Exp
+  Set* : ℕ -> Exp
 
  data Subst : Set where
   ↑ id : Subst
@@ -24,7 +25,8 @@ data Ctx : Set where
 mutual
  data Nf : Set where
   ƛ : (t : Nf) -> Nf
-  Nat zero Set* : Nf
+  Nat zero : Nf
+  Set* : ℕ -> Nf
   Π : Nf -> Nf -> Nf
   suc : (t : Nf) -> Nf
   ne : (u : Ne) -> Nf
