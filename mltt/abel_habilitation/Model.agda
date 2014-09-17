@@ -6,6 +6,7 @@ open import Eval
 open import Data.Product
 open import Data.Unit
 open import Data.Empty
+open import Data.Nat
 
 PREL : Set -> Set₁
 PREL α = α -> α -> Set
@@ -68,35 +69,59 @@ data NeuRel : REL where
  inj : ∀ {e1 E1 e2 E2} -- -> E1 ≈ E ∈⊥ -> E2 ≈ E ∈⊥  -- TODO! ?
      -> e1 ≈ e2 ∈ ⊥' -> NeuRel (↑[ E1 ] e1) (↑[ E2 ] e2)
 
+module SetF (SetP : REL) where
+ mutual
+  data SetR : Val -> Val -> Set where
+   Neu : ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* ] E ≈ ↑[ Set* ] E' ∈ SetR
+   Nat : Nat ≈ Nat ∈ SetR
+   Π : ∀ {A A' F F'} (pA : A ≈ A' ∈ SetR)
+    -> F ≈ F' ∈ ΠR (El pA) (λ _ -> SetR)
+    -> (Π A F) ≈ (Π A' F') ∈ SetR
+   Set* : Set* ≈ Set* ∈ SetR
+
+  El : ∀ {A A'} -> A ≈ A' ∈ SetR -> REL
+  El (Neu {E} x) = NeuRel
+  El Nat = NatR
+  El (Π pA pF) = ΠR (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
+  El (Set*) = SetP
+
+isNonZero : ℕ -> Set
+isNonZero zero = ⊥
+isNonZero (suc n) = ⊤
+
 mutual
- data SetR : Val -> Val -> Set where
-  Neu : ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* ] E ≈ ↑[ Set* ] E' ∈ SetR
-  Nat : Nat ≈ Nat ∈ SetR
-  Π : ∀ {A A' F F'} (pA : A ≈ A' ∈ SetR)
-   -> F ≈ F' ∈ ΠR (El pA) (λ _ -> SetR)
-   -> (Π A F) ≈ (Π A' F') ∈ SetR
+ SetU' : ℕ -> REL
+ SetU' zero = NeuRel
+ SetU' (suc n) = SetF.SetR (SetU' n)
 
- El : ∀ {A A'} -> A ≈ A' ∈ SetR -> REL
- El (Neu {E} x) = NeuRel
- El Nat = NatR
- El (Π pA pF) = ΠR (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
+ SetU : ℕ -> REL
+ SetU n = SetU' (suc n)
 
-⟦_⟧tp : ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ SetR -> REL
-⟦ vT ⟧tp = El (⟦_⟧_≈⟦_⟧_∈_.rel vT)
+Type : REL
+Type A B = ∃ (λ n → SetU n A B)
+
+ElU : (n : ℕ) -> ∀ {A A'} -> A ≈ A' ∈ (SetU n) -> REL
+ElU n = SetF.El _
+
+[_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
+[ n , pA ] = ElU n pA
+
+⟦_⟧tp : ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ Type -> REL
+⟦ vT ⟧tp = [ ⟦_⟧_≈⟦_⟧_∈_.rel vT ]
 
 mutual
  ⊨_ctx : Ctx -> Set
  ⊨ ⊡ ctx = ⊤
- ⊨ (Γ , T) ctx = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ SetR)
+ ⊨ (Γ , T) ctx = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ Type)
 
  ⟦_,_⟧ctx : (Γ : Ctx) -> ⊨ Γ ctx -> EnvREL
  ⟦_,_⟧ctx ⊡ tt ⊡ ⊡ = ⊤
  ⟦_,_⟧ctx (Γ , T) (vΓ , vT) (ρ , a) (ρ' , a') = Σ (ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) (λ vρ → a ≈ a' ∈ ⟦ vT vρ ⟧tp)
  ⟦_,_⟧ctx _ _ _ _ = ⊥
 
--- Can we package these the other way? Taking well-formedness as input?
+-- -- Can we package these the other way? Taking well-formedness as input?
 _⊨_type : Ctx -> Exp -> Set
-Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ SetR)
+Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ Type)
 
 _⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
 Γ ⊨ t ≈ t' ∶ T = Σ (Γ ⊨ T type)
