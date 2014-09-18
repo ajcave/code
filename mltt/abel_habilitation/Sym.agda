@@ -66,10 +66,16 @@ symElω' : ∀ {k} (acck : Acc k) -> ∀ {A A' B B' a a'} (pA : A ≈ A' ∈ (Se
       ElU' acck pA' a a' -> ElU' acck pA a' a
 symElω' (inj x) = SymF.symEl _ x (λ p → symSetω' (x p))
 
+symElω2' : ∀ {k} (acck : Acc k) -> ∀ {A A' a a'}
+                     (pA : A ≈ A' ∈ (SetU' acck)) ->
+      ElU' acck pA a a' -> ElU' acck (symSetω' acck pA) a' a
+symElω2' acck pA = symElω' acck (symSetω' acck pA) refl refl pA
+
 symElω : ∀ {k} {A A' a a'}
-     (pA  : A  ≈ A' ∈ (SetU k))
-  -> (pA' : A' ≈ A  ∈ (SetU k))
+     (pA  : A'  ≈ A ∈ (SetU k))
+  -> (pA' : A ≈ A'  ∈ (SetU k))
   -> ElU k pA' a a' -> ElU k pA a' a
 symElω pA pA' h = symElω' nat-acc pA refl refl pA' h
+
 
 
