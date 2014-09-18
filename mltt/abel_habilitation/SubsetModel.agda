@@ -19,8 +19,8 @@ PRED α = α -> Set
 
 VPRED = PRED Val
 
-_∈_ : ∀ {α} -> α -> PRED α -> Set
-a ∈ A = A a
+_∈₁_ : ∀ {α} -> α -> PRED α -> Set
+a ∈₁ A = A a
 
 ⊤' : PRED Dnf
 ⊤' (↓[ A ] a)  = ∀ n → ∃ (λ v → Rnf n , a ∶ A ↘ v)
@@ -29,20 +29,14 @@ a ∈ A = A a
 ⊥' e = ∀ n → ∃ (λ u → Rne n , e ↘ u)
 
 data NatP : VPRED where
- zero : zero ∈ NatP
- suc : ∀ {a a'} -> a ∈ NatP -> suc a ∈ NatP
- neu : ∀ {e e'} -> e ∈ ⊥' -> ↑[ Nat ] e ∈ NatP
+ zero : zero ∈₁ NatP
+ suc : ∀ {a} -> a ∈₁ NatP -> suc a ∈₁ NatP
+ neu : ∀ {e} -> e ∈₁ ⊥' -> ↑[ Nat ] e ∈₁ NatP
 
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
 
-record ValApp : Set where
- constructor _·_
- field
-  f : Val
-  a : Val
-
-record App (B : VPRED) (c : ValApp) : Set where
+record App₁ (B : VPRED) (c : ValApp) : Set where
  constructor inj
  field
   b : Val
@@ -50,45 +44,45 @@ record App (B : VPRED) (c : ValApp) : Set where
   pred : B b
 
 AppDeter1 :  ∀ {f a B B'} 
-    (p : (f · a) ∈ App B)
-    (q : (f · a) ∈ App B')
-   -> App.b p ≡ App.b q
+    (p : (f · a) ∈₁ App₁ B)
+    (q : (f · a) ∈₁ App₁ B')
+   -> App₁.b p ≡ App₁.b q
 AppDeter1 (inj b red pred)
           (inj b' red' pred') = app-deter red red'
 
 ΠP : (A : VPRED) -> (∀ {a} -> A a -> VPRED) -> VPRED
-ΠP A F f = ∀ {a} -> (p : A a) -> (f · a) ∈ (App (F p))
+ΠP A F f = ∀ {a} -> (p : A a) -> (f · a) ∈₁ (App₁ (F p))
 
 data NeuPred : VPRED where
- inj : ∀ {e E} -> e ∈ ⊥' -> NeuPred (↑[ E ] e)
+ inj : ∀ {e E} -> e ∈₁ ⊥' -> NeuPred (↑[ E ] e)
 
-module SetF (k : ℕ) (SetPrev : ∀ {j} -> j < k -> VPRED) where
+module SetPF (k : ℕ) (SetPrev : ∀ {j} -> j < k -> VPRED) where
  mutual
   data SetP : VPRED where
-   Neu : ∀ {E} -> E ∈ ⊥' -> ↑[ Set* k ] E ∈ SetP
-   Nat : Nat ∈ SetP
-   Π : ∀ {A F} (pA : A ∈ SetP)
-    -> (pF : F  ∈ ΠP (El pA) (λ _ -> SetP))
-    -> (Π A F) ∈ SetP
-   Set* : ∀ {j} -> j < k -> Set* j ∈ SetP
+   Neu : ∀ {E} -> E ∈₁ ⊥' -> ↑[ Set* k ] E ∈₁ SetP
+   Nat : Nat ∈₁ SetP
+   Π : ∀ {A F} (pA : A ∈₁ SetP)
+    -> (pF : F  ∈₁ ΠP (El₁ pA) (λ _ -> SetP))
+    -> (Π A F) ∈₁ SetP
+   Set* : ∀ {j} -> j < k -> Set* j ∈₁ SetP
 
-  El : ∀ {A} -> A ∈ SetP -> VPRED
-  El (Neu {E} x) = NeuPred
-  El Nat = NatP
-  El (Π pA pF) = ΠP (El pA) (λ p → El (App.pred (pF p)))
-  El (Set* j<k) = SetPrev j<k
+  El₁ : ∀ {A} -> A ∈₁ SetP -> VPRED
+  El₁ (Neu {E} x) = NeuPred
+  El₁ Nat = NatP
+  El₁ (Π pA pF) = ΠP (El₁ pA) (λ p → El₁ (App₁.pred (pF p)))
+  El₁ (Set* j<k) = SetPrev j<k
 
-SetU' : {n : ℕ} -> Acc n -> VPRED
-SetU' {n} (inj f) = SetF.SetP n (λ p → SetU' (f p))
+SetU₁' : {n : ℕ} -> Acc n -> VPRED
+SetU₁' {n} (inj f) = SetPF.SetP n (λ p → SetU₁' (f p))
 
-SetU : ℕ -> VPRED
-SetU n = SetU' (nat-acc {n})
+SetU₁ : ℕ -> VPRED
+SetU₁ n = SetU₁' (nat-acc {n})
 
-Type : VPRED
-Type A = ∃ (λ n → SetU n A)
+Type₁ : VPRED
+Type₁ A = ∃ (λ n → SetU₁ n A)
 
-ElU' : {n : ℕ} (p : Acc n) -> ∀ {A} -> A ∈ (SetU' p) -> VPRED
-ElU' {n} (inj p) = SetF.El n (λ q → SetU' (p q))
+ElU₁' : {n : ℕ} (p : Acc n) -> ∀ {A} -> A ∈₁ (SetU₁' p) -> VPRED
+ElU₁' {n} (inj p) = SetPF.El₁ n (λ q → SetU₁' (p q))
 
-ElU : (n : ℕ) -> ∀ {A} -> A ∈ (SetU n) -> VPRED
-ElU n = ElU' (nat-acc {n})
+ElU₁ : (n : ℕ) -> ∀ {A} -> A ∈₁ (SetU₁ n) -> VPRED
+ElU₁ n = ElU₁' (nat-acc {n})

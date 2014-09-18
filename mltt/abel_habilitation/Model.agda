@@ -32,12 +32,6 @@ data NatR : REL where
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
 
-record ValApp : Set where
- constructor _·_
- field
-  f : Val
-  a : Val
-
 record App (B : REL) (c1 c2 : ValApp) : Set where
  constructor inj
  field

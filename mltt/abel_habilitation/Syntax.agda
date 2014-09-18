@@ -28,4 +28,11 @@ module Syn (Tm : Set) where
 
   data Dnf : Set where
    ↓[_] : (A : Val) -> (a : Val) -> Dnf
+
+ 
+ record ValApp : Set where
+  constructor _·_
+  field
+   f : Val
+   a : Val
   
