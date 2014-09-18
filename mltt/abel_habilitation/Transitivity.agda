@@ -12,9 +12,7 @@ open import Model
 open import Relation.Binary.PropositionalEquality
 open SetF
 open import Sym
-
-_→₂_ : ∀ {A : Set} (P Q : PREL A) -> Set
-P →₂ Q = ∀ {a b} -> P a b -> Q a b
+open import Util
 
 TRANS : ∀ {A} -> PREL A -> Set
 TRANS R = ∀ {a b c} -> R a b -> R b c -> R a c

@@ -10,6 +10,7 @@ open import Data.Nat
 open import WfNat
 open import Model
 open import Relation.Binary.PropositionalEquality
+open import Util
 open SetF
 
 SYM : ∀ {A} -> PREL A -> Set

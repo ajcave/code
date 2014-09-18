@@ -9,9 +9,7 @@ open import Data.Empty
 open import Data.Nat
 open import WfNat
 open import Relation.Binary.PropositionalEquality hiding ([_])
-
-PREL : Set -> Set₁
-PREL α = α -> α -> Set
+open import Util
 
 REL = PREL Val
 
