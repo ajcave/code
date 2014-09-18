@@ -25,20 +25,13 @@ NatR-sym (neu x) = neu (sym-⊥' x)
 
 module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
             (set<sym : ∀ {j} (p : j < k) -> SYM (SetU' (akf p))) where
- mutual
-  symSet : SYM (SetU' (inj akf))
-  symSet (Neu y) = Neu (sym-⊥' y)
-  symSet Nat = Nat
-  symSet (Π pA y) = Π (symSet pA) (λ p →
-    let q = y (symEl pA refl refl (symSet pA) p) in
-    inj _ _ (App.red2 q) (App.red1 q) (symSet (App.rel q)))
-  symSet (Set* y) = Set* y
-
   -- This seems like a heterogenous version of symmetry?
-  symEl : ∀ {A A' B B' a a'} (pA : A ≈ A' ∈ (SetU' (inj akf)))
-                     (eqA : A ≡ B) (eqB : A' ≡ B')
-                     (pA' : B' ≈ B ∈ (SetU' (inj akf))) ->
-   ElU' (inj akf) pA' a a' -> ElU' (inj akf) pA a' a
+  symEl : ∀ {A A' B B' a a'}
+      (pA : A ≈ A' ∈ (SetU' (inj akf)))
+         (eqA : A ≡ B) (eqB : A' ≡ B')
+      (pA' : B' ≈ B ∈ (SetU' (inj akf)))
+   -> ElU' (inj akf) pA' a a'
+   -> ElU' (inj akf) pA a' a
   symEl (Neu y) refl refl (Neu w) (inj y') = inj (sym-⊥' y')
   symEl Nat refl refl Nat h = NatR-sym h
   symEl (Π pA y) refl refl (Π pA' y') h = λ p →
@@ -52,6 +45,14 @@ module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
           (App.rel q))
   symEl (Set* y) refl refl (Set* y') h with ≤uniq y y'
   symEl (Set* y) refl refl (Set* .y) h | refl = set<sym y h
+
+  symSet : SYM (SetU' (inj akf))
+  symSet (Neu y) = Neu (sym-⊥' y)
+  symSet Nat = Nat
+  symSet (Π pA y) = Π (symSet pA) (λ p →
+    let q = y (symEl pA refl refl (symSet pA) p) in
+    inj _ _ (App.red2 q) (App.red1 q) (symSet (App.rel q)))
+  symSet (Set* y) = Set* y
 
 symSetω' : ∀ {k} (acck : Acc k) -> SYM (SetU' acck)
 symSetω' (inj x) = SymF.symSet _ x (λ p → symSetω' (x p))

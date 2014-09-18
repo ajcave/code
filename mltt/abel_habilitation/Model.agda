@@ -60,6 +60,20 @@ AppDeter2 :  ∀ {f1 a1 f2 a2 f3 a3 B B'}
    -> App.b1 q ≡ App.b2 p 
 AppDeter2 p q = sym (AppDeter1 p q)
 
+AppDeter3 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
+    (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
+    (q : (f1 · a1) ≈ (f3 · a3) ∈ App B')
+   -> App.b1 p ≡ App.b1 q
+AppDeter3 (inj b1 b2 red1 red2 rel)
+          (inj b3 b4 red3 red4 rel') = app-deter red1 red3 
+
+AppDeter4 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
+    (p : (f2 · a2) ≈ (f1 · a1) ∈ App B)
+    (q : (f3 · a3) ≈ (f1 · a1) ∈ App B')
+   -> App.b2 p ≡ App.b2 q
+AppDeter4 (inj b1 b2 red1 red2 rel)
+          (inj b3 b4 red3 red4 rel') = app-deter red2 red4
+
 record ⟦_⟧_≈⟦_⟧_∈_ t ρ t' ρ' (B : REL) : Set where
  field
   b1 : Val
