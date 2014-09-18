@@ -10,6 +10,7 @@ open import Data.Nat
 open import WfNat
 open import Model
 open import Relation.Binary.PropositionalEquality
+open import Sym
 
 open SetF
 
@@ -33,7 +34,11 @@ AppDeter :  ∀ {f1 a1 f2 a2 f3 a3 B B'}
    -> _·_≈_·_∈App_.b2 p ≡ _·_≈_·_∈App_.b1 q
 AppDeter p q = {!!}
 
+
+-- TODO: Just do the twisted recursion scheme..
 module Resp (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j) where
+ open SymF k akf
+
  resp : ∀ {A A' B' B}
    (p : A  ≈ A'  ∈ SetU' (inj akf))
    (h : A' ≡ B')
@@ -44,7 +49,9 @@ module Resp (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j) where
  resp (Π pA y) refl (Π pA' y') a b with resp pA refl pA'
  ... | rpA = (λ x p →
       let p' = proj₂ (rpA _ _) p in
-      AppResp (λ a' b' x' →  proj₁ (resp (_·_≈_·_∈App_.rel (y p')) {!!} (_·_≈_·_∈App_.rel (y' p)) _ _) x') (x p'))
+      -- TODO: Need to use symmetry somehow here..
+      let q' = (_·_≈_·_∈App_.rel (y p')) in
+      AppResp (λ a' b' x' →  proj₁ (resp q' {!!} (_·_≈_·_∈App_.rel (y' p)) _ _) x') (x p'))
  
 
 
@@ -53,13 +60,13 @@ module Resp (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j) where
  resp (Set* y) refl (Set* y') a b with ≤uniq y y'
  resp (Set* .y') refl (Set* y') a b | refl = (λ x → x) , (λ x → x)
 
- Πresp : ∀ {A A' A'' F F' F''} 
-     (p : A  ≈ A'  ∈ SetU' (inj akf))
-     (q : A' ≈ A'' ∈ SetU' (inj akf))
-     (pF  : F ≈ F' ∈ ΠR (ElU' _ p) (λ _ -> (SetU' (inj akf))))
-     (pF' : F' ≈ F'' ∈ ΠR (ElU' _ q) (λ _ -> (SetU' (inj akf))))
-   -> (rA : ElU' _ p ↔₂ ElU' _ q)
-   -> (∀ {a b} (p : ElU' _ p a b) -> ElU' _ (_·_≈_·_∈App_.rel (pF p)) ↔₂ ElU' _ (_·_≈_·_∈App_.rel (pF' (proj₁ (rA _ _) p))))
-   -> (ΠR (ElU' _ p) (λ p → ElU' _ (_·_≈_·_∈App_.rel (pF p)))) ⟶₂ 
-      (ΠR (ElU' _ q) (λ p → ElU' _ (_·_≈_·_∈App_.rel (pF' p))))
- Πresp pA qA pF pF' rA rF a b x p = {!proj₂ (rF ? _ _)!}
+ -- Πresp : ∀ {A A' A'' F F' F''} 
+ --     (p : A  ≈ A'  ∈ SetU' (inj akf))
+ --     (q : A' ≈ A'' ∈ SetU' (inj akf))
+ --     (pF  : F ≈ F' ∈ ΠR (ElU' _ p) (λ _ -> (SetU' (inj akf))))
+ --     (pF' : F' ≈ F'' ∈ ΠR (ElU' _ q) (λ _ -> (SetU' (inj akf))))
+ --   -> (rA : ElU' _ p ↔₂ ElU' _ q)
+ --   -> (∀ {a b} (p : ElU' _ p a b) -> ElU' _ (_·_≈_·_∈App_.rel (pF p)) ↔₂ ElU' _ (_·_≈_·_∈App_.rel (pF' (proj₁ (rA _ _) p))))
+ --   -> (ΠR (ElU' _ p) (λ p → ElU' _ (_·_≈_·_∈App_.rel (pF p)))) ⟶₂ 
+ --      (ΠR (ElU' _ q) (λ p → ElU' _ (_·_≈_·_∈App_.rel (pF' p))))
+ -- Πresp pA qA pF pF' rA rF a b x p = {!proj₂ (rF ? _ _)!}

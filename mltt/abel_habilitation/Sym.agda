@@ -18,8 +18,11 @@ SYM R = ∀ {a b} -> R a b -> R b a
 sym-⊥' : SYM ⊥'
 sym-⊥' h n = , proj₂ (proj₂ (h n)) , proj₁ (proj₂ (h n))
 
+postulate
+ TODO : ∀ {A : Set} -> A
+
 ·↘-deter : ∀ {f a b1 b2} -> f · a ↘ b1 -> f · a ↘ b2 -> b1 ≡ b2
-·↘-deter e1 e2 = {!!}
+·↘-deter e1 e2 = TODO
 
 AppDeter1 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
     (p : f1 · a1 ≈ f2 · a2 ∈App B)
@@ -34,7 +37,7 @@ AppDeter2 :  ∀ {f1 a1 f2 a2 f3 a3 B B'}
    -> _·_≈_·_∈App_.b1 q ≡ _·_≈_·_∈App_.b2 p 
 AppDeter2 p q = sym (AppDeter1 p q)
 
-module Sym (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j) where
+module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j) where
  mutual
   symSet : SYM (SetU' (inj akf))
   symSet (Neu y) = Neu (sym-⊥' y)
@@ -50,7 +53,7 @@ module Sym (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j) where
    {a a'} ->
    ElU' (inj akf) pA' a a' -> ElU' (inj akf) pA a' a
   symEl (Neu y) refl refl (Neu w) (inj y') = inj (sym-⊥' y')
-  symEl Nat refl refl Nat h = {!!}
+  symEl Nat refl refl Nat h = TODO
   symEl (Π pA y) refl refl (Π pA' y') h = λ p →
    let p' = symEl pA' refl refl pA p in
    let q = h p' in
@@ -60,4 +63,4 @@ module Sym (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j) where
              (AppDeter1 (y p) (y' p'))
           (_·_≈_·_∈App_.rel (y' p'))
           (_·_≈_·_∈App_.rel q))
-  symEl (Set* y) refl refl (Set* y') h = {!!}
+  symEl (Set* y) refl refl (Set* y') h = TODO
