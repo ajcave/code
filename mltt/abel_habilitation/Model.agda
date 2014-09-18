@@ -8,6 +8,7 @@ open import Data.Unit
 open import Data.Empty
 open import Data.Nat
 open import WfNat
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 PREL : Set -> Set₁
 PREL α = α -> α -> Set
@@ -31,14 +32,33 @@ data NatR : REL where
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
 
-record _·_≈_·_∈App_ (f a f' a' : Val) (B : REL) : Set where
+record ValApp : Set where
+ constructor _·_
+ field
+  f : Val
+  a : Val
+
+record App (B : REL) (c1 c2 : ValApp) : Set where
  constructor inj
  field
   b1 : Val
   b2 : Val
-  red1 : f  · a  ↘ b1
-  red2 : f' · a' ↘ b2
+  red1 : ValApp.f c1 · ValApp.a c1  ↘ b1
+  red2 : ValApp.f c2 · ValApp.a c2 ↘ b2
   rel : B b1 b2
+
+AppDeter1 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
+    (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
+    (q : (f2 · a2) ≈ (f3 · a3) ∈ App B')
+   -> App.b2 p ≡ App.b1 q
+AppDeter1 (inj b1 b2 red1 red2 rel)
+          (inj b3 b4 red3 red4 rel') = app-deter red2 red3
+
+AppDeter2 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
+    (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
+    (q : (f2 · a2) ≈ (f3 · a3) ∈ App B')
+   -> App.b1 q ≡ App.b2 p 
+AppDeter2 p q = sym (AppDeter1 p q)
 
 record ⟦_⟧_≈⟦_⟧_∈_ t ρ t' ρ' (B : REL) : Set where
  field
@@ -57,7 +77,7 @@ record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
   rel : B ρ1 ρ2
 
 ΠR : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
-ΠR A F f f' = ∀ {a a'} -> (p : A a a') -> f · a ≈ f' · a' ∈App (F p)
+ΠR A F f f' = ∀ {a a'} -> (p : A a a') -> (f · a) ≈ (f' · a') ∈ (App (F p))
 
 data NeuRel : REL where
  inj : ∀ {e1 E1 e2 E2} -- -> E1 ≈ E ∈⊥ -> E2 ≈ E ∈⊥  -- TODO! ?
@@ -69,14 +89,14 @@ module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
    Neu : ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* k ] E ≈ ↑[ Set* k ] E' ∈ SetR
    Nat : Nat ≈ Nat ∈ SetR
    Π : ∀ {A A' F F'} (pA : A ≈ A' ∈ SetR)
-    -> F ≈ F' ∈ ΠR (El pA) (λ _ -> SetR)
+    -> (pF : F ≈ F' ∈ ΠR (El pA) (λ _ -> SetR))
     -> (Π A F) ≈ (Π A' F') ∈ SetR
    Set* : ∀ {j} -> j < k -> Set* j ≈ Set* j ∈ SetR
 
   El : ∀ {A A'} -> A ≈ A' ∈ SetR -> REL
   El (Neu {E} x) = NeuRel
   El Nat = NatR
-  El (Π pA pF) = ΠR (El pA) (λ p → El (_·_≈_·_∈App_.rel (pF p)))
+  El (Π pA pF) = ΠR (El pA) (λ p → El (App.rel (pF p)))
   El (Set* j<k) = SetP j<k
 
 SetU' : {n : ℕ} -> Acc n -> REL

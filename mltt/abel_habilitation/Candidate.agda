@@ -42,7 +42,7 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   reflect (Neu x) d = inj d
   reflect Nat d = neu d
   reflect (Π pA pF) d = foo
-   where foo : _ ≈ _ ∈ ΠR (ElU' _ pA) (λ p -> ElU' _ (_·_≈_·_∈App_.rel (pF p)))
+   where foo : _ ≈ _ ∈ ΠR (ElU' _ pA) (λ p -> ElU' _ (App.rel (pF p)))
          foo p with pF p
          foo p | inj b1 b2 red1 red2 rel with reify pA p
          ... | q with reflect rel (λ n → , ((proj₁ (proj₂ (d n))) · (proj₁ (proj₂ (q n)))) , (proj₂ (proj₂ (d n)) · proj₂ (proj₂ (q n))))

@@ -3,6 +3,7 @@ open import Syntax
 open import SyntaxTm
 open Syn Exp
 open import Data.Nat
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 -- Hmm I don't think I can make the others parametric over eval, since
 -- it wouldn't be able to see strict positivity...
@@ -73,3 +74,45 @@ mutual
   lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
   _·_ : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
   rec : ∀ {n e u T tz ts} -> Rne n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
+
+Singleton : ∀ {A : Set} (P : A -> Set) -> Set
+Singleton P = ∀ {x y} -> P x -> P y -> x ≡ y
+
+lookup-deter : ∀ {ρ i} -> Singleton (lookup_,_↘_ ρ i)
+lookup-deter top top = refl
+lookup-deter (pop p1) (pop p2) = lookup-deter p1 p2
+
+mutual
+ eval-deter : ∀ {t ρ} -> Singleton (⟦_⟧_↘_ t ρ)
+ eval-deter (idx x₂) (idx x₃) = lookup-deter x₂ x₃
+ eval-deter ƛ ƛ = refl
+ eval-deter (_·_ p1 p2 x₁) (_·_ p3 p4 x₂) with eval-deter p1 p3 | eval-deter p2 p4
+ ... | refl | refl = app-deter x₁ x₂
+ eval-deter zero zero = refl
+ eval-deter (suc p1) (suc p2) = cong suc (eval-deter p1 p2)
+ eval-deter (rec p1 x₁) (rec p2 x₂) with eval-deter p1 p2
+ ... | refl = rec-deter x₁ x₂
+ eval-deter Set* Set* = refl
+ eval-deter (Π p1) (Π p2) = cong₂ Π (eval-deter p1 p2) refl
+ eval-deter Nat Nat = refl
+ eval-deter (x₁ [ p1 ]) (x₂ [ p2 ]) with evals-deter x₁ x₂
+ ... | refl = eval-deter p1 p2
+
+ evals-deter : ∀ {σ ρ} -> Singleton (⟦_⟧s_↘_ σ ρ)
+ evals-deter (p2 [ p1 ]) (p3 [ p4 ]) with evals-deter p2 p3
+ ... | refl = evals-deter p1 p4
+ evals-deter id id = refl
+ evals-deter ↑ ↑ = refl
+ evals-deter (p1 , x) (p2 , x₁) = cong₂ _,_ (evals-deter p1 p2) (eval-deter x x₁)
+
+ app-deter : ∀ {f a} -> Singleton (_·_↘_ f a)
+ app-deter (ƛ x₁) (ƛ x₂) = eval-deter x₁ x₂
+ app-deter (↑ p1) (↑ p2) with app-deter p1 p2
+ ... | refl = refl
+
+ rec-deter : ∀ {T tz ts dn} -> Singleton (rec_,_,_,_↘_ T tz ts dn)
+ rec-deter (zero x₁) (zero x₂) = eval-deter x₁ x₂
+ rec-deter (suc p1 x₁) (suc p2 x₂) with rec-deter p1 p2
+ ... | refl = eval-deter x₁ x₂
+ rec-deter (ne x) (ne x₁) with eval-deter x x₁
+ ... | refl = refl
