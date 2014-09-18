@@ -19,6 +19,9 @@ P →₂ Q = ∀ {a b} -> P a b -> Q a b
 TRANS : ∀ {A} -> PREL A -> Set
 TRANS R = ∀ {a b c} -> R a b -> R b c -> R a c
 
+TRANS' : ∀ {A} -> PREL A -> Set
+TRANS' R = ∀ {a b b' c} -> R a b -> b ≡ b' -> R b' c -> R a c
+
 trans-⊥' : TRANS ⊥'
 trans-⊥' h1 h2 n = {!!} -- need Rne deterministic
 
@@ -26,6 +29,10 @@ NatR-trans : TRANS NatR
 NatR-trans zero zero = zero
 NatR-trans (suc x) (suc y) = suc (NatR-trans x y)
 NatR-trans (neu x) (neu y) = neu (trans-⊥' x y)
+
+-- App-trans : ∀ {B : REL} -> TRANS B -> TRANS (App B)
+-- App-trans f (inj b1 b2 red1 red2 rel) (inj b3 b4 red3 red4 rel₁) with app-deter red2 red3
+-- App-trans f (inj b1 b2 red1 red2 rel) (inj .b2 b4 red3 red4 rel₁) | refl = inj _ _ red1 red4 (f rel rel₁)
 
 module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
             (set<trans : ∀ {j} (p : j < k) -> TRANS (SetU' (akf p))) where
@@ -42,16 +49,17 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
  transEl pAB refl pBC refl pAC refl t1 t2 = {!!}
 
  mutual
-  transSet : TRANS (SetU' (inj akf))
-  transSet (Neu x) (Neu x₁) = Neu (trans-⊥' x x₁)
-  transSet Nat Nat = Nat
-  transSet (Π pA pF) (Π pA₁ pF₁) = Π (transSet pA pA₁) (λ p →
-    let p1 = resp (transSet pA pA₁) (selfrel1Set pA) (symSetω' (inj akf) pA₁) pA p in
-    let p2 = resp (selfrel2Set (transSet pA pA₁)) (symSetω' (inj akf) pA₁) (selfrel2Set pA₁) pA₁ (selfrel2 (transSet pA pA₁) p) in
+  transSet : TRANS' (SetU' (inj akf))
+  transSet (Neu x) refl (Neu x₁) = Neu (trans-⊥' x x₁)
+  transSet Nat refl Nat = Nat
+  transSet (Π pA pF) refl (Π pA₁ pF₁) = Π (transSet pA refl pA₁) (λ p →
+    let p1 = resp (transSet pA refl pA₁) (selfrel1Set pA) (symSetω' (inj akf) pA₁) pA p in
+    let p2 = resp (selfrel2Set (transSet pA refl pA₁)) (symSetω' (inj akf) pA₁) (selfrel2Set pA₁) pA₁ (selfrel2 (transSet pA refl pA₁) p) in
     let q1 = pF p1 in
     let q2 = pF₁ p2 in
-    {!!})
-  transSet (Set* x) (Set* x₁) = Set* x₁
+    inj _ _ (App.red1 q1) (App.red2 q2) (transSet (App.rel q1) {!!} (App.rel q2))
+    )
+  transSet (Set* x) refl (Set* x₁) = Set* x₁
 
   resp : ∀ {A A' B' B}
     (pA : A  ≈ A'  ∈ SetU' (inj akf))
@@ -72,10 +80,10 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   resp (Set* x) (Set* x₁) (Set* x₂) (Set* .x) r | refl = r
 
   selfrel1Set : ∀ {A A'} -> (pA : A ≈ A' ∈ SetU' (inj akf)) -> A ≈ A ∈ SetU' (inj akf)
-  selfrel1Set pA = transSet pA (symSetω' (inj akf) pA)
+  selfrel1Set pA = transSet pA refl (symSetω' (inj akf) pA)
 
   selfrel2Set : ∀ {A A'} -> (pA : A ≈ A' ∈ SetU' (inj akf)) -> A' ≈ A' ∈ SetU' (inj akf)
-  selfrel2Set pA = transSet (symSetω' (inj akf) pA) pA
+  selfrel2Set pA = symSetω' (inj akf) {!!} --transSet (symSetω' (inj akf) pA) refl pA
 
   selfrel1 : ∀ {A A' a a'} -> (pA : A ≈ A' ∈ (SetU' (inj akf)))
     -> a ≈ a' ∈ ElU' (inj akf) pA
