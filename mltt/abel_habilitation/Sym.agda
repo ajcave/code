@@ -26,6 +26,9 @@ NatR-sym (neu x) = neu (sym-⊥' x)
 
 module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
             (set<sym : ∀ {j} (p : j < k) -> SYM (SetU' (akf p))) where
+  K : Acc k
+  K = inj akf
+
   -- This seems like a heterogenous version of symmetry?
   symEl : ∀ {A A' B B' a a'}
       (pA : A ≈ A' ∈ (SetU' (inj akf)))
@@ -46,6 +49,16 @@ module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
           (App.rel q))
   symEl (Set* y) refl refl (Set* y') h with ≤uniq y y'
   symEl (Set* y) refl refl (Set* .y) h | refl = set<sym y h
+
+  -- open import Irrelevance
+  -- symEl2 : ∀ {A} (pA : A ≈ A ∈ SetU' K) -> SYM (ElU' K pA)
+  -- symEl2 (Neu y) ab = {!!}
+  -- symEl2 Nat ab = {!!}
+  -- symEl2 (Π pA pF) ab = λ p →
+  --   let p' = symEl2 pA p in
+  --   inj _ _ (App.red2 (ab p')) (App.red1 (ab p'))
+  --   {!symEl2!}
+  -- symEl2 (Set* y) ab = {!!}
 
   symSet : SYM (SetU' (inj akf))
   symSet (Neu y) = Neu (sym-⊥' y)
