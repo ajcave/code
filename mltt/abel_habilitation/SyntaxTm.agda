@@ -10,7 +10,7 @@ mutual
   idx : (x : ℕ) -> Exp
   _·_ : (r s : Exp) -> Exp
   _[_] : (t : Exp) -> (σ : Subst) -> Exp
-  Π : (A F : Exp) -> Exp
+  Π : (A F : Exp) -> Exp -- This may as well be a regular Π and not a "Fun"
   Set* : ℕ -> Exp
 
  data Subst : Set where
