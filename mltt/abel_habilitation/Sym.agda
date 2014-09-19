@@ -32,7 +32,7 @@ module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   K : Acc k
   K = inj akf
 
-  -- This seems like a heterogenous version of symmetry?
+  -- This seems like a heterogenous version of symmetry? Is this really necessary?
   hsymEl : ∀ {A A' B B' a a'}
       (pA : A ≈ A' ∈ (SetU' (inj akf)))
          (eqA : A ≡ B) (eqB : A' ≡ B')
