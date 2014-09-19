@@ -32,6 +32,7 @@ mutual
   id : ∀ {ρ} -> ⟦ id ⟧s ρ ↘ ρ
   ↑ : ∀ {ρ a} -> ⟦ ↑ ⟧s (ρ , a) ↘ ρ
   _,_ : ∀ {σ t ρ ρ' a} -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t ⟧ ρ ↘ a -> ⟦ σ , t ⟧s ρ ↘ (ρ' , a)
+  ⊡ : ∀ {ρ} -> ⟦ ⊡ ⟧s ρ ↘ ⊡
  data _·_↘_ : Val -> Val -> Val -> Set where 
   ƛ : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> (ƛ t ρ) · a ↘ b
   ↑ : ∀ {A F e a F'}
@@ -113,6 +114,7 @@ mutual
  evals-deter id id = refl
  evals-deter ↑ ↑ = refl
  evals-deter (p1 , x) (p2 , x₁) = cong₂ _,_ (evals-deter p1 p2) (eval-deter x x₁)
+ evals-deter ⊡ ⊡ = refl
 
  app-deter : ∀ {f a} -> Singleton (_·_↘_ f a)
  app-deter (ƛ x₁) (ƛ x₂) = eval-deter x₁ x₂

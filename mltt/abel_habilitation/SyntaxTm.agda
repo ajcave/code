@@ -14,6 +14,7 @@ mutual
   Set* : ℕ -> Exp
 
  data Subst : Set where
+  ⊡ : Subst
   ↑ id : Subst
   _[_] : (σ τ : Subst) -> Subst
   _,_ : (σ : Subst) -> (t : Exp) -> Subst
