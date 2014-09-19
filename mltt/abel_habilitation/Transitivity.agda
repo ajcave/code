@@ -22,7 +22,9 @@ TRANS' : ∀ {A} -> PREL A -> Set
 TRANS' R = ∀ {a b b' c} -> R a b -> b ≡ b' -> R b' c -> R a c
 
 trans-⊥' : TRANS ⊥'
-trans-⊥' h1 h2 n = {!!} -- need Rne deterministic
+trans-⊥' h1 h2 n with h1 n | h2 n
+... | _ , (p1 , p2) | _ , (p3 , p4) with Rne-deter p2 p3
+trans-⊥' h1 h2 n | proj₁ , (p1 , p2) | .proj₁ , (p3 , p4) | refl = , p1 , p4
 
 NatR-trans : TRANS NatR
 NatR-trans zero zero = zero
