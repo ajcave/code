@@ -40,8 +40,7 @@ App-sym f (inj b1 b2 red1 red2 rel) = inj _ _ red2 red1 (f rel)
 module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
       (set<trans : ∀ {j} (p : j < k) -> TRANS (SetU' (akf p)))
  where
-  K : Acc k
-  K = inj akf
+  open IrrF k akf
 
   transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' K pA)
   transEl (Neu y) (inj y') (inj y0) = inj (trans-⊥' y' y0)
@@ -59,8 +58,8 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
    let p' = symEl pA p in
    let q = App-sym (symEl (App.rel (pF p'))) (ab p') in
    let pp' = transEl pA p p' in
-   let q0 = App→ (IrrF.irrR _ _ (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
-   let q1 = App→ (IrrF.irrL _ _ (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
+   let q0 = App→ (irrR (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
+   let q1 = App→ (irrL (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
    q1
   symEl (Set* y) ab = {!!}
 
