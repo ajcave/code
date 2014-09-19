@@ -30,41 +30,31 @@ module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   K = inj akf
 
   -- This seems like a heterogenous version of symmetry?
-  symEl : ∀ {A A' B B' a a'}
+  hsymEl : ∀ {A A' B B' a a'}
       (pA : A ≈ A' ∈ (SetU' (inj akf)))
          (eqA : A ≡ B) (eqB : A' ≡ B')
       (pA' : B' ≈ B ∈ (SetU' (inj akf)))
    -> ElU' (inj akf) pA' a a'
    -> ElU' (inj akf) pA a' a
-  symEl (Neu y) refl refl (Neu w) (inj y') = inj (sym-⊥' y')
-  symEl Nat refl refl Nat h = NatR-sym h
-  symEl (Π pA y) refl refl (Π pA' y') h = λ p →
-   let p' = symEl pA' refl refl pA p in
+  hsymEl (Neu y) refl refl (Neu w) (inj y') = inj (sym-⊥' y')
+  hsymEl Nat refl refl Nat h = NatR-sym h
+  hsymEl (Π pA y) refl refl (Π pA' y') h = λ p →
+   let p' = hsymEl pA' refl refl pA p in
    let q = h p' in
    inj _ _ (App.red2 q) (App.red1 q)
-   (symEl (App.rel (y p))
+   (hsymEl (App.rel (y p))
              (AppDeter2 (y' p') (y p))
              (AppDeter1 (y p) (y' p'))
           (App.rel (y' p'))
           (App.rel q))
-  symEl (Set* y) refl refl (Set* y') h with ≤uniq y y'
-  symEl (Set* y) refl refl (Set* .y) h | refl = set<sym y h
-
-  -- open import Irrelevance
-  -- symEl2 : ∀ {A} (pA : A ≈ A ∈ SetU' K) -> SYM (ElU' K pA)
-  -- symEl2 (Neu y) ab = {!!}
-  -- symEl2 Nat ab = {!!}
-  -- symEl2 (Π pA pF) ab = λ p →
-  --   let p' = symEl2 pA p in
-  --   inj _ _ (App.red2 (ab p')) (App.red1 (ab p'))
-  --   {!symEl2!}
-  -- symEl2 (Set* y) ab = {!!}
+  hsymEl (Set* y) refl refl (Set* y') h with ≤uniq y y'
+  hsymEl (Set* y) refl refl (Set* .y) h | refl = set<sym y h
 
   symSet : SYM (SetU' (inj akf))
   symSet (Neu y) = Neu (sym-⊥' y)
   symSet Nat = Nat
-  symSet (Π pA y) = Π (symSet pA) (λ p →
-    let q = y (symEl pA refl refl (symSet pA) p) in
+  symSet (Π pA pF) = Π (symSet pA) (λ p →
+    let q = pF (hsymEl pA refl refl (symSet pA) p) in
     inj _ _ (App.red2 q) (App.red1 q) (symSet (App.rel q)))
   symSet (Set* y) = Set* y
 
@@ -74,22 +64,22 @@ symSetω' (inj x) = SymF.symSet _ x (λ p → symSetω' (x p))
 symSetω : ∀ {k} -> SYM (SetU k)
 symSetω = symSetω' nat-acc
 
-symElω' : ∀ {k} (acck : Acc k) -> ∀ {A A' B B' a a'} (pA : A ≈ A' ∈ (SetU' acck))
-                     (eqA : A ≡ B) (eqB : A' ≡ B')
-                     (pA' : B' ≈ B ∈ (SetU' acck)) ->
-      ElU' acck pA' a a' -> ElU' acck pA a' a
-symElω' (inj x) = SymF.symEl _ x (λ p → symSetω' (x p))
+-- symElω' : ∀ {k} (acck : Acc k) -> ∀ {A A' B B' a a'} (pA : A ≈ A' ∈ (SetU' acck))
+--                      (eqA : A ≡ B) (eqB : A' ≡ B')
+--                      (pA' : B' ≈ B ∈ (SetU' acck)) ->
+--       ElU' acck pA' a a' -> ElU' acck pA a' a
+-- symElω' (inj x) = SymF.symEl _ x (λ p → symSetω' (x p))
 
-symElω2' : ∀ {k} (acck : Acc k) -> ∀ {A A' a a'}
-                     (pA : A ≈ A' ∈ (SetU' acck)) ->
-      ElU' acck pA a a' -> ElU' acck (symSetω' acck pA) a' a
-symElω2' acck pA = symElω' acck (symSetω' acck pA) refl refl pA
+-- symElω2' : ∀ {k} (acck : Acc k) -> ∀ {A A' a a'}
+--                      (pA : A ≈ A' ∈ (SetU' acck)) ->
+--       ElU' acck pA a a' -> ElU' acck (symSetω' acck pA) a' a
+-- symElω2' acck pA = symElω' acck (symSetω' acck pA) refl refl pA
 
-symElω : ∀ {k} {A A' a a'}
-     (pA  : A'  ≈ A ∈ (SetU k))
-  -> (pA' : A ≈ A'  ∈ (SetU k))
-  -> ElU k pA' a a' -> ElU k pA a' a
-symElω pA pA' h = symElω' nat-acc pA refl refl pA' h
+-- symElω : ∀ {k} {A A' a a'}
+--      (pA  : A'  ≈ A ∈ (SetU k))
+--   -> (pA' : A ≈ A'  ∈ (SetU k))
+--   -> ElU k pA' a a' -> ElU k pA a' a
+-- symElω pA pA' h = symElω' nat-acc pA refl refl pA' h
 
 
 
