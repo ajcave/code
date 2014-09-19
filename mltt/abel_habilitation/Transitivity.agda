@@ -45,7 +45,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
 
  mutual
   transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' K pA)
-  transEl (Neu y) (inj y') (inj y0) = inj (trans-⊥' y' y0)
+  transEl (Neu y _) (inj y') (inj y0) = inj (trans-⊥' y' y0)
   transEl Nat ab bc = NatR-trans ab bc
   transEl (Π pA pF) ab bc = λ p →
    let p' = symEl pA p in
@@ -57,7 +57,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   transEl (Set* y) ab bc = set<trans y ab bc
 
   symEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SYM (ElU' K pA)
-  symEl (Neu y) (inj x) = inj (sym-⊥' x)
+  symEl (Neu y _) (inj x) = inj (sym-⊥' x)
   symEl Nat ab = NatR-sym ab
   symEl (Π pA pF) ab = λ p → 
    let p' = symEl pA p in
@@ -70,7 +70,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
 
  mutual
   transSet' : TRANS' (SetU' K)
-  transSet' (Neu x) refl (Neu x₁) = Neu (trans-⊥' x x₁)
+  transSet' (Neu x p) refl (Neu x₁ _) = Neu (trans-⊥' x x₁) p
   transSet' Nat refl Nat = Nat
   transSet' (Π pA pF) refl (Π pA₁ pF₁) = Π (transSet pA pA₁) (λ aa'AA'' →
     let a'aAA'' = symEl (transSet pA pA₁) aa'AA'' in

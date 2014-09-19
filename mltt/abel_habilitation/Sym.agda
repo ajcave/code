@@ -39,7 +39,7 @@ module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
       (pA' : B' ≈ B ∈ (SetU' (inj akf)))
    -> ElU' (inj akf) pA' a a'
    -> ElU' (inj akf) pA a' a
-  hsymEl (Neu y) refl refl (Neu w) (inj y') = inj (sym-⊥' y')
+  hsymEl (Neu _ y) refl refl (Neu _ w) (inj y') = inj (sym-⊥' y')
   hsymEl Nat refl refl Nat h = NatR-sym h
   hsymEl (Π pA y) refl refl (Π pA' y') h = λ p →
    let p' = hsymEl pA' refl refl pA p in
@@ -54,7 +54,7 @@ module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   hsymEl (Set* y) refl refl (Set* .y) h | refl = set<sym y h
 
   symSet : SYM (SetU' (inj akf))
-  symSet (Neu y) = Neu (sym-⊥' y)
+  symSet (Neu y p) = Neu (sym-⊥' y) p
   symSet Nat = Nat
   symSet (Π pA pF) = Π (symSet pA) (λ p →
     let q = pF (hsymEl pA refl refl (symSet pA) p) in

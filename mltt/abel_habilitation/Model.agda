@@ -4,7 +4,7 @@ open import SyntaxTm
 open Syn Exp
 open import Eval
 open import Data.Product
-open import Data.Unit
+open import Data.Unit hiding (_≤_)
 open import Data.Empty
 open import Data.Nat
 open import WfNat
@@ -95,7 +95,7 @@ data NeuRel : REL where
 module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
  mutual
   data SetR : Val -> Val -> Set where
-   Neu : ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* k ] E ≈ ↑[ Set* k ] E' ∈ SetR
+   Neu : ∀ {j E E'} -> E ≈ E' ∈ ⊥' -> j ≤ k -> ↑[ Set* j ] E ≈ ↑[ Set* j ] E' ∈ SetR
    Nat : Nat ≈ Nat ∈ SetR
    Π : ∀ {A A' F F'} (pA : A ≈ A' ∈ SetR)
     -> (pF : F ≈ F' ∈ ΠR (El pA) (λ _ -> SetR))
@@ -103,7 +103,7 @@ module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
    Set* : ∀ {j} -> j < k -> Set* j ≈ Set* j ∈ SetR
 
   El : ∀ {A A'} -> A ≈ A' ∈ SetR -> REL
-  El (Neu {E} x) = NeuRel
+  El (Neu {E} _ x) = NeuRel
   El Nat = NatR
   El (Π pA pF) = ΠR (El pA) (λ p → El (App.rel (pF p)))
   El (Set* j<k) = SetP j<k
