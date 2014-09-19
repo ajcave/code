@@ -58,6 +58,15 @@ mutual
  -- -----------------------------------------------------------------------------
  --                G |- rec (x. T) tz (n,p. ts) tn : T[n/x]
 
+open import Data.Unit
+open import Data.Empty
+
+IsBaseType : Val -> Set
+IsBaseType Nat = ⊤
+IsBaseType (Set* _) = ⊤
+IsBaseType (↑[ Set* i ] E) = ⊤
+IsBaseType _ = ⊥
+
 mutual
  data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Nf -> Set where
   Π : ∀ {n f b A B B' v} -> f · ↑[ A ] (lvl n) ↘ b -> B · ↑[ A ] (lvl n) ↘ B' -> Rnf (suc n) , b ∶ B' ↘ v
@@ -67,7 +76,7 @@ mutual
   Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> F · ↑[ A ] (lvl n) ↘ B
    -> Rnf (suc n) , B ∶ Set* i ↘ B'
    -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
-  Neut : ∀ {n e v B B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
+  Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
   zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
  data Rne_,_↘_ : ℕ -> Dne -> Ne -> Set where
@@ -116,3 +125,23 @@ mutual
  ... | refl = eval-deter x₁ x₂
  rec-deter (ne x) (ne x₁) with eval-deter x x₁
  ... | refl = refl
+
+mutual
+ Rnf-deter : ∀ {n a A} -> Singleton (Rnf_,_∶_↘_ n a A)
+ Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) with app-deter x x₂
+ Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) | refl with app-deter x₁ x₃
+ ... | refl = cong ƛ (Rnf-deter p1 p2)
+ Rnf-deter (Π x₂ x p1) (Neut {._} {()} x₃)
+ Rnf-deter Nat Nat = refl
+ Rnf-deter SetZ SetZ = refl
+ Rnf-deter (Fun p1 x p2) (Fun p3 x₁ p4) with app-deter x x₁
+ ... | refl = cong₂ Π (Rnf-deter p1 p3) (cong ƛ (Rnf-deter p2 p4))
+ Rnf-deter (Neut {._} {()} x₁) (Π x₂ x₃ p2)
+ Rnf-deter (Neut x) (Neut x₃) = cong ne (Rne-deter x x₃)
+ Rnf-deter zero zero = refl
+ Rnf-deter (suc p1) (suc p2) = cong suc (Rnf-deter p1 p2)
+
+ Rne-deter : ∀ {n a} -> Singleton (Rne_,_↘_ n a)
+ Rne-deter (lvl k) (lvl .k) = refl
+ Rne-deter (p1 · x) (p2 · x₁) = cong₂ _·_ (Rne-deter p1 p2) (Rnf-deter x x₁)
+ Rne-deter (rec p1) (rec p2) = cong (rec _ _ _) (Rne-deter p1 p2)
