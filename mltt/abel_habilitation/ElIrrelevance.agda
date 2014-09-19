@@ -1,4 +1,4 @@
-module Irrelevance where
+module ElIrrelevance where
 open import Syntax
 open import SyntaxTm
 open Syn Exp

@@ -39,6 +39,9 @@ record App (B : REL) (c1 c2 : ValApp) : Set where
   red2 : ValApp.f c2 · ValApp.a c2 ↘ b2
   rel : B b1 b2
 
+App→ : ∀ {B B'} -> B →₂ B' -> App B →₂ App B'
+App→ f (inj b1 b2 red1 red2 rel) = inj _ _ red1 red2 (f rel)
+
 AppDeter1 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
     (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
     (q : (f2 · a2) ≈ (f3 · a3) ∈ App B')

@@ -13,7 +13,8 @@ open import Relation.Binary.PropositionalEquality
 open SetF
 open import Sym
 open import Util
-open import Irrelevance
+open import ElIrrelevance
+open Syn
 
 TRANS : ∀ {A} -> PREL A -> Set
 TRANS R = ∀ {a b c} -> R a b -> R b c -> R a c
@@ -32,6 +33,9 @@ NatR-trans (neu x) (neu y) = neu (trans-⊥' x y)
 -- App-trans : ∀ {B : REL} -> TRANS B -> TRANS (App B)
 -- App-trans f (inj b1 b2 red1 red2 rel) (inj b3 b4 red3 red4 rel₁) with app-deter red2 red3
 -- App-trans f (inj b1 b2 red1 red2 rel) (inj .b2 b4 red3 red4 rel₁) | refl = inj _ _ red1 red4 (f rel rel₁)
+
+App-sym : ∀ {B : REL} -> SYM B -> SYM (App B)
+App-sym f (inj b1 b2 red1 red2 rel) = inj _ _ red2 red1 (f rel)
 
 module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
       (set<trans : ∀ {j} (p : j < k) -> TRANS (SetU' (akf p)))
@@ -52,7 +56,12 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   symEl (Neu y) ab = {!!}
   symEl Nat ab = {!!}
   symEl (Π pA pF) ab = λ p → 
-   {!!}
+   let p' = symEl pA p in
+   let q = App-sym (symEl (App.rel (pF p'))) (ab p') in
+   let pp' = transEl pA p p' in
+   let q0 = App→ (IrrF.irrR _ _ (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
+   let q1 = App→ (IrrF.irrL _ _ (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
+   q1
   symEl (Set* y) ab = {!!}
 
   selfrel1 : ∀ {A a a'}
