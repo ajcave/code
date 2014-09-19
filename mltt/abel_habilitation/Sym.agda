@@ -24,6 +24,9 @@ NatR-sym zero = zero
 NatR-sym (suc x) = suc (NatR-sym x)
 NatR-sym (neu x) = neu (sym-⊥' x)
 
+App-sym : ∀ {B : REL} -> SYM B -> SYM (App B)
+App-sym f (inj b1 b2 red1 red2 rel) = inj _ _ red2 red1 (f rel)
+
 module SymF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
             (set<sym : ∀ {j} (p : j < k) -> SYM (SetU' (akf p))) where
   K : Acc k
