@@ -49,6 +49,13 @@ mutual
      with eval-deter red1 red4 | eval-deter red2 red3
   hsym* (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl = hsymEl _ _ rel rel₁ x
 
+  -- hsym*' : ∀ {k n} {K : Acc k} {N : Acc n}
+  --  -> HSYM (App (SetU' K)) (App ∘ ElU' ∘ App.rel) (App (SetU' N)) (App ∘ ElU' ∘ App.rel)
+  -- hsym*' (inj (_ , red1) (_ , red2) rel) (inj (_ , red3) (_ , red4) rel₁) x
+  --   with eval-deter red1 red4 | eval-deter red2 red3
+  -- hsym*' (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl =
+  --   inj (App.red2 x) (App.red1 x) (hsymEl _ _ rel rel₁ (App.rel x))
+
   symSet : ∀ {k n} (K : Acc k) (N : Acc n) -> k ≤ n -> ∀ {A A'} -> A ≈ A' ∈ SetU' K -> A' ≈ A ∈ SetU' N
   symSet (inj akf) (inj akn) kn (Neu y p) = Neu (sym-⊥' y) (≤trans p kn)
   symSet (inj akf) (inj akn) kn Nat = Nat
