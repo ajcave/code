@@ -30,46 +30,45 @@ data NatR : REL where
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
 
---record 
+Red : Comp -> Set
+Red c = ∃ (λ b -> c ↘ b)
 
 record App (B : REL) (c1 c2 : Comp) : Set where
  constructor inj
  field
-  b1 : Val
-  b2 : Val
-  red1 : c1 ↘ b1
-  red2 : c2 ↘ b2
-  rel : B b1 b2
+  red1 : Red c1
+  red2 : Red c2
+  rel : B (proj₁ red1) (proj₁ red2)
 
 App→ : ∀ {B B'} -> B →₂ B' -> App B →₂ App B'
-App→ f (inj b1 b2 red1 red2 rel) = inj _ _ red1 red2 (f rel)
+App→ f (inj red1 red2 rel) = inj red1 red2 (f rel)
 
 AppDeter1 :  ∀ {c1 c2 c3 B B'} 
     (p : c1 ≈ c2 ∈ App B)
     (q : c2 ≈ c3 ∈ App B')
-   -> App.b2 p ≡ App.b1 q
-AppDeter1 (inj b1 b2 red1 red2 rel)
-          (inj b3 b4 red3 red4 rel') = eval-deter red2 red3
+   -> proj₁ (App.red2 p) ≡ proj₁ (App.red1 q)
+AppDeter1 (inj red1 (_ , red2) rel)
+          (inj (_ , red3) red4 rel') = eval-deter red2 red3
 
 AppDeter2 :  ∀ {c1 c2 c3 B B'} 
     (p : c1 ≈ c2 ∈ App B)
     (q : c2 ≈ c3 ∈ App B')
-   -> App.b1 q ≡ App.b2 p 
+   -> proj₁ (App.red1 q) ≡ proj₁ (App.red2 p) 
 AppDeter2 p q = sym (AppDeter1 p q)
 
 AppDeter3 :  ∀ {c1 c2 c3 B B'} 
     (p : c1 ≈ c2 ∈ App B)
     (q : c1 ≈ c3 ∈ App B')
-   -> App.b1 p ≡ App.b1 q
-AppDeter3 (inj b1 b2 red1 red2 rel)
-          (inj b3 b4 red3 red4 rel') = eval-deter red1 red3 
+   -> proj₁ (App.red1 p) ≡ proj₁ (App.red1 q)
+AppDeter3 (inj (_ , red1) red2 rel)
+          (inj (_ , red3) red4 rel') = eval-deter red1 red3 
 
 AppDeter4 :  ∀ {c1 c2 c3 B B'} 
     (p : c2 ≈ c1 ∈ App B)
     (q : c3 ≈ c1 ∈ App B')
-   -> App.b2 p ≡ App.b2 q
-AppDeter4 (inj b1 b2 red1 red2 rel)
-          (inj b3 b4 red3 red4 rel') = eval-deter red2 red4
+   -> proj₁ (App.red2 p) ≡ proj₁ (App.red2 q)
+AppDeter4 (inj red1 (_ , red2) rel)
+          (inj red3 (_ , red4) rel') = eval-deter red2 red4
 
 record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
  field

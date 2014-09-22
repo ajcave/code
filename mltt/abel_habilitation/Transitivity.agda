@@ -31,8 +31,8 @@ NatR-trans (suc x) (suc y) = suc (NatR-trans x y)
 NatR-trans (neu x) (neu y) = neu (trans-⊥' x y)
 
 App-trans : ∀ {B : REL} -> TRANS B -> TRANS (App B)
-App-trans f (inj b1 b2 red1 red2 rel) (inj b3 b4 red3 red4 rel₁) with eval-deter red2 red3
-App-trans f (inj b1 b2 red1 red2 rel) (inj .b2 b4 red3 red4 rel₁) | refl = inj _ _ red1 red4 (f rel rel₁)
+App-trans f (inj red1 (b2 , red2) rel) (inj (b3 , red3) b4 rel₁) with eval-deter red2 red3
+App-trans f (inj red1 (b2 , red2) rel) (inj (.b2 , red3) red4 rel₁) | refl = inj red1 red4 (f rel rel₁)
 
 open import Sym
 
@@ -76,7 +76,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
     let aaAA' = irrLω' (transSet pA pA₁) pA aaAA'' in
     let aa'A'A'' = irrRω' (transSet pA pA₁) pA₁ aa'AA'' in
     let q = transSet' (App.rel (pF aaAA')) (AppDeter1 (pF aaAA') (pF₁ aa'A'A'')) (App.rel (pF₁ aa'A'A'')) in
-    inj _ _ (App.red1 (pF aaAA')) (App.red2 (pF₁ aa'A'A'')) q
+    inj (App.red1 (pF aaAA')) (App.red2 (pF₁ aa'A'A'')) q
    )
   transSet' (Set* x) refl (Set* x₁) = Set* x
 

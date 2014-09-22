@@ -23,7 +23,7 @@ mutual
  cumul (inj x) (inj x₁) k≤n (Π pA pF) = Π (cumul _ _ k≤n pA) (λ p →
    let p' = elIrrAcc (inj x₁) (inj x) (cumul _ _ k≤n pA) refl refl pA p in
    let q = cumul (inj x) (inj x₁) k≤n (App.rel (pF p')) in
-   inj _ _ (App.red1 (pF p')) (App.red2 (pF p')) q)
+   inj (App.red1 (pF p')) (App.red2 (pF p')) q)
  cumul (inj x) (inj x₁) k≤n (Set* x₂) = Set* (≤trans x₂ k≤n)
 
  elIrrAcc : ∀ {k k'} (ak1 : Acc k) (ak2 : Acc k') {A A' B B'}
@@ -45,7 +45,7 @@ elIrrAccω (n , pA1) (m , pA2) = elIrrAcc _ _ pA1 refl refl pA2
 
 
 AppIrr : ∀ {A A'} (p q : A ≈ A' ∈ Type) -> App ([ p ]) →₂ App ([ q ])
-AppIrr p q (inj b1 b2 red1 red2 rel) = inj _ _ red1 red2 (elIrrAccω p q rel)
+AppIrr p q (inj red1 red2 rel) = inj red1 red2 (elIrrAccω p q rel)
 
 ⟦⟧tp-irr : ∀ {c1 c2} (p q : c1 ≈ c2 ∈ App Type) -> ⟦ p ⟧tp →₂ ⟦ q ⟧tp
 ⟦⟧tp-irr p q x = elIrrAcc _ _ (proj₂ (App.rel p)) (AppDeter3 p q) (AppDeter4 p q) (proj₂ (App.rel q)) x

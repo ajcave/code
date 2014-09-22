@@ -29,7 +29,7 @@ module IrrF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   irrL (Π pA pF) refl (Π pA' pF') ab = λ p' →
    let p = irrL pA' refl pA p' in
    let q = irrL (App.rel (pF p)) (AppDeter3 (pF p) (pF' p')) (App.rel (pF' p')) (App.rel (ab p)) in
-   inj _ _ (App.red1 (ab p)) (App.red2 (ab p)) q
+   inj (App.red1 (ab p)) (App.red2 (ab p)) q
   irrL (Set* y) refl (Set* y') ab with ≤uniq y y'
   irrL (Set* .y') refl (Set* y') ab | refl = ab
 
@@ -43,7 +43,7 @@ module IrrF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   irrR (Π pA pF) refl (Π pA' pF') ab = λ p' →
    let p = irrR pA' refl pA p' in
    let q = irrR (App.rel (pF p)) (AppDeter4 (pF p) (pF' p')) (App.rel (pF' p')) (App.rel (ab p)) in
-   inj _ _ (App.red1 (ab p)) (App.red2 (ab p)) q
+   inj (App.red1 (ab p)) (App.red2 (ab p)) q
   irrR (Set* y) refl (Set* y') ab with ≤uniq y y'
   irrR (Set* .y') refl (Set* y') ab | refl = ab
 

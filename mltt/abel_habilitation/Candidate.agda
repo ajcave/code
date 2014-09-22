@@ -44,9 +44,9 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   reflect (Π pA pF) d = foo
    where foo : _ ≈ _ ∈ ΠR (ElU' _ pA) (λ p -> ElU' _ (App.rel (pF p)))
          foo p with pF p
-         foo p | inj b1 b2 red1 red2 rel with reify pA p
+         foo p | inj (_ , red1) (_ , red2) rel with reify pA p
          ... | q with reflect rel (λ n → , ((proj₁ (proj₂ (d n))) · (proj₁ (proj₂ (q n)))) , (proj₂ (proj₂ (d n)) · proj₂ (proj₂ (q n))))
-         ... | q1 = inj _ _ (↑ red1) (↑ red2) q1
+         ... | q1 = inj (, ↑ red1) (, ↑ red2) q1
   reflect (Set* j<k) d = reflectSet< j<k d 
 
   reify : Reify k (inj akf)
@@ -54,7 +54,7 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   reify Nat p n = reifyNat p n
   reify (Π pA pF) d n with reflect pA (λ n₁ → , lvl n , lvl n)
   ... | q with pF q | d q
-  reify (Π pA pF) d n | q | inj b1 b2 red1 red2 rel | inj b3 b4 red3 red4 rel₁ with reify rel rel₁
+  reify (Π pA pF) d n | q | inj (b1 , red1) (b2 , red2) rel | inj (b3 , red3) (b4 , red4) rel₁ with reify rel rel₁
   ... | q1 = _ , ((Π red3 red1 (proj₁ (proj₂ (q1 _)))) , (Π red4 red2 (proj₂ (proj₂ (q1 _)))))
   reify (Set* j<k) d n = reifySet< j<k d n 
 
@@ -62,7 +62,7 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   reifySet (Neu x _) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
   reifySet Nat n = , Nat , Nat
   reifySet (Π pA pF) n with pF (reflect pA (λ n₁ -> , lvl n , lvl n))
-  reifySet (Π pA pF) n | inj b1 b2 red1 red2 rel with reifySet pA | reifySet rel
+  reifySet (Π pA pF) n | inj (b1 , red1) (b2 , red2) rel with reifySet pA | reifySet rel
   ... | qA | q2 = , Fun (proj₁ (proj₂ (qA n))) red1 (proj₁ (proj₂ (q2 (suc n)))) , Fun (proj₂ (proj₂ (qA n))) red2 (proj₂ (proj₂ (q2 (suc n))))
   reifySet (Set* j<k) n = , SetZ , SetZ
 

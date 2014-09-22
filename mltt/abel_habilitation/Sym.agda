@@ -25,7 +25,7 @@ NatR-sym (suc x) = suc (NatR-sym x)
 NatR-sym (neu x) = neu (sym-⊥' x)
 
 App-sym : ∀ {B : REL} -> SYM B -> SYM (App B)
-App-sym f (inj b1 b2 red1 red2 rel) = inj _ _ red2 red1 (f rel)
+App-sym f (inj red1 red2 rel) = inj red2 red1 (f rel)
 
 mutual
   -- This seems like a heterogenous version of symmetry? Is this really necessary?
@@ -39,20 +39,21 @@ mutual
   hsymEl (inj akf) (inj anf) (Π pA y) (Π pA' y') h = λ p →
    let p' = hsymEl (inj anf) (inj akf) pA' pA p in
    let q = h p' in
-   inj _ _ (App.red2 q) (App.red1 q) (hsym* (y p') (y' p) (App.rel q))
+   inj (App.red2 q) (App.red1 q) (hsym* (y p') (y' p) (App.rel q))
   hsymEl (inj akf) (inj anf) (Set* y) (Set* y') h = symSet _ _ ≤refl h
 
   hsym* :  ∀ {k n A A'} {K : Acc k} {N : Acc n} (pA : A ≈ A' ∈ App (SetU' K)) (pA' : A' ≈ A ∈ App (SetU' N))
    -> ∀ {a b} -> a ≈ b ∈ ElU' _ (App.rel pA) -> b ≈ a ∈ ElU' _ (App.rel pA')
-  hsym* (inj b1 b2 red1 red2 rel) (inj b3 b4 red3 red4 rel₁) x with eval-deter red1 red4 | eval-deter red2 red3
-  hsym* (inj b1 b2 red1 red2 rel) (inj .b2 .b1 red3 red4 rel₁) x | refl | refl = hsymEl _ _ rel rel₁ x
+  hsym* (inj (_ , red1) (_ , red2) rel) (inj (_ , red3) (_ , red4) rel₁) x
+     with eval-deter red1 red4 | eval-deter red2 red3
+  hsym* (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl = hsymEl _ _ rel rel₁ x
 
   symSet : ∀ {k n} (K : Acc k) (N : Acc n) -> k ≤ n -> ∀ {A A'} -> A ≈ A' ∈ SetU' K -> A' ≈ A ∈ SetU' N
   symSet (inj akf) (inj akn) kn (Neu y p) = Neu (sym-⊥' y) (≤trans p kn)
   symSet (inj akf) (inj akn) kn Nat = Nat
   symSet (inj akf) (inj akn) kn (Π pA pF) = Π (symSet (inj akf) (inj akn) kn pA) (λ p →
     let q = pF (hsymEl (inj akf) (inj akn) (symSet _ _ kn pA) pA p) in
-    inj _ _ (App.red2 q) (App.red1 q) (symSet (inj akf) (inj akn) kn (App.rel q)))
+    inj (App.red2 q) (App.red1 q) (symSet (inj akf) (inj akn) kn (App.rel q)))
   symSet (inj akf) (inj anf) kn (Set* y) = Set* (≤trans y kn)
 
 symSetω' : ∀ {k} (K : Acc k) -> SYM (SetU' K)
