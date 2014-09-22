@@ -23,7 +23,7 @@ module IrrF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
     (pAB : A ≈ B ∈ SetU' K)
     (eq : A ≡ A')
     (pAC : A' ≈ C ∈ SetU' K)
-   -> ElU' K pAB →₂ ElU' K pAC
+   -> ElU' pAB →₂ ElU' pAC
   irrL (Neu _ y) refl (Neu _ y') ab = ab
   irrL Nat refl Nat ab = ab
   irrL (Π pA pF) refl (Π pA' pF') ab = λ p' →
@@ -37,7 +37,7 @@ module IrrF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
     (pAB : B ≈ A ∈ SetU' K)
     (eq : A ≡ A')
     (pAC : C ≈ A' ∈ SetU' K)
-   -> ElU' K pAB →₂ ElU' K pAC
+   -> ElU' pAB →₂ ElU' pAC
   irrR (Neu _ y) refl (Neu _ y') ab = ab
   irrR Nat refl Nat ab = ab
   irrR (Π pA pF) refl (Π pA' pF') ab = λ p' →
@@ -50,13 +50,13 @@ module IrrF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
 irrLω' : ∀ {k} {K : Acc k} {A B C}
     (pAB : A ≈ B ∈ SetU' K)
     (pAC : A ≈ C ∈ SetU' K)
-   -> ElU' K pAB →₂ ElU' K pAC
+   -> ElU' pAB →₂ ElU' pAC
 irrLω' {k} {inj ackf} pAB pAC = IrrF.irrL k ackf pAB refl pAC
 
 irrRω' : ∀ {k} {K : Acc k} {A B C}
     (pAB : B ≈ A ∈ SetU' K)
     (pAC : C ≈ A ∈ SetU' K)
-   -> ElU' K pAB →₂ ElU' K pAC
+   -> ElU' pAB →₂ ElU' pAC
 irrRω' {k} {inj ackf} pAB pAC = IrrF.irrR k ackf pAB refl pAC
 
 irrLω : ∀ {k} {A B C}

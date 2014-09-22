@@ -85,6 +85,9 @@ data NeuRel : REL where
  inj : ∀ {e1 E1 e2 E2} -- -> E1 ≈ E ∈⊥ -> E2 ≈ E ∈⊥  -- TODO! ?
      -> e1 ≈ e2 ∈ ⊥' -> NeuRel (↑[ E1 ] e1) (↑[ E2 ] e2)
 
+INTERP : ∀ B {A} -> PREL A -> Set₁
+INTERP B U = ∀ {A A'} -> A ≈ A' ∈ U -> PREL B
+
 module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
  mutual
   data SetR : Val -> Val -> Set where
@@ -95,7 +98,7 @@ module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
     -> (Π A F) ≈ (Π A' F') ∈ SetR
    Set* : ∀ {j} -> j < k -> Set* j ≈ Set* j ∈ SetR
 
-  El : ∀ {A A'} -> A ≈ A' ∈ SetR -> REL
+  El : INTERP Val SetR
   El (Neu {E} _ x) = NeuRel
   El Nat = NatR
   El (Π pA pF) = ΠR (El pA) (λ p → El (App.rel (pF p)))
@@ -110,11 +113,11 @@ SetU n = SetU' (nat-acc {n})
 Type : REL
 Type A B = ∃ (λ n → SetU n A B)
 
-ElU' : {n : ℕ} (p : Acc n) -> ∀ {A A'} -> A ≈ A' ∈ (SetU' p) -> REL
-ElU' {n} (inj p) = SetF.El n (λ q → SetU' (p q))
+ElU' : {n : ℕ} {p : Acc n} -> ∀ {A A'} -> A ≈ A' ∈ (SetU' p) -> REL
+ElU' {n} {inj p} = SetF.El n (λ q → SetU' (p q))
 
 ElU : (n : ℕ) -> ∀ {A A'} -> A ≈ A' ∈ (SetU n) -> REL
-ElU n = ElU' (nat-acc {n})
+ElU n = ElU' {n} {nat-acc {n}}
 
 [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 [ n , pA ] = ElU n pA

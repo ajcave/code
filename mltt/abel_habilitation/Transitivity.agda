@@ -42,7 +42,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
  open IrrF k akf
 
  mutual
-  transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' K pA)
+  transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
   transEl (Neu y _) (inj y') (inj y0) = inj (trans-⊥' y' y0)
   transEl Nat ab bc = NatR-trans ab bc
   transEl (Π pA pF) ab bc = λ p →
@@ -54,7 +54,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
    App-trans (transEl (App.rel (pF p))) q2 q1
   transEl (Set* y) ab bc = set<trans y ab bc
 
-  symEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SYM (ElU' K pA)
+  symEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SYM (ElU' pA)
   symEl (Neu y _) (inj x) = inj (sym-⊥' x)
   symEl Nat ab = NatR-sym ab
   symEl (Π pA pF) ab = λ p → 
@@ -86,12 +86,12 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
 transSetω' : ∀ {k} (acck : Acc k) -> TRANS (SetU' acck)
 transSetω' (inj x) = TransF.transSet _ _ (λ p → transSetω' (x p))
 
-symω' : ∀ {k} (acck : Acc k) -> ∀ {A A'} (pA : A ≈ A' ∈ SetU' acck) -> SYM (ElU' acck pA)
+symω' : ∀ {k} (acck : Acc k) -> ∀ {A A'} (pA : A ≈ A' ∈ SetU' acck) -> SYM (ElU' pA)
 symω' (inj x) = TransF.symEl _ _ (λ p → transSetω' (x p))
 
 symω : ∀ {A A'} (pA : A ≈ A' ∈ Type) -> SYM ([ pA ])
 symω (k , pA) = symω' _ pA
 
-transω' : ∀ {k} (K : Acc k) {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' K pA)
+transω' : ∀ {k} (K : Acc k) {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
 transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
 

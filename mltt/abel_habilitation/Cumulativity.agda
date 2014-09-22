@@ -28,7 +28,7 @@ mutual
 
  elIrrAcc : ∀ {k k'} (ak1 : Acc k) (ak2 : Acc k') {A A' B B'}
    (pA1 : A ≈ A' ∈ SetU' ak1) (eq1 : A ≡ B) (eq2 : A' ≡ B') (pA2 : B ≈ B' ∈ SetU' ak2)
-   -> ElU' _ pA1 →₂ ElU' _ pA2
+   -> ElU' pA1 →₂ ElU' pA2
  elIrrAcc (inj akf1) (inj akf2) (Neu x₁ x) refl refl (Neu x₂ x₃) p = p
  elIrrAcc (inj akf1) (inj akf2) Nat refl refl Nat p = p
  elIrrAcc (inj akf1) (inj akf2) (Π pA pF) refl refl (Π pA₁ pF₁) p = λ p₁ →

@@ -21,10 +21,10 @@ reifyNat (neu x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (
 -- Types of reify and reflect, parameterized for convenience
 -- Really these should just abstract over a universe U and an interpretation function ElU
 Reflect : (k : ℕ) (acck : Acc k) -> Set
-Reflect k acck = ∀ {e e' A A'} -> (pA : A ≈ A' ∈ (SetU' acck)) -> e ≈ e' ∈ ⊥' -> ↑[ A ] e ≈ ↑[ A' ] e' ∈ (ElU' acck pA)
+Reflect k acck = ∀ {e e' A A'} -> (pA : A ≈ A' ∈ (SetU' acck)) -> e ≈ e' ∈ ⊥' -> ↑[ A ] e ≈ ↑[ A' ] e' ∈ (ElU' pA)
 
 Reify : (k : ℕ) (acck : Acc k) -> Set
-Reify k acck = ∀ {a a' A A'} (pA : A ≈ A' ∈ (SetU' acck)) -> a ≈ a' ∈ (ElU' acck pA) -> ↓[ A ] a ≈ ↓[ A' ] a' ∈ ⊤'
+Reify k acck = ∀ {a a' A A'} (pA : A ≈ A' ∈ (SetU' acck)) -> a ≈ a' ∈ (ElU' pA) -> ↓[ A ] a ≈ ↓[ A' ] a' ∈ ⊤'
 
 ReifySet : (k : ℕ) (acck : Acc k) -> Set
 ReifySet k acck = ∀ {a a'} -> a ≈ a' ∈ (SetU' acck) -> ↓[ Set* k ] a ≈ ↓[ Set* k ] a' ∈ ⊤'
@@ -42,7 +42,7 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   reflect (Neu x _) d = inj d
   reflect Nat d = neu d
   reflect (Π pA pF) d = foo
-   where foo : _ ≈ _ ∈ ΠR (ElU' _ pA) (λ p -> ElU' _ (App.rel (pF p)))
+   where foo : _ ≈ _ ∈ ΠR (ElU' pA) (λ p -> ElU' (App.rel (pF p)))
          foo p with pF p
          foo p | inj (_ , red1) (_ , red2) rel with reify pA p
          ... | q with reflect rel (λ n → , ((proj₁ (proj₂ (d n))) · (proj₁ (proj₂ (q n)))) , (proj₂ (proj₂ (d n)) · proj₂ (proj₂ (q n))))

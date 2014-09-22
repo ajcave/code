@@ -11,10 +11,15 @@ open import WfNat
 open import Model
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Util
+open import Function
 open SetF
 
 SYM : ∀ {A} -> PREL A -> Set
 SYM R = ∀ {a b} -> R a b -> R b a
+
+HSYM : ∀ {B A} (U1 : PREL A) (El1 : INTERP B U1) (U2 : PREL A) (El2 : INTERP B U2) -> Set
+HSYM U1 El1 U2 El2 = ∀ {A A'} (pA : A ≈ A' ∈ U1) (pA' : A' ≈ A ∈ U2)
+  -> ∀ {a a'} -> a ≈ a' ∈ (El1 pA) -> a' ≈ a ∈ (El2 pA')
 
 sym-⊥' : SYM ⊥'
 sym-⊥' h n = , proj₂ (proj₂ (h n)) , proj₁ (proj₂ (h n))
@@ -29,11 +34,7 @@ App-sym f (inj red1 red2 rel) = inj red2 red1 (f rel)
 
 mutual
   -- This seems like a heterogenous version of symmetry? Is this really necessary?
-  hsymEl : ∀ {k n} (an : Acc k) (ak : Acc n) {A A' a a'}
-      (pA : A ≈ A' ∈ (SetU' ak))
-      (pA' : A' ≈ A ∈ (SetU' an))
-   -> ElU' _ pA a a'
-   -> ElU' _ pA' a' a
+  hsymEl : ∀ {k n} (an : Acc k) (ak : Acc n) -> HSYM (SetU' ak) ElU' (SetU' an) ElU'
   hsymEl (inj akf) (inj anf) (Neu _ y) (Neu _ w) (inj y') = inj (sym-⊥' y')
   hsymEl (inj akf) (inj anf) Nat Nat h = NatR-sym h
   hsymEl (inj akf) (inj anf) (Π pA y) (Π pA' y') h = λ p →
@@ -42,8 +43,8 @@ mutual
    inj (App.red2 q) (App.red1 q) (hsym* (y p') (y' p) (App.rel q))
   hsymEl (inj akf) (inj anf) (Set* y) (Set* y') h = symSet _ _ ≤refl h
 
-  hsym* :  ∀ {k n A A'} {K : Acc k} {N : Acc n} (pA : A ≈ A' ∈ App (SetU' K)) (pA' : A' ≈ A ∈ App (SetU' N))
-   -> ∀ {a b} -> a ≈ b ∈ ElU' _ (App.rel pA) -> b ≈ a ∈ ElU' _ (App.rel pA')
+  hsym* :  ∀ {k n} {K : Acc k} {N : Acc n}
+   -> HSYM (App (SetU' K)) (ElU' ∘ App.rel) (App (SetU' N)) (ElU' ∘ App.rel)
   hsym* (inj (_ , red1) (_ , red2) rel) (inj (_ , red3) (_ , red4) rel₁) x
      with eval-deter red1 red4 | eval-deter red2 red3
   hsym* (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl = hsymEl _ _ rel rel₁ x

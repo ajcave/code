@@ -3,18 +3,22 @@ open import Syntax
 open import SyntaxTm
 open import Model
 open import Sym
+open import Transitivity
 open import Cumulativity
 open Syn Exp
 open import Data.Product
 open import Eval
 open import Util
+open import Function
 
 type-inv : ∀ {T S} -> T ≈ S ∈ App Type -> ∃ (λ n -> T ≈ S ∈ App (SetU n))
-type-inv (inj b1 b2 red1 red2 (n , rel)) = , inj _ _ red1 red2 rel
+type-inv (inj red1 red2 (n , rel)) = , inj red1 red2 rel
 
-hsymω :  ∀ {A A'} (pA : A ≈ A' ∈ App Type) (pA' : A' ≈ A ∈ App Type)
-   -> ∀ {a b} -> ⟦ pA ⟧tp a b -> ⟦ pA' ⟧tp b a
+hsymω :  HSYM (App Type) ⟦_⟧tp (App Type) ⟦_⟧tp
 hsymω pA pA' x = hsym* (proj₂ (type-inv pA)) (proj₂ (type-inv pA')) x
+
+hsymωt : HSYM (App Type) (App ∘ ⟦_⟧tp) (App Type) (App ∘ ⟦_⟧tp)
+hsymωt pA pA' (inj red1 red2 rel) = inj red2 red1 (hsymω pA pA' rel)
 
 ⟦,⟧ctx-sym : ∀ {Γ : Ctx} {p : ⊨ Γ ctx} -> SYM ⟦ Γ , p ⟧ctx
 ⟦,⟧ctx-sym {⊡} {tt} {⊡} {⊡} x = tt
