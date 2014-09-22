@@ -9,7 +9,7 @@ open import Data.Empty
 open import Data.Nat
 open import WfNat
 open import Model
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open SetF
 open import Util
 open import ElIrrelevance
@@ -39,3 +39,13 @@ mutual
                   (AppDeter4 (pF p₁') (pF₁ p₁))
                  (App.rel (pF₁ p₁))) r
  elIrrAcc (inj akf1) (inj akf2) (Set* x) refl refl (Set* x₁) p = cumul (akf1 x) (akf2 x₁) ≤refl p
+
+elIrrAccω : ∀ {A A'} (pA1 pA2 : A ≈ A' ∈ Type) -> [ pA1 ] →₂ [ pA2 ]
+elIrrAccω (n , pA1) (m , pA2) = elIrrAcc _ _ pA1 refl refl pA2
+
+
+AppIrr : ∀ {A A'} (p q : A ≈ A' ∈ Type) -> App ([ p ]) →₂ App ([ q ])
+AppIrr p q (inj b1 b2 red1 red2 rel) = inj _ _ red1 red2 (elIrrAccω p q rel)
+
+⟦⟧tp-irr : ∀ {c1 c2} (p q : c1 ≈ c2 ∈ App Type) -> ⟦ p ⟧tp →₂ ⟦ q ⟧tp
+⟦⟧tp-irr p q x = elIrrAcc _ _ (proj₂ (App.rel p)) (AppDeter3 p q) (AppDeter4 p q) (proj₂ (App.rel q)) x

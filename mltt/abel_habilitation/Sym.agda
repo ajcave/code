@@ -9,7 +9,7 @@ open import Data.Empty
 open import Data.Nat
 open import WfNat
 open import Model
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Util
 open SetF
 
@@ -66,6 +66,17 @@ symSetω' (inj x) = SymF.symSet _ x (λ p → symSetω' (x p))
 
 symSetω : ∀ {k} -> SYM (SetU k)
 symSetω = symSetω' nat-acc
+
+hsymElω' : ∀ {k} {K : Acc k} {A A' B B' a a'}
+      (pA : A ≈ A' ∈ (SetU' K))
+         (eqA : A ≡ B) (eqB : A' ≡ B')
+      (pA' : B' ≈ B ∈ (SetU' K))
+   -> ElU' K pA' a a'
+   -> ElU' K pA a' a
+hsymElω' {k} {inj x} = SymF.hsymEl _ x (λ p → symSetω' (x p))
+
+
+--hsymω (n , pA) (m , pA') = SymF.hsymEl _ _ {!!} pA' refl refl pA
 
 -- symElω' : ∀ {k} (acck : Acc k) -> ∀ {A A' B B' a a'} (pA : A ≈ A' ∈ (SetU' acck))
 --                      (eqA : A ≡ B) (eqB : A' ≡ B')

@@ -44,29 +44,29 @@ record App (B : REL) (c1 c2 : Comp) : Set where
 App→ : ∀ {B B'} -> B →₂ B' -> App B →₂ App B'
 App→ f (inj b1 b2 red1 red2 rel) = inj _ _ red1 red2 (f rel)
 
-AppDeter1 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
-    (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
-    (q : (f2 · a2) ≈ (f3 · a3) ∈ App B')
+AppDeter1 :  ∀ {c1 c2 c3 B B'} 
+    (p : c1 ≈ c2 ∈ App B)
+    (q : c2 ≈ c3 ∈ App B')
    -> App.b2 p ≡ App.b1 q
 AppDeter1 (inj b1 b2 red1 red2 rel)
           (inj b3 b4 red3 red4 rel') = eval-deter red2 red3
 
-AppDeter2 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
-    (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
-    (q : (f2 · a2) ≈ (f3 · a3) ∈ App B')
+AppDeter2 :  ∀ {c1 c2 c3 B B'} 
+    (p : c1 ≈ c2 ∈ App B)
+    (q : c2 ≈ c3 ∈ App B')
    -> App.b1 q ≡ App.b2 p 
 AppDeter2 p q = sym (AppDeter1 p q)
 
-AppDeter3 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
-    (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
-    (q : (f1 · a1) ≈ (f3 · a3) ∈ App B')
+AppDeter3 :  ∀ {c1 c2 c3 B B'} 
+    (p : c1 ≈ c2 ∈ App B)
+    (q : c1 ≈ c3 ∈ App B')
    -> App.b1 p ≡ App.b1 q
 AppDeter3 (inj b1 b2 red1 red2 rel)
           (inj b3 b4 red3 red4 rel') = eval-deter red1 red3 
 
-AppDeter4 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
-    (p : (f2 · a2) ≈ (f1 · a1) ∈ App B)
-    (q : (f3 · a3) ≈ (f1 · a1) ∈ App B')
+AppDeter4 :  ∀ {c1 c2 c3 B B'} 
+    (p : c2 ≈ c1 ∈ App B)
+    (q : c3 ≈ c1 ∈ App B')
    -> App.b2 p ≡ App.b2 q
 AppDeter4 (inj b1 b2 red1 red2 rel)
           (inj b3 b4 red3 red4 rel') = eval-deter red2 red4
@@ -120,7 +120,7 @@ ElU n = ElU' (nat-acc {n})
 [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 [ n , pA ] = ElU n pA
 
-⟦_⟧tp : ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ (App Type) -> REL
+⟦_⟧tp : ∀ {c1 c2} -> c1 ≈ c2 ∈ App Type -> REL
 ⟦ vT ⟧tp = [ App.rel vT ]
 
 mutual
