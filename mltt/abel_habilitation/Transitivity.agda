@@ -95,12 +95,3 @@ symω (k , pA) = symω' _ pA
 transω' : ∀ {k} (K : Acc k) {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' K pA)
 transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
 
-⟦,⟧ctx-sym : ∀ {Γ : Ctx} {p : ⊨ Γ ctx} -> SYM ⟦ Γ , p ⟧ctx
-⟦,⟧ctx-sym {⊡} {tt} {⊡} {⊡} x = tt
-⟦,⟧ctx-sym {⊡} {tt} {Syn.⊡} {b Syn., a} ()
-⟦,⟧ctx-sym {⊡} {tt} {a Syn., a₁} {Syn.⊡} ()
-⟦,⟧ctx-sym {⊡} {tt} {a Syn., a₁} {b Syn., a₂} ()
-⟦,⟧ctx-sym {Γ , S} {proj₁ , proj₂} {Syn.⊡} {Syn.⊡} ()
-⟦,⟧ctx-sym {Γ , S} {proj₁ , proj₂} {Syn.⊡} {b Syn., a} ()
-⟦,⟧ctx-sym {Γ , S} {proj₁ , proj₂} {a Syn., a₁} {Syn.⊡} ()
-⟦,⟧ctx-sym {Γ , S} {vΓ , vT} {a Syn., a₁} {b Syn., a₂} (r1 , r2) = (⟦,⟧ctx-sym r1) , {!elIrrAccω!}
