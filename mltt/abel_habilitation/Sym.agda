@@ -49,13 +49,6 @@ mutual
      with eval-deter red1 red4 | eval-deter red2 red3
   hsym* (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl = hsymEl _ _ rel rel₁ x
 
-  -- hsym*' : ∀ {k n} {K : Acc k} {N : Acc n}
-  --  -> HSYM (App (SetU' K)) (App ∘ ElU' ∘ App.rel) (App (SetU' N)) (App ∘ ElU' ∘ App.rel)
-  -- hsym*' (inj (_ , red1) (_ , red2) rel) (inj (_ , red3) (_ , red4) rel₁) x
-  --   with eval-deter red1 red4 | eval-deter red2 red3
-  -- hsym*' (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl =
-  --   inj (App.red2 x) (App.red1 x) (hsymEl _ _ rel rel₁ (App.rel x))
-
   symSet : ∀ {k n} (K : Acc k) (N : Acc n) -> k ≤ n -> ∀ {A A'} -> A ≈ A' ∈ SetU' K -> A' ≈ A ∈ SetU' N
   symSet (inj akf) (inj akn) kn (Neu y p) = Neu (sym-⊥' y) (≤trans p kn)
   symSet (inj akf) (inj akn) kn Nat = Nat
@@ -69,34 +62,4 @@ symSetω' K = symSet K K ≤refl
 
 symSetω : ∀ {k} -> SYM (SetU k)
 symSetω = symSetω' nat-acc
-
--- hsymElω' : ∀ {k} {K : Acc k} {A A' B B' a a'}
---       (pA : A ≈ A' ∈ (SetU' K))
---          (eqA : A ≡ B) (eqB : A' ≡ B')
---       (pA' : B' ≈ B ∈ (SetU' K))
---    -> ElU' K pA' a a'
---    -> ElU' K pA a' a
--- hsymElω' {k} {inj x} = SymF.hsymEl _ x (λ p → symSetω' (x p))
-
-
---hsymω (n , pA) (m , pA') = SymF.hsymEl _ _ {!!} pA' refl refl pA
-
--- symElω' : ∀ {k} (acck : Acc k) -> ∀ {A A' B B' a a'} (pA : A ≈ A' ∈ (SetU' acck))
---                      (eqA : A ≡ B) (eqB : A' ≡ B')
---                      (pA' : B' ≈ B ∈ (SetU' acck)) ->
---       ElU' acck pA' a a' -> ElU' acck pA a' a
--- symElω' (inj x) = SymF.symEl _ x (λ p → symSetω' (x p))
-
--- symElω2' : ∀ {k} (acck : Acc k) -> ∀ {A A' a a'}
---                      (pA : A ≈ A' ∈ (SetU' acck)) ->
---       ElU' acck pA a a' -> ElU' acck (symSetω' acck pA) a' a
--- symElω2' acck pA = symElω' acck (symSetω' acck pA) refl refl pA
-
--- symElω : ∀ {k} {A A' a a'}
---      (pA  : A'  ≈ A ∈ (SetU k))
---   -> (pA' : A ≈ A'  ∈ (SetU k))
---   -> ElU k pA' a a' -> ElU k pA a' a
--- symElω pA pA' h = symElω' nat-acc pA refl refl pA' h
-
-
 

@@ -1,4 +1,4 @@
-module Transitivity where
+module HTransitivity where
 open import Syntax
 open import SyntaxTm
 open Syn Exp
@@ -45,32 +45,33 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
  open IrrF k akf
 
  mutual
-  transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
-  transEl (Neu y _) (inj y') (inj y0) = inj (trans-⊥' y' y0)
-  transEl Nat ab bc = NatR-trans ab bc
-  transEl (Π pA pF) ab bc = λ p →
-   let p' = symEl pA p in
-   let pp' = transEl pA p p' in
-   let q0 = ab pp' in
-   let q1 = bc p in
-   let q2 = App→ (irrL (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
-   App-trans (transEl (App.rel (pF p))) q2 q1
-  transEl (Set* y) ab bc = set<trans y ab bc
+  transEl : ∀ {A B C} (pAB : A ≈ B ∈ SetU' K) (pBC : B ≈ C ∈ SetU' K) (pAC : A ≈ C ∈ SetU' K) ->
+   ∀ {f g h} -> f ≈ g ∈ ElU' pAB -> g ≈ h ∈ ElU' pBC -> f ≈ h ∈ ElU' pAC
+  transEl (Neu x x₂) (Neu x₁ x₃) (Neu x₄ x₅) (inj x₆) (inj x₇) = inj (trans-⊥' x₆ x₇)
+  transEl Nat Nat Nat x1 x2 = NatR-trans x1 x2
+  transEl (Π pA pF) (Π pA₁ pF₁) (Π pA₂ pF₂) fRg gRh = λ aRa'₂ →
+    let aRa'₁ = irrR pA₂ refl pA₁ aRa'₂ in
+    let gaRha' = gRh aRa'₁ in
+    let aRa' = irrL pA₂ refl pA aRa'₂ in
+    let a'Ra = hsymEl _ _ pA (symSetω' _ pA) aRa' in
+    let aRa = transEl pA (symSetω' _ pA) {! (transSet pA (symSetω' _ pA)) !} aRa' a'Ra in
+    {!!}
+  transEl (Set* x) (Set* x₁) (Set* x₂) x1 x2 = set<trans x₂ {!!} {!!}
 
   symEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SYM (ElU' pA)
-  symEl (Neu y _) (inj x) = inj (sym-⊥' x)
-  symEl Nat ab = NatR-sym ab
-  symEl (Π pA pF) ab = λ p → 
-   let p' = symEl pA p in
-   let pp' = transEl pA p p' in
-   let q = App-sym (symEl (App.rel (pF p'))) (ab p') in
-   let q0 = App→ (irrR (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
-   let q1 = App→ (irrL (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
-   q1
-  symEl (Set* y) ab = symSetω' (akf y) ab
+  symEl = {!!} -- (Neu y _) (inj x) = inj (sym-⊥' x)
+  -- symEl Nat ab = NatR-sym ab
+  -- symEl (Π pA pF) ab = λ p → 
+  --  let p' = symEl pA p in
+  --  let pp' = transEl pA p p' in
+  --  let q = App-sym (symEl (App.rel (pF p'))) (ab p') in
+  --  let q0 = App→ (irrR (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
+  --  let q1 = App→ (irrL (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
+  --  q1
+  -- symEl (Set* y) ab = symSetω' (akf y) ab
 
   selfL : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SELFL (ElU' pA)
-  selfL pA p = transEl pA p (symEl pA p)
+  selfL pA p = {!!} --transEl pA p (symEl pA p)
 
  mutual
   transSet' : TRANS' (SetU' K)
@@ -97,14 +98,6 @@ symω' (inj x) = TransF.symEl _ _ (λ p → transSetω' (x p))
 symω : ∀ {A A'} (pA : A ≈ A' ∈ Type) -> SYM ([ pA ])
 symω (k , pA) = symω' _ pA
 
-transω' : ∀ {k} (K : Acc k) {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
-transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
+-- transω' : ∀ {k} (K : Acc k) {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
+-- transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
 
--- selfSetL : ∀ {k} {K : Acc k} {A B} (pAB : A ≈ B ∈ SetU' K) -> A ≈ A ∈ SetU' K
--- selfSetL pAB = transSetω' _ pAB (symSet _ _ ≤refl pAB)
-
-htrans : ∀ {k} {K : Acc k} {A B C}
-     (pAB : A ≈ B ∈ SetU' K) (pBC : B ≈ C ∈ SetU' K) (pAC : A ≈ C ∈ SetU' K) ->
-   ∀ {f g h} -> f ≈ g ∈ ElU' pAB -> g ≈ h ∈ ElU' pBC -> f ≈ h ∈ ElU' pAC
-htrans pAB pBC pAC f≈g∈AB g≈h∈BC =
- transω' _ pAC (irrLω' pAB pAC f≈g∈AB) (irrRω' pBC pAC g≈h∈BC)
