@@ -13,6 +13,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open SetF
 open import Util
 open import ElIrrelevance
+open import Cumulativity
 
 TRANS : ∀ {A} -> PREL A -> Set
 TRANS R = ∀ {a b c} -> R a b -> R b c -> R a c
@@ -42,7 +43,8 @@ open import Sym
 module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
       (set<trans : ∀ {j} (p : j < k) -> TRANS (SetU' (akf p)))
   where
- open IrrF k akf
+ K : Acc k
+ K = inj akf
 
  mutual
   transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
@@ -53,7 +55,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
    let pp' = transEl pA p p' in
    let q0 = ab pp' in
    let q1 = bc p in
-   let q2 = App→ (irrL (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
+   let q2 = App→ (irrL _ _ (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
    App-trans (transEl (App.rel (pF p))) q2 q1
   transEl (Set* y) ab bc = set<trans y ab bc
 
@@ -64,8 +66,8 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
    let p' = symEl pA p in
    let pp' = transEl pA p p' in
    let q = App-sym (symEl (App.rel (pF p'))) (ab p') in
-   let q0 = App→ (irrR (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
-   let q1 = App→ (irrL (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
+   let q0 = App→ (irrR _ _ (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
+   let q1 = App→ (irrL _ _ (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
    q1
   symEl (Set* y) ab = symSetω' (akf y) ab
 
@@ -103,8 +105,14 @@ transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
 -- selfSetL : ∀ {k} {K : Acc k} {A B} (pAB : A ≈ B ∈ SetU' K) -> A ≈ A ∈ SetU' K
 -- selfSetL pAB = transSetω' _ pAB (symSet _ _ ≤refl pAB)
 
-htrans : ∀ {k} {K : Acc k} {A B C}
-     (pAB : A ≈ B ∈ SetU' K) (pBC : B ≈ C ∈ SetU' K) (pAC : A ≈ C ∈ SetU' K) ->
-   ∀ {f g h} -> f ≈ g ∈ ElU' pAB -> g ≈ h ∈ ElU' pBC -> f ≈ h ∈ ElU' pAC
-htrans pAB pBC pAC f≈g∈AB g≈h∈BC =
- transω' _ pAC (irrLω' pAB pAC f≈g∈AB) (irrRω' pBC pAC g≈h∈BC)
+-- htrans : ∀ {k} {K : Acc k} {A B C}
+--      (pAB : A ≈ B ∈ SetU' K) (pBC : B ≈ C ∈ SetU' K) (pAC : A ≈ C ∈ SetU' K) ->
+--    ∀ {f g h} -> f ≈ g ∈ ElU' pAB -> g ≈ h ∈ ElU' pBC -> f ≈ h ∈ ElU' pAC
+-- htrans pAB pBC pAC f≈g∈AB g≈h∈BC =
+--  transω' _ pAC (irrLω' pAB pAC f≈g∈AB) (irrRω' pBC pAC g≈h∈BC)
+
+htransω : ∀ {A B C}
+     (pAB : A ≈ B ∈ Type) (pBC : B ≈ C ∈ Type) (pAC : A ≈ C ∈ Type) ->
+   ∀ {f g h} -> f ≈ g ∈ [ pAB ] -> g ≈ h ∈ [ pBC ] -> f ≈ h ∈ [ pAC ]
+htransω (n , pAB) (m , pBC) (k , pAC) f≈g g≈h =
+ transω' _ pAC (irrL _ _ pAB refl pAC f≈g) (irrR _ _ pBC refl pAC g≈h)
