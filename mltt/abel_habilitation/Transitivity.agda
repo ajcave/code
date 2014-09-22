@@ -9,7 +9,7 @@ open import Data.Empty
 open import Data.Nat
 open import WfNat
 open import Model
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding ([_])
 open SetF
 open import Util
 open import ElIrrelevance
@@ -32,14 +32,13 @@ NatR-trans (suc x) (suc y) = suc (NatR-trans x y)
 NatR-trans (neu x) (neu y) = neu (trans-⊥' x y)
 
 App-trans : ∀ {B : REL} -> TRANS B -> TRANS (App B)
-App-trans f (inj b1 b2 red1 red2 rel) (inj b3 b4 red3 red4 rel₁) with app-deter red2 red3
+App-trans f (inj b1 b2 red1 red2 rel) (inj b3 b4 red3 red4 rel₁) with eval-deter red2 red3
 App-trans f (inj b1 b2 red1 red2 rel) (inj .b2 b4 red3 red4 rel₁) | refl = inj _ _ red1 red4 (f rel rel₁)
 
 open import Sym
 
 module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
       (set<trans : ∀ {j} (p : j < k) -> TRANS (SetU' (akf p)))
-      (set<sym : ∀ {j} (p : j < k) -> SYM (SetU' (akf p)))
   where
  open IrrF k akf
 
@@ -66,7 +65,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
    let q0 = App→ (irrR (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
    let q1 = App→ (irrL (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
    q1
-  symEl (Set* y) ab = set<sym y ab
+  symEl (Set* y) ab = symSetω' (akf y) ab
 
  mutual
   transSet' : TRANS' (SetU' K)
@@ -84,4 +83,15 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
 
   transSet : TRANS (SetU' K)
   transSet pA pB = transSet' pA refl pB
- 
+
+transSetω' : ∀ {k} (acck : Acc k) -> TRANS (SetU' acck)
+transSetω' (inj x) = TransF.transSet _ _ (λ p → transSetω' (x p))
+
+symω' : ∀ {k} (acck : Acc k) -> ∀ {A A'} (pA : A ≈ A' ∈ SetU' acck) -> SYM (ElU' acck pA)
+symω' (inj x) = TransF.symEl _ _ (λ p → transSetω' (x p))
+
+symω : ∀ {A A'} (pA : A ≈ A' ∈ Type) -> SYM ([ pA ])
+symω (k , pA) = symω' _ pA
+
+transω' : ∀ {k} (K : Acc k) {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' K pA)
+transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))

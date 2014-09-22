@@ -20,7 +20,7 @@ mutual
   Nat : ∀ {i} -> Γ ⊢ctx -> Γ ⊢ Nat ≈ Nat ∶ Set* i
   zero : Γ ⊢ctx -> Γ ⊢ zero ≈ zero ∶ Nat
   suc : ∀ {t t'} -> Γ ⊢ t ≈ t' ∶ Nat -> Γ ⊢ suc t ≈ suc t' ∶ Nat
-  Set* : ∀ {i} -> Γ ⊢ Set* i ≈ Set* i ∶ Set* (suc i)
+  Set* : ∀ {i} -> Γ ⊢ctx -> Γ ⊢ Set* i ≈ Set* i ∶ Set* (suc i)
   idx : ∀ {x A} -> Γ ⊢ctx -> Γ ∋ x ∶ A -> Γ ⊢ (idx x) ≈ (idx x) ∶ A
   rec :  ∀ {T ts tz tn tn' i}
        -> (⊡ , Nat) ⊢ T ≈ T ∶ Set* i

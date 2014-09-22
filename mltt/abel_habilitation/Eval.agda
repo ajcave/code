@@ -5,16 +5,18 @@ open Syn Exp
 open import Data.Nat
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
--- Hmm I don't think I can make the others parametric over eval, since
--- it wouldn't be able to see strict positivity...
+data Comp : Set where
+ ⟦_⟧_ : (term : Exp) -> (env : Env) -> Comp
+ _·_ : (f a : Val) -> Comp
+
 mutual
  data lookup_,_↘_ : Env -> ℕ -> Val -> Set where
   top : ∀ {ρ a} -> lookup (ρ , a) , zero ↘ a
   pop : ∀ {ρ a b x} -> lookup ρ , x ↘ b -> lookup (ρ , a) , (suc x) ↘ b
- data ⟦_⟧_↘_ : Exp -> Env -> Val -> Set where
+ data _↘_ : Comp -> Val -> Set where
   idx : ∀ {x ρ v} -> lookup ρ , x ↘ v -> ⟦ idx x ⟧ ρ ↘ v
   ƛ : ∀ {t ρ} -> ⟦ ƛ t ⟧ ρ ↘ ƛ t ρ
-  _·_ : ∀ {r s ρ f a b} -> ⟦ r ⟧ ρ ↘ f -> ⟦ s ⟧ ρ ↘ a -> f · a ↘ b -> ⟦ r · s ⟧ ρ ↘ b
+  _·_ : ∀ {r s ρ f a b} -> ⟦ r ⟧ ρ ↘ f -> ⟦ s ⟧ ρ ↘ a -> (f · a) ↘ b -> ⟦ r · s ⟧ ρ ↘ b
   zero : ∀ {ρ} -> ⟦ zero ⟧ ρ ↘ zero
   suc : ∀ {ρ t d} -> ⟦ t ⟧ ρ ↘ d -> ⟦ suc t ⟧ ρ ↘ (suc d)
   -- Note that this is rec where ts is of arrow type, not expanded.
@@ -27,17 +29,17 @@ mutual
   Π : ∀ {A A' F ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ Π A F ⟧ ρ ↘ Π A' (ƛ F ρ)
   Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
   _[_] : ∀ {t σ ρ ρ' d} -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t ⟧ ρ' ↘ d -> ⟦ t [ σ ] ⟧ ρ ↘ d
+   --data _·_↘_ : Val -> Val -> Val -> Set where 
+  ƛ· : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> ((ƛ t ρ) · a) ↘ b
+  ↑ : ∀ {A F e a F'}
+    -> (F · a) ↘ F'
+    -> (↑[ Π A F ] e · a) ↘ ↑[ F' ] (e · ↓[ A ] a)
  data ⟦_⟧s_↘_ : Subst -> Env -> Env -> Set where
   _[_] : ∀ {σ1 σ2 ρ ρ' ρ''} -> ⟦ σ2 ⟧s ρ ↘ ρ' -> ⟦ σ1 ⟧s ρ' ↘ ρ'' -> ⟦ σ1 [ σ2 ] ⟧s ρ ↘ ρ''
   id : ∀ {ρ} -> ⟦ id ⟧s ρ ↘ ρ
   ↑ : ∀ {ρ a} -> ⟦ ↑ ⟧s (ρ , a) ↘ ρ
   _,_ : ∀ {σ t ρ ρ' a} -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t ⟧ ρ ↘ a -> ⟦ σ , t ⟧s ρ ↘ (ρ' , a)
   ⊡ : ∀ {ρ} -> ⟦ ⊡ ⟧s ρ ↘ ⊡
- data _·_↘_ : Val -> Val -> Val -> Set where 
-  ƛ : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> (ƛ t ρ) · a ↘ b
-  ↑ : ∀ {A F e a F'}
-    -> F · a ↘ F'
-    -> (↑[ Π A F ] e) · a ↘ ↑[ F' ] (e · ↓[ A ] a)
  data rec_,_,_,_↘_ : Exp -> Exp -> Exp -> Val -> Val -> Set where
   zero : ∀ {T tz ts dz} -> ⟦ tz ⟧ ⊡ ↘ dz -> rec T , tz , ts , zero ↘ dz
   suc : ∀ {T tz ts dn a b} -> rec T , tz , ts , dn ↘ a -> ⟦ ts ⟧ ((⊡ , dn) , a) ↘ b
@@ -70,11 +72,11 @@ IsBaseType _ = ⊥
 
 mutual
  data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Nf -> Set where
-  Π : ∀ {n f b A B B' v} -> f · ↑[ A ] (lvl n) ↘ b -> B · ↑[ A ] (lvl n) ↘ B' -> Rnf (suc n) , b ∶ B' ↘ v
+  Π : ∀ {n f b A B B' v} -> (f · ↑[ A ] (lvl n)) ↘ b -> (B · ↑[ A ] (lvl n)) ↘ B' -> Rnf (suc n) , b ∶ B' ↘ v
      -> Rnf n , f ∶ Π A B ↘ ƛ v
   Nat : ∀ {n i} -> Rnf n , Nat ∶ Set* i ↘ Nat
   SetZ : ∀ {n i j} -> Rnf n , Set* i ∶ Set* j ↘ Set* i -- !! Todo: will this work?
-  Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> F · ↑[ A ] (lvl n) ↘ B
+  Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> (F · ↑[ A ] (lvl n)) ↘ B
    -> Rnf (suc n) , B ∶ Set* i ↘ B'
    -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
   Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
@@ -93,11 +95,11 @@ lookup-deter top top = refl
 lookup-deter (pop p1) (pop p2) = lookup-deter p1 p2
 
 mutual
- eval-deter : ∀ {t ρ} -> Singleton (⟦_⟧_↘_ t ρ)
+ eval-deter : ∀ {c} -> Singleton (_↘_ c)
  eval-deter (idx x₂) (idx x₃) = lookup-deter x₂ x₃
  eval-deter ƛ ƛ = refl
  eval-deter (_·_ p1 p2 x₁) (_·_ p3 p4 x₂) with eval-deter p1 p3 | eval-deter p2 p4
- ... | refl | refl = app-deter x₁ x₂
+ ... | refl | refl = eval-deter x₁ x₂
  eval-deter zero zero = refl
  eval-deter (suc p1) (suc p2) = cong suc (eval-deter p1 p2)
  eval-deter (rec p1 x₁) (rec p2 x₂) with eval-deter p1 p2
@@ -107,6 +109,9 @@ mutual
  eval-deter Nat Nat = refl
  eval-deter (x₁ [ p1 ]) (x₂ [ p2 ]) with evals-deter x₁ x₂
  ... | refl = eval-deter p1 p2
+ eval-deter (ƛ· x₁) (ƛ· x₂) = eval-deter x₁ x₂
+ eval-deter (↑ p1) (↑ p2) with eval-deter p1 p2
+ ... | refl = refl
 
  evals-deter : ∀ {σ ρ} -> Singleton (⟦_⟧s_↘_ σ ρ)
  evals-deter (p2 [ p1 ]) (p3 [ p4 ]) with evals-deter p2 p3
@@ -115,11 +120,6 @@ mutual
  evals-deter ↑ ↑ = refl
  evals-deter (p1 , x) (p2 , x₁) = cong₂ _,_ (evals-deter p1 p2) (eval-deter x x₁)
  evals-deter ⊡ ⊡ = refl
-
- app-deter : ∀ {f a} -> Singleton (_·_↘_ f a)
- app-deter (ƛ x₁) (ƛ x₂) = eval-deter x₁ x₂
- app-deter (↑ p1) (↑ p2) with app-deter p1 p2
- ... | refl = refl
 
  rec-deter : ∀ {T tz ts dn} -> Singleton (rec_,_,_,_↘_ T tz ts dn)
  rec-deter (zero x₁) (zero x₂) = eval-deter x₁ x₂
@@ -130,13 +130,13 @@ mutual
 
 mutual
  Rnf-deter : ∀ {n a A} -> Singleton (Rnf_,_∶_↘_ n a A)
- Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) with app-deter x x₂
- Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) | refl with app-deter x₁ x₃
+ Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) with eval-deter x x₂
+ Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) | refl with eval-deter x₁ x₃
  ... | refl = cong ƛ (Rnf-deter p1 p2)
  Rnf-deter (Π x₂ x p1) (Neut {._} {()} x₃)
  Rnf-deter Nat Nat = refl
  Rnf-deter SetZ SetZ = refl
- Rnf-deter (Fun p1 x p2) (Fun p3 x₁ p4) with app-deter x x₁
+ Rnf-deter (Fun p1 x p2) (Fun p3 x₁ p4) with eval-deter x x₁
  ... | refl = cong₂ Π (Rnf-deter p1 p3) (cong ƛ (Rnf-deter p2 p4))
  Rnf-deter (Neut {._} {()} x₁) (Π x₂ x₃ p2)
  Rnf-deter (Neut x) (Neut x₃) = cong ne (Rne-deter x x₃)

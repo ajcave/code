@@ -30,13 +30,15 @@ data NatR : REL where
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
 
-record App (B : REL) (c1 c2 : ValApp) : Set where
+--record 
+
+record App (B : REL) (c1 c2 : Comp) : Set where
  constructor inj
  field
   b1 : Val
   b2 : Val
-  red1 : ValApp.f c1 · ValApp.a c1  ↘ b1
-  red2 : ValApp.f c2 · ValApp.a c2 ↘ b2
+  red1 : c1 ↘ b1
+  red2 : c2 ↘ b2
   rel : B b1 b2
 
 App→ : ∀ {B B'} -> B →₂ B' -> App B →₂ App B'
@@ -47,7 +49,7 @@ AppDeter1 :  ∀ {f1 a1 f2 a2 f3 a3 B B'}
     (q : (f2 · a2) ≈ (f3 · a3) ∈ App B')
    -> App.b2 p ≡ App.b1 q
 AppDeter1 (inj b1 b2 red1 red2 rel)
-          (inj b3 b4 red3 red4 rel') = app-deter red2 red3
+          (inj b3 b4 red3 red4 rel') = eval-deter red2 red3
 
 AppDeter2 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
     (p : (f1 · a1) ≈ (f2 · a2) ∈ App B)
@@ -60,22 +62,14 @@ AppDeter3 :  ∀ {f1 a1 f2 a2 f3 a3 B B'}
     (q : (f1 · a1) ≈ (f3 · a3) ∈ App B')
    -> App.b1 p ≡ App.b1 q
 AppDeter3 (inj b1 b2 red1 red2 rel)
-          (inj b3 b4 red3 red4 rel') = app-deter red1 red3 
+          (inj b3 b4 red3 red4 rel') = eval-deter red1 red3 
 
 AppDeter4 :  ∀ {f1 a1 f2 a2 f3 a3 B B'} 
     (p : (f2 · a2) ≈ (f1 · a1) ∈ App B)
     (q : (f3 · a3) ≈ (f1 · a1) ∈ App B')
    -> App.b2 p ≡ App.b2 q
 AppDeter4 (inj b1 b2 red1 red2 rel)
-          (inj b3 b4 red3 red4 rel') = app-deter red2 red4
-
-record ⟦_⟧_≈⟦_⟧_∈_ t ρ t' ρ' (B : REL) : Set where
- field
-  b1 : Val
-  b2 : Val
-  red1 : ⟦ t  ⟧ ρ  ↘ b1
-  red2 : ⟦ t' ⟧ ρ' ↘ b2
-  rel : B b1 b2
+          (inj b3 b4 red3 red4 rel') = eval-deter red2 red4
 
 record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
  field
@@ -126,26 +120,32 @@ ElU n = ElU' (nat-acc {n})
 [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 [ n , pA ] = ElU n pA
 
-⟦_⟧tp : ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ Type -> REL
-⟦ vT ⟧tp = [ ⟦_⟧_≈⟦_⟧_∈_.rel vT ]
+⟦_⟧tp : ∀ {T ρ ρ'} -> ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ (App Type) -> REL
+⟦ vT ⟧tp = [ App.rel vT ]
 
 mutual
  ⊨_ctx : Ctx -> Set
  ⊨ ⊡ ctx = ⊤
- ⊨ (Γ , T) ctx = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ Type)
+ ⊨ (Γ , T) ctx = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App Type)
 
  ⟦_,_⟧ctx : (Γ : Ctx) -> ⊨ Γ ctx -> EnvREL
  ⟦_,_⟧ctx ⊡ tt ⊡ ⊡ = ⊤
  ⟦_,_⟧ctx (Γ , T) (vΓ , vT) (ρ , a) (ρ' , a') = Σ (ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) (λ vρ → a ≈ a' ∈ ⟦ vT vρ ⟧tp)
  ⟦_,_⟧ctx _ _ _ _ = ⊥
 
--- -- Can we package these the other way? Taking well-formedness as input?
+_⊨'_type[_] : (Γ : Ctx) -> Exp -> ⊨ Γ ctx -> Set
+Γ ⊨' T type[ vΓ ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App Type
+
 _⊨_type : Ctx -> Exp -> Set
-Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈⟦ T ⟧ ρ' ∈ Type)
+Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → Γ ⊨' T type[ vΓ ])
+
+_⊨'_≈_∶_[_] : (Γ : Ctx) -> Exp -> Exp -> (T : Exp) -> Γ ⊨ T type -> Set
+Γ ⊨' t ≈ t' ∶ T [ vΓ , vT ] =
+  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ vT vρ ⟧tp
 
 _⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
 Γ ⊨ t ≈ t' ∶ T = Σ (Γ ⊨ T type)
-  (λ {(vΓ , vT) -> ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ t ⟧ ρ ≈⟦ t' ⟧ ρ' ∈ ⟦ vT vρ ⟧tp })
+  (λ p -> Γ ⊨' t ≈ t' ∶ T [ p ] )
 
 _⊨_∶_ : Ctx -> Exp -> Exp -> Set
 Γ ⊨ t ∶ T    =    Γ ⊨ t ≈ t ∶ T
