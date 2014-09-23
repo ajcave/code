@@ -4,7 +4,7 @@ open import SyntaxTm
 open Syn Exp
 open import Eval
 open import Data.Product
-open import Data.Unit
+open import Data.Unit 
 open import Data.Empty
 open import Data.Nat
 open import WfNat
@@ -93,6 +93,11 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
 transSetω' : ∀ {k} (acck : Acc k) -> TRANS (SetU' acck)
 transSetω' (inj x) = TransF.transSet _ _ (λ p → transSetω' (x p))
 
+-- transSetω'' : TRANS Type
+-- transSetω'' (m , pAB) (n , pBC) with compare' m n
+-- transSetω'' (m , pAB) (n , pBC) | lte y = n , transSetω' _ (cumul _ _ y pAB) pBC
+-- transSetω'' (m , pAB) (n , pBC) | gte y = m , transSetω' _ pAB (cumul _ _ y pBC)
+
 symω' : ∀ {k} (acck : Acc k) -> ∀ {A A'} (pA : A ≈ A' ∈ SetU' acck) -> SYM (ElU' pA)
 symω' (inj x) = TransF.symEl _ _ (λ p → transSetω' (x p))
 
@@ -111,8 +116,17 @@ transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
 -- htrans pAB pBC pAC f≈g∈AB g≈h∈BC =
 --  transω' _ pAC (irrLω' pAB pAC f≈g∈AB) (irrRω' pBC pAC g≈h∈BC)
 
-htransω : ∀ {A B C}
-     (pAB : A ≈ B ∈ Type) (pBC : B ≈ C ∈ Type) (pAC : A ≈ C ∈ Type) ->
-   ∀ {f g h} -> f ≈ g ∈ [ pAB ] -> g ≈ h ∈ [ pBC ] -> f ≈ h ∈ [ pAC ]
+HTRANS : ∀ {B A} (U : PREL A) (El : INTERP B U) -> Set
+HTRANS U El = ∀ {A B C}
+  (pAB : A ≈ B ∈ U)
+  (pBC : B ≈ C ∈ U)
+  (pAC : A ≈ C ∈ U) 
+ -> ∀ {f g h}
+ -> f ≈ g ∈ (El pAB)
+ -> g ≈ h ∈ (El pBC)
+ -> f ≈ h ∈ (El pAC)
+
+htransω : HTRANS Type [_]
 htransω (n , pAB) (m , pBC) (k , pAC) f≈g g≈h =
  transω' _ pAC (irrL _ _ pAB refl pAC f≈g) (irrR _ _ pBC refl pAC g≈h)
+

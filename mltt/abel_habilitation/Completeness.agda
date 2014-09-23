@@ -30,22 +30,22 @@ mutual
 
  fundc : ∀ {Γ t t' T} -> Γ ⊢ t ≈ t' ∶ T -> ⊨ Γ ctx
  fundc (sym d) = fundc d
- fundc (trans d d₁) = fundc d
+ fundc (trans d d₁) = fundc d₁
  fundc (Nat x) = fundc' x
  fundc (zero x) = fundc' x
  fundc (suc d) = fundc d
  fundc (Set* x) = fundc' x
  fundc (idx x₁ x₂) = fundc' x₁
+ fundc (rec d d₁ d₂ d₃) = {!!}
+ fundc (d · d₁) = fundc d
+ fundc (ƛ d) = proj₁ (fundc d)
+ fundc (Π d d₁) = fundc d
+ fundc (d [ x ]) = {!!}
+ fundc (conv d d₁) = fundc d
+ fundc (sub d x) = fundc d
+ fundc (funβ d d₁) = fundc d₁
+ fundc (funη d) = fundc d
  fundc _ = {!!}
- -- fundc (rec d d₁ d₂ d₃) = {!!}
- -- fundc (d · d₁) = {!!}
- -- fundc (ƛ d) = {!!}
- -- fundc (Π d d₁) = {!!}
- -- fundc (d [ x ]) = {!!}
- -- fundc (conv d d₁) = {!!}
- -- fundc (sub d x) = {!!}
- -- fundc (funβ d d₁) = {!!}
- -- fundc (funη d) = {!!}
  -- fundc (rec-zero d d₁ d₂) = {!!}
  -- fundc (rec-suc d d₁ d₂ d₃) = {!!}
  -- fundc (sub-id d) = {!!}
@@ -63,22 +63,23 @@ mutual
 
  fundt : ∀ {Γ t t' T} (d : Γ ⊢ t ≈ t' ∶ T) -> Γ ⊨' T type[ fundc d ]
  fundt (sym d) vρ = fundt d vρ
- fundt (trans d d₁) vρ = fundt d vρ
+ fundt (trans d d₁) vρ = fundt d₁ vρ
  fundt (Nat {i} x) vρ = record { red1 = , Set*; red2 = , Set*; rel = suc i , Set* (s≤s ≤refl) }
  fundt (zero x) vρ = record { red1 = , Nat; red2 = , Nat; rel = 0 , Nat }
+ fundt (suc d) vρ = inj (, Nat) (, Nat) (0 , Nat)
+ fundt (Set* {i} x) vρ = inj (, Set*) (, Set*) (suc (suc i) , Set* ≤refl)
+ fundt (idx x₁ x₂) vρ = {!!}
+ fundt (rec d d₁ d₂ d₃) vρ = {!!}
+ fundt (d · d₁) vρ = {!!}
+ fundt (ƛ d) vρ with proj₂ (fundc d) vρ 
+ ... | inj (A , red1) (A' , red2) (n , rel) = inj (, Π red1 ƛ) (, Π red2 ƛ) (n , Π rel (λ a≈a' → {!!})) -- TODO: This may not be n! Do I need to mutually extract the level?
+ fundt (Π d d₁) vρ = {!!}
+ fundt (d [ x ]) vρ = {!!}
+ fundt (conv d d₁) vρ = {!!}
+ fundt (sub d x) vρ = {!!}
+ fundt (funβ d d₁) vρ = {!!}
+ fundt (funη d) vρ = {!!}
  fundt _ vρ = {!!}
- -- fundt (suc d) vρ = {!!}
- -- fundt (Set* x) vρ = {!!}
- -- fundt (idx x₁ x₂) vρ = {!!}
- -- fundt (rec d d₁ d₂ d₃) vρ = {!!}
- -- fundt (d · d₁) vρ = {!!}
- -- fundt (ƛ d) vρ = {!!}
- -- fundt (Π d d₁) vρ = {!!}
- -- fundt (d [ x ]) vρ = {!!}
- -- fundt (conv d d₁) vρ = {!!}
- -- fundt (sub d x) vρ = {!!}
- -- fundt (funβ d d₁) vρ = {!!}
- -- fundt (funη d) vρ = {!!}
  -- fundt (rec-zero d d₁ d₂) vρ = {!!}
  -- fundt (rec-suc d d₁ d₂ d₃) vρ = {!!}
  -- fundt (sub-id d) vρ = {!!}
@@ -96,22 +97,26 @@ mutual
 
  fund : ∀ {Γ t t' T} (d : Γ ⊢ t ≈ t' ∶ T) -> Γ ⊨' t ≈ t' ∶ T [ fundc d , fundt d ]
  fund (sym d) vρ = hsymωt (fundt d (⟦,⟧ctx-sym vρ)) (fundt d vρ) (fund d (⟦,⟧ctx-sym vρ))
- fund (trans d d₁) vρ = {!!}
- fund (Nat x) vρ = {!!}
- fund (zero x) vρ = {!!}
+ fund (trans d d₁) vρ =
+   let vρ' = ⟦,⟧ctx-irr (⟦,⟧ctx-self vρ) in
+   htransω' (fundt d vρ') (fundt d₁ vρ) (fundt d₁ vρ) (fund d vρ') (fund d₁ vρ)
+ fund (Nat x) vρ = inj (, Nat) (, Nat) Nat
+ fund (zero x) vρ = inj (, zero) (, zero) zero
+ fund (suc d) vρ with fund d vρ
+ fund (suc d) vρ | inj (_ , red1) (_ , red2) rel with fundt d vρ
+ fund (suc d) vρ | inj (_ , red1) (_ , red2) rel' | inj (._ , Nat) (._ , Nat) (n , Nat) = inj (, suc red1) (, suc red2) (suc rel')
+ fund (Set* x) vρ = inj (, Set*) (, Set*) (Set* ≤refl)
+ fund (idx x₁ x₂) vρ = {!!}
+ fund (rec d d₁ d₂ d₃) vρ = {!!}
+ fund (d · d₁) vρ = {!!}
+ fund (ƛ d) vρ = {!!}
+ fund (Π d d₁) vρ = {!!}
+ fund (d [ x ]) vρ = {!!}
+ fund (conv d d₁) vρ = {!!}
+ fund (sub d x) vρ = {!!}
+ fund (funβ d d₁) vρ = {!!}
+ fund (funη d) vρ = {!!}
  fund _ vρ = {!!}
- -- fund (suc d) vρ = {!!}
- -- fund (Set* x) vρ = {!!}
- -- fund (idx x₁ x₂) vρ = {!!}
- -- fund (rec d d₁ d₂ d₃) vρ = {!!}
- -- fund (d · d₁) vρ = {!!}
- -- fund (ƛ d) vρ = {!!}
- -- fund (Π d d₁) vρ = {!!}
- -- fund (d [ x ]) vρ = {!!}
- -- fund (conv d d₁) vρ = {!!}
- -- fund (sub d x) vρ = {!!}
- -- fund (funβ d d₁) vρ = {!!}
- -- fund (funη d) vρ = {!!}
  -- fund (rec-zero d d₁ d₂) vρ = {!!}
  -- fund (rec-suc d d₁ d₂ d₃) vρ = {!!}
  -- fund (sub-id d) vρ = {!!}

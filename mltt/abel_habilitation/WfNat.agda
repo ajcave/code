@@ -30,3 +30,14 @@ nat-acc = inj (nat-acc' _)
 ≤uniq : ∀ {n m} (p q : n ≤ m) -> p ≡ q
 ≤uniq z≤n z≤n = refl
 ≤uniq (s≤s m≤n) (s≤s m≤n') = cong s≤s (≤uniq m≤n m≤n')
+
+data Compare (m n : ℕ) : Set where
+ lte : m ≤ n -> Compare m n
+ gte : n ≤ m -> Compare m n
+
+compare' : (m n : ℕ) -> Compare m n
+compare' zero n = lte z≤n
+compare' (suc n) zero = gte z≤n
+compare' (suc n) (suc n') with compare' n n'
+compare' (suc n) (suc n') | lte y = lte (s≤s y)
+compare' (suc n) (suc n') | gte y = gte (s≤s y)
