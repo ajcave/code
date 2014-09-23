@@ -80,3 +80,8 @@ hsymωt pA pA' (inj red1 red2 rel) = inj red2 red1 (hsym* pA pA' rel)
 
 ⟦,⟧ctx-self : ∀ {Γ : Ctx} {p : ⊨ Γ ctx} -> SELFL (⟦ Γ , p ⟧ctx)
 ⟦,⟧ctx-self x = ⟦,⟧ctx-trans x (⟦,⟧ctx-sym x)
+
+-- open import Data.Nat
+-- lvl-inv : ∀ {k n ρ ρ'} -> ⟦ Set* k ⟧ ρ ≈ ⟦ Set* k ⟧ ρ' ∈ App (SetU n) -> k < n
+-- lvl-inv (inj (_ , red1) (_ , red2) rel) with eval-deter red1 Set* | eval-deter red2 Set*
+-- lvl-inv (inj (._ , red1) (._ , red2) (SetF.Set* x)) | refl | refl = x

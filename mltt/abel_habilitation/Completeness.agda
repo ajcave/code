@@ -15,18 +15,26 @@ open import ElIrrelevance
 open import Typing
 open import Sym
 open import Transitivity
-open Syn
 open import ModelProperties
 open import Function
+open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Cumulativity
 
 -- Copatterns would be useful to do all of this at once, even the record stuff...
 mutual
  fundc' : ∀ {Γ} -> Γ ⊢ctx -> ⊨ Γ ctx
  fundc' ⊡ = tt
- fundc' (_,_ x) = fundt' x , {!!}
+ fundc' (_,_ (inj x)) = fundc x , (λ x₁ → App→ ,_ (lem0 x x₁))
 
  fundt' : ∀ {Γ T} -> Γ ⊢ T type -> ⊨ Γ ctx
  fundt' (inj x) = fundc x
+
+ -- TODO: This is messy... Some kind of inversion happening here..
+ lem : ∀ {ρ ρ' i k A} (vT' : ⟦ Set* i ⟧ ρ ≈ ⟦ Set* i ⟧ ρ' ∈ App (SetU k))
+  -> ⟦ A ⟧ ρ ≈ ⟦ A ⟧ ρ' ∈ App (ElU k (App.rel vT'))
+  -> i < k × (⟦ A ⟧ ρ ≈ ⟦ A ⟧ ρ' ∈ App (SetU (pred k)))
+ lem (inj (_ , red1) (_ , red2) rel) p with eval-deter red1 Set* | eval-deter red2 Set*
+ lem (inj (._ , red1) (._ , red2) (Set* (s≤s x))) p | refl | refl = s≤s x , App→ (λ x₁ → cumul _ _ x x₁) p
 
  fundc : ∀ {Γ t t' T} -> Γ ⊢ t ≈ t' ∶ T -> ⊨ Γ ctx
  fundc (sym d) = fundc d
@@ -60,6 +68,11 @@ mutual
  -- fundc (sub-idx-pop x₁ x₂) = {!!}
  -- fundc (sub-· x d d₁) = {!!}
  -- fundc (sub-Π x d d₁) = {!!}
+ 
+ fundlvlv : ∀ {Γ x T} (dc : Γ ⊢ctx) (d : Γ ∋ x ∶ T) -> ℕ
+ fundlvlv ⊡ ()
+ fundlvlv (_,_ (inj {i} x)) top = i
+ fundlvlv (_,_ (inj x)) (pop d) = {!!}
 
  fundlvl : ∀ {Γ t t' T} (d : Γ ⊢ t ≈ t' ∶ T) -> ℕ
  fundlvl (sym d) = fundlvl d
@@ -68,7 +81,7 @@ mutual
  fundlvl (zero x) = 0
  fundlvl (suc d) = 0
  fundlvl (Set* {i} x) = suc (suc i)
- fundlvl (idx x₁ x₂) = {!!}
+ fundlvl (idx x₁ x₂) = fundlvlv x₁ x₂
  fundlvl (rec d d₁ d₂ d₃) = {!!}
  fundlvl (d · d₁) = {!!}
  fundlvl (ƛ d) = {!!}
@@ -94,6 +107,19 @@ mutual
  -- fundlvl (sub-· x d d₁) = {!!}
  -- fundlvl (sub-Π x d d₁) = {!!}
 
+ lem0 : ∀ {Γ A i} (d : Γ ⊢ A ≈ A ∶ Set* i) -> Γ ⊨' A type[ fundc d , pred (fundlvl d) ]
+ lem0 d vρ = proj₂ (lem (fundt d vρ) (fund d vρ))
+
+ fundtv : ∀ {Γ x T} (x1 : Γ ⊢ctx) (d : Γ ∋ x ∶ T) -> Γ ⊨' T type[ fundc' x1 , fundlvlv x1 d ]
+ fundtv ⊡ () ρ₁
+ fundtv (_,_ (inj x)) top {Syn.⊡} {Syn.⊡} vρ = {!!}
+ fundtv (_,_ (inj x)) top {Syn.⊡} {ρ' Syn., a} vρ = {!!}
+ fundtv (_,_ (inj x)) top {ρ Syn., a} {Syn.⊡} vρ = {!!}
+ fundtv (_,_ (inj x)) top {ρ Syn., a} {ρ' Syn., a₁} (vρ , va) = 
+  let q = lem (fundt x vρ) (fund x vρ) in
+  {!!}
+ fundtv (_,_ x) (pop d) ρ₁ = {!!}
+
  fundt : ∀ {Γ t t' T} (d : Γ ⊢ t ≈ t' ∶ T) -> Γ ⊨' T type[ fundc d , fundlvl d ]
  fundt (sym d) vρ = fundt d vρ
  fundt (trans d d₁) vρ = fundt d₁ vρ
@@ -101,7 +127,7 @@ mutual
  fundt (zero x) vρ = record { red1 = , Nat; red2 = , Nat; rel = Nat }
  fundt (suc d) vρ = inj (, Nat) (, Nat) (Nat)
  fundt (Set* {i} x) vρ = inj (, Set*) (, Set*) (Set* ≤refl)
- fundt (idx x₁ x₂) vρ = {!!}
+ fundt (idx x₁ x₂) vρ = fundtv x₁ x₂ vρ
  fundt (rec d d₁ d₂ d₃) vρ = {!!}
  fundt (d · d₁) vρ = {!!}
  fundt (ƛ d) vρ with proj₂ (fundc d) vρ 
