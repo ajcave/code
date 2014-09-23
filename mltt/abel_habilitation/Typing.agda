@@ -4,7 +4,7 @@ open import Data.Nat
 
 data _∋_∶_ : Ctx -> ℕ -> Exp -> Set where
  top : ∀ {Γ A} -> (Γ , A) ∋ zero ∶ (A [ ↑ ])
- pop : ∀ {Γ A B x} -> Γ ∋ x ∶ A -> (Γ , B) ∋ x ∶ (A [ ↑ ]) 
+ pop : ∀ {Γ A B x} -> Γ ∋ x ∶ A -> (Γ , B) ∋ (suc x) ∶ (A [ ↑ ]) 
 
 mutual
  data _⊢ctx : Ctx -> Set where

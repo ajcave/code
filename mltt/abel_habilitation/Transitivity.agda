@@ -116,15 +116,25 @@ transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
 -- htrans pAB pBC pAC f≈g∈AB g≈h∈BC =
 --  transω' _ pAC (irrLω' pAB pAC f≈g∈AB) (irrRω' pBC pAC g≈h∈BC)
 
-HTRANS : ∀ {B A} (U : PREL A) (El : INTERP B U) -> Set
-HTRANS U El = ∀ {A B C}
-  (pAB : A ≈ B ∈ U)
-  (pBC : B ≈ C ∈ U)
-  (pAC : A ≈ C ∈ U) 
+HTRANS' : ∀ {B A}
+ (U1 : PREL A) (El1 : INTERP B U1)
+ (U2 : PREL A) (El2 : INTERP B U2)
+ (U3 : PREL A) (El3 : INTERP B U3) -> Set
+HTRANS' U1 El1 U2 El2 U3 El3 = ∀ {A B C}
+  (pAB : A ≈ B ∈ U1)
+  (pBC : B ≈ C ∈ U2)
+  (pAC : A ≈ C ∈ U3) 
  -> ∀ {f g h}
- -> f ≈ g ∈ (El pAB)
- -> g ≈ h ∈ (El pBC)
- -> f ≈ h ∈ (El pAC)
+ -> f ≈ g ∈ (El1 pAB)
+ -> g ≈ h ∈ (El2 pBC)
+ -> f ≈ h ∈ (El3 pAC)
+
+HTRANS : ∀ {B A} (U : PREL A) (El : INTERP B U) -> Set
+HTRANS U El = HTRANS' U El U El U El
+
+htrans* : ∀ {k n m} -> HTRANS' (SetU k) (ElU k) (SetU n) (ElU n) (SetU m) (ElU m)
+htrans* pAB pBC pAC f≈g g≈h =
+ transω' _ pAC (irrL _ _ pAB refl pAC f≈g) (irrR _ _ pBC refl pAC g≈h)
 
 htransω : HTRANS Type [_]
 htransω (n , pAB) (m , pBC) (k , pAC) f≈g g≈h =

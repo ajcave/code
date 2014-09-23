@@ -122,6 +122,9 @@ ElU n = ElU' {n} {nat-acc {n}}
 [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 [ n , pA ] = ElU n pA
 
+⟦_,_⟧tp' : ∀ {c1 c2} k -> c1 ≈ c2 ∈ App (SetU k) -> REL
+⟦ k , vT ⟧tp' = ElU k (App.rel vT)
+
 ⟦_⟧tp : ∀ {c1 c2} -> c1 ≈ c2 ∈ App Type -> REL
 ⟦ vT ⟧tp = [ App.rel vT ]
 
@@ -135,15 +138,15 @@ mutual
  ⟦_,_⟧ctx (Γ , T) (vΓ , vT) (ρ , a) (ρ' , a') = Σ (ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) (λ vρ → a ≈ a' ∈ ⟦ vT vρ ⟧tp)
  ⟦_,_⟧ctx _ _ _ _ = ⊥
 
-_⊨'_type[_] : (Γ : Ctx) -> Exp -> ⊨ Γ ctx -> Set
-Γ ⊨' T type[ vΓ ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App Type
+_⊨'_type[_,_] : (Γ : Ctx) -> Exp -> ⊨ Γ ctx -> ℕ -> Set
+Γ ⊨' T type[ vΓ , k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k)
 
 _⊨_type : Ctx -> Exp -> Set
-Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → Γ ⊨' T type[ vΓ ])
+Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∃ (λ k -> Γ ⊨' T type[ vΓ , k ]))
 
 _⊨'_≈_∶_[_] : (Γ : Ctx) -> Exp -> Exp -> (T : Exp) -> Γ ⊨ T type -> Set
-Γ ⊨' t ≈ t' ∶ T [ vΓ , vT ] =
-  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ vT vρ ⟧tp
+Γ ⊨' t ≈ t' ∶ T [ vΓ , (k , vT) ] =
+  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ k , vT vρ ⟧tp'
 
 _⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
 Γ ⊨ t ≈ t' ∶ T = Σ (Γ ⊨ T type)

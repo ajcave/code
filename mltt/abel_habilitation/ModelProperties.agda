@@ -27,14 +27,25 @@ htransω0
  r1 r2 with eval-deter red1 red5 | eval-deter red2 red3 | eval-deter red4 red6
 htransω0 (inj (._ , red1) (._ , red2) rel) (inj (_ , red3) (._ , red4) rel') (inj (_ , red5) (_ , red6) rel0) r1 r2 | refl | refl | refl = htransω rel rel' rel0 r1 r2
 
+htransω0' : ∀ {k n m} -> HTRANS' (App (SetU k)) (⟦_,_⟧tp' k) (App (SetU n)) (⟦_,_⟧tp' n) (App (SetU m)) (⟦_,_⟧tp' m)
+htransω0'
+ (inj (_ , red1) (_ , red2) rel)
+ (inj (_ , red3) (_ , red4) rel')
+ (inj (_ , red5) (_ , red6) rel0)
+ r1 r2 with eval-deter red1 red5 | eval-deter red2 red3 | eval-deter red4 red6
+htransω0' (inj (._ , red1) (._ , red2) rel) (inj (_ , red3) (._ , red4) rel') (inj (_ , red5) (_ , red6) rel0) r1 r2 | refl | refl | refl = htrans* rel rel' rel0 r1 r2
+
 -- TODO: Is part of this shared with the def of transEl like 
 -- it is for symEl? Factor it out?
-htransω' : HTRANS (App Type) (App ∘ ⟦_⟧tp)
+htransω' : ∀ {k n m}
+ -> HTRANS' (App (SetU k)) (App ∘ (⟦_,_⟧tp' k))
+           (App (SetU n)) (App ∘ (⟦_,_⟧tp' n))
+           (App (SetU m)) (App ∘ (⟦_,_⟧tp' m))
 htransω' pAB pBC pAC (inj red1 (_ , red2) rel) (inj (_ , red3) red4 rel') with eval-deter red2 red3
-htransω' pAB pBC pAC (inj red1 (.proj₁ , red2) rel) (inj (proj₁ , red3) red4 rel') | refl = inj red1 red4 (htransω0 pAB pBC pAC rel rel')
+htransω' pAB pBC pAC (inj red1 (.proj₁ , red2) rel) (inj (proj₁ , red3) red4 rel') | refl = inj red1 red4 (htransω0' pAB pBC pAC rel rel')
 
-hsymωt : HSYM (App Type) (App ∘ ⟦_⟧tp) (App Type) (App ∘ ⟦_⟧tp)
-hsymωt pA pA' (inj red1 red2 rel) = inj red2 red1 (hsymω pA pA' rel)
+hsymωt : ∀ {k} -> HSYM (App (SetU k)) (App ∘ (⟦_,_⟧tp' k)) (App (SetU k)) (App ∘ (⟦_,_⟧tp' k))
+hsymωt pA pA' (inj red1 red2 rel) = inj red2 red1 (hsym* pA pA' rel)
 
 ⟦,⟧ctx-sym : ∀ {Γ : Ctx} {p : ⊨ Γ ctx} -> SYM ⟦ Γ , p ⟧ctx
 ⟦,⟧ctx-sym {⊡} {tt} {⊡} {⊡} x = tt
