@@ -309,18 +309,15 @@ maplem' df dw [] = clo (, fold[] []) (, fold[] []) []
 maplem' {i} {S} {S'} df dw (x ∷ du) with df x | maplem' {i} {S} {S'} df dw du
 maplem' df dw (x ∷ du) | clo (proj₁ , proj₂) (proj₃ , proj₄) rel | clo (proj₅ , proj₆) (proj₇ , proj₈) rel₁ = clo (, fold∷ proj₆ ((((▹ (pop (pop (pop top)))) · (▹ (pop top))) proj₂) ∷ (▹ top))) (, fold∷ proj₈ ((((▹ (pop (pop (pop top)))) · (▹ (pop top))) proj₄) ∷ (▹ top))) (rel ∷ rel₁)
 
--- maplem : ∀ {f} {S S' : tp ⊡ ₀} {us}
---   -> ⊡ , ⊡ ⊢ f ∶ (S ⇒ S') -> ⊡ , ⊡ ⊢ us ∶ Lst S -> ∃ (λ vs -> ((map' · f) · us) [ ⊡ ] ⇓ vs)
--- maplem {f} {S} {S'} df dus with fund df ⊡ ⊡ | fund dus ⊡ ⊡ | fund (maptp' S S') ⊡ ⊡
--- maplem df dus | clo (vf1 , r1) (vf2 , r2) relf | clo (dus1 , r3) (dus2 , r4) relu | clo red1 red2 rel with rel relf
--- maplem df dus | clo (vf1 , r1) (vf2 , r2) relf | clo (dus1 , r3) (dus2 , r4) relu | clo red1 red2 rel | clo red3 red4 rel₁ with rel₁ relu
--- maplem df dus | clo (vf1 , r1) (vf2 , r2) relf | clo (dus1 , r3) (dus2 , r4) relu | clo (._ , ƛ) red2 rel₂ | clo (._ , apλ ƛ) red4 rel₁ | clo (proj₁ , r) red6 rel = , ((((ƛ · r1) (apλ ƛ)) · r3) r)
-
 -- TODO: Would a CBPV style type system clean this up?
 
 maplem2 : ∀ {fv us vs ws} -> mapc fv ws us  ⇓ vs -> All {Level.suc Level.zero} (λ x y -> Lift ((fv · x) ⇓ y)) us vs
 maplem2 (fold[] []) = []
 maplem2 (fold∷ m (_·_ (▹ (pop (pop (pop top)))) (▹ (pop top)) m₃ ∷ (▹ top))) = (lift m₃) ∷ maplem2 m
+
+maplem3 : ∀ {fv us vs ws} -> All {Level.suc Level.zero} (λ x y -> Lift ((fv · x) ⇓ y)) us vs -> mapc fv ws us  ⇓ vs
+maplem3 [] = fold[] []
+maplem3 (x ∷ d) = fold∷ (maplem3 d) ((((▹ (pop (pop (pop top)))) · (▹ (pop top))) (lower x)) ∷ (▹ top))
 
 record Clo' {i} (P : val -> Set i) (c : comp) : Set i where
  constructor clo
@@ -346,9 +343,5 @@ permFree : ∀ {f t s} {S S' : tp ⊡ ₀}
 permFree {f} d1 d2 d3 with fund' d1 | fund' d2 | fund' d3
 permFree {f} {t} {s} {S} {S'} d1 d2 d3 | clo ut r1 rel | clo us r3 rel₁ | clo uf r5 rel₂ with clo1 {₀} {Lst S'} (maplem' {₀} {S} {S'} rel₂ rel₁ rel₁)
 permFree d1 d2 d3 | clo ut r1 rel₃ | clo us r3 rel₁ | clo uf r5 rel₂ | clo um rm rel with rel₃ (λ x -> _⇓_ (uf · x)) (maplem2 rm)
-permFree d1 d2 d3 | clo ut r1 rel₃ | clo us r3 rel₁ | clo uf r5 rel₂ | clo um rm rel₄ | clo (vm , r0) (vm' , r0') rel = {!!}
-
--- ... | clo (fv , red1) (fv' , red2) relf with fund d1 (⊡ , (λ x y → (fv · x) ⇓ y)) ⊡
--- permFree {f} {t} {s} {S} {S'} d1 d2 d3 | clo (fv , red3) (fv' , red4) relf | clo (tv , red1) (tv' , red2) rel with maplem d3 d2
--- ... | ws , (fold' q0 q) with rel (maplem2 red3 q)
--- permFree d1 d2 d3 | clo (fv , red3) (fv' , red6) relf | clo (tv , red4) (tv' , red5) rel | ws , fold' q0 q | clo (zs , red1) (zs' , red2) rel₁ = {!!}
+permFree d1 d2 d3 | clo ut r1 rel₃ | clo us r3 rel₁ | clo uf r5 rel₂ | clo um rm rel₄ | clo (vm , r0) (vm' , r0') rel with maplem3 {ws = vm} rel
+... | q = _ , (((((ƛ · r5) (apλ ƛ)) · ((r1 · r3) r0)) (apλ (fold' (▹ top) q))) , (r1 · ((((ƛ · r5) (apλ ƛ)) · r3) (apλ (fold' (▹ top) rm)))) r0')
