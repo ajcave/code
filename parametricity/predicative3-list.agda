@@ -1,4 +1,4 @@
-module predicative3 where
+module predicative3-list where
 open import Data.Unit
 open import Data.Product
 open import Data.Nat
@@ -19,7 +19,8 @@ mutual
   ▹ : (X : Var Δ _) -> tp Δ ₀
   _⇒_ : ∀ {i} -> (T S : tp Δ i) -> tp Δ i
   _[_] : ∀ {i Δ'} (T : tp Δ' i) -> (η : tpenv Δ Δ') -> tp Δ i
-  ∃̂ ∀̂ : (T : tp (Δ , _) ₀) -> tp Δ ₁
+  Lst : ∀ {i} (T : tp Δ i) -> tp Δ i
+  ∃̂ ∀̂ : (T : tp (Δ , _) ₀) -> tp Δ ₁ -- Can we let that ₀ be a ₁?
 
  data tpenv : (Δ₁ Δ₂ : Ctx ⊤) -> Set where
   ⊡ : ∀ {Δ₁} -> tpenv Δ₁ ⊡
@@ -50,10 +51,14 @@ data tm : Set where
  ƛ : (t : tm) -> tm
  _·_ : (t s : tm) -> tm
  letpack : (t s : tm) -> tm
+ [] : tm
+ _∷_ : (t ts : tm) -> tm
 
 mutual
  data val : Set where
   ƛ_[_]' : (t : tm) -> (ρ : env) -> val
+  [] : val
+  _∷_ : (v vs : val) -> val
  
  data env : Set where
   ⊡ : env
@@ -70,6 +75,8 @@ data lookup : env -> ℕ -> val -> Set where
 data _⇓_ : comp -> val -> Set where
  ▹ : ∀ {ρ x v} -> lookup ρ x v -> (▹ x) [ ρ ] ⇓ v
  ƛ : ∀ {t ρ} -> ((ƛ t) [ ρ ]) ⇓ (ƛ t [ ρ ]')
+ [] : ∀ {ρ} -> [] [ ρ ] ⇓ []
+ _∷_ : ∀ {t ts v vs ρ} -> t [ ρ ] ⇓ v -> ts [ ρ ] ⇓ vs -> (t ∷ ts) [ ρ ] ⇓ (v ∷ vs)
  _·_ : ∀ {t s u v w ρ} -> t [ ρ ] ⇓ u -> s [ ρ ] ⇓ v -> (u · v) ⇓ w -> (t · s) [ ρ ] ⇓ w
  letpack : ∀ {t s ρ u v} -> t [ ρ ] ⇓ u -> s [ ρ , u ] ⇓ v -> (letpack t s) [ ρ ] ⇓ v
  apλ : ∀ {t ρ u v} -> t [ ρ , u ] ⇓ v -> ((ƛ t [ ρ ]') · u) ⇓ v
@@ -88,6 +95,8 @@ lookupdeter (pop d1) (pop d2) = lookupdeter d1 d2
 ⇓deter (letpack d1 d2) (letpack d3 d4) with ⇓deter d1 d3
 ... | refl = ⇓deter d2 d4
 ⇓deter (apλ d1) (apλ d2) = ⇓deter d1 d2
+⇓deter [] [] = refl
+⇓deter (d ∷ ds) (d1 ∷ ds1) = cong₂ _∷_ (⇓deter d d1) (⇓deter ds ds1)
 
 data TCtx (Δ : Ctx ⊤) : Set where
  ⊡ : TCtx Δ
@@ -111,6 +120,8 @@ data _,_⊢_∶_ (Δ : Ctx ⊤) (Γ : TCtx Δ) : ∀ {i} -> tm -> tp Δ i -> Set
  ∃E : ∀ {i} {C : tp Δ i} {T} {t s} -> Δ , Γ ⊢ t ∶ (∃̂ T)
                  -> (Δ , _) , ((↑c Γ) , T) ⊢ s ∶ (C [ ↑ ])
                  -> Δ , Γ ⊢ letpack t s ∶ C
+ [] : ∀ {i} {T : tp Δ i} -> Δ , Γ ⊢ [] ∶ Lst T
+ _∷_ : ∀ {i} {T : tp Δ i} {t ts} -> Δ , Γ ⊢ t ∶ T -> Δ , Γ ⊢ ts ∶ Lst T -> Δ , Γ ⊢ (t ∷ ts) ∶ Lst T
  convfwd : ∀ {i} {T T' : tp Δ i} {t} -> Δ , Γ ⊢ t ∶ T -> T ⇢ T' -> Δ , Γ ⊢ t ∶ T'
  convbwd : ∀ {i} {T T' : tp Δ i} {t} -> Δ , Γ ⊢ t ∶ T -> T' ⇢ T -> Δ , Γ ⊢ t ∶ T'
 
@@ -148,6 +159,10 @@ lookupE ⊡ ()
 lookupE (η , R) top = R
 lookupE (η , R) (pop X) = lookupE η X
 
+data All {l} (R : REL {l} val) : REL {l} val where
+ [] : All R [] []
+ _∷_ : ∀ {u v us vs} -> R u v -> All R us vs -> All R (u ∷ us) (v ∷ vs)
+
 mutual
  V[_] : ∀ {Δ i} -> tp Δ i -> D[ Δ ] -> REL {⟦ i ⟧} val
  V[ ▹ X ] η = lookupE η X
@@ -155,6 +170,7 @@ mutual
  V[ T [ η ] ] η₁ = V[ T ] (VS[ η ] η₁)
  V[ ∃̂ T ] η v1 v2 = ∃ (λ R → V[ T ] (η , R) v1 v2)
  V[ ∀̂ T ] η v1 v2 = ∀ R -> V[ T ] (η , R) v1 v2
+ V[ Lst T ] η v1 v2 = All (V[ T ] η) v1 v2
 
  VS[_] : ∀ {Δ Δ'} -> tpenv Δ Δ' -> D[ Δ ] -> D[ Δ' ]
  VS[ ⊡ ] η' = ⊡
@@ -223,6 +239,11 @@ fund (∃E {._} {C} d d₁) η ρr | clo red1 red2 (R , rel) with fund d₁ (η 
 fund (∃E {._} {C} d d₁) η ρr | clo (v1 , red1) (v2 , red2) (R , rel) | clo (u1 , red3) (u2 , red4) rel₁ = clo (, letpack red1 red3) (, letpack red2 red4) rel₁
 fund (convfwd d eq) η ρr = Clo≡ (feq eq) (fund d η ρr)
 fund (convbwd d eq) η ρr = Clo≡ (sym (feq eq)) (fund d η ρr)
+fund [] η ρr = clo ([] , []) ([] , []) []
+fund (d ∷ ds) η ρr with fund d η ρr | fund ds η ρr
+fund (d ∷ ds) η ρr | clo (u , red1) (v , red2) rel | clo (us , red3) (vs , red4) rel₁ =
+  clo (_ , (red1 ∷ red3)) (, red2 ∷ red4) (rel ∷ rel₁)
+
 
 _≈_ : tm -> tm -> Set
 t ≈ s = ∃ (λ v -> t [ ⊡ ] ⇓ v × s [ ⊡ ] ⇓ v)
