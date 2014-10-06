@@ -17,7 +17,7 @@ open import Sym
 open import Transitivity
 open import ModelProperties
 open import Function
-open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Relation.Binary.PropositionalEquality hiding ([_]; sym; trans)
 open import Cumulativity
 
 -- Copatterns would be useful to do all of this at once, even the record stuff...
@@ -113,9 +113,9 @@ mutual
  fundtv : ∀ {Γ x T} (x1 : Γ ⊢ctx) (d : Γ ∋ x ∶ T) -> Γ ⊨' T type[ fundc' x1 , fundlvlv x1 d ]
  fundtv ⊡ () ρ₁
  fundtv (_,_ (inj x)) top {Syn.⊡} {Syn.⊡} vρ = {!!}
- fundtv (_,_ (inj x)) top {Syn.⊡} {ρ' Syn., a} vρ = {!!}
- fundtv (_,_ (inj x)) top {ρ Syn., a} {Syn.⊡} vρ = {!!}
- fundtv (_,_ (inj x)) top {ρ Syn., a} {ρ' Syn., a₁} (vρ , va) = 
+ fundtv (_,_ (inj x)) top {Syn.⊡} {_,_ ρ' a} vρ = {!!}
+ fundtv (_,_ (inj x)) top {ρ , a} {Syn.⊡} vρ = {!!}
+ fundtv (_,_ (inj x)) top {ρ , a} {ρ' , a₁} (vρ , va) = 
   let q = lem (fundt x vρ) (fund x vρ) in
   {!!}
  fundtv (_,_ x) (pop d) ρ₁ = {!!}

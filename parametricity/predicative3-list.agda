@@ -32,6 +32,11 @@ mutual
 data lookupT : ∀ {Δ1 Δ2} -> tpenv Δ1 Δ2 -> Var Δ2 _ -> tp Δ1 ₀ -> Set where
  top : ∀ {Δ1 Δ2} {ρ : tpenv Δ1 Δ2} {v} -> lookupT (ρ , v) top v
  pop : ∀ {Δ1 Δ2} {ρ : tpenv Δ1 Δ2} {n u v} -> lookupT ρ n v -> lookupT (ρ , u) (pop n) v
+ ↑ : ∀ {Δ X} -> lookupT {Δ , _} {Δ} ↑ X (▹ (pop X))
+ id : ∀ {Δ X} -> lookupT {Δ} id X (▹ X)
+ [] : ∀ {Δ1 Δ2 Δ3 X T} {η₁ : tpenv Δ2 Δ3} {η₂ : tpenv Δ1 Δ2}
+    -> lookupT η₁ X T -> lookupT (η₁ [ η₂ ]) X (T [ η₂ ])
+   -- TODO: Is the [] case sufficient?
 
 data _⇢_ {Δ : Ctx ⊤} : ∀ {i} -> tp Δ i -> tp Δ i -> Set where
  ▹[] : ∀ {Δ'} {η : tpenv Δ Δ'} {X T} -> lookupT η X T -> (▹ X) [ η ] ⇢ T
@@ -46,6 +51,8 @@ data _⇢_ {Δ : Ctx ⊤} : ∀ {i} -> tp Δ i -> tp Δ i -> Set where
  -- (It's the only "computation")
  -- Would also need reduction in either direction...
  -- Prove that type system sound and complete for the "usual" one?
+ -- Getting this definition right was error prone!
+ -- It would actually be good to verify it's equivalent
 
 data tm : Set where
  ▹ : (x : ℕ) -> tm
@@ -140,7 +147,6 @@ data _,_⊢_∶_ (Δ : Ctx ⊤) (Γ : TCtx Δ) : ∀ {i} -> tm -> tp Δ i -> Set
  convfwd : ∀ {i} {T T' : tp Δ i} {t} -> Δ , Γ ⊢ t ∶ T -> T ⇢ T' -> Δ , Γ ⊢ t ∶ T'
  convbwd : ∀ {i} {T T' : tp Δ i} {t} -> Δ , Γ ⊢ t ∶ T -> T' ⇢ T -> Δ , Γ ⊢ t ∶ T'
 
-
 open import Level
 
 record ⊤' {l} : Set l where
@@ -180,10 +186,10 @@ data All {l} (R : REL {l} val) : REL {l} val where
 
 mutual
  V[_] : ∀ {Δ i} -> tp Δ i -> D[ Δ ] -> REL {⟦ i ⟧} val
- V[ ▹ {₀} X ] η = lookupE η X
+ V[ ▹ {₀} X ] η v1 v2 = lookupE η X v1 v2
  V[ ▹ {₁} X ] η v1 v2 = Lift (lookupE η X v1 v2)
  V[ T ⇒ T₁ ] η v1 v2 = ∀ {u1 u2} → V[ T ] η u1 u2 → Clo (V[ T₁ ] η) (v1 · u1) (v2 · u2)
- V[ T [ η ] ] η₁ = V[ T ] (VS[ η ] η₁)
+ V[ T [ η ] ] η₁ v1 v2 = V[ T ] (VS[ η ] η₁) v1 v2
  V[ ∃̂ T ] η v1 v2 = ∃ (λ R → V[ T ] (η , R) v1 v2)
  V[ ∀̂ T ] η v1 v2 = ∀ R -> V[ T ] (η , R) v1 v2
  V[ Lst T ] η v1 v2 = All (V[ T ] η) v1 v2
@@ -192,7 +198,7 @@ mutual
  VS[ ⊡ ] η' = ⊡
  VS[ η , T ] η' = (VS[ η ] η') , (V[ T ] η')
  VS[ ↑ ] (η' , R) = η'
- VS[ id ] η' = η'
+ VS[ tpenv.id ] η' = η'
  VS[ η [ η' ] ] η'' = VS[ η ] (VS[ η' ] η'')
 
 data G_[_] {Δ} (η : D[ Δ ]) : TCtx Δ -> REL {⟦ ₁ ⟧} env where
@@ -200,7 +206,7 @@ data G_[_] {Δ} (η : D[ Δ ]) : TCtx Δ -> REL {⟦ ₁ ⟧} env where
  _,_ : ∀ {Γ ρ1 ρ2 v1 v2 i} {T : tp Δ i} -> G η [ Γ ] ρ1 ρ2 -> V[ T ] η v1 v2
    -> G η [ Γ , T ] (ρ1 , v1) (ρ2 , v2)
 
-_,_⊨_∶_ : ∀ Δ Γ t {i} (T : tp Δ i) -> Set (Level.suc Level.zero Level.⊔ ⟦ i ⟧)
+_,_⊨_∶_ : ∀ Δ Γ t {i} (T : tp Δ i) -> Set _
 Δ , Γ ⊨ t ∶ T = ∀ (η : D[ Δ ]) {ρ1 ρ2} -> G η [ Γ ] ρ1 ρ2 -> Clo (V[ T ] η) (t [ ρ1 ]) (t [ ρ2 ])
 
 _⇒₂_ : ∀ {l} {A : Set} -> REL {l} A -> REL {l} A -> Set l
@@ -220,6 +226,9 @@ feqv : ∀ {Δ : Ctx ⊤} {T' : tp Δ ₀} {Δ' : Ctx ⊤} {η : tpenv Δ Δ'} {
         lookupT η X T' -> {η₁ : D[ Δ ]} -> lookupE (VS[ η ] η₁) X ≡ V[ T' ] η₁
 feqv top = refl
 feqv (pop x) = feqv x
+feqv ↑ {η₁ , T} = refl
+feqv lookupT.id = refl
+feqv ([] x) = feqv x
 
 feq : ∀ {Δ i} {T T' : tp Δ i} -> T ⇢ T' -> {η : D[ Δ ]} -> V[ T ] η ≡ V[ T' ] η 
 feq (▹[] x) = feqv x
