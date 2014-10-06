@@ -3,8 +3,8 @@ open import Data.Unit
 open import Data.Product
 open import Data.Nat
 
-data Univ : Set where
- ⋆₀ ⋆₁ : Univ
+record ⊤₁ : Set₁ where
+ constructor tt
 
 data Ctx (A : Set) : Set where
  ⊡ : Ctx A
@@ -81,6 +81,53 @@ data _,_⊢_∶_ (Δ : Ctx ⊤) (Γ : TCtx Δ) : ∀ {i} -> tm -> tp Δ i -> Set
  ∃E : ∀ {t s T i} {C : tp Δ i} -> Δ , Γ ⊢ t ∶ (∃̂ T)
                  -> (Δ , _) , ((↑c Γ) , T) ⊢ s ∶ (C [ ↑ ])
                  -> Δ , Γ ⊢ letpack t s ∶ C
+
+open import Level
+
+REL : ∀ {l} -> (A : Set) -> Set (Level.suc l)
+REL {l} A = A -> A -> Set l
+
+VREL : ∀ {l} -> Set (Level.suc l)
+VREL = REL val
+
+-- data Lift (R : VREL) : VREL₁ where
+--  inj : ∀ {v1 v2} -> R v1 v2 -> Lift R v1 v2
+
+D[_] : Ctx ⊤ -> Set₁
+D[ Δ ] = Var Δ _ -> VREL
+
+_,,_ : ∀ {Δ} -> D[ Δ ] -> VREL -> D[ Δ , _ ]
+_,,_ η R top = R
+_,,_ η R (pop X) = η X
+
+⊡' : D[ ⊡ ]
+⊡' ()
+
+open import Function
+
+⟦_⟧ : lvl -> Level
+⟦ ₀ ⟧ = Level.zero
+⟦ ₁ ⟧ = Level.suc Level.zero
+
+record Clo {l} (R : REL {l} val) (c1 c2 : comp) : Set l where
+ field
+  red1 : ∃ (λ v1 -> c1 ⇓ v1)
+  red2 : ∃ (λ v2 -> c2 ⇓ v2)
+  rel : R (proj₁ red1) (proj₁ red2)
+
+mutual
+ V[_] : ∀ {Δ i} -> tp Δ i -> D[ Δ ] -> VREL {⟦ i ⟧}
+ V[ ▹ X ] η = η X
+ V[ T ⇒ T₁ ] η v1 v2 = ∀ {u1 u2} → V[ T ] η u1 u2 → Clo (V[ T₁ ] η) (v1 · u1) (v2 · u2)
+ V[ T [ η ] ] η₁ = V[ T ] (VS[ η ] η₁)
+ V[ ∃̂ T ] η v1 v2 = ∃ (λ R → V[ T ] (η ,, R) v1 v2)
+ V[ ∀̂ T ] η v1 v2 = ∀ R -> V[ T ] (η ,, R) v1 v2
+
+ VS[_] : ∀ {Δ Δ'} -> tpenv Δ Δ' -> D[ Δ ] -> D[ Δ' ]
+ VS[ ⊡ ] η' = ⊡'
+ VS[ η , T ] η' = (VS[ η ] η') ,, (V[ T ] η')
+ VS[ ↑ ] η' = η' ∘ pop
+ VS[ id ] η' = η'
 
 
  
