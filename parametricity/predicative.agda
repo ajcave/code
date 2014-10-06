@@ -34,12 +34,12 @@ data lookupT : ∀ {Δ1 Δ2} -> tpenv Δ1 Δ2 -> Var Δ2 _ -> tp Δ1 ₀ -> Set 
 
 data _≈_ {Δ : Ctx ⊤} : ∀ {i} -> tp Δ i -> tp Δ i -> Set where
  ▹ : (X : Var Δ _) -> (▹ X) ≈ (▹ X)
- _⇒_ : ∀ {i} {T1 T2 S1 S2 : tp Δ i} -> T1 ≈ T2 -> S2 ≈ S2 -> (T1 ⇒ S1) ≈ (T2 ⇒ S2)
+ _⇒_ : ∀ {i} {T1 T2 S1 S2 : tp Δ i} -> T1 ≈ T2 -> S1 ≈ S2 -> (T1 ⇒ S1) ≈ (T2 ⇒ S2)
  ∃̂ : ∀ {T1 T2 : tp (Δ , _) ₀} -> T1 ≈ T2 -> ∃̂ T1 ≈ ∃̂ T2
  ∀̂ : ∀ {T1 T2 : tp (Δ , _) ₀} -> T1 ≈ T2 -> ∀̂ T1 ≈ ∀̂ T2
  _[_] : ∀ {i Δ'} {T1 T2 : tp Δ' i} -> T1 ≈ T2 -> (η : tpenv Δ Δ') -> (T1 [ η ]) ≈ (T2 [ η ])
    -- Could also relate environments...
- sym : ∀ {i} {T1 T2 : tp Δ i} -> T1 ≈ T2 -> T2 ≈ T2
+ sym : ∀ {i} {T1 T2 : tp Δ i} -> T1 ≈ T2 -> T2 ≈ T1
  trans : ∀ {i} {T1 T2 T3 : tp Δ i} -> T1 ≈ T2 -> T2 ≈ T3 -> T1 ≈ T3
  ▹[] : ∀ {Δ'} {η : tpenv Δ Δ'} {X T} -> lookupT η X T -> (▹ X) [ η ] ≈ T
  ⇒[] : ∀ {Δ'} {η : tpenv Δ Δ'} {i} (T S : tp Δ' i) -> (T ⇒ S) [ η ] ≈ (T [ η ] ⇒ S [ η ])
@@ -119,6 +119,7 @@ data _,_⊢_∶_ (Δ : Ctx ⊤) (Γ : TCtx Δ) : ∀ {i} -> tm -> tp Δ i -> Set
  ∃E : ∀ {T i} {C : tp Δ i} {t s} -> Δ , Γ ⊢ t ∶ (∃̂ T)
                  -> (Δ , _) , ((↑c Γ) , T) ⊢ s ∶ (C [ ↑ ])
                  -> Δ , Γ ⊢ letpack t s ∶ C
+ conv : ∀ {i} {T T' : tp Δ i} {t} -> Δ , Γ ⊢ t ∶ T -> T ≈ T' -> Δ , Γ ⊢ t ∶ T'
 
 open import Level
 
@@ -186,12 +187,45 @@ _,_⊨_∶_ : ∀ Δ Γ t {i} (T : tp Δ i) -> Set (Level.suc Level.zero Level.�
 _⇒₂_ : ∀ {l} {A : Set} -> REL {l} A -> REL {l} A -> Set l
 R ⇒₂ S = ∀ {x y} -> R x y -> S x y
 
+Clo⇒ : ∀ {l} {R S : REL {l} val} -> R ⇒₂ S -> Clo R ⇒₂ Clo S
+Clo⇒ p (clo red1 red2 rel) = clo red1 red2 (p rel)
+
 ≡R : ∀ {l} {A : Set} (R : REL {l} A) -> ∀ {x1 x2 y1 y2} -> x1 ≡ x2 -> y1 ≡ y2 -> R x1 y1 -> R x2 y2
 ≡R R refl refl x = x
 
 G↑ : ∀ {Δ} {η : D[ Δ ]} (Γ : TCtx Δ) R -> (G η [ Γ ]) ⇒₂ (G (η ,, R) [ ↑c Γ ])
 G↑ ⊡ R ⊡ = ⊡
 G↑ (Γ , T) R (p , x) = (G↑ Γ R p) , x
+
+mutual
+ feq : ∀ {Δ i} {T T' : tp Δ i} -> T ≈ T' -> (η : D[ Δ ]) -> V[ T ] η ⇒₂ V[ T' ] η 
+ feq (▹ X) η x₁ = x₁
+ feq (eq ⇒ eq₁) η x₁ = λ x → Clo⇒ (feq eq₁ η) (x₁ (feq' eq η x))
+ feq (∃̂ eq) η x₁ = , feq eq (η ,, _) (proj₂ x₁)
+ feq (∀̂ eq) η x₁ = λ R → feq eq (η ,, R) (x₁ R)
+ feq (eq [ η ]) η₁ x₁ = feq eq (VS[ η ] η₁) x₁
+ feq (_≈_.sym eq) η x₁ = feq' eq η x₁
+ feq (_≈_.trans eq eq₁) η x₁ = feq eq₁ η (feq eq η x₁)
+ feq (▹[] x) η₁ x₂ = {!!}
+ feq (⇒[] T S) η₁ x₁ = x₁
+ feq (∀[] T) η₁ x₁ = x₁
+ feq (∃[] T) η₁ x₁ = x₁
+ feq ([][] T η') η₁ x₁ = x₁
+
+ feq' : ∀ {Δ i} {T T' : tp Δ i} -> T' ≈ T -> (η : D[ Δ ]) -> V[ T ] η ⇒₂ V[ T' ] η 
+ feq' (▹ X) η x₁ = x₁
+ feq' (d ⇒ d₁) η x₁ = λ x → Clo⇒ (feq' d₁ η) (x₁ (feq d η x))
+ feq' (∃̂ d) η x₁ = , feq' d (η ,, _) (proj₂ x₁)
+ feq' (∀̂ d) η x₁ = λ R → feq' d (η ,, R) (x₁ R)
+ feq' (d [ η ]) η₁ x₁ = feq' d (VS[ η ] η₁) x₁
+ feq' (_≈_.sym d) η x₁ = feq d η x₁
+ feq' (_≈_.trans d d₁) η x₁ = feq' d η (feq' d₁ η x₁)
+ feq' (▹[] x) η₁ x₂ = {!!}
+ feq' (⇒[] T S) η₁ x₁ = x₁
+ feq' (∀[] T) η₁ x₁ = x₁
+ feq' (∃[] T) η₁ x₁ = x₁
+ feq' ([][] T η') η₁ x₁ = x₁
+
 
 fundv : ∀ {Δ Γ x i} {T : tp Δ i} -> lookupt Γ x T -> ∀ (η : D[ Δ ]) {ρ1 ρ2} -> G η [ Γ ] ρ1 ρ2 -> ∃₂ (λ v1 v2 -> lookup ρ1 x v1 × lookup ρ2 x v2 × V[ T ] η v1 v2)
 fundv top η (ρr , x) = , (, (top , (top , x)))
@@ -218,5 +252,6 @@ fund (∃I S d) η ρr | clo red1 red2 rel = clo red1 red2 (V[ S ] η , rel)
 fund (∃E {T} {._} {C} d d₁) η ρr with fund d η ρr
 fund (∃E {T} {._} {C} d d₁) η ρr | clo red1 red2 (R , rel) with fund d₁ (η ,, R) ((G↑ _ R ρr) , rel)
 fund (∃E {T} {._} {C} d d₁) η ρr | clo (v1 , red1) (v2 , red2) (R , rel) | clo (u1 , red3) (u2 , red4) rel₁ = clo (, letpack red1 red3) (, letpack red2 red4) rel₁
+fund (conv d eq) η ρr = Clo⇒ (feq eq η) (fund d η ρr)
 
 -- TODO!!! Need type equivalence!!
