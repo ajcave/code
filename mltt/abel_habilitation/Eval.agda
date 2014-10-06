@@ -75,7 +75,7 @@ mutual
   Π : ∀ {n f b A B B' v} -> (f · ↑[ A ] (lvl n)) ↘ b -> (B · ↑[ A ] (lvl n)) ↘ B' -> Rnf (suc n) , b ∶ B' ↘ v
      -> Rnf n , f ∶ Π A B ↘ ƛ v
   Nat : ∀ {n i} -> Rnf n , Nat ∶ Set* i ↘ Nat
-  SetZ : ∀ {n i j} -> Rnf n , Set* i ∶ Set* j ↘ Set* i -- !! Todo: will this work?
+  SetZ : ∀ {n i j} -> Rnf n , Set* i ∶ Set* j ↘ Set* i
   Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> (F · ↑[ A ] (lvl n)) ↘ B
    -> Rnf (suc n) , B ∶ Set* i ↘ B'
    -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
