@@ -24,8 +24,33 @@ mutual
  data tpenv : (Δ₁ Δ₂ : Ctx ⊤) -> Set where
   ⊡ : ∀ {Δ₁} -> tpenv Δ₁ ⊡
   _,_ : ∀ {Δ₁ Δ₂} -> tpenv Δ₁ Δ₂ -> tp Δ₁ ₀ -> tpenv Δ₁ (Δ₂ , _)
+  _[_] : ∀ {Δ1 Δ2 Δ3} -> tpenv Δ2 Δ3 -> tpenv Δ1 Δ2 -> tpenv Δ1 Δ3
   ↑ : ∀ {Δ₁} -> tpenv (Δ₁ , _) Δ₁
   id : ∀ {Δ} -> tpenv Δ Δ
+
+data lookupT : ∀ {Δ1 Δ2} -> tpenv Δ1 Δ2 -> Var Δ2 _ -> tp Δ1 ₀ -> Set where
+ top : ∀ {Δ1 Δ2} {ρ : tpenv Δ1 Δ2} {v} -> lookupT (ρ , v) top v
+ pop : ∀ {Δ1 Δ2} {ρ : tpenv Δ1 Δ2} {n u v} -> lookupT ρ n v -> lookupT (ρ , u) (pop n) v
+
+data _≈_ {Δ : Ctx ⊤} : ∀ {i} -> tp Δ i -> tp Δ i -> Set where
+ ▹ : (X : Var Δ _) -> (▹ X) ≈ (▹ X)
+ _⇒_ : ∀ {i} {T1 T2 S1 S2 : tp Δ i} -> T1 ≈ T2 -> S2 ≈ S2 -> (T1 ⇒ S1) ≈ (T2 ⇒ S2)
+ ∃̂ : ∀ {T1 T2 : tp (Δ , _) ₀} -> T1 ≈ T2 -> ∃̂ T1 ≈ ∃̂ T2
+ ∀̂ : ∀ {T1 T2 : tp (Δ , _) ₀} -> T1 ≈ T2 -> ∀̂ T1 ≈ ∀̂ T2
+ _[_] : ∀ {i Δ'} {T1 T2 : tp Δ' i} -> T1 ≈ T2 -> (η : tpenv Δ Δ') -> (T1 [ η ]) ≈ (T2 [ η ])
+   -- Could also relate environments...
+ sym : ∀ {i} {T1 T2 : tp Δ i} -> T1 ≈ T2 -> T2 ≈ T2
+ trans : ∀ {i} {T1 T2 T3 : tp Δ i} -> T1 ≈ T2 -> T2 ≈ T3 -> T1 ≈ T3
+ ▹[] : ∀ {Δ'} {η : tpenv Δ Δ'} {X T} -> lookupT η X T -> (▹ X) [ η ] ≈ T
+ ⇒[] : ∀ {Δ'} {η : tpenv Δ Δ'} {i} (T S : tp Δ' i) -> (T ⇒ S) [ η ] ≈ (T [ η ] ⇒ S [ η ])
+ ∀[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₀) -> (∀̂ T) [ η ] ≈ ∀̂ (T [ η [ ↑ ] , (▹ top) ])
+ ∃[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₀) -> (∃̂ T) [ η ] ≈ ∃̂ (T [ η [ ↑ ] , (▹ top) ])
+  
+ -- Hmm I think I only need a "reduction" which pushes under one constructor
+ -- Would need to handle T[η][η'] carefully.. a couple choices...
+ -- (It's the only "computation")
+ -- Would also need reduction in either direction...
+ -- Prove that type system sound and complete for the "usual" one?
 
 data tm : Set where
  ▹ : (x : ℕ) -> tm
@@ -147,6 +172,7 @@ mutual
  VS[ η , T ] η' = (VS[ η ] η') ,, (V[ T ] η')
  VS[ ↑ ] η' = η' ∘ pop
  VS[ id ] η' = η'
+ VS[ η [ η' ] ] η'' = VS[ η ] (VS[ η' ] η'')
 
 data G_[_] {Δ} (η : D[ Δ ]) : TCtx Δ -> REL {⟦ ₁ ⟧} env where
  ⊡ : G η [ ⊡ ] ⊡ ⊡
