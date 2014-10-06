@@ -16,11 +16,11 @@ data lvl : Set where
 
 mutual
  data tp (Δ : Ctx ⊤) : lvl -> Set where
-  ▹ : (X : Var Δ _) -> tp Δ ₀
+  ▹ : ∀ {i} (X : Var Δ _) -> tp Δ i
   _⇒_ : ∀ {i} -> (T S : tp Δ i) -> tp Δ i
   _[_] : ∀ {i Δ'} (T : tp Δ' i) -> (η : tpenv Δ Δ') -> tp Δ i
   Lst : ∀ {i} (T : tp Δ i) -> tp Δ i
-  ∃̂ ∀̂ : (T : tp (Δ , _) ₀) -> tp Δ ₁ -- Can we let that ₀ be a ₁?
+  ∃̂ ∀̂ : (T : tp (Δ , _) ₁) -> tp Δ ₁ 
 
  data tpenv : (Δ₁ Δ₂ : Ctx ⊤) -> Set where
   ⊡ : ∀ {Δ₁} -> tpenv Δ₁ ⊡
@@ -36,8 +36,8 @@ data lookupT : ∀ {Δ1 Δ2} -> tpenv Δ1 Δ2 -> Var Δ2 _ -> tp Δ1 ₀ -> Set 
 data _⇢_ {Δ : Ctx ⊤} : ∀ {i} -> tp Δ i -> tp Δ i -> Set where
  ▹[] : ∀ {Δ'} {η : tpenv Δ Δ'} {X T} -> lookupT η X T -> (▹ X) [ η ] ⇢ T
  ⇒[] : ∀ {Δ'} {η : tpenv Δ Δ'} {i} (T S : tp Δ' i) -> (T ⇒ S) [ η ] ⇢ (T [ η ] ⇒ S [ η ])
- ∀[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₀) -> (∀̂ T) [ η ] ⇢ ∀̂ (T [ η [ ↑ ] , (▹ top) ])
- ∃[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₀) -> (∃̂ T) [ η ] ⇢ ∃̂ (T [ η [ ↑ ] , (▹ top) ])
+ ∀[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₁) -> (∀̂ T) [ η ] ⇢ ∀̂ (T [ η [ ↑ ] , (▹ top) ])
+ ∃[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₁) -> (∃̂ T) [ η ] ⇢ ∃̂ (T [ η [ ↑ ] , (▹ top) ])
  [][] : ∀ {Δ'} {η : tpenv Δ Δ'} {i Δ''} (T : tp Δ'' i) (η' : tpenv Δ' Δ'') -> (T [ η' ]) [ η ] ⇢ T [ η' [ η ] ]
   
  -- Hmm I think I only need a "reduction" which pushes under one constructor
@@ -53,6 +53,7 @@ data tm : Set where
  letpack : (t s : tm) -> tm
  [] : tm
  _∷_ : (t ts : tm) -> tm
+ fold' : (tnil tsuc tl : tm) -> tm
 
 mutual
  data val : Set where
@@ -67,6 +68,7 @@ mutual
 data comp : Set where
  _[_] : (t : tm) (ρ : env) -> comp
  _·_ : (u v : val) -> comp
+ fold' : (tnil ts : tm) (ρ : env) (v : val) -> comp
 
 data lookup : env -> ℕ -> val -> Set where
  top : ∀ {ρ v} -> lookup (ρ , v) 0 v
@@ -80,6 +82,10 @@ data _⇓_ : comp -> val -> Set where
  _·_ : ∀ {t s u v w ρ} -> t [ ρ ] ⇓ u -> s [ ρ ] ⇓ v -> (u · v) ⇓ w -> (t · s) [ ρ ] ⇓ w
  letpack : ∀ {t s ρ u v} -> t [ ρ ] ⇓ u -> s [ ρ , u ] ⇓ v -> (letpack t s) [ ρ ] ⇓ v
  apλ : ∀ {t ρ u v} -> t [ ρ , u ] ⇓ v -> ((ƛ t [ ρ ]') · u) ⇓ v
+ fold[] : ∀ {tnil tcons v ρ} -> tnil [ ρ ] ⇓ v -> fold' tnil tcons ρ [] ⇓ v
+ fold∷ : ∀ {tnil tcons v vs u w ρ} -> fold' tnil tcons ρ vs ⇓ u -> tcons [ (ρ , v) , u ] ⇓ w
+         -> fold' tnil tcons ρ (v ∷ vs) ⇓ w
+ fold' : ∀ {tnil tcons ts u v ρ} -> ts [ ρ ] ⇓ u -> fold' tnil tcons ρ u ⇓ v -> fold' tnil tcons ts [ ρ ] ⇓ v
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
@@ -97,6 +103,11 @@ lookupdeter (pop d1) (pop d2) = lookupdeter d1 d2
 ⇓deter (apλ d1) (apλ d2) = ⇓deter d1 d2
 ⇓deter [] [] = refl
 ⇓deter (d ∷ ds) (d1 ∷ ds1) = cong₂ _∷_ (⇓deter d d1) (⇓deter ds ds1)
+⇓deter (fold' d1 d2) (fold' d1' d2') with ⇓deter d1 d1'
+⇓deter (fold' d1 d2) (fold' d1' d2') | refl = ⇓deter d2 d2'
+⇓deter (fold[] d) (fold[] d') = ⇓deter d d'
+⇓deter (fold∷ d1 d2) (fold∷ d1' d2') with ⇓deter d1 d1'
+... | refl = ⇓deter d2 d2'
 
 data TCtx (Δ : Ctx ⊤) : Set where
  ⊡ : TCtx Δ
@@ -122,6 +133,9 @@ data _,_⊢_∶_ (Δ : Ctx ⊤) (Γ : TCtx Δ) : ∀ {i} -> tm -> tp Δ i -> Set
                  -> Δ , Γ ⊢ letpack t s ∶ C
  [] : ∀ {i} {T : tp Δ i} -> Δ , Γ ⊢ [] ∶ Lst T
  _∷_ : ∀ {i} {T : tp Δ i} {t ts} -> Δ , Γ ⊢ t ∶ T -> Δ , Γ ⊢ ts ∶ Lst T -> Δ , Γ ⊢ (t ∷ ts) ∶ Lst T
+ fold' : ∀ {i j} {T : tp Δ i} {C : tp Δ j} {tnil tcons ts}
+        -> Δ , Γ ⊢ tnil ∶ C -> Δ , ((Γ , T) , C) ⊢ tcons ∶ C -> Δ , Γ ⊢ ts ∶ Lst T
+        -> Δ , Γ ⊢ fold' tnil tcons ts ∶ C
  convfwd : ∀ {i} {T T' : tp Δ i} {t} -> Δ , Γ ⊢ t ∶ T -> T ⇢ T' -> Δ , Γ ⊢ t ∶ T'
  convbwd : ∀ {i} {T T' : tp Δ i} {t} -> Δ , Γ ⊢ t ∶ T -> T' ⇢ T -> Δ , Γ ⊢ t ∶ T'
 
@@ -165,7 +179,8 @@ data All {l} (R : REL {l} val) : REL {l} val where
 
 mutual
  V[_] : ∀ {Δ i} -> tp Δ i -> D[ Δ ] -> REL {⟦ i ⟧} val
- V[ ▹ X ] η = lookupE η X
+ V[ ▹ {₀} X ] η = lookupE η X
+ V[ ▹ {₁} X ] η v1 v2 = Lift (lookupE η X v1 v2)
  V[ T ⇒ T₁ ] η v1 v2 = ∀ {u1 u2} → V[ T ] η u1 u2 → Clo (V[ T₁ ] η) (v1 · u1) (v2 · u2)
  V[ T [ η ] ] η₁ = V[ T ] (VS[ η ] η₁)
  V[ ∃̂ T ] η v1 v2 = ∃ (λ R → V[ T ] (η , R) v1 v2)
@@ -217,6 +232,20 @@ fundv top η (ρr , x) = , (, (top , (top , x)))
 fundv (pop x) η (ρr , x₁) with fundv x η ρr
 fundv (pop x) η (ρr , x₁) | _ , (_ , (x1 , (x2 , y))) = , (, ((pop x1) , ((pop x2) , y)))
 
+-- TODO: Pretty sure this can be cleaned up
+foldH : ∀ {Δ} {i} (T : tp Δ i) {η : D[ Δ ]}
+           {ρ1 ρ2 u} {v} {i₁} (T₁ : tp Δ i₁) {tnil tcons} →
+         Clo (V[ T₁ ] η) (tnil [ ρ1 ]) (tnil [ ρ2 ]) →
+         (∀ {w1 w2 wn wm} -> V[ T ] η w1 w2 -> V[ T₁ ] η wn wm ->
+          Clo (V[ T₁ ] η) (tcons [ (ρ1 , w1) , wn ]) (tcons [ (ρ2 , w2) , wm ])) →
+         All (V[ T ] η) u v →
+         Clo (V[ T₁ ] η) (fold' tnil tcons ρ1 u)
+         (fold' tnil tcons ρ2 v)
+foldH T T₁ (clo (_ , r1) (_ , r2) n1) d2 [] = clo (, fold[] r1) (, fold[] r2) n1
+foldH T T₁ d1 d2 (x ∷ r₁) with foldH T T₁ d1 d2 r₁
+foldH T T₁ d1 d2 (x ∷ r₁) | clo (_ , r1) (_ , r2) rel with d2 x rel
+foldH T T₁ d1 d2 (x ∷ r₁) | clo (proj₁ , r1) (proj₂ , r2) rel | clo (_ , r3) (_ , r4) rel₁ = clo (, fold∷ r1 r3) (, fold∷ r2 r4) rel₁
+
 fund : ∀ {Δ Γ t i} {T : tp Δ i} -> Δ , Γ ⊢ t ∶ T -> Δ , Γ ⊨ t ∶ T
 fund (▹ x₁) η ρr with fundv x₁ η ρr
 ... | _ , (_ , (x1 , (x2 , y))) = clo (, ▹ x1) (, ▹ x2) y
@@ -243,18 +272,83 @@ fund [] η ρr = clo ([] , []) ([] , []) []
 fund (d ∷ ds) η ρr with fund d η ρr | fund ds η ρr
 fund (d ∷ ds) η ρr | clo (u , red1) (v , red2) rel | clo (us , red3) (vs , red4) rel₁ =
   clo (_ , (red1 ∷ red3)) (, red2 ∷ red4) (rel ∷ rel₁)
-
+fund (fold' {_} {_} {T} {C} dnil dcons ds) η ρr with fund ds η ρr
+... | clo (u , r1) (v , r2) r with foldH T C (fund dnil η ρr) (λ x x₁ → fund dcons η ((ρr , x) , x₁)) r
+fund (fold' dnil dcons ds) η ρr | clo (u , r1) (v , r2) r | clo (w , r3) (z , r4) rel = clo (, fold' r1 r3) (, fold' r2 r4) rel
 
 _≈_ : tm -> tm -> Set
 t ≈ s = ∃ (λ v -> t [ ⊡ ] ⇓ v × s [ ⊡ ] ⇓ v)
 
 idFree : ∀ {t s} {T : tp ⊡ ₀} -> ⊡ , ⊡ ⊢ t ∶ ∀̂ (▹ top ⇒ ▹ top) -> ⊡ , ⊡ ⊢ s ∶ T -> (t · s) ≈ s
 idFree d1 d2 with fund d1 ⊡ ⊡ | fund d2 ⊡ ⊡
-idFree d1 d2 | clo red1 red2 rel | clo (u , red3) red4 rel₁ with rel (λ v1 v2 -> v1 ≡ u) {u} {u} refl
-idFree d1 d2 | clo red1 red2 rel | clo (u , red5) red6 rel₂ | clo red3 red4 q = u , ((((proj₂ red1) · red5) (subst (_⇓_ (proj₁ red1 · u)) q (proj₂ red3))) , red5)
+idFree d1 d2 | clo red1 red2 rel | clo (u , red3) red4 rel₁ with rel (λ v1 v2 -> v1 ≡ u) {u} {u} (lift refl)
+idFree d1 d2 | clo red1 red2 rel | clo (u , red5) red6 rel₂ | clo red3 red4 (lift q) = u , ((((proj₂ red1) · red5) (subst (_⇓_ (proj₁ red1 · u)) q (proj₂ red3))) , red5)
 
 open import Data.Empty
 
 emp : ∀ {t} -> ⊡ , ⊡ ⊢ t ∶ ∀̂ (▹ top) -> ⊥
 emp d with fund d ⊡ ⊡
-emp d | clo (v , red1) (u , red2) rel = rel (λ _ _ → ⊥)
+emp d | clo (v , red1) (u , red2) rel = Lift.lower (rel (λ _ _ → ⊥))
+
+-- TODO: Can we implement theorems for free "generically"?
+
+map' : tm
+map' = ƛ (ƛ (fold' [] (((▹ 3) · (▹ 1)) ∷ (▹ 0)) (▹ 0)))
+
+mapc : val -> val -> val -> comp
+mapc fv ws us = fold' [] (((▹ 3) · (▹ 1)) ∷ (▹ 0)) ((⊡ , fv) , ws) us
+
+maptp' : ∀ {Δ} {i} (S T : tp Δ i) -> Δ , ⊡ ⊢ map' ∶ ((S ⇒ T) ⇒ (Lst S ⇒ Lst T))
+maptp' S T = ƛ (ƛ (fold' [] (((▹ (pop (pop (pop top)))) · ▹ (pop top)) ∷ ▹ top) (▹ top)))
+
+maptp :  ⊡ , ⊡ ⊢ map' ∶ ∀̂ (∀̂ ((▹ (pop top) ⇒ ▹ top) ⇒ (Lst (▹ (pop top)) ⇒ Lst (▹ top))))
+maptp = ∀I (∀I (maptp' _ _))
+
+maplem' : ∀ {i} {S S' : tp ⊡ i} {fv fv' us us' ws ws'} -> V[ S ⇒ S' ] ⊡ fv fv' -> V[ Lst S ] ⊡ ws ws' -> V[ Lst S ] ⊡ us us' -> Clo (V[ Lst S' ] ⊡) (mapc fv ws us) (mapc fv' ws us')
+maplem' df dw [] = clo (, fold[] []) (, fold[] []) []
+maplem' {i} {S} {S'} df dw (x ∷ du) with df x | maplem' {i} {S} {S'} df dw du
+maplem' df dw (x ∷ du) | clo (proj₁ , proj₂) (proj₃ , proj₄) rel | clo (proj₅ , proj₆) (proj₇ , proj₈) rel₁ = clo (, fold∷ proj₆ ((((▹ (pop (pop (pop top)))) · (▹ (pop top))) proj₂) ∷ (▹ top))) (, fold∷ proj₈ ((((▹ (pop (pop (pop top)))) · (▹ (pop top))) proj₄) ∷ (▹ top))) (rel ∷ rel₁)
+
+-- maplem : ∀ {f} {S S' : tp ⊡ ₀} {us}
+--   -> ⊡ , ⊡ ⊢ f ∶ (S ⇒ S') -> ⊡ , ⊡ ⊢ us ∶ Lst S -> ∃ (λ vs -> ((map' · f) · us) [ ⊡ ] ⇓ vs)
+-- maplem {f} {S} {S'} df dus with fund df ⊡ ⊡ | fund dus ⊡ ⊡ | fund (maptp' S S') ⊡ ⊡
+-- maplem df dus | clo (vf1 , r1) (vf2 , r2) relf | clo (dus1 , r3) (dus2 , r4) relu | clo red1 red2 rel with rel relf
+-- maplem df dus | clo (vf1 , r1) (vf2 , r2) relf | clo (dus1 , r3) (dus2 , r4) relu | clo red1 red2 rel | clo red3 red4 rel₁ with rel₁ relu
+-- maplem df dus | clo (vf1 , r1) (vf2 , r2) relf | clo (dus1 , r3) (dus2 , r4) relu | clo (._ , ƛ) red2 rel₂ | clo (._ , apλ ƛ) red4 rel₁ | clo (proj₁ , r) red6 rel = , ((((ƛ · r1) (apλ ƛ)) · r3) r)
+
+-- TODO: Would a CBPV style type system clean this up?
+
+maplem2 : ∀ {fv us vs ws} -> mapc fv ws us  ⇓ vs -> All {Level.suc Level.zero} (λ x y -> Lift ((fv · x) ⇓ y)) us vs
+maplem2 (fold[] []) = []
+maplem2 (fold∷ m (_·_ (▹ (pop (pop (pop top)))) (▹ (pop top)) m₃ ∷ (▹ top))) = (lift m₃) ∷ maplem2 m
+
+record Clo' {i} (P : val -> Set i) (c : comp) : Set i where
+ constructor clo
+ field
+  v : val
+  red : c ⇓ v
+  rel : P v
+
+clo1 : ∀ {i} {T : tp ⊡ i} {c} -> Clo (V[ T ] ⊡) c c -> Clo' (λ v -> V[ T ] ⊡ v v) c
+clo1 (clo (v , red1) (u , red2) rel) with ⇓deter red1 red2
+clo1 (clo (v , red1) (.v , red2) rel) | refl = clo v red2 rel
+
+fund' : ∀ {i t} {T : tp ⊡ i} -> ⊡ , ⊡ ⊢ t ∶ T -> Clo' (λ v -> V[ T ] ⊡ v v) (t [ ⊡ ])
+fund' d with fund d ⊡ ⊡
+... | clo (v , r1) (u , r2) rel with ⇓deter r1 r2
+fund' d | clo (v , r1) (.v , r2) rel | refl = clo v r1 rel
+
+permFree : ∀ {f t s} {S S' : tp ⊡ ₀}
+  -> ⊡ , ⊡ ⊢ t ∶ ∀̂ (Lst (▹ top) ⇒ Lst (▹ top))
+  -> ⊡ , ⊡ ⊢ s ∶ Lst S
+  -> ⊡ , ⊡ ⊢ f ∶ (S ⇒ S')
+  -> ((map' · f) · (t · s)) ≈ (t · ((map' · f) · s))
+permFree {f} d1 d2 d3 with fund' d1 | fund' d2 | fund' d3
+permFree {f} {t} {s} {S} {S'} d1 d2 d3 | clo ut r1 rel | clo us r3 rel₁ | clo uf r5 rel₂ with clo1 {₀} {Lst S'} (maplem' {₀} {S} {S'} rel₂ rel₁ rel₁)
+permFree d1 d2 d3 | clo ut r1 rel₃ | clo us r3 rel₁ | clo uf r5 rel₂ | clo um rm rel with rel₃ (λ x -> _⇓_ (uf · x)) (maplem2 rm)
+permFree d1 d2 d3 | clo ut r1 rel₃ | clo us r3 rel₁ | clo uf r5 rel₂ | clo um rm rel₄ | clo (vm , r0) (vm' , r0') rel = {!!}
+
+-- ... | clo (fv , red1) (fv' , red2) relf with fund d1 (⊡ , (λ x y → (fv · x) ⇓ y)) ⊡
+-- permFree {f} {t} {s} {S} {S'} d1 d2 d3 | clo (fv , red3) (fv' , red4) relf | clo (tv , red1) (tv' , red2) rel with maplem d3 d2
+-- ... | ws , (fold' q0 q) with rel (maplem2 red3 q)
+-- permFree d1 d2 d3 | clo (fv , red3) (fv' , red6) relf | clo (tv , red4) (tv' , red5) rel | ws , fold' q0 q | clo (zs , red1) (zs' , red2) rel₁ = {!!}
