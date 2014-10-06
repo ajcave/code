@@ -39,6 +39,7 @@ data _⇢_ {Δ : Ctx ⊤} : ∀ {i} -> tp Δ i -> tp Δ i -> Set where
  ∀[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₁) -> (∀̂ T) [ η ] ⇢ ∀̂ (T [ η [ ↑ ] , (▹ top) ])
  ∃[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₁) -> (∃̂ T) [ η ] ⇢ ∃̂ (T [ η [ ↑ ] , (▹ top) ])
  [][] : ∀ {Δ'} {η : tpenv Δ Δ'} {i Δ''} (T : tp Δ'' i) (η' : tpenv Δ' Δ'') -> (T [ η' ]) [ η ] ⇢ T [ η' [ η ] ]
+ Lst[] : ∀ {Δ'} {η : tpenv Δ Δ'} {i} (T : tp Δ' i) -> (Lst T) [ η ] ⇢ Lst (T [ η ])
   
  -- Hmm I think I only need a "reduction" which pushes under one constructor
  -- Would need to handle T[η][η'] carefully.. a couple choices...
@@ -226,6 +227,7 @@ feq (⇒[] T S) = refl
 feq (∀[] T) = refl
 feq (∃[] T) = refl
 feq ([][] T η') = refl
+feq (Lst[] T) = refl
 
 fundv : ∀ {Δ Γ x i} {T : tp Δ i} -> lookupt Γ x T -> ∀ (η : D[ Δ ]) {ρ1 ρ2} -> G η [ Γ ] ρ1 ρ2 -> ∃₂ (λ v1 v2 -> lookup ρ1 x v1 × lookup ρ2 x v2 × V[ T ] η v1 v2)
 fundv top η (ρr , x) = , (, (top , (top , x)))
