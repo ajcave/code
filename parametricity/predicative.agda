@@ -45,6 +45,7 @@ data _≈_ {Δ : Ctx ⊤} : ∀ {i} -> tp Δ i -> tp Δ i -> Set where
  ⇒[] : ∀ {Δ'} {η : tpenv Δ Δ'} {i} (T S : tp Δ' i) -> (T ⇒ S) [ η ] ≈ (T [ η ] ⇒ S [ η ])
  ∀[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₀) -> (∀̂ T) [ η ] ≈ ∀̂ (T [ η [ ↑ ] , (▹ top) ])
  ∃[] : ∀ {Δ'} {η : tpenv Δ Δ'} (T : tp (Δ' , _) ₀) -> (∃̂ T) [ η ] ≈ ∃̂ (T [ η [ ↑ ] , (▹ top) ])
+ [][] : ∀ {Δ'} {η : tpenv Δ Δ'} {i Δ''} (T : tp Δ'' i) (η' : tpenv Δ' Δ'') -> (T [ η' ]) [ η ] ≈ T [ η' [ η ] ]
   
  -- Hmm I think I only need a "reduction" which pushes under one constructor
  -- Would need to handle T[η][η'] carefully.. a couple choices...
