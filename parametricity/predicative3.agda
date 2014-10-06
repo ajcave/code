@@ -189,13 +189,12 @@ feqv : ∀ {Δ : Ctx ⊤} {T' : tp Δ ₀} {Δ' : Ctx ⊤} {η : tpenv Δ Δ'} {
 feqv top = refl
 feqv (pop x) = feqv x
 
-mutual
- feq : ∀ {Δ i} {T T' : tp Δ i} -> T ⇢ T' -> {η : D[ Δ ]} -> V[ T ] η ≡ V[ T' ] η 
- feq (▹[] x) = feqv x
- feq (⇒[] T S) = refl
- feq (∀[] T) = refl
- feq (∃[] T) = refl
- feq ([][] T η') = refl
+feq : ∀ {Δ i} {T T' : tp Δ i} -> T ⇢ T' -> {η : D[ Δ ]} -> V[ T ] η ≡ V[ T' ] η 
+feq (▹[] x) = feqv x
+feq (⇒[] T S) = refl
+feq (∀[] T) = refl
+feq (∃[] T) = refl
+feq ([][] T η') = refl
 
 fundv : ∀ {Δ Γ x i} {T : tp Δ i} -> lookupt Γ x T -> ∀ (η : D[ Δ ]) {ρ1 ρ2} -> G η [ Γ ] ρ1 ρ2 -> ∃₂ (λ v1 v2 -> lookup ρ1 x v1 × lookup ρ2 x v2 × V[ T ] η v1 v2)
 fundv top η (ρr , x) = , (, (top , (top , x)))
@@ -224,3 +223,11 @@ fund (∃E {._} {C} d d₁) η ρr | clo red1 red2 (R , rel) with fund d₁ (η 
 fund (∃E {._} {C} d d₁) η ρr | clo (v1 , red1) (v2 , red2) (R , rel) | clo (u1 , red3) (u2 , red4) rel₁ = clo (, letpack red1 red3) (, letpack red2 red4) rel₁
 fund (convfwd d eq) η ρr = Clo≡ (feq eq) (fund d η ρr)
 fund (convbwd d eq) η ρr = Clo≡ (sym (feq eq)) (fund d η ρr)
+
+_≈_ : tm -> tm -> Set
+t ≈ s = ∃ (λ v -> t [ ⊡ ] ⇓ v × s [ ⊡ ] ⇓ v)
+
+idFree : ∀ {t s} {T : tp ⊡ ₀} -> ⊡ , ⊡ ⊢ t ∶ ∀̂ (▹ top ⇒ ▹ top) -> ⊡ , ⊡ ⊢ s ∶ T -> (t · s) ≈ s
+idFree d1 d2 with fund d1 ⊡ ⊡ | fund d2 ⊡ ⊡
+idFree d1 d2 | clo red1 red2 rel | clo (u , red3) red4 rel₁ with rel (λ v1 v2 -> v1 ≡ u) {u} {u} refl
+idFree d1 d2 | clo red1 red2 rel | clo (u , red5) red6 rel₂ | clo red3 red4 q = u , ((((proj₂ red1) · red5) (subst (_⇓_ (proj₁ red1 · u)) q (proj₂ red3))) , red5)
