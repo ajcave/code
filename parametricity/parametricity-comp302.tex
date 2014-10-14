@@ -1,0 +1,44 @@
+\documentclass{article}
+\usepackage{listings}
+\title{Parametricity and Modular reasoning}
+\begin{document}
+\maketitle
+\begin{lstlisting}
+module type SwitchType = sig
+ type t
+ val init : t
+ val flip : t -> t
+ val isOn : t -> bool
+end
+
+module Switch1 : SwitchType = struct
+ type t = int
+ let init = 1 (* positive means `off', negative means `on' *)
+ let flip n = -2*n
+ let isOn n = (n < 0)
+end
+
+module Switch2 : SwitchType = struct
+ type t = bool
+ let init = false (* false means `off', true means `on' *)
+ let flip b = not b
+ let isOn b = b
+end
+\end{lstlisting}
+
+Intuitively, it seems that we can't tell these two implementations are
+equivalent. Because the type t is abstract, and all we can do is flip
+the initial switch a few times, and then read its result. It shouldn't
+matter whether whether we use \lstinline{Switch1} or
+\lstinline{Switch2} (ignoring overflow).
+
+- Enforced by type system
+
+- Parametricity doesn't quite hold in Ocaml. Equality and Obj.magic break it.
+- Design decision, simplifies ...?. But as a module implementor, it's difficult/impossible to be sure that a change you make won't break someone else's code
+- Java breaks parametricity...
+ - Doesn't have modules
+ - Does have generics
+ 
+
+\end{document}
