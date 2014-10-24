@@ -38,15 +38,15 @@ mutual
   ⊡ : env
   _,_ : env -> val -> env
 
-data comp : Set where -- This is not exactly what we did on the board
+data comp : Set where 
  _[_] : tm -> env -> comp
- _·_ : val -> val -> comp
+ _·_ : val -> val -> comp -- This is not exactly what we did on the board
 
 data lookup : env -> ℕ -> val -> Set where
  top : ∀ {σ v} -> lookup (σ , v) zero v
  pop : ∀ {σ x v u} -> lookup σ x v -> lookup (σ , u) (suc x) v
 
-data _⇓_ : comp -> val -> Set where -- not exactly what we did on the board
+data _⇓_ : comp -> val -> Set where
  app : ∀ {M N M' σ u σ' v}
        -> M [ σ ] ⇓ (ƛ M' [ σ' ]')
        -> N [ σ ] ⇓ u
@@ -56,37 +56,41 @@ data _⇓_ : comp -> val -> Set where -- not exactly what we did on the board
  ƛ : ∀ {M σ} -> (ƛ M) [ σ ] ⇓ (ƛ M [ σ ]')
  apƛ : ∀ {M σ v u} -> M [ σ , v ] ⇓ u -> ((ƛ M [ σ ]') · v) ⇓ u -- This is not exactly what we did on the board
 
+-- Just some notation
+_∈_ : ∀ {A : Set} -> A -> (P : A -> Set) -> Set
+x ∈ P = P x
+
 record Clo (R : val -> Set) (c : comp) : Set where
  constructor inj
  field
   v : val
   ev : c ⇓ v
-  red : R v
+  red : v ∈ R
 
 mutual
  V[_] : ∀ T -> val -> Set
  V[ unit ] v = Unit
- V[ T ⇝ S ] v = ∀ {u} -> V[ T ] u -> Clo V[ S ] (v · u)
+ V[ T ⇝ S ] v = ∀ {u} -> u ∈ V[ T ] -> (v · u) ∈ Clo V[ S ]
 
 E[_] : ∀ T -> comp -> Set
 E[ T ] = Clo V[ T ]
 
 data G[_] : ctx -> env -> Set where
- ⊡ : G[ ⊡ ] ⊡
- _,_ : ∀ {Γ T σ v} -> G[ Γ ] σ -> V[ T ] v -> G[ Γ , T ] (σ , v)
+ ⊡ : ⊡ ∈ G[ ⊡ ]
+ _,_ : ∀ {Γ T σ v} -> σ ∈ G[ Γ ] -> v ∈ V[ T ] -> (σ , v) ∈ G[ Γ , T ]
 
-thmv : ∀ {Γ x T} -> x ∶ T ∈ Γ -> ∀ {σ} -> G[ Γ ] σ -> E[ T ] ((var x) [ σ ])
+thmv : ∀ {Γ x T} -> x ∶ T ∈ Γ -> ∀ {σ} -> σ ∈ G[ Γ ] -> (var x) [ σ ] ∈ E[ T ]
 thmv z (gΓ , x) = inj _ (var top) x
 thmv (s d) (gΓ , x₁) with thmv d gΓ
 thmv (s d) (gΓ , x₁) | inj v (var d') red = inj _ (var (pop d')) red
 
-thm : ∀ {Γ t T} -> Γ ⊢ t ∶ T -> ∀ {σ} -> G[ Γ ] σ -> E[ T ] (t [ σ ])
+thm : ∀ {Γ t T} -> Γ ⊢ t ∶ T -> ∀ {σ} -> σ ∈ G[ Γ ] -> t [ σ ] ∈ E[ T ]
 thm (var x₁) gΓ = thmv x₁ gΓ
 thm (d · d₁) gΓ with thm d gΓ | thm d₁ gΓ
 thm (d · d₁) gΓ | inj v ev red | inj v₁ ev₁ red₁ with red red₁
 thm (d · d₁) gΓ | inj .(ƛ M [ σ ]') ev₁ red | inj v₁ ev₂ red₁ | inj v₂ (apƛ {M} {σ} ev) red₂ = inj v₂ (app ev₁ ev₂ ev) red₂
 thm (ƛ {T} {S} {M}  d) {σ} gΓ = inj _ ƛ helper
- where helper : ∀ {u} -> V[ T ] u -> E[ S ] (ƛ M [ σ ]' · u)
+ where helper : ∀ {u} -> u ∈ V[ T ] -> (ƛ M [ σ ]' · u) ∈ E[ S ]
        helper x with thm d (gΓ , x)
        helper x | inj v ev red = inj v (apƛ ev) red
 
