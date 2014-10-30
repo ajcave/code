@@ -222,14 +222,14 @@ _∘_ : ∀ {A B C : Set} -> (B -> C) -> (A -> B) -> A -> C
 ⟦ k1 ∷ k ⟧' = ⟦ k ⟧' ∘ ⟦ k1 ⟧₁
 
 [_]₁ : ∀ {∁ β} {m n : CTerm ∅ β} → 
-              (k : Outside1 ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (⟦ k ⟧₁ m) ⇓ t → (⟦ k ⟧₁ n) ⇓ t
+              (k : Outside1 ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → (∀ {t} -> (⟦ k ⟧₁ m) ⇓ t → (⟦ k ⟧₁ n) ⇓ t)
 [ π₁ ]₁ t (ev-π₁ y y') = ev-π₁ (t y) y'
 [ π₂ ]₁ t (ev-π₂ y y') = ev-π₂ (t y) y'
 [ ` y ]₁ t (ev-′ y' y0) = ev-′ (t y') y0
 [ []to y ]₁ t (ev-to y' y0) = ev-to (t y') y0
 
 [_] : ∀ {∁ β} {m n : CTerm ∅ β} → 
-              (k : Outside ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (⟦ k ⟧' m) ⇓ t → (⟦ k ⟧' n) ⇓ t
+              (k : Outside ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → (∀ {t} -> (⟦ k ⟧' m) ⇓ t → (⟦ k ⟧' n) ⇓ t)
 [ nil ] = id'
 [ y ∷ y' ] = [ y' ] ∘ [ y ]₁
 
