@@ -136,12 +136,15 @@ data _⇓_ {Γ : Ctx} : ∀ {β : CType} → CTerm Γ β → CTerm Γ β → Set
   ev-π₂    : ∀ {β₁ β₂} {m : CTerm Γ (β₁ ∧ β₂)} {m₁ m₂ t} → m ⇓ ⟨ m₁ , m₂ ⟩ → m₂ ⇓ t → π₂ m ⇓ t
   ev-′     : ∀ {α β} {m v t} {m' : CTerm (Γ , α) β} → m ⇓ ƛ m' → ⟦ v ∷ id ⟧ m' ⇓ t → (v ′ m) ⇓ t
 
-data Outside (Γ : Ctx) (∁ : CType) : CType → Set where
-  nil     : Outside Γ ∁ ∁
-  []to_∷_ : ∀ {α β} → CTerm (Γ , α) β → Outside Γ ∁ β → Outside Γ ∁ (F α)
-  π₁∷_    : ∀ {β₁ β₂} → Outside Γ ∁ β₁ → Outside Γ ∁ (β₁ ∧ β₂)
-  π₂∷_    : ∀ {β₁ β₂} → Outside Γ ∁ β₂ → Outside Γ ∁ (β₁ ∧ β₂)
-  _∷v_    : ∀ {α β} → VTerm Γ α → Outside Γ ∁ β → Outside Γ ∁ (α ⇒ β)
+data Outside1 (Γ : Ctx) (C : CType) : CType -> Set where
+ π₁ : ∀ {β₂} -> Outside1 Γ C (C ∧ β₂)
+ π₂ : ∀ {β₁} -> Outside1 Γ C (β₁ ∧ C) 
+ ` : ∀ {α} -> VTerm Γ α -> Outside1 Γ C (α ⇒ C)
+ []to : ∀ {α} -> CTerm (Γ , α) C -> Outside1 Γ C (F α)
+
+data Outside (Γ : Ctx) (C : CType) : CType → Set where
+  nil     : Outside Γ C C
+  _∷_ : ∀ {B D} -> Outside1 Γ B D -> Outside Γ C B -> Outside Γ C D
 
 data CK {Γ : Ctx} {∁ : CType} : ∀ {β} → CTerm Γ β → Outside Γ ∁ β → Set where
   _,_ : ∀ {β} (t : CTerm Γ β) (k : Outside Γ ∁ β) → CK t k
@@ -149,8 +152,8 @@ data CK {Γ : Ctx} {∁ : CType} : ∀ {β} → CTerm Γ β → Outside Γ ∁ �
 data _↝_ {Γ : Ctx} {∁ : CType} : ∀ {β₁ β₂} {t₁ : CTerm Γ β₁} {k₁ : Outside Γ ∁ β₁} 
              {t₂ : CTerm Γ β₂} {k₂ : Outside Γ ∁ β₂} → CK t₁ k₁ → CK t₂ k₂ → Set where
   tr-let   : ∀ {α β} {m : CTerm (Γ , α) β} {v k} → (letbe v m , k) ↝ (⟦ v ∷ id ⟧ m , k)
-  tr-to    : ∀ {α β} {n : CTerm (Γ , α) β} {m k} → ((m to n) , k) ↝ (m , []to n ∷ k)
-  tr-prod  : ∀ {α β v k} {n : CTerm (Γ , α) β} → (produce v , []to n ∷ k) ↝ (⟦ v ∷ id ⟧ n , k)
+  tr-to    : ∀ {α β} {n : CTerm (Γ , α) β} {m k} → ((m to n) , k) ↝ (m , ([]to n ∷ k))
+  tr-prod  : ∀ {α β v k} {n : CTerm (Γ , α) β} → (produce v , ([]to n ∷ k)) ↝ (⟦ v ∷ id ⟧ n , k)
   tr-force : ∀ {β k} {m : CTerm Γ β} → (force (thunk m) , k) ↝ (m , k)
   tr-pml   : ∀ {α₁ α₂ β v k} {m₁ : CTerm (Γ , α₁) β} {m₂ : CTerm (Γ , α₂) β} →
              ((pm (inl v) left m₁ right m₂) , k) ↝ (⟦ v ∷ id ⟧ m₁ , k)
@@ -158,12 +161,12 @@ data _↝_ {Γ : Ctx} {∁ : CType} : ∀ {β₁ β₂} {t₁ : CTerm Γ β₁} 
              ((pm (inr v) left m₁ right m₂) , k) ↝ (⟦ v ∷ id ⟧ m₂ , k)
   tr-pm    : ∀ {α₁ α₂ β v₁ v₂ k} {m : CTerm ((Γ , α₂) , α₁) β} → 
              ((pm v₁ , v₂ as m) , k) ↝ (⟦ v₁ ∷ (v₂ ∷ id) ⟧ m , k)
-  tr-π₁    : ∀ {β₁ β₂ k} {m : CTerm Γ (β₁ ∧ β₂)} → (π₁ m , k) ↝ (m , π₁∷ k)
-  tr-π₂    : ∀ {β₁ β₂ k} {m : CTerm Γ (β₁ ∧ β₂)} → (π₂ m , k) ↝ (m , π₂∷ k)
-  tr-∧₁    : ∀ {β₁ β₂ k} {m₁ : CTerm Γ β₁} {m₂ : CTerm Γ β₂} → (⟨ m₁ , m₂ ⟩ , π₁∷ k) ↝ (m₁ , k)
-  tr-∧₂    : ∀ {β₁ β₂ k} {m₁ : CTerm Γ β₁} {m₂ : CTerm Γ β₂} → (⟨ m₁ , m₂ ⟩ , π₂∷ k) ↝ (m₂ , k)
-  tr-′     :  ∀ {α β v k} {m : CTerm Γ (α ⇒ β)} → ((v ′ m) , k) ↝ (m , (v ∷v k)) 
-  tr-ƛ     : ∀ {α β v k} {m : CTerm (Γ , α) β} → ((ƛ m) , (v ∷v k)) ↝ (⟦ v ∷ id ⟧ m , k)
+  tr-π₁    : ∀ {β₁ β₂ k} {m : CTerm Γ (β₁ ∧ β₂)} → (π₁ m , k) ↝ (m , (π₁ ∷ k))
+  tr-π₂    : ∀ {β₁ β₂ k} {m : CTerm Γ (β₁ ∧ β₂)} → (π₂ m , k) ↝ (m , (π₂ ∷ k))
+  tr-∧₁    : ∀ {β₁ β₂ k} {m₁ : CTerm Γ β₁} {m₂ : CTerm Γ β₂} → (⟨ m₁ , m₂ ⟩ , (π₁ ∷ k)) ↝ (m₁ , k)
+  tr-∧₂    : ∀ {β₁ β₂ k} {m₁ : CTerm Γ β₁} {m₂ : CTerm Γ β₂} → (⟨ m₁ , m₂ ⟩ , (π₂ ∷ k)) ↝ (m₂ , k)
+  tr-′     :  ∀ {α β v k} {m : CTerm Γ (α ⇒ β)} → ((v ′ m) , k) ↝ (m , (` v ∷ k)) 
+  tr-ƛ     : ∀ {α β v k} {m : CTerm (Γ , α) β} → ((ƛ m) , (` v ∷ k)) ↝ (⟦ v ∷ id ⟧ m , k)
 
 data Terminal {Γ : Ctx} : ∀ {β} {m : CTerm Γ β} → CK m nil → Set where
   term-prod : ∀ {α} {v : VTerm Γ α} → Terminal (produce v , nil)
@@ -202,32 +205,27 @@ data _↝⋆_ {Γ : Ctx} {∁ : CType} : ∀ {β₁ β₂} {t₁ : CTerm Γ β�
               (m , k) ↝⋆ (t , k)) → (m , nil) ↝⋆ (t , nil)
 ↝∀kto↝nil {β = β} e = e {β} nil
 
+_∙₁_ : ∀ {β ∁} → CTerm ∅ β → Outside1 ∅ ∁ β → CTerm ∅ ∁
+m ∙₁ ([]to m') = m to m'
+m ∙₁ π₁ = π₁ m
+m ∙₁ π₂ = π₂ m
+m ∙₁ (` v) = v ′ m
+
 _∙_ : ∀ {β ∁} → CTerm ∅ β → Outside ∅ ∁ β → CTerm ∅ ∁
 m ∙ nil = m
-m ∙ ([]to m' ∷ k) = (m to m') ∙ k
-m ∙ (π₁∷ k) = π₁ m ∙ k
-m ∙ (π₂∷ k) = π₂ m ∙ k
-m ∙ (v ∷v k) = (v ′ m) ∙ k
+m ∙ (k1 ∷ k) = (m ∙₁ k1) ∙ k
 
-m⇓n⇓→mk⇓nk⇓ : ∀ {∁ β} {m n : CTerm ∅ β} → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁}
-              (k : Outside ∅ ∁ β) → (m ∙ k) ⇓ t → (n ∙ k) ⇓ t
-m⇓n⇓→mk⇓nk⇓ f nil x = f x
-m⇓n⇓→mk⇓nk⇓ {m = m} {n = n} f ([]to x ∷ k) x₁ = m⇓n⇓→mk⇓nk⇓ helper k x₁
-  where helper : ∀ {t} → (m to x) ⇓ t → (n to x) ⇓ t
-        helper (ev-to w w₁) = ev-to (f w) w₁
-m⇓n⇓→mk⇓nk⇓ {m = m} {n = n} f (π₁∷ k) x = m⇓n⇓→mk⇓nk⇓ helper k x
-  where helper : ∀ {t} -> π₁ m ⇓ t -> π₁ n ⇓ t
-        helper (ev-π₁ x₁ x₂) = ev-π₁ (f x₁) x₂
-m⇓n⇓→mk⇓nk⇓ {m = m} {n = n} f (π₂∷ k) x = m⇓n⇓→mk⇓nk⇓ helper k x
-  where helper : ∀ {t} -> π₂ m ⇓ t -> π₂ n ⇓ t
-        helper (ev-π₂ x₁ x₂) = ev-π₂ (f x₁) x₂
-m⇓n⇓→mk⇓nk⇓ {m = m} {n = n} f (x ∷v k) x₁ = m⇓n⇓→mk⇓nk⇓ helper k x₁
-  where helper : ∀ {t} → (x ′ m) ⇓ t → (x ′ n) ⇓ t
-        helper (ev-′ w w₁) = ev-′ (f w) w₁
+_[_]₁ : ∀ {∁ β} {m n : CTerm ∅ β} → 
+              (k : Outside1 ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (m ∙₁ k) ⇓ t → (n ∙₁ k) ⇓ t
+(π₁ [ t ]₁) (ev-π₁ y y') = ev-π₁ (t y) y'
+(π₂ [ t ]₁) (ev-π₂ y y') = ev-π₂ (t y) y'
+((` y ) [ t ]₁) (ev-′ y' y0) = ev-′ (t y') y0
+(([]to y) [ t ]₁) (ev-to y' y0) = ev-to (t y') y0
 
 _[_] : ∀ {∁ β} {m n : CTerm ∅ β} → 
               (k : Outside ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (m ∙ k) ⇓ t → (n ∙ k) ⇓ t
-k [ t ] = m⇓n⇓→mk⇓nk⇓ t k
+nil [ t ] = t
+(y ∷ y') [ t ] = y' [ y [ t ]₁ ]
 
 helper : ∀ {∁ : CType} {m : CTerm ∅ ∁} → Terminal (m , nil) → m ⇓ m
 helper term-prod = ev-prod
