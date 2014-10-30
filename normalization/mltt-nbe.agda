@@ -685,7 +685,7 @@ mutual
   lem2 Γ (▹ x₁ x₂) ps x = lem1 Γ x₁ ps x
   lem2 Γ (Π t t₁) ps x = set
   lem2 Γ (ƛ x t) ps x₁ = Π (lem1 Γ x ps x₁) (λ w x₂ → lem2 (Γ , _) t _ (φswkn w x₁ ,[ Φwkn w (lem1 Γ x ps x₁) ] φfunct' w id (lem1 Γ x ps x₁) x₂))
-  lem2 Γ (t · t₁) ps x with lem2 Γ t₁ ps x
+  lem2 Γ (t · t₁) ps x with lem2 Γ t ps x
   lem2 Γ (t · t₁) ps x | bool = {!!}
   lem2 Γ (t · t₁) ps x | Π q x₁ = x₁ id {!!}
   lem2 Γ (t · t₁) ps x | neut A₁ = {!!}
