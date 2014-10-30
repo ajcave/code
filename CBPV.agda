@@ -205,55 +205,58 @@ data _↝⋆_ {Γ : Ctx} {∁ : CType} : ∀ {β₁ β₂} {t₁ : CTerm Γ β�
               (m , k) ↝⋆ (t , k)) → (m , nil) ↝⋆ (t , nil)
 ↝∀kto↝nil {β = β} e = e {β} nil
 
-_∙₁_ : ∀ {β ∁} → CTerm ∅ β → Outside1 ∅ ∁ β → CTerm ∅ ∁
-m ∙₁ ([]to m') = m to m'
-m ∙₁ π₁ = π₁ m
-m ∙₁ π₂ = π₂ m
-m ∙₁ (` v) = v ′ m
+id' : ∀ {A : Set} -> A -> A
+id' x = x
 
-_∙_ : ∀ {β ∁} → CTerm ∅ β → Outside ∅ ∁ β → CTerm ∅ ∁
-m ∙ nil = m
-m ∙ (k1 ∷ k) = (m ∙₁ k1) ∙ k
+_∘_ : ∀ {A B C : Set} -> (B -> C) -> (A -> B) -> A -> C
+(f ∘ g) x = f (g x)
 
-_[_]₁ : ∀ {∁ β} {m n : CTerm ∅ β} → 
-              (k : Outside1 ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (m ∙₁ k) ⇓ t → (n ∙₁ k) ⇓ t
-(π₁ [ t ]₁) (ev-π₁ y y') = ev-π₁ (t y) y'
-(π₂ [ t ]₁) (ev-π₂ y y') = ev-π₂ (t y) y'
-((` y ) [ t ]₁) (ev-′ y' y0) = ev-′ (t y') y0
-(([]to y) [ t ]₁) (ev-to y' y0) = ev-to (t y') y0
+⟦_⟧₁ : ∀ {β C} → Outside1 ∅ C β -> CTerm ∅ β → CTerm ∅ C
+⟦ []to m' ⟧₁ = λ m -> (m to m')
+⟦ π₁ ⟧₁ = π₁
+⟦ π₂ ⟧₁ = π₂
+⟦ ` v ⟧₁ = _′_ v
 
-_[_] : ∀ {∁ β} {m n : CTerm ∅ β} → 
-              (k : Outside ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (m ∙ k) ⇓ t → (n ∙ k) ⇓ t
-nil [ t ] = t
-(y ∷ y') [ t ] = y' [ y [ t ]₁ ]
+⟦_⟧' : ∀ {β ∁} → Outside ∅ ∁ β → CTerm ∅ β → CTerm ∅ ∁
+⟦ nil ⟧' = id'
+⟦ k1 ∷ k ⟧' = ⟦ k ⟧' ∘ ⟦ k1 ⟧₁
+
+[_]₁ : ∀ {∁ β} {m n : CTerm ∅ β} → 
+              (k : Outside1 ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (⟦ k ⟧₁ m) ⇓ t → (⟦ k ⟧₁ n) ⇓ t
+[ π₁ ]₁ t (ev-π₁ y y') = ev-π₁ (t y) y'
+[ π₂ ]₁ t (ev-π₂ y y') = ev-π₂ (t y) y'
+[ ` y ]₁ t (ev-′ y' y0) = ev-′ (t y') y0
+[ []to y ]₁ t (ev-to y' y0) = ev-to (t y') y0
+
+[_] : ∀ {∁ β} {m n : CTerm ∅ β} → 
+              (k : Outside ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (⟦ k ⟧' m) ⇓ t → (⟦ k ⟧' n) ⇓ t
+[ nil ] = id'
+[ y ∷ y' ] = [ y' ] ∘ [ y ]₁
 
 helper : ∀ {∁ : CType} {m : CTerm ∅ ∁} → Terminal (m , nil) → m ⇓ m
 helper term-prod = ev-prod
 helper term-∧ = ev-∧
 helper term-ƛ = ev-ƛ
 
-id' : ∀ {A : Set} -> A -> A
-id' x = x
-
 helper2 : ∀ {∁ β : CType} {m : CTerm ∅ β} {t : CTerm ∅ ∁}
             {k : Outside ∅ ∁ β} {β₂ : CType} {m₂ : CTerm ∅ β₂}
             (k₂ : Outside ∅ ∁ β₂) →
-          (m , k) ↝ (m₂ , k₂) → (m₂ ∙ k₂) ⇓ t → (m ∙ k) ⇓ t
-helper2 k tr-let = k [ ev-let ]
+          (m , k) ↝ (m₂ , k₂) → (⟦ k₂ ⟧' m₂) ⇓ t → (⟦ k ⟧' m) ⇓ t
+helper2 k tr-let = [ k ] ev-let
 helper2 ._ tr-to = id'
-helper2 k tr-prod = k [ ev-to ev-prod ]
-helper2 k tr-force = k [ ev-force ]
-helper2 k tr-pml = k [ ev-pml ]
-helper2 k tr-pmr = k [ ev-pmr ]
-helper2 k tr-pm = k [ ev-pm ]
+helper2 k tr-prod = [ k ] (ev-to ev-prod)
+helper2 k tr-force = [ k ] ev-force
+helper2 k tr-pml = [ k ] ev-pml
+helper2 k tr-pmr = [ k ] ev-pmr
+helper2 k tr-pm = [ k ] ev-pm
 helper2 ._ tr-π₁ = id'
 helper2 ._ tr-π₂ = id'
-helper2 k tr-∧₁ = k [ ev-π₁ ev-∧ ]
-helper2 k tr-∧₂ = k [ ev-π₂ ev-∧ ]
+helper2 k tr-∧₁ = [ k ] (ev-π₁ ev-∧)
+helper2 k tr-∧₂ = [ k ] (ev-π₂ ev-∧)
 helper2 ._ tr-′ = id'
-helper2 k tr-ƛ = k [ ev-′ ev-ƛ ]
+helper2 k tr-ƛ = [ k ] (ev-′ ev-ƛ)
 
 foo : ∀ {∁ β : CType} {m t} {k : Outside ∅ ∁ β} → 
-            Terminal (t , nil) → (m , k) ↝⋆ (t , nil) → (m ∙ k) ⇓ t
+            Terminal (t , nil) → (m , k) ↝⋆ (t , nil) → (⟦ k ⟧' m) ⇓ t
 foo t ↝refl = helper t
 foo t₁ (↝trans x s) = helper2 _ x (foo t₁ s)

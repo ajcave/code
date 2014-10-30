@@ -1,4 +1,4 @@
-module CBPV where
+module CBPV2 where
 
 -- open import Prelude
 -- open import DeBruijn renaming (⟦_⟧ to ⟦_⟧a)
@@ -227,7 +227,11 @@ m⇓n⇓→mk⇓nk⇓ {m = m} {n = n} f (x ∷v k) x₁ = m⇓n⇓→mk⇓nk⇓ 
 
 _[_] : ∀ {∁ β} {m n : CTerm ∅ β} → 
               (k : Outside ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (m ∙ k) ⇓ t → (n ∙ k) ⇓ t
-k [ t ] = m⇓n⇓→mk⇓nk⇓ t k
+(nil [ t ]) x = t x
+(([]to y ∷ y') [ t ]) x = {!x!}
+((π₁∷ y) [ t ]) x = {!!}
+((π₂∷ y) [ t ]) x = {!!}
+((y ∷v y') [ t ]) x = {!!}
 
 helper : ∀ {∁ : CType} {m : CTerm ∅ ∁} → Terminal (m , nil) → m ⇓ m
 helper term-prod = ev-prod
