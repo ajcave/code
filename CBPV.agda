@@ -1,7 +1,14 @@
 module CBPV where
 
-open import Prelude
-open import DeBruijn renaming (⟦_⟧ to ⟦_⟧a)
+-- open import Prelude
+-- open import DeBruijn renaming (⟦_⟧ to ⟦_⟧a)
+
+data Context (A : Set) : Set where
+ ∅ : Context A
+ _,_ : Context A -> A -> Context A
+
+data Var {A : Set} : (Γ : Context A) -> A -> Set where
+ top : ∀ {Γ A} -> Var (Γ , A) A
 
 mutual
   data VType : Set where
@@ -40,6 +47,10 @@ mutual
 
 
 
+data Sub {B : Set} (A : B -> Set) : Context B -> Set where
+ ⊡ : Sub A ∅
+ _∷_ : ∀ {T Γ} -> A T -> Sub A Γ -> Sub A (Γ , T)
+
 TRen : Ctx → Ctx → Set
 TRen Γ Γ₁ = Sub (Var Γ₁) Γ
 
@@ -47,18 +58,18 @@ TSub : Ctx → Ctx → Set
 TSub Γ Γ₁ = Sub (VTerm Γ₁) Γ
 
 wkn-tren : ∀ {Γ Γ₁ : Ctx} {α} → TRen Γ Γ₁ → TRen Γ (Γ₁ , α)
-wkn-tren r = map pop r
+wkn-tren r = {!!} --map pop r
 
 id-tren : ∀ {Γ : Ctx} → TRen Γ Γ
 id-tren {Γ = ∅} = ⊡
-id-tren {Γ = Γ , α} = top ∷ wkn-tren id-tren
+id-tren {Γ = Γ , α} = {!!} --top ∷ wkn-tren id-tren
 
 ⇑ : ∀ {Γ : Ctx} {α} → TRen Γ (Γ , α)
 ⇑ = wkn-tren id-tren
 
 mutual
   ∥_∥v : ∀ {Γ Γ₁ α} → TRen Γ Γ₁ → VTerm Γ α → VTerm Γ₁ α
-  ∥_∥v ρ (var x) = var (⟦ ρ ⟧a x)
+  ∥_∥v ρ (var x) = {!!} --var (⟦ ρ ⟧a x)
   ∥_∥v ρ (thunk x) = thunk (∥ ρ ∥ x)
   ∥_∥v ρ (inl x) = inl (∥ ρ ∥v x)
   ∥_∥v ρ (inr x) = inr (∥ ρ ∥v x)
@@ -72,13 +83,13 @@ mutual
   ∥_∥ ρ (t to t₁) = (∥ ρ ∥ t) to (∥ top ∷ wkn-tren ρ ∥ t₁)
   ∥_∥ ρ (force x) = force (∥ ρ ∥v x)
   ∥_∥ ρ (pm x left x₁ right x₂) = pm ∥ ρ ∥v x left ∥ top ∷ wkn-tren ρ ∥ x₁ right (∥ top ∷ wkn-tren ρ ∥ x₂)
-  ∥_∥ ρ (pm x as t) = pm ∥ ρ ∥v x as (∥ (top ∷ ((pop top) ∷ (wkn-tren (wkn-tren ρ)))) ∥ t)
+  ∥_∥ ρ (pm x as t) = {!!} --pm ∥ ρ ∥v x as (∥ (top ∷ ((pop top) ∷ (wkn-tren (wkn-tren ρ)))) ∥ t)
   ∥_∥ ρ (π₁ x) = π₁ (∥ ρ ∥ x)
   ∥_∥ ρ (π₂ x) = π₂ (∥ ρ ∥ x)
   ∥_∥ ρ (x ′ t) = (∥ ρ ∥v x) ′ (∥ ρ ∥ t)
 
 wkn : ∀ {Γ Γ₁ : Ctx} {α} → TSub Γ Γ₁ → TSub Γ (Γ₁ , α)
-wkn r = map ∥ ⇑ ∥v r
+wkn r = {!!} --map ∥ ⇑ ∥v r
 
 id : ∀ {Γ : Ctx} → TSub Γ Γ
 id {Γ = ∅} = ⊡
@@ -89,7 +100,7 @@ id {Γ = Γ , α} = var top ∷ wkn id
 
 mutual
   ⟦_⟧v : ∀ {Γ Γ₁ α} → TSub Γ Γ₁ → VTerm Γ α → VTerm Γ₁ α
-  ⟦_⟧v σ (var x) = ⟦ σ ⟧a x
+  ⟦_⟧v σ (var x) = {!!} --⟦ σ ⟧a x
   ⟦_⟧v σ (thunk x) = thunk (⟦ σ ⟧ x)
   ⟦_⟧v ρ (inl x) = inl (⟦ ρ ⟧v x)
   ⟦_⟧v ρ (inr x) = inr (⟦ ρ ⟧v x)
@@ -103,7 +114,7 @@ mutual
   ⟦_⟧ σ (t to t₁) = (⟦ σ ⟧ t) to ⟦ var top ∷ wkn σ ⟧ t₁
   ⟦_⟧ σ (force x) = force (⟦ σ ⟧v x)
   ⟦_⟧ ρ (pm x left x₁ right x₂) = pm ⟦ ρ ⟧v x left ⟦ var top ∷ wkn ρ ⟧ x₁ right (⟦ var top ∷ wkn ρ ⟧ x₂)
-  ⟦_⟧ σ (pm x as t) = pm ⟦ σ ⟧v x as (⟦ var top ∷ (var (pop top) ∷ wkn (wkn σ)) ⟧ t)
+  ⟦_⟧ σ (pm x as t) = {!!} --pm ⟦ σ ⟧v x as (⟦ var top ∷ (var (pop top) ∷ wkn (wkn σ)) ⟧ t)
   ⟦_⟧ ρ (π₁ x) = π₁ (⟦ ρ ⟧ x)
   ⟦_⟧ ρ (π₂ x) = π₂ (⟦ ρ ⟧ x)
   ⟦_⟧ σ (x ′ t) = ⟦ σ ⟧v x ′ ⟦ σ ⟧ t
@@ -214,189 +225,35 @@ m⇓n⇓→mk⇓nk⇓ {m = m} {n = n} f (x ∷v k) x₁ = m⇓n⇓→mk⇓nk⇓ 
   where helper : ∀ {t} → (x ′ m) ⇓ t → (x ′ n) ⇓ t
         helper (ev-′ w w₁) = ev-′ (f w) w₁
 
-↝⋆nilto∙⇓ : ∀ {∁ β m t} {k : Outside ∅ ∁ β} → Terminal (t , nil) → 
-          (m , k) ↝⋆ (t , nil) → (m ∙ k) ⇓ t
-↝⋆nilto∙⇓ {m = produce x} {k = nil} τ ↝refl = ev-prod
-↝⋆nilto∙⇓ {m = ⟨ m , m₁ ⟩} {k = nil} τ ↝refl = ev-∧
-↝⋆nilto∙⇓ {m = ƛ m} {k = nil} τ ↝refl = ev-ƛ
-↝⋆nilto∙⇓ {m = letbe x m} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = m to m₁} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = force x} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = pm_left_right x m m₁} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = pm_as x m} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = π₁ m} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = π₂ m} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = x ′ m} {k = nil} () ↝refl
-↝⋆nilto∙⇓ {m = produce x} {k = nil} τ (↝trans () e)
-↝⋆nilto∙⇓ {m = ⟨ m , m₁ ⟩} {k = nil} τ (↝trans () e)
-↝⋆nilto∙⇓ {m = ƛ m} {k = nil} τ (↝trans () e)
-↝⋆nilto∙⇓ {m = letbe x m} {k = nil} τ (↝trans tr-let e) = 
-          m⇓n⇓→mk⇓nk⇓ ev-let nil (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = m to m₁} {k = nil} τ (↝trans tr-to e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = force ._} {k = nil} τ (↝trans tr-force e) = 
-          m⇓n⇓→mk⇓nk⇓ ev-force nil (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = nil} τ (↝trans tr-pml e) = 
-          m⇓n⇓→mk⇓nk⇓ ev-pml nil (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = nil} τ (↝trans tr-pmr e) = 
-          m⇓n⇓→mk⇓nk⇓ ev-pmr nil (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = pm_as ._ m} {k = nil} τ (↝trans tr-pm e) = 
-          m⇓n⇓→mk⇓nk⇓ ev-pm nil (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = π₁ m} {k = nil} τ (↝trans tr-π₁ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = π₂ m} {k = nil} τ (↝trans tr-π₂ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = x ′ m} {k = nil} τ (↝trans tr-′ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = produce x} {k = []to x₁ ∷ k} τ (↝trans tr-prod e) = 
-          m⇓n⇓→mk⇓nk⇓ (ev-to ev-prod) k (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = letbe x m} {k = []to x₁ ∷ k} τ (↝trans tr-let e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (⟦ x ∷ ⊡ ⟧ m to x₁) ⇓ t → (letbe x m to x₁) ⇓ t
-        helper (ev-to w w₁) = ev-to (ev-let w) w₁
-↝⋆nilto∙⇓ {m = m to m₁} {k = []to x ∷ k} τ (↝trans tr-to e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = force ._} {k = []to x₁ ∷ k} τ (↝trans {m₂ = m₂} tr-force e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (m₂ to x₁) ⇓ t → (force (thunk m₂) to x₁) ⇓ t
-        helper (ev-to w w₁) = ev-to (ev-force w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = []to x₁ ∷ k} τ (↝trans (tr-pml {v = v}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (⟦ v ∷ ⊡ ⟧ m to x₁) ⇓ t → (pm inl v left m right m₁ to x₁) ⇓ t
-        helper (ev-to w w₁) = ev-to (ev-pml w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = []to x₁ ∷ k} τ (↝trans (tr-pmr {v = v}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (⟦ v ∷ ⊡ ⟧ m₁ to x₁) ⇓ t → (pm inr v left m right m₁ to x₁) ⇓ t
-        helper (ev-to w w₁) = ev-to (ev-pmr w) w₁
-↝⋆nilto∙⇓ {m = pm_as ._ m} {k = []to x₁ ∷ k} τ (↝trans (tr-pm {v₁ = v₁} {v₂ = v₂}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (⟦ v₁ ∷ (v₂ ∷ ⊡) ⟧ m to x₁) ⇓ t → (pm v₁ , v₂ as m to x₁) ⇓ t
-        helper (ev-to w w₁) = ev-to (ev-pm w) w₁
-↝⋆nilto∙⇓ {m = π₁ m} {k = []to x ∷ k} τ (↝trans tr-π₁ e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (π₁ m to x) ⇓ t → (π₁ m to x) ⇓ t
-        helper (ev-to w w₁) = ev-to w w₁
-↝⋆nilto∙⇓ {m = π₂ m} {k = []to x ∷ k} τ (↝trans tr-π₂ e) =           
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (π₂ m to x) ⇓ t → (π₂ m to x) ⇓ t
-        helper (ev-to w w₁) = ev-to w w₁
-↝⋆nilto∙⇓ {m = x ′ m} {k = []to x₁ ∷ k} τ (↝trans tr-′ e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → ((x ′ m) to x₁) ⇓ t → ((x ′ m) to x₁) ⇓ t
-        helper (ev-to w w₁) = ev-to w w₁
-↝⋆nilto∙⇓ {m = ⟨ m , m₁ ⟩} {k = π₁∷ k} τ (↝trans tr-∧₁ e) =  
-          m⇓n⇓→mk⇓nk⇓ (ev-π₁ ev-∧) k (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = letbe x m} {k = π₁∷ k} τ (↝trans tr-let e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₁ (⟦ x ∷ ⊡ ⟧ m) ⇓ t → π₁ (letbe x m) ⇓ t
-        helper (ev-π₁ w w₁) = ev-π₁ (ev-let w) w₁
-↝⋆nilto∙⇓ {m = m to m₁} {k = π₁∷ k} τ (↝trans tr-to e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = force ._} {k = π₁∷ k} τ (↝trans {m₂ = m₂} tr-force e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₁ m₂ ⇓ t → π₁ (force (thunk m₂)) ⇓ t
-        helper (ev-π₁ w w₁) = ev-π₁ (ev-force w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = π₁∷ k} τ (↝trans (tr-pml {v = v}) e) =  
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₁ (⟦ v ∷ ⊡ ⟧ m) ⇓ t → π₁ (pm inl v left m right m₁) ⇓ t
-        helper (ev-π₁ w w₁) = ev-π₁ (ev-pml w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = π₁∷ k} τ (↝trans (tr-pmr {v = v}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₁ (⟦ v ∷ ⊡ ⟧ m₁) ⇓ t → π₁ (pm inr v left m right m₁) ⇓ t
-        helper (ev-π₁ w w₁) = ev-π₁ (ev-pmr w) w₁
-↝⋆nilto∙⇓ {m = pm_as ._ m} {k = π₁∷ k} τ (↝trans (tr-pm {v₁ = v₁} {v₂ = v₂}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₁ (⟦ v₁ ∷ (v₂ ∷ ⊡) ⟧ m) ⇓ t → π₁ (pm v₁ , v₂ as m) ⇓ t
-        helper (ev-π₁ w w₁) = ev-π₁ (ev-pm w) w₁
-↝⋆nilto∙⇓ {m = π₁ m} {k = π₁∷ k} τ (↝trans tr-π₁ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = π₂ m} {k = π₁∷ k} τ (↝trans tr-π₂ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = x ′ m} {k = π₁∷ k} τ (↝trans tr-′ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = ⟨ m , m₁ ⟩} {k = π₂∷ k} τ (↝trans tr-∧₂ e) = 
-          m⇓n⇓→mk⇓nk⇓ (ev-π₂ ev-∧) k (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = letbe x m} {k = π₂∷ k} τ (↝trans tr-let e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₂ (⟦ x ∷ ⊡ ⟧ m) ⇓ t → π₂ (letbe x m) ⇓ t
-        helper (ev-π₂ w w₁) = ev-π₂ (ev-let w) w₁
-↝⋆nilto∙⇓ {m = m to m₁} {k = π₂∷ k} τ (↝trans tr-to e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = force ._} {k = π₂∷ k} τ (↝trans {m₂ = m₂} tr-force e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₂ m₂ ⇓ t → π₂ (force (thunk m₂)) ⇓ t
-        helper (ev-π₂ w w₁) = ev-π₂ (ev-force w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = π₂∷ k} τ (↝trans (tr-pml {v = v}) e) =  
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₂ (⟦ v ∷ ⊡ ⟧ m) ⇓ t → π₂ (pm inl v left m right m₁) ⇓ t
-        helper (ev-π₂ w w₁) = ev-π₂ (ev-pml w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = π₂∷ k} τ (↝trans (tr-pmr {v = v}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₂ (⟦ v ∷ ⊡ ⟧ m₁) ⇓ t → π₂ (pm inr v left m right m₁) ⇓ t
-        helper (ev-π₂ w w₁) = ev-π₂ (ev-pmr w) w₁
-↝⋆nilto∙⇓ {m = pm_as ._ m} {k = π₂∷ k} τ (↝trans (tr-pm {v₁ = v₁} {v₂ = v₂}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → π₂ (⟦ v₁ ∷ (v₂ ∷ ⊡) ⟧ m) ⇓ t → π₂ (pm v₁ , v₂ as m) ⇓ t
-        helper (ev-π₂ w w₁) = ev-π₂ (ev-pm w) w₁
-↝⋆nilto∙⇓ {m = π₁ m} {k = π₂∷ k} τ (↝trans tr-π₁ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = π₂ m} {k = π₂∷ k} τ (↝trans tr-π₂ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = x ′ m} {k = π₂∷ k} τ (↝trans tr-′ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = ƛ m} {k = x ∷v k} τ (↝trans tr-ƛ e) = 
-          m⇓n⇓→mk⇓nk⇓ (ev-′ ev-ƛ) k (↝⋆nilto∙⇓ τ e)
-↝⋆nilto∙⇓ {m = letbe x m} {k = x₁ ∷v k} τ (↝trans tr-let e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (x₁ ′ ⟦ x ∷ ⊡ ⟧ m) ⇓ t → (x₁ ′ letbe x m) ⇓ t
-        helper (ev-′ w w₁) = ev-′ (ev-let w) w₁
-↝⋆nilto∙⇓ {m = m to m₁} {k = x ∷v k} τ (↝trans tr-to e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = force ._} {k = x₁ ∷v k} τ (↝trans {m₂ = m₂} tr-force e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (x₁ ′ m₂) ⇓ t → (x₁ ′ force (thunk m₂)) ⇓ t
-        helper (ev-′ w w₁) = ev-′ (ev-force w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = x₁ ∷v k} τ (↝trans (tr-pml {v = v}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (x₁ ′ ⟦ v ∷ ⊡ ⟧ m) ⇓ t → (x₁ ′ pm inl v left m right m₁) ⇓ t
-        helper (ev-′ w w₁) = ev-′ (ev-pml w) w₁
-↝⋆nilto∙⇓ {m = pm_left_right ._ m m₁} {k = x₁ ∷v k} τ (↝trans (tr-pmr {v = v}) e) =
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (x₁ ′ ⟦ v ∷ ⊡ ⟧ m₁) ⇓ t → (x₁ ′ pm inr v left m right m₁) ⇓ t
-        helper (ev-′ w w₁) = ev-′ (ev-pmr w) w₁
-↝⋆nilto∙⇓ {m = pm_as ._ m} {k = x₁ ∷v k} τ (↝trans (tr-pm {v₁ = v₁} {v₂ = v₃}) e) = 
-          m⇓n⇓→mk⇓nk⇓ helper k (↝⋆nilto∙⇓ τ e)
-  where helper : ∀ {t} → (x₁ ′ ⟦ v₁ ∷ (v₃ ∷ ⊡) ⟧ m) ⇓ t → (x₁ ′ pm v₁ , v₃ as m) ⇓ t
-        helper (ev-′ w w₁) = ev-′ (ev-pm w) w₁ 
-↝⋆nilto∙⇓ {m = π₁ m} {k = x ∷v k} τ (↝trans tr-π₁ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = π₂ m} {k = x ∷v k} τ (↝trans tr-π₂ e) = ↝⋆nilto∙⇓ τ e
-↝⋆nilto∙⇓ {m = x ′ m} {k = x₁ ∷v k} τ (↝trans tr-′ e) = ↝⋆nilto∙⇓ τ e
-
-↝nilto⇓ : ∀ {β} {m t : CTerm ∅ β} → Terminal (t , nil) → (m , nil) ↝⋆ (t , nil) → m ⇓ t
-↝nilto⇓ τ e = ↝⋆nilto∙⇓ τ e
-
+_[_] : ∀ {∁ β} {m n : CTerm ∅ β} → 
+              (k : Outside ∅ ∁ β) → (∀ {t} → m ⇓ t → n ⇓ t) → {t : CTerm ∅ ∁} -> (m ∙ k) ⇓ t → (n ∙ k) ⇓ t
+k [ t ] = m⇓n⇓→mk⇓nk⇓ t k
 
 helper : ∀ {∁ : CType} {m : CTerm ∅ ∁} → Terminal (m , nil) → m ⇓ m
 helper term-prod = ev-prod
 helper term-∧ = ev-∧
 helper term-ƛ = ev-ƛ
 
+id' : ∀ {A : Set} -> A -> A
+id' x = x
+
 helper2 : ∀ {∁ β : CType} {m : CTerm ∅ β} {t : CTerm ∅ ∁}
-            (k : Outside ∅ ∁ β) {β₂ : CType} {m₂ : CTerm ∅ β₂}
-            {k₂ : Outside ∅ ∁ β₂} →
+            {k : Outside ∅ ∁ β} {β₂ : CType} {m₂ : CTerm ∅ β₂}
+            (k₂ : Outside ∅ ∁ β₂) →
           (m , k) ↝ (m₂ , k₂) → (m₂ ∙ k₂) ⇓ t → (m ∙ k) ⇓ t
-helper2 k tr-let s = m⇓n⇓→mk⇓nk⇓ ev-let k s
-helper2 k tr-to s = s
-helper2 ._ tr-prod s = m⇓n⇓→mk⇓nk⇓ (ev-to ev-prod) _ s
-helper2 k tr-force s = {!!}
-helper2 k tr-pml s = {!!}
-helper2 k tr-pmr s = {!!}
-helper2 k tr-pm s = {!!}
-helper2 k tr-π₁ s = {!!}
-helper2 k tr-π₂ s = {!!}
-helper2 ._ tr-∧₁ s = {!!}
-helper2 ._ tr-∧₂ s = {!!}
-helper2 k tr-′ s = {!!}
-helper2 ._ tr-ƛ s = {!!}
--- helper2 {k = k} tr-let t₁ = m⇓n⇓→mk⇓nk⇓ ev-let k t₁
--- helper2 tr-to t₁ = t₁
--- helper2 {k = k} tr-prod t₁ = m⇓n⇓→mk⇓nk⇓ {!ev-pro!} {!!} {!!}
--- helper2 tr-force t₁ = {!!}
--- helper2 tr-pml t₁ = {!!}
--- helper2 tr-pmr t₁ = {!!}
--- helper2 tr-pm t₁ = {!!}
--- helper2 tr-π₁ t₁ = {!!}
--- helper2 tr-π₂ t₁ = {!!}
--- helper2 tr-∧₁ t₁ = {!!}
--- helper2 tr-∧₂ t₁ = {!!}
--- helper2 tr-′ t₁ = {!!}
--- helper2 tr-ƛ t₁ = {!!}
+helper2 k tr-let = k [ ev-let ]
+helper2 ._ tr-to = id'
+helper2 k tr-prod = k [ ev-to ev-prod ]
+helper2 k tr-force = k [ ev-force ]
+helper2 k tr-pml = k [ ev-pml ]
+helper2 k tr-pmr = k [ ev-pmr ]
+helper2 k tr-pm = k [ ev-pm ]
+helper2 ._ tr-π₁ = id'
+helper2 ._ tr-π₂ = id'
+helper2 k tr-∧₁ = k [ ev-π₁ ev-∧ ]
+helper2 k tr-∧₂ = k [ ev-π₂ ev-∧ ]
+helper2 ._ tr-′ = id'
+helper2 k tr-ƛ = k [ ev-′ ev-ƛ ]
 
 foo : ∀ {∁ β : CType} {m t} {k : Outside ∅ ∁ β} → 
             Terminal (t , nil) → (m , k) ↝⋆ (t , nil) → (m ∙ k) ⇓ t

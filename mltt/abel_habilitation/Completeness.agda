@@ -84,7 +84,8 @@ mutual
  fundlvl (idx x₁ x₂) = fundlvlv x₁ x₂
  fundlvl (rec d d₁ d₂ d₃) = {!!}
  fundlvl (d · d₁) = {!!}
- fundlvl (ƛ d) = {!!}
+ fundlvl (ƛ d) with fundc d | fundlvl d
+ fundlvl (ƛ d) | proj₁ , proj₂ | q2 = {!!}
  fundlvl (Π d d₁) = {!!}
  fundlvl (d [ x ]) = {!!}
  fundlvl (conv d d₁) = {!!}
@@ -112,7 +113,7 @@ mutual
 
  fundtv : ∀ {Γ x T} (x1 : Γ ⊢ctx) (d : Γ ∋ x ∶ T) -> Γ ⊨' T type[ fundc' x1 , fundlvlv x1 d ]
  fundtv ⊡ () ρ₁
- fundtv (_,_ (inj x)) top {Syn.⊡} {Syn.⊡} vρ = {!!}
+ fundtv (_,_ (inj x)) top {Syn.⊡} {Syn.⊡} ()
  fundtv (_,_ (inj x)) top {Syn.⊡} {_,_ ρ' a} vρ = {!!}
  fundtv (_,_ (inj x)) top {ρ , a} {Syn.⊡} vρ = {!!}
  fundtv (_,_ (inj x)) top {ρ , a} {ρ' , a₁} (vρ , va) = 
