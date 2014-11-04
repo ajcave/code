@@ -32,7 +32,6 @@ data _⊢_∶_ (Γ : ctx) : (M : tm) -> (T : tp) -> Set where
 mutual
  data val : Set where
   ƛ_[_]' : tm -> env -> val
-  c : val
 
  data env :  Set where
   ⊡ : env

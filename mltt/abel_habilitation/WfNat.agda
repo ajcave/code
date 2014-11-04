@@ -24,6 +24,10 @@ nat-acc' : (n : ℕ) -> ∀ {j} -> j < n -> Acc j
 nat-acc' zero ()
 nat-acc' (suc n) p = suc-acc' (nat-acc' n) p --inj (λ x → nat-acc' n (≤trans x p))
 
+nat-acc'' : (n : ℕ) -> ∀ {j} -> j < n -> Acc j
+nat-acc'' zero ()
+nat-acc'' (suc n) (s≤s p) = inj (λ x → nat-acc'' n (≤trans x p))
+
 nat-acc : {n : ℕ} -> Acc n
 nat-acc = inj (nat-acc' _)
 

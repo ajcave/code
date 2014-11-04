@@ -81,6 +81,9 @@ record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
 ΠR : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
 ΠR A F f f' = ∀ {a a'} -> (p : A a a') -> (f · a) ≈ (f' · a') ∈ (App (F p))
 
+_⇒R_ : (A B : REL) -> REL
+A ⇒R B = ΠR A (λ _ -> B)
+
 data NeuRel : REL where
  inj : ∀ {e1 E1 e2 E2} -- -> E1 ≈ E ∈⊥ -> E2 ≈ E ∈⊥  -- TODO! ?
      -> e1 ≈ e2 ∈ ⊥' -> NeuRel (↑[ E1 ] e1) (↑[ E2 ] e2)
@@ -94,7 +97,7 @@ module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
    Neu : ∀ {j E E'} -> E ≈ E' ∈ ⊥' -> j ≤ k -> ↑[ Set* j ] E ≈ ↑[ Set* j ] E' ∈ SetR
    Nat : Nat ≈ Nat ∈ SetR
    Π : ∀ {A A' F F'} (pA : A ≈ A' ∈ SetR)
-    -> (pF : F ≈ F' ∈ ΠR (El pA) (λ _ -> SetR))
+    -> (pF : F ≈ F' ∈ ((El pA) ⇒R SetR))
     -> (Π A F) ≈ (Π A' F') ∈ SetR
    Set* : ∀ {j} -> j < k -> Set* j ≈ Set* j ∈ SetR
 
@@ -122,42 +125,55 @@ ElU n = ElU' {n} {nat-acc {n}}
 [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 [ n , pA ] = ElU n pA
 
-⟦_,_⟧tp' : ∀ {c1 c2} k -> c1 ≈ c2 ∈ App (SetU k) -> REL
-⟦ k , vT ⟧tp' = ElU k (App.rel vT)
+⟦_⟧tp' : ∀ {c1 c2} {k} -> c1 ≈ c2 ∈ App (SetU k) -> REL
+⟦ vT ⟧tp' = ElU _ (App.rel vT)
 
 ⟦_⟧tp : ∀ {c1 c2} -> c1 ≈ c2 ∈ App Type -> REL
 ⟦ vT ⟧tp = [ App.rel vT ]
 
-mutual
- ⊨_ctx : Ctx -> Set
- ⊨ ⊡ ctx = ⊤
- ⊨ (Γ , T) ctx = Σ (⊨ Γ ctx) (λ vΓ → ∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App Type)
+data Comb (R : EnvREL) (S : ∀ {ρ1 ρ2} -> ρ1 ≈ ρ2 ∈ R -> REL) : EnvREL where
+ _,_ : ∀ {ρ1 ρ2 a1 a2} (vρ : ρ1 ≈ ρ2 ∈ R) -> a1 ≈ a2 ∈ S vρ -> (ρ1 , a1) ≈ (ρ2 , a2) ∈ Comb R S
 
- ⟦_,_⟧ctx : (Γ : Ctx) -> ⊨ Γ ctx -> EnvREL
- ⟦_,_⟧ctx ⊡ tt ⊡ ⊡ = ⊤
- ⟦_,_⟧ctx (Γ , T) (vΓ , vT) (ρ , a) (ρ' , a') = Σ (ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) (λ vρ → a ≈ a' ∈ ⟦ vT vρ ⟧tp)
- ⟦_,_⟧ctx _ _ _ _ = ⊥
+data EmpRel : EnvREL where
+ tt : EmpRel ⊡ ⊡
+
+open import Function
+
+mutual
+ data ⊨_ctx : Ctx -> Set where
+  tt : ⊨ ⊡ ctx
+  _,_ : ∀ {Γ T k} -> (vΓ : ⊨ Γ ctx) -> (∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k))
+       -> ⊨ (Γ , T) ctx
+
+ ⟦_⟧ctx : {Γ : Ctx} -> ⊨ Γ ctx -> EnvREL
+ ⟦ tt ⟧ctx = EmpRel
+ ⟦ Γ , T ⟧ctx = Comb ⟦ Γ ⟧ctx (⟦_⟧tp' ∘  T)
 
 _⊨'_type[_,_] : (Γ : Ctx) -> Exp -> ⊨ Γ ctx -> ℕ -> Set
-Γ ⊨' T type[ vΓ , k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k)
+Γ ⊨' T type[ vΓ , k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k)
+
+[_]⊨_type[_] : {Γ : Ctx} -> ⊨ Γ ctx -> Exp -> ℕ -> Set
+[ Γ ]⊨ T type[ k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧ctx) → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k)
 
 _⊨_type : Ctx -> Exp -> Set
 Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∃ (λ k -> Γ ⊨' T type[ vΓ , k ]))
 
-_⊨'_≈_∶_[_] : (Γ : Ctx) -> Exp -> Exp -> (T : Exp) -> Γ ⊨ T type -> Set
-Γ ⊨' t ≈ t' ∶ T [ vΓ , (k , vT) ] =
-  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ k , vT vρ ⟧tp'
+[_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
+[ Γ ]⊨ t ≈ t' ∶[ T ] =
+  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧ctx) → ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ T vρ ⟧tp'
+
+_,_⊨''_≈_∶_[_] : ∀ ρ ρ' -> Exp -> Exp -> Exp -> ℕ -> Set
+ρ , ρ' ⊨'' t ≈ t' ∶ T [ k ] = Σ (⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k)) (λ p -> ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ p ⟧tp')
 
 _⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
-Γ ⊨ t ≈ t' ∶ T = Σ (Γ ⊨ T type)
-  (λ p -> Γ ⊨' t ≈ t' ∶ T [ p ] )
+Γ ⊨ t ≈ t' ∶ T = Σ (⊨ Γ ctx) (λ vΓ -> ∃ (λ k -> ∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx → ρ , ρ' ⊨'' t ≈ t' ∶ T [ k ]))
 
 _⊨_∶_ : Ctx -> Exp -> Exp -> Set
 Γ ⊨ t ∶ T    =    Γ ⊨ t ≈ t ∶ T
 
 _⊨s_≈_∶_ : Ctx -> Subst -> Subst -> Ctx -> Set
 Γ ⊨s σ ≈ σ' ∶ Δ = Σ (⊨ Γ ctx) (λ vΓ → Σ (⊨ Δ ctx) (λ vΔ →
-  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ , vΓ ⟧ctx) → ⟦ σ ⟧s ρ ≈⟦ σ' ⟧s ρ' ∈ ⟦ Δ , vΔ ⟧ctx))
+  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx) → ⟦ σ ⟧s ρ ≈⟦ σ' ⟧s ρ' ∈ ⟦ vΔ ⟧ctx))
 
 _⊨s_∶_ : Ctx -> Subst -> Ctx -> Set
 Γ ⊨s σ ∶ Δ    =    Γ ⊨s σ ≈ σ ∶ Δ
