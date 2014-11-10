@@ -265,5 +265,9 @@ mutual
  preserve3 (lvl (split {Γ₁} {A} Γ₂)) (lvl ._) rewrite lem1 {Γ₁ , A} Γ₂ = idx (preserve5 Γ₂)
  preserve3 (d1 · d1') (d2 · x) = preserve3 d1 d2 · preserve2 d1' x
 
+preserve6 : ∀ Γ -> Γ ⊢e idenv Γ ∶ Γ
+preserve6 ⊡ = ⊡
+preserve6 (Γ , T) = (wkn2 (preserve6 Γ)) , (neu (lvl (split ⊡)))
+
 preserve : ∀ {Γ a v n A} -> Γ ⊢ a ∶ A -> a [ idenv Γ ] ⇓ v -> Rnf (len Γ) , v ∶ A ↘ n -> Γ ⊢ n ∶ A
-preserve d1 d2 d3 = preserve2 (preserve1 d1 {!idenv'!} d2) d3
+preserve d1 d2 d3 = preserve2 (preserve1 d1 (preserve6 _) d2) d3
