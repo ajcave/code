@@ -196,6 +196,7 @@ mutual
 
 -- Is there a nicer way to do this? What if we do a Kripke relation the whole way
 -- and use 'semantic typing'? Will we only need one Kripke relation?
+-- (Can we get typing out of the logical relation?)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 mutual
  wkn1 : ∀ {Γ v A B} -> Γ ⊢v v ∶ A -> (Γ , B) ⊢v v ∶ A
@@ -271,3 +272,7 @@ preserve6 (Γ , T) = (wkn2 (preserve6 Γ)) , (neu (lvl (split ⊡)))
 
 preserve : ∀ {Γ a v n A} -> Γ ⊢ a ∶ A -> a [ idenv Γ ] ⇓ v -> Rnf (len Γ) , v ∶ A ↘ n -> Γ ⊢ n ∶ A
 preserve d1 d2 d3 = preserve2 (preserve1 d1 (preserve6 _) d2) d3
+
+tp-norm :  ∀ {Γ a} A -> Γ ⊢ a ∶ A -> ∃ (λ n -> Γ ⊢norm a ↘ n ∶ A × Γ ⊢ n ∶ A)
+tp-norm A d with corollary A d
+tp-norm A d | _ , q = _ , (q , (preserve d (proj₁ (proj₂ q)) (proj₂ (proj₂ q))))
