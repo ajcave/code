@@ -62,8 +62,9 @@ data _⇓_ : comp -> val -> Set where
        -> (M · N) [ σ ] ⇓ v
  var : ∀ {x σ v} -> lookup σ x v -> (idx x) [ σ ] ⇓ v
  ƛ : ∀ {M σ} -> (ƛ M) [ σ ] ⇓ (ƛ M [ σ ]')
- apƛ : ∀ {M σ v u} -> M [ σ , v ] ⇓ u -> ((ƛ M [ σ ]') · v) ⇓ u -- This is not exactly what we did on the board
- ↑ : ∀ {T S e a} -> (↑[ T ⇝ S ] e · a) ⇓ ↑[ S ] (e · ↓[ T ] a) -- Could this part be a function if we use intrinsically typed terms?
+ apƛ : ∀ {M σ v u} -> M [ σ , v ] ⇓ u -> ((ƛ M [ σ ]') · v) ⇓ u
+ ↑ : ∀ {T S e a} -> (↑[ T ⇝ S ] e · a) ⇓ ↑[ S ] (e · ↓[ T ] a)
+  -- Could this part be a function if we use intrinsically typed terms?
  tt : ∀ {σ} -> tt [ σ ] ⇓ tt
  ff : ∀ {σ} -> ff [ σ ] ⇓ ff
 
@@ -149,10 +150,7 @@ mutual
 
  reflect : ∀ {e} A -> e ∈ ⊥ -> ↑[ A ] e ∈ V[ A ]
  reflect base p = neu p
- reflect (A ⇝ A₁) p = reflect-arr
-  where reflect-arr : ↑[ A ⇝ A₁ ] _ ∈ V[ A ⇝ A₁ ]
-        reflect-arr x with reify A x
-        ... | q = inj _ ↑ (reflect A₁ (λ n → , proj₂ (p n) · proj₂ (q n)))
+ reflect (A ⇝ A₁) p x = inj _ ↑ (reflect A₁ (λ n → , proj₂ (p n) · proj₂ (reify A x n)))
 
 len : ctx -> ℕ
 len ⊡ = zero
@@ -166,7 +164,106 @@ idenv' : ∀ Γ -> (idenv Γ) ∈ G[ Γ ]
 idenv' ⊡ = ⊡
 idenv' (Γ , T) = (idenv' Γ) , reflect T (λ n → , lvl (len Γ))
 
-corollary : ∀ {Γ a} A -> Γ ⊢ a ∶ A -> ∃ (λ v -> a [ idenv Γ ] ⇓ v × (∃ (λ nf -> Rnf (len Γ) , v ∶ A ↘ nf)))
+_⊢norm_↘_∶_ : ctx -> tm -> tm -> tp -> Set
+Γ ⊢norm a ↘ n ∶ A =  ∃ (λ v -> a [ idenv Γ ] ⇓ v × Rnf (len Γ) , v ∶ A ↘ n)
+
+corollary : ∀ {Γ a} A -> Γ ⊢ a ∶ A -> ∃ (λ n -> Γ ⊢norm a ↘ n ∶ A)
 corollary A d with thm d (idenv' _)
 corollary {Γ} A d | inj v ev red with reify A red (len Γ)
-corollary A d | inj v ev red | r = , (ev , r)
+corollary A d | inj v ev red | r = , (, (ev , proj₂ r))
+
+_<<_ : ctx -> ctx -> ctx
+Γ₁ << ⊡ = Γ₁
+Γ₁ << (Γ₂ , T) = Γ₁ << Γ₂ , T
+
+mutual
+ data _⊢v_∶_ (Γ : ctx) : val -> tp -> Set where
+  ƛ : ∀ {Δ T S t σ} -> (Δ , S) ⊢ t ∶ T -> Γ ⊢e σ ∶ Δ -> Γ ⊢v (ƛ t [ σ ]') ∶ (S ⇝ T)
+  tt : Γ ⊢v tt ∶ base
+  ff : Γ ⊢v ff ∶ base
+  neu : ∀ {d T} -> Γ ⊢ne d ∶ T -> Γ ⊢v (↑[ T ] d) ∶ T
+
+ data _⊢e_∶_ (Γ : ctx) : env -> ctx -> Set where
+  ⊡ : Γ ⊢e ⊡ ∶ ⊡
+  _,_ : ∀ {ρ Δ a T} -> Γ ⊢e ρ ∶ Δ -> Γ ⊢v a ∶ T -> Γ ⊢e (ρ , a) ∶ (Δ , T)
+
+ data _⊢ne_∶_ (Γ : ctx) : Dne -> tp -> Set where
+  _·_ : ∀ {d a T S} -> Γ ⊢ne d ∶ (T ⇝ S) -> Γ ⊢v a ∶ T -> Γ ⊢ne (d · (↓[ T ] a)) ∶ S
+  lvl : ∀ {k T} -> Γ ⊢var k ∶ T -> Γ ⊢ne (lvl k) ∶ T
+
+ data _⊢var_∶_ : (Γ : ctx) -> ℕ -> tp -> Set where
+  split : ∀ {Γ₁ T} Γ₂ -> ((Γ₁ , T) << Γ₂) ⊢var (len Γ₁) ∶ T
+
+-- Is there a nicer way to do this? What if we do a Kripke relation the whole way
+-- and use 'semantic typing'? Will we only need one Kripke relation?
+open import Relation.Binary.PropositionalEquality hiding ([_])
+mutual
+ wkn1 : ∀ {Γ v A B} -> Γ ⊢v v ∶ A -> (Γ , B) ⊢v v ∶ A
+ wkn1 (ƛ x x₁) = ƛ x (wkn2 x₁)
+ wkn1 tt = tt
+ wkn1 ff = ff
+ wkn1 (neu x) = neu (wkn3 x)
+
+ wkn2 : ∀ {Γ ρ Δ A} -> Γ ⊢e ρ ∶ Δ -> (Γ , A) ⊢e ρ ∶ Δ
+ wkn2 ⊡ = ⊡
+ wkn2 (d1 , x) = (wkn2 d1) , (wkn1 x)
+
+ wkn3 : ∀ {Γ d A B} -> Γ ⊢ne d ∶ A -> (Γ , B) ⊢ne d ∶ A
+ wkn3 (d₁ · x) = (wkn3 d₁) · (wkn1 x)
+ wkn3 (lvl (split Γ₂)) = lvl (split (Γ₂ , _))
+
+preserve4 : ∀ {Γ ρ Δ v A} {x} →
+           x ∶ A ∈ Δ → Γ ⊢e ρ ∶ Δ → lookup ρ x v → Γ ⊢v v ∶ A
+preserve4 z (d2 , x) top = x
+preserve4 (s d1) (d2 , x₁) (pop d3) = preserve4 d1 d2 d3
+
+preserve1 : ∀ {Γ a ρ Δ v A} -> Δ ⊢ a ∶ A -> Γ ⊢e ρ ∶ Δ -> a [ ρ ] ⇓ v -> Γ ⊢v v ∶ A
+preserve1 (d1 · d3) d2 (app d4 d5 d6) with preserve1 d1 d2 d4 | preserve1 d3 d2 d5
+preserve1 (d1 · d3) d2 (app d4 d5 (apƛ d6)) | ƛ x x₁ | q2 = preserve1 x (x₁ , q2) d6
+preserve1 (d1 · d3) d2 (app d4 d5 ↑) | neu x | q2 = neu (x · q2)
+preserve1 (idx x₁) d2 (var x₂) = preserve4 x₁ d2 x₂
+preserve1 (ƛ d1) d2 ƛ = ƛ d1 d2
+preserve1 tt d2 tt = tt
+preserve1 ff d2 ff = ff
+
+lem : ∀ {Γ} Γ' -> len (Γ << Γ') ≡ len Γ' + len Γ
+lem ⊡ = refl
+lem (Γ' , T) = cong suc (lem Γ')
+
+lem0' : ∀ b -> b + zero ≡ b
+lem0' zero = refl
+lem0' (suc b) = cong suc (lem0' b)
+
+lem0'' : ∀ b c -> b + (suc c) ≡ suc (b + c)
+lem0'' zero c = refl
+lem0'' (suc b) c = cong suc (lem0'' b c)
+
+lem0 : ∀ a b c -> a ≡ b + c -> a ∸ c ≡ b
+lem0 zero b zero x rewrite lem0' b = x
+lem0 zero b (suc c) x rewrite lem0'' b c with x
+... | ()
+lem0 (suc a) b zero x rewrite lem0' b = x
+lem0 (suc a) b (suc c) x with trans x (lem0'' b c)
+lem0 (suc .(b + c)) b (suc c) x | refl = lem0 (b + c) b c refl
+
+lem1 : ∀ {Γ} Γ' -> len (Γ << Γ') ∸ len Γ ≡ len Γ'
+lem1 {Γ} Γ' = lem0 _ (len Γ') (len Γ) (lem Γ')
+
+preserve5 : ∀ {Γ₁ A} Γ₂ -> len Γ₂ ∶ A ∈ ((Γ₁ , A) << Γ₂)
+preserve5 ⊡ = z
+preserve5 (Γ₂ , T) = s (preserve5 Γ₂)
+
+mutual
+ preserve2 : ∀ {Γ v A n} -> Γ ⊢v v ∶ A -> Rnf (len Γ) , v ∶ A ↘ n -> Γ ⊢ n ∶ A
+ preserve2 (ƛ x x₁) (arr (apƛ x₂) d2) = ƛ (preserve2 (preserve1 x (wkn2 x₁ , neu (lvl (split ⊡))) x₂) d2)
+ preserve2 (neu d1) (arr ↑ d2) = ƛ (preserve2 (neu (wkn3 d1 · neu (lvl  (split ⊡)))) d2)
+ preserve2 (neu d1) (Neut x) = preserve3 d1 x
+ preserve2 d1 tt = tt
+ preserve2 d1 ff = ff
+
+ preserve3 : ∀ {Γ e A n} -> Γ ⊢ne e ∶ A -> Rne (len Γ) , e ↘ n -> Γ ⊢ n ∶ A
+ preserve3 (lvl (split {Γ₁} {A} Γ₂)) (lvl ._) rewrite lem1 {Γ₁ , A} Γ₂ = idx (preserve5 Γ₂)
+ preserve3 (d1 · d1') (d2 · x) = preserve3 d1 d2 · preserve2 d1' x
+
+preserve : ∀ {Γ a v n A} -> Γ ⊢ a ∶ A -> a [ idenv Γ ] ⇓ v -> Rnf (len Γ) , v ∶ A ↘ n -> Γ ⊢ n ∶ A
+preserve d1 d2 d3 = preserve2 (preserve1 d1 {!idenv'!} d2) d3
