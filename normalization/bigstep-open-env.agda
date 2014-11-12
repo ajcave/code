@@ -150,7 +150,7 @@ mutual
 
  reflect : ∀ {e} A -> e ∈ ⊥ -> ↑[ A ] e ∈ V[ A ]
  reflect base p = neu p
- reflect (A ⇝ A₁) p x = inj _ ↑ (reflect A₁ (λ n → , proj₂ (p n) · proj₂ (reify A x n)))
+ reflect (A ⇝ A₁) p = λ x -> inj _ ↑ (reflect A₁ (λ n → , proj₂ (p n) · proj₂ (reify A x n)))
 
 len : ctx -> ℕ
 len ⊡ = zero
