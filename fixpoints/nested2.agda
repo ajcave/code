@@ -103,5 +103,7 @@ interp' (μ F) p = {!!}
 interp' (F ⊕ F₁) (inj₁ x) = {!!}
 interp' (F ⊕ F₁) (inj₂ y) = {!!}
 interp' (F ⊗ F₁) p = {!!}
+
+-- Does the Agda Containers library already implement this?
  
  
