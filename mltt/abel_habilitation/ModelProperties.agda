@@ -16,16 +16,16 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 type-inv : ∀ {T S} -> T ≈ S ∈ App Type -> ∃ (λ n -> T ≈ S ∈ App (SetU n))
 type-inv (inj red1 red2 (n , rel)) = , inj red1 red2 rel
 
-hsymω :  HSYM (App Type) ⟦_⟧tp (App Type) ⟦_⟧tp
-hsymω pA pA' x = hsym* (proj₂ (type-inv pA)) (proj₂ (type-inv pA')) x
+-- hsymω :  HSYM (App Type) ⟦_⟧tp (App Type) ⟦_⟧tp
+-- hsymω pA pA' x = hsym* (proj₂ (type-inv pA)) (proj₂ (type-inv pA')) x
 
-htransω0 : HTRANS (App Type) ⟦_⟧tp
-htransω0
- (inj (_ , red1) (_ , red2) rel)
- (inj (_ , red3) (_ , red4) rel')
- (inj (_ , red5) (_ , red6) rel0)
- r1 r2 with eval-deter red1 red5 | eval-deter red2 red3 | eval-deter red4 red6
-htransω0 (inj (._ , red1) (._ , red2) rel) (inj (_ , red3) (._ , red4) rel') (inj (_ , red5) (_ , red6) rel0) r1 r2 | refl | refl | refl = htransω rel rel' rel0 r1 r2
+-- htransω0 : HTRANS (App Type) ⟦_⟧tp
+-- htransω0
+--  (inj (_ , red1) (_ , red2) rel)
+--  (inj (_ , red3) (_ , red4) rel')
+--  (inj (_ , red5) (_ , red6) rel0)
+--  r1 r2 with eval-deter red1 red5 | eval-deter red2 red3 | eval-deter red4 red6
+-- htransω0 (inj (._ , red1) (._ , red2) rel) (inj (_ , red3) (._ , red4) rel') (inj (_ , red5) (_ , red6) rel0) r1 r2 | refl | refl | refl = htransω rel rel' rel0 r1 r2
 
 htransω0' : ∀ {k n m} -> HTRANS' (App (SetU k)) ⟦_⟧tp' (App (SetU n)) ⟦_⟧tp' (App (SetU m)) ⟦_⟧tp'
 htransω0'

@@ -28,7 +28,7 @@ mutual
   Set* : ∀ {ρ i} -> ⟦ Set* i ⟧ ρ ↘ Set* i
   Π : ∀ {A A' F F' ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ F ⟧ ρ ↘ F' -> ⟦ Π A F ⟧ ρ ↘ Π A' F'
   Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
-  _[_] : ∀ {t σ ρ ρ' d} -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t ⟧ ρ' ↘ d -> ⟦ t [ σ ] ⟧ ρ ↘ d
+  _[_] : ∀ {t σ ρ ρ' d} -> ⟦ t ⟧ ρ' ↘ d -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t [ σ ] ⟧ ρ ↘ d
    --data _·_↘_ : Val -> Val -> Val -> Set where 
   ƛ· : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> ((ƛ t ρ) · a) ↘ b
   ↑ : ∀ {A F e a F'}
@@ -107,8 +107,8 @@ mutual
  eval-deter Set* Set* = refl
  eval-deter (Π p1 p3) (Π p2 p4) = cong₂ Π (eval-deter p1 p2) (eval-deter p3 p4)
  eval-deter Nat Nat = refl
- eval-deter (x₁ [ p1 ]) (x₂ [ p2 ]) with evals-deter x₁ x₂
- ... | refl = eval-deter p1 p2
+ eval-deter (x₁ [ p1 ]) (x₂ [ p2 ]) with evals-deter p1 p2
+ ... | refl = eval-deter x₁ x₂
  eval-deter (ƛ· x₁) (ƛ· x₂) = eval-deter x₁ x₂
  eval-deter (↑ p1) (↑ p2) with eval-deter p1 p2
  ... | refl = refl

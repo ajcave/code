@@ -1,7 +1,7 @@
 {-# OPTIONS --copatterns #-}
 module Completeness where
 open import Syntax
-open import SyntaxTm
+open import SyntaxTm as T
 open Syn Exp
 open import Eval
 open import Data.Product
@@ -83,6 +83,27 @@ fundƛ : ∀ {γ a b t s k} {Γ : ⊨ γ ctx} {A : [ Γ ]⊨ a type[ k ]} {B : [
       -> [ Γ , A ]⊨ t ≈ s ∶[ B ]
       -> [ Γ ]⊨ (ƛ t) ≈ (ƛ s) ∶[ Πs A B ]
 fundƛ d ρ₁≈ρ₂ = inj (, ƛ) (, ƛ) (λ p → com ƛ· ƛ· (d (ρ₁≈ρ₂ , p)))
+
+fundƛ' : ∀ {γ a b t s k} {Γ : ⊨ γ ctx} (pΠAB : [ Γ ]⊨ (Π a (ƛ b)) type[ k ])
+      -> [ Γ , (Πinv1 pΠAB) ]⊨ t ≈ s ∶[ Πinv2 pΠAB ]
+      -> [ Γ ]⊨ (ƛ t) ≈ (ƛ s) ∶[ pΠAB ]
+fundƛ' pΠab d ρ1≈ρ2 = irr {A1 = Πs (Πinv1 pΠab) (Πinv2 pΠab)} {A2 = pΠab} (fundƛ {A = Πinv1 pΠab} {B = Πinv2 pΠab} d) ρ1≈ρ2
+
+_>_•_ : ∀ {γ a b t k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ]) 
+ -> [ Γ , A ]⊨ b type[ k ]
+ -> [ Γ ]⊨ t ∶[ A ]
+ -> [ Γ ]⊨ (b [ T.id , t ]) type[ k ]
+(A > B • t) ρ1≈ρ2 with B (ρ1≈ρ2 , (App.rel (t ρ1≈ρ2)))
+_>_•_ A B t ρ1≈ρ2 | inj (_ , red1) (_ , red2) rel =
+ inj (, red1 [ Eval.id , (proj₂ (App.red1 (t ρ1≈ρ2))) ])
+     (, red2 [ Eval.id , (proj₂ (App.red2 (t ρ1≈ρ2))) ])
+     rel
+
+fund· : ∀ {γ t1 t2 s1 s2 a b k} {Γ : ⊨ γ ctx} {A : [ Γ ]⊨ a type[ k ]} {B : [ Γ , A ]⊨ b type[ k ]}
+     ->       [ Γ ]⊨ t1 ≈ t2 ∶[ Πs A B ]
+     -> (ds : [ Γ ]⊨ s1 ≈ s2 ∶[ A ])
+     ->       [ Γ ]⊨ t1 · s1 ≈ t2 · s2 ∶[ A > B • {!!} ]
+fund· dt ds ρ1≈ρ2 = {!!}
 
 Nats : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Nat type[ k ]
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat

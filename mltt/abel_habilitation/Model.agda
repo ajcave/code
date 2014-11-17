@@ -122,14 +122,14 @@ ElU' {n} {inj p} = SetF.El n (λ q → SetU' (p q))
 ElU : (n : ℕ) -> ∀ {A A'} -> A ≈ A' ∈ (SetU n) -> REL
 ElU n = ElU' {n} {nat-acc {n}}
 
-[_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
-[ n , pA ] = ElU n pA
+-- [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
+-- [ n , pA ] = ElU n pA
 
 ⟦_⟧tp' : ∀ {c1 c2} {k} -> c1 ≈ c2 ∈ App (SetU k) -> REL
 ⟦ vT ⟧tp' = ElU _ (App.rel vT)
 
-⟦_⟧tp : ∀ {c1 c2} -> c1 ≈ c2 ∈ App Type -> REL
-⟦ vT ⟧tp = [ App.rel vT ]
+-- ⟦_⟧tp : ∀ {c1 c2} -> c1 ≈ c2 ∈ App Type -> REL
+-- ⟦ vT ⟧tp = [ App.rel vT ]
 
 data Comb (R : EnvREL) (S : ∀ {ρ1 ρ2} -> ρ1 ≈ ρ2 ∈ R -> REL) : EnvREL where
  _,_ : ∀ {ρ1 ρ2 a1 a2} (vρ : ρ1 ≈ ρ2 ∈ R) -> a1 ≈ a2 ∈ S vρ -> (ρ1 , a1) ≈ (ρ2 , a2) ∈ Comb R S
@@ -170,6 +170,9 @@ _⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
 
 _⊨_∶_ : Ctx -> Exp -> Exp -> Set
 Γ ⊨ t ∶ T    =    Γ ⊨ t ≈ t ∶ T
+
+[_]⊨_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
+[ Γ ]⊨ t ∶[ T ] = [ Γ ]⊨ t ≈ t ∶[ T ]
 
 _⊨s_≈_∶_ : Ctx -> Subst -> Subst -> Ctx -> Set
 Γ ⊨s σ ≈ σ' ∶ Δ = Σ (⊨ Γ ctx) (λ vΓ → Σ (⊨ Δ ctx) (λ vΔ →

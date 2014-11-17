@@ -101,8 +101,8 @@ transSetω' (inj x) = TransF.transSet _ _ (λ p → transSetω' (x p))
 symω' : ∀ {k} (acck : Acc k) -> ∀ {A A'} (pA : A ≈ A' ∈ SetU' acck) -> SYM (ElU' pA)
 symω' (inj x) = TransF.symEl _ _ (λ p → transSetω' (x p))
 
-symω : ∀ {A A'} (pA : A ≈ A' ∈ Type) -> SYM ([ pA ])
-symω (k , pA) = symω' _ pA
+-- symω : ∀ {A A'} (pA : A ≈ A' ∈ Type) -> SYM ([ pA ])
+-- symω (k , pA) = symω' _ pA
 
 transω' : ∀ {k} (K : Acc k) {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
 transω' (inj x) = TransF.transEl _ _ (λ p → transSetω' (x p))
@@ -136,7 +136,7 @@ htrans* : ∀ {k n m} -> HTRANS' (SetU k) (ElU k) (SetU n) (ElU n) (SetU m) (ElU
 htrans* pAB pBC pAC f≈g g≈h =
  transω' _ pAC (irrL _ _ pAB refl pAC f≈g) (irrR _ _ pBC refl pAC g≈h)
 
-htransω : HTRANS Type [_]
-htransω (n , pAB) (m , pBC) (k , pAC) f≈g g≈h =
- transω' _ pAC (irrL _ _ pAB refl pAC f≈g) (irrR _ _ pBC refl pAC g≈h)
+-- htransω : HTRANS Type [_]
+-- htransω (n , pAB) (m , pBC) (k , pAC) f≈g g≈h =
+--  transω' _ pAC (irrL _ _ pAB refl pAC f≈g) (irrR _ _ pBC refl pAC g≈h)
 
