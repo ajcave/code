@@ -43,13 +43,6 @@ com2 F1 F2 x F3 = inj (, F1 (proj₂ (App.red1 x))) (, F2 (proj₂ (App.red2 x))
 -- Combine reductions into "product model", so dealing with 2 is as easy as one?
 -- Outrageous but Meaninful Coincidences: S and K applicative instance...
 
--- Πs1 : ∀ {γ a b k} {Γ : ⊨ γ ctx} {ρ₁ ρ₂} (ρ₁≈ρ₂ : ρ₁ ≈ ρ₂ ∈ ⟦ Γ ⟧ctx)
---  -> (A : ⟦ a ⟧ ρ₁ ≈ ⟦ a ⟧ ρ₂ ∈ App (SetU k))
---  -> (∀ {a₁ a₂} -> a₁ ≈ a₂ ∈ ElU _ (App.rel A) -> ⟦ b ⟧ (ρ₁ , a₁) ≈ ⟦ b ⟧ (ρ₂ , a₂) ∈ App (SetU k))
---  -> ⟦ Π a (ƛ b) ⟧ ρ₁ ≈ ⟦ Π a (ƛ b) ⟧ ρ₂ ∈ App (SetU k)
--- Πs1 ρ₁≈ρ₂ A B = inj (, Π (proj₂ (App.red1 A)) ƛ) (, Π (proj₂ (App.red2 A)) ƛ)
---  (Π (App.rel A) (λ p → com ƛ· ƛ· (B p)))
-
 Set' : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Set* k type[ suc k ]
 Set' k ρ1≈ρ2 = inj (, Set*) (, Set*) (Set* (s≤s ≤refl))
 
@@ -74,13 +67,17 @@ irr {A1 = A1} {A2 = A2} d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (⟦⟧tp'-ir
                    (, (Π (proj₂ (App.red2 (A ρ1≈ρ2))) ƛ))
      (Π (App.rel (A ρ1≈ρ2)) (λ p -> com ƛ· ƛ· (B (ρ1≈ρ2 , p))))
 
--- Πs' : ∀ {γ a b k} {Γ : ⊨ γ ctx} ->
---      (A : [ Γ ]⊨ a type[ k ]) -> [ Γ , A ]⊨ b type[ k ] -> [ Γ ]⊨ (Π a (ƛ b)) type[ k ]
--- Πs' A B ρ1≈ρ2 = com2 (λ p -> Π p ƛ) (λ p -> Π p ƛ) (A ρ1≈ρ2)
---   (λ x → Π x (λ p → com2 ƛ· ƛ· (B (ρ1≈ρ2 , {!!})) {!!}))
---   -- inj (, (Π (proj₂ (App.red1 (A ρ1≈ρ2))) ƛ))
---   --                  (, (Π (proj₂ (App.red2 (A ρ1≈ρ2))) ƛ))
---   --    (Π (App.rel (A ρ1≈ρ2)) (λ p -> com ƛ· ƛ· (B (ρ1≈ρ2 , p))))
+
+-- Would this be easier if I used a fancier definition that computed?
+-- It's tricky because reduction still needs to be inverted
+Πinv1 : ∀ {γ a b k} {Γ : ⊨ γ ctx} -> [ Γ ]⊨ (Π a (ƛ b)) type[ k ] -> [ Γ ]⊨ a type[ k ]
+Πinv1 p ρ1≈ρ2 with p ρ1≈ρ2
+Πinv1 p ρ1≈ρ2 | inj (._ , Π proj₂ proj₃) (._ , Π proj₄ proj₅) (Π pA pF) = inj (, proj₂) (, proj₄) pA
+
+Πinv2 : ∀ {γ a b k} {Γ : ⊨ γ ctx} -> (d : [ Γ ]⊨ (Π a (ƛ b)) type[ k ]) -> [ Γ , Πinv1 d ]⊨ b type[ k ] 
+Πinv2 p (vρ , x) with p vρ
+Πinv2 p (vρ , x) | inj (._ , Π proj₂ ƛ) (._ , Π proj₄ ƛ) (Π pA pF) with pF x
+Πinv2 p (vρ , x) | inj (._ , Π proj₂ ƛ) (._ , Π proj₄ ƛ) (Π pA pF) | inj (proj₁ , ƛ· proj₃) (proj₅ , ƛ· proj₆) rel = inj (, proj₃) (, proj₆) rel
 
 fundƛ : ∀ {γ a b t s k} {Γ : ⊨ γ ctx} {A : [ Γ ]⊨ a type[ k ]} {B : [ Γ , A ]⊨ b type[ k ]}
       -> [ Γ , A ]⊨ t ≈ s ∶[ B ]
@@ -89,15 +86,6 @@ fundƛ d ρ₁≈ρ₂ = inj (, ƛ) (, ƛ) (λ p → com ƛ· ƛ· (d (ρ₁≈�
 
 Nats : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Nat type[ k ]
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat
-
--- fund-suc : ∀ {γ t s k} {Γ : ⊨ γ ctx} 
---  -> [ Γ ]⊨ t ≈ s ∶[ Nats k ]
---  -> [ Γ ]⊨ suc t ≈ suc s ∶[ Nats k ] 
--- fund-suc d ρ1≈ρ2 =
---  inj
---   (, suc (proj₂ (App.red1 (d ρ1≈ρ2))))
---   (, suc (proj₂ (App.red2 (d ρ1≈ρ2))))
---   (suc (App.rel (d ρ1≈ρ2)))
 
 fund-suc' : ∀ {γ t s k} {Γ : ⊨ γ ctx} 
  -> [ Γ ]⊨ t ≈ s ∶[ Nats k ]
