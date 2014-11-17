@@ -61,8 +61,9 @@ irr : ∀ {γ t s a k} {Γ : ⊨ γ ctx} {A1 A2 : [ Γ ]⊨ a type[ k ]}
  -> [ Γ ]⊨ t ≈ s ∶[ A2 ]
 irr {A1 = A1} {A2 = A2} d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (⟦⟧tp'-irr (A1 ρ1≈ρ2) (A2 ρ1≈ρ2))
 
-Πs : ∀ {γ a b k} {Γ : ⊨ γ ctx} ->
-     (A : [ Γ ]⊨ a type[ k ]) -> [ Γ , A ]⊨ b type[ k ] -> [ Γ ]⊨ (Π a (ƛ b)) type[ k ]
+Πs : ∀ {γ1 γ2 a1 a2 b1 b2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} ->
+     (A : [ Γ ]⊨ a1 ≈ a2 type[ k ]) -> [ Γ , A ]⊨ b1 ≈ b2 type[ k ]
+    -> [ Γ ]⊨ (Π a1 (ƛ b1)) ≈ (Π a2 (ƛ b2)) type[ k ]
 Πs A B ρ1≈ρ2 = inj (, (Π (proj₂ (App.red1 (A ρ1≈ρ2))) ƛ))
                    (, (Π (proj₂ (App.red2 (A ρ1≈ρ2))) ƛ))
      (Π (App.rel (A ρ1≈ρ2)) (λ p -> com ƛ· ƛ· (B (ρ1≈ρ2 , p))))
@@ -89,21 +90,55 @@ fundƛ' : ∀ {γ a b t s k} {Γ : ⊨ γ ctx} (pΠAB : [ Γ ]⊨ (Π a (ƛ b)) 
       -> [ Γ ]⊨ (ƛ t) ≈ (ƛ s) ∶[ pΠAB ]
 fundƛ' pΠab d ρ1≈ρ2 = irr {A1 = Πs (Πinv1 pΠab) (Πinv2 pΠab)} {A2 = pΠab} (fundƛ {A = Πinv1 pΠab} {B = Πinv2 pΠab} d) ρ1≈ρ2
 
-_>_•_ : ∀ {γ a b t k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ]) 
- -> [ Γ , A ]⊨ b type[ k ]
- -> [ Γ ]⊨ t ∶[ A ]
- -> [ Γ ]⊨ (b [ T.id , t ]) type[ k ]
-(A > B • t) ρ1≈ρ2 with B (ρ1≈ρ2 , (App.rel (t ρ1≈ρ2)))
-_>_•_ A B t ρ1≈ρ2 | inj (_ , red1) (_ , red2) rel =
- inj (, red1 [ Eval.id , (proj₂ (App.red1 (t ρ1≈ρ2))) ])
-     (, red2 [ Eval.id , (proj₂ (App.red2 (t ρ1≈ρ2))) ])
-     rel
+_>h_•_ : ∀ {γ1 γ2 a1 a2 b1 b2 t1 t2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : [ Γ ]⊨ a1 ≈ a2 type[ k ]) 
+ -> [ Γ , A ]⊨ b1 ≈ b2 type[ k ]
+ -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
+ -> [ Γ ]⊨ b1 [ T.id , t1 ] ≈ b2 [ T.id , t2 ] type[ k ]
+(A >h B • t) ρ1≈ρ2 =
+ let q = B (ρ1≈ρ2 , App.rel (t ρ1≈ρ2)) in
+ inj (, proj₂ (App.red1 q) [ Eval.id , (proj₂ (App.red1 (t ρ1≈ρ2))) ])
+     (, proj₂ (App.red2 q) [ Eval.id , (proj₂ (App.red2 (t ρ1≈ρ2))) ])
+     (App.rel q)
+
+fund-trans : ∀ {γ t1 t2 t3 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
+ -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
+ -> [ Γ ]⊨ t2 ≈ t3 ∶[ A ]
+ -> [ Γ ]⊨ t1 ≈ t3 ∶[ A ]
+fund-trans A t1≈t2 t2≈t3 ρ1≈ρ2 = {!!}
+
+fund-sym : ∀ {γ t1 t2 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
+ -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
+ -> [ Γ ]⊨ t2 ≈ t1 ∶[ A ]
+fund-sym A t1≈t2 ρ1≈ρ2 = {!!}
+
+self : ∀ {γ a t1 t2 k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
+ -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
+ -> [ Γ ]⊨ t1 ≈ t1 ∶[ A ]
+self A t1≈t2 = fund-trans A t1≈t2 (fund-sym A t1≈t2)
+
+
+-- TODO: Could I factor out part of this? Environment plays no role here
+-- What about just doing ds ρ1≈ρ2 and then using com?
+-- Heterogeneous formulation makes this statement and proof simpler
+fund·h : ∀ {γ1 γ2 t1 t2 s1 s2 a1 a2 b1 b2 k}
+ {Γ : ⊨ γ1 ≈ γ2 ctx} {A : [ Γ ]⊨ a1 ≈ a2 type[ k ]} {B : [ Γ , A ]⊨ b1 ≈ b2 type[ k ]}
+     ->       [ Γ ]⊨ t1 ≈ t2 ∶h[ Πs A B ]
+     -> (ds : [ Γ ]⊨ s1 ≈ s2 ∶h[ A ])
+     ->       [ Γ ]⊨ t1 · s1 ≈ t2 · s2 ∶h[ A >h B • ds ]
+fund·h dt ds ρ1≈ρ2 with dt ρ1≈ρ2 | ds ρ1≈ρ2
+fund·h dt ds ρ1≈ρ2 | inj (_ , r1) (_ , r2) rel | inj (_ , r3) (_ , r4) rel₁ with rel rel₁
+fund·h dt ds ρ1≈ρ2 | inj (_ , r1) (_ , r2) rel | inj (_ , r3) (_ , r4) rel₁ | inj (_ , r5) (_ , r6) rel₂ = inj (, (r1 · r3) r5) (, (r2 · r4) r6) rel₂
+
 
 fund· : ∀ {γ t1 t2 s1 s2 a b k} {Γ : ⊨ γ ctx} {A : [ Γ ]⊨ a type[ k ]} {B : [ Γ , A ]⊨ b type[ k ]}
      ->       [ Γ ]⊨ t1 ≈ t2 ∶[ Πs A B ]
      -> (ds : [ Γ ]⊨ s1 ≈ s2 ∶[ A ])
-     ->       [ Γ ]⊨ t1 · s1 ≈ t2 · s2 ∶[ A > B • {!!} ]
-fund· dt ds ρ1≈ρ2 = {!!}
+     ->       [ Γ ]⊨ t1 · s1 ≈ t2 · s2 ∶[ A >h B • self A ds ]
+fund· dt ds ρ1≈ρ2 with dt ρ1≈ρ2 | ds ρ1≈ρ2
+fund· dt ds ρ1≈ρ2 | inj (_ , r1) (_ , r2) rel | inj (_ , r3) (_ , r4) rel₁ with rel rel₁
+fund· dt ds ρ1≈ρ2 | inj (_ , r1) (_ , r2) rel | inj (_ , r3) (_ , r4) rel₁ | inj (_ , r5) (_ , r6) rel₂ = inj (, (r1 · r3) r5) (, (r2 · r4) r6) {!!}
+
+-- Is it more convenient to work with a heterogeneous version for a while?
 
 Nats : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Nat type[ k ]
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat
