@@ -86,23 +86,29 @@ _⊎̂_ f g (inj₂ y) = inj₂ (g y)
 fancy : ∀ {A B C : Set} -> (A ⊎ B) ⊎ C -> A ⊎ (C ⊎ B)
 fancy = (λ { (inj₁ (inj₁ x)) → inj₁ x ; (inj₁ (inj₂ y)) → inj₂ (inj₂ y) ; (inj₂ y) → inj₂ (inj₁ y) })
 
-interp : ∀ {Δ} -> (F : tp Δ) -> SPF (Δ ⊎ cnt F)
-interp unit = one
-interp (F ⇝ F₁) with interp F
-... | q = {!!} ⇒ interp F₁
-interp (var x) = var (inj₁ x)
-interp (μ F) = wkn fancy (interp F)
-interp (F ⊕ F₁) = wkn (id ⊎̂ inj₁) (interp F) ⊕ wkn (id ⊎̂ inj₂) (interp F₁)
-interp (F ⊗ F₁) = wkn (id ⊎̂ inj₁) (interp F) ⊗ wkn (id ⊎̂ inj₂) (interp F₁)
+mutual
+ -- This interprets the "main one", "entry point"
+ -- I guess this should be Suc (Δ ⊎ cnf F) for the distinguished entry point?
+ interp : ∀ {Δ} -> (F : tp Δ) -> SPF (Δ ⊎ cnt F)
+ interp unit = one
+ interp (F ⇝ F₁) with μ̂ (interp F) {!!}
+ ... | q = {!!} ⇒ interp F₁
+ interp (var x) = var (inj₁ x)
+ interp (μ F) = var (inj₂ (inj₂ unit))
+ interp (F ⊕ F₁) = wkn (id ⊎̂ inj₁) (interp F) ⊕ wkn (id ⊎̂ inj₂) (interp F₁)
+ interp (F ⊗ F₁) = wkn (id ⊎̂ inj₁) (interp F) ⊗ wkn (id ⊎̂ inj₂) (interp F₁)
 
-interp' : ∀ {Δ} -> (F : tp Δ) -> cnt F -> SPF (Δ ⊎ cnt F)
-interp' unit ()
-interp' (F ⇝ F₁) p = {!!}
-interp' (var x) ()
-interp' (μ F) p = {!!}
-interp' (F ⊕ F₁) (inj₁ x) = {!!}
-interp' (F ⊕ F₁) (inj₂ y) = {!!}
-interp' (F ⊗ F₁) p = {!!}
+ -- This finds and interprets the "auxiliary ones"
+ interp' : ∀ {Δ} -> (F : tp Δ) -> cnt F -> SPF (Δ ⊎ cnt F)
+ interp' unit ()
+ interp' (F ⇝ F₁) p = {!!}
+ interp' (var x) ()
+ interp' (μ F) p = wkn fancy (interp F)
+ interp' (F ⊕ F₁) (inj₁ x) = wkn (id ⊎̂ inj₁) (interp' F x)
+ interp' (F ⊕ F₁) (inj₂ y) = wkn (id ⊎̂ inj₂) (interp' F₁ y)
+ interp' (F ⊗ F₁) p = {!!}
+ -- Is this prettier with indexed containers?
+open import Data.Container
 
 -- Does the Agda Containers library already implement this?
  
