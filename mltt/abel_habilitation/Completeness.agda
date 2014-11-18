@@ -38,7 +38,7 @@ com2 : ∀ {B c1 c2 d1 d2} {f1 f2 : Val -> Val} {C : ∀ {v1 v2} (p : B v1 v2) -
  -> (p : c1 ≈ c2 ∈ App B)
  -> (∀ {v1 v2} -> (p : B v1 v2) -> C p (f1 v1) (f2 v2))
  -> d1 ≈ d2 ∈ App (C (rel p))
-com2 F1 F2 x F3 = inj (, F1 (proj₂ (red1 x))) (, F2 (proj₂ (red2 x))) (F3 (rel x))
+com2 F1 F2 x F3 = inj' (F1 (rd1 x)) (F2 (rd2 x)) (F3 (rel x))
 
 
 -- Do something like Applicative for 2-argument version of com?
@@ -46,10 +46,10 @@ com2 F1 F2 x F3 = inj (, F1 (proj₂ (red1 x))) (, F2 (proj₂ (red2 x))) (F3 (r
 -- Outrageous but Meaninful Coincidences: S and K applicative instance...
 
 Set' : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Set* k type[ suc k ]
-Set' k ρ1≈ρ2 = inj (, Set*) (, Set*) (Set* (s≤s ≤refl))
+Set' k ρ1≈ρ2 = inj' Set* Set* (Set* (s≤s ≤refl))
 
 Set'' : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ (Set* k) ≈ (Set* k) ∶[ Set' (suc k) ]
-Set'' k ρ1≈ρ2 = inj (, Set*) (, Set*) (Set* (s≤s ≤refl))
+Set'' k ρ1≈ρ2 = inj' Set* Set* (Set* (s≤s ≤refl))
 
 -- Alternatively, I could index [ Γ ]⊨ a type[ _ ] by the proof of accessibility...?
 in-type : ∀ {γ a1 a2 k} {Γ : ⊨ γ ctx} -> [ Γ ]⊨ a1 ≈ a2 ∶[ Set' k ] -> [ Γ ]⊨ a1 ≈ a2 type[ k ]
@@ -66,8 +66,8 @@ irr {A1 = A1} {A2 = A2} d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (⟦⟧tp'-ir
 Πs : ∀ {γ1 γ2 a1 a2 b1 b2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} ->
      (A : [ Γ ]⊨ a1 ≈ a2 type[ k ]) -> [ Γ , A ]⊨ b1 ≈ b2 type[ k ]
     -> [ Γ ]⊨ (Π a1 (ƛ b1)) ≈ (Π a2 (ƛ b2)) type[ k ]
-Πs A B ρ1≈ρ2 = inj (, (Π (proj₂ (red1 (A ρ1≈ρ2))) ƛ))
-                   (, (Π (proj₂ (red2 (A ρ1≈ρ2))) ƛ))
+Πs A B ρ1≈ρ2 = inj' (Π (rd1 (A ρ1≈ρ2)) ƛ)
+                    (Π (rd2 (A ρ1≈ρ2)) ƛ)
      (Π (rel (A ρ1≈ρ2)) (λ p -> com ƛ· ƛ· (B (ρ1≈ρ2 , p))))
 
 
@@ -105,9 +105,9 @@ _>_•_ : ∀ {γ1 γ2 δ1 δ2 b1 b2 σ1 σ2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (Δ :
 (Δ > B • σ) ρ1≈ρ2 =
  let vσ = σ ρ1≈ρ2 in
  let vb = B (rel vσ) in
- inj (, (proj₂ (red1 vb)) [ (proj₂ (red1 vσ)) ])
-     (, (proj₂ (red2 vb)) [ (proj₂ (red2 vσ)) ])
-     (rel vb)
+ inj' ((rd1 vb) [ rd1 vσ ])
+      ((rd2 vb) [ rd2 vσ ])
+      (rel vb)
 
 fund-, : ∀ {γ1 γ2 δ1 δ2 σ σ' t t' a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx}
  -> (A : [ Δ ]⊨ a1 ≈ a2 type[ k ])
@@ -117,9 +117,9 @@ fund-, : ∀ {γ1 γ2 δ1 δ2 σ σ' t t' a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {�
 fund-, A dσ dt dρ =
  let vσ = dσ dρ in
  let vt = dt dρ in
- inj (, (proj₂ (red1 vσ)) , (proj₂ (red1 vt)))
-     (, (proj₂ (red2 vσ)) , (proj₂ (red2 vt)))
-     ((rel vσ) , (rel vt)) 
+ inj' ((rd1 vσ) , (rd1 vt))
+      ((rd2 vσ) , (rd2 vt))
+      ((rel vσ) , (rel vt)) 
 
 fund-id : ∀ {γ1 γ2} {Γ : ⊨ γ1 ≈ γ2 ctx} -> [ Γ ]⊨s T.id ≈ T.id ∶[ Γ ]
 fund-id dρ = inj (, Eval.id) (, Eval.id) dρ
@@ -159,9 +159,9 @@ fund·h dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt ρ1≈ρ2 in
  let vr = rel vt (rel vs) in
- inj (, ((proj₂ (red1 vt)) · (proj₂ (red1 vs))) (proj₂ (red1 vr)))
-     (, ((proj₂ (red2 vt)) · (proj₂ (red2 vs))) (proj₂ (red2 vr)))
-     (rel vr)
+ inj' (((rd1 vt) · (rd1 vs)) (rd1 vr))
+      (((rd2 vt) · (rd2 vs)) (rd2 vr))
+      (rel vr)
 -- TODO: Is it better to flatten the "App" structure?
 -- What about building some more convenient operators on Red?
 
@@ -173,8 +173,8 @@ fundβ : ∀ {γ1 γ2 t1 t2 s1 s2 a1 a2 b1 b2 k}
 fundβ dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt (ρ1≈ρ2 , (rel vs)) in
- inj (, (ƛ · (proj₂ (red1 vs))) (ƛ· (proj₂ (red1 vt))))
-     (, proj₂ (red2 vt) [ (Eval.id , (proj₂ (red2 vs))) ])
+ inj' ((ƛ · rd1 vs) (ƛ· (rd1 vt)))
+     (rd2 vt [ Eval.id , rd2 vs ])
      (rel vt)
 
 fundη : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 k}
@@ -185,11 +185,10 @@ fundη dt ρ1≈ρ2 =
  let vt = dt ρ1≈ρ2 in
  inj (red1 vt)
      (, ƛ)
-     (λ p →
-       let q = rel vt p in
-       inj (red1 q)
-           (, ƛ· ((((proj₂ (red2 vt)) [ ↑ ]) · (idx top)) (proj₂ (red2 q))))
-           (rel q))
+     (λ p → let q = rel vt p in
+       inj' (rd1 q)
+            (ƛ· ((((rd2 vt) [ ↑ ]) · (idx top)) (rd2 q)))
+            (rel q))
 
 fund-subƛ : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 σ1 σ2 δ1 δ2 k}
  {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx} {A : [ Δ ]⊨ a1 ≈ a2 type[ k ]} {B : [ Δ , A ]⊨ b1 ≈ b2 type[ k ]}
@@ -198,11 +197,11 @@ fund-subƛ : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 σ1 σ2 δ1 δ2 k}
  -> [ Γ ]⊨ (ƛ t1) [ σ1 ] ≈ ƛ (t2 [ σ2 [ ↑ ] , idx 0 ]) ∶h[ Δ > Πs A B • dσ ]
 fund-subƛ dσ dt dρ = 
  let vσ = dσ dρ in
- inj (, ƛ [ proj₂ (red1 vσ) ])
+ inj (, ƛ [ rd1 vσ ])
      (, ƛ)
      (λ p → let vt = dt (rel vσ , p) in
-        inj (, ƛ· (proj₂ (red1 vt)))
-            (, ƛ· ((proj₂ (red2 vt)) [ ((↑ [ (proj₂ (red2 vσ)) ]) , (idx top)) ]))
+        inj (, ƛ· (rd1 vt))
+            (, ƛ· (rd2 vt [ ↑ [ rd2 vσ ] , idx top ]))
             (rel vt))
 
 Nats : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Nat type[ k ]
