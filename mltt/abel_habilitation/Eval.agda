@@ -9,6 +9,9 @@ data Comp : Set where
  ⟦_⟧_ : (term : Exp) -> (env : Env) -> Comp
  _·_ : (f a : Val) -> Comp
 
+data SComp : Set where
+ ⟦_⟧_ : (σ : Subst) -> (ρ : Env) -> SComp
+
 mutual
  data lookup_,_↘_ : Env -> ℕ -> Val -> Set where
   top : ∀ {ρ a} -> lookup (ρ , a) , zero ↘ a
@@ -28,18 +31,18 @@ mutual
   Set* : ∀ {ρ i} -> ⟦ Set* i ⟧ ρ ↘ Set* i
   Π : ∀ {A A' F F' ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ F ⟧ ρ ↘ F' -> ⟦ Π A F ⟧ ρ ↘ Π A' F'
   Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
-  _[_] : ∀ {t σ ρ ρ' d} -> ⟦ t ⟧ ρ' ↘ d -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t [ σ ] ⟧ ρ ↘ d
+  _[_] : ∀ {t σ ρ ρ' d} -> ⟦ t ⟧ ρ' ↘ d -> ⟦ σ ⟧ ρ ↘s ρ' -> ⟦ t [ σ ] ⟧ ρ ↘ d
    --data _·_↘_ : Val -> Val -> Val -> Set where 
   ƛ· : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> ((ƛ t ρ) · a) ↘ b
   ↑ : ∀ {A F e a F'}
     -> (F · a) ↘ F'
     -> (↑[ Π A F ] e · a) ↘ ↑[ F' ] (e · ↓[ A ] a)
- data ⟦_⟧s_↘_ : Subst -> Env -> Env -> Set where
-  _[_] : ∀ {σ1 σ2 ρ ρ' ρ''} -> ⟦ σ2 ⟧s ρ ↘ ρ' -> ⟦ σ1 ⟧s ρ' ↘ ρ'' -> ⟦ σ1 [ σ2 ] ⟧s ρ ↘ ρ''
-  id : ∀ {ρ} -> ⟦ id ⟧s ρ ↘ ρ
-  ↑ : ∀ {ρ a} -> ⟦ ↑ ⟧s (ρ , a) ↘ ρ
-  _,_ : ∀ {σ t ρ ρ' a} -> ⟦ σ ⟧s ρ ↘ ρ' -> ⟦ t ⟧ ρ ↘ a -> ⟦ σ , t ⟧s ρ ↘ (ρ' , a)
-  ⊡ : ∀ {ρ} -> ⟦ ⊡ ⟧s ρ ↘ ⊡
+ data _↘s_ : SComp -> Env -> Set where
+  _[_] : ∀ {σ1 σ2 ρ ρ' ρ''} -> ⟦ σ2 ⟧ ρ ↘s ρ' -> ⟦ σ1 ⟧ ρ' ↘s ρ'' -> ⟦ σ1 [ σ2 ] ⟧ ρ ↘s ρ''
+  id : ∀ {ρ} -> ⟦ id ⟧ ρ ↘s ρ
+  ↑ : ∀ {ρ a} -> ⟦ ↑ ⟧ (ρ , a) ↘s ρ
+  _,_ : ∀ {σ t ρ ρ' a} -> ⟦ σ ⟧ ρ ↘s ρ' -> ⟦ t ⟧ ρ ↘ a -> ⟦ σ , t ⟧ ρ ↘s (ρ' , a)
+  ⊡ : ∀ {ρ} -> ⟦ ⊡ ⟧ ρ ↘s ⊡
  data rec_,_,_,_↘_ : Exp -> Exp -> Exp -> Val -> Val -> Set where
   zero : ∀ {T tz ts dz} -> ⟦ tz ⟧ ⊡ ↘ dz -> rec T , tz , ts , zero ↘ dz
   suc : ∀ {T tz ts dn a b} -> rec T , tz , ts , dn ↘ a -> ⟦ ts ⟧ ((⊡ , dn) , a) ↘ b
@@ -113,7 +116,7 @@ mutual
  eval-deter (↑ p1) (↑ p2) with eval-deter p1 p2
  ... | refl = refl
 
- evals-deter : ∀ {σ ρ} -> Singleton (⟦_⟧s_↘_ σ ρ)
+ evals-deter : ∀ {σ ρ} -> Singleton (_↘s_ (⟦ σ ⟧ ρ))
  evals-deter (p2 [ p1 ]) (p3 [ p4 ]) with evals-deter p2 p3
  ... | refl = evals-deter p1 p4
  evals-deter id id = refl

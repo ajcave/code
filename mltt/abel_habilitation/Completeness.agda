@@ -21,7 +21,7 @@ open import Function as F
 open import Relation.Binary.PropositionalEquality hiding ([_]; sym; trans)
 open import Cumulativity
 
-open App
+open Clo
 
 _⋆_ : ∀ {c d} -> (∀ {v} -> c ↘ v -> d ↘ v) -> Red c -> Red d
 f ⋆ r = , f (proj₂ r)
@@ -93,20 +93,42 @@ fundƛ : ∀ {γ1 γ2 a1 a2 b1 b2 t s k}
       -> [ Γ ]⊨ (ƛ t) ≈ (ƛ s) ∶h[ Πs A B ]
 fundƛ d ρ₁≈ρ₂ = inj (, ƛ) (, ƛ) (λ p → com ƛ· ƛ· (d (ρ₁≈ρ₂ , p)))
 
-fundƛ' : ∀ {γ a b t s k} {Γ : ⊨ γ ctx} (pΠAB : [ Γ ]⊨ (Π a (ƛ b)) type[ k ])
-      -> [ Γ , (Πinv1 pΠAB) ]⊨ t ≈ s ∶[ Πinv2 pΠAB ]
-      -> [ Γ ]⊨ (ƛ t) ≈ (ƛ s) ∶[ pΠAB ]
-fundƛ' pΠab d ρ1≈ρ2 = irr {A1 = Πs (Πinv1 pΠab) (Πinv2 pΠab)} {A2 = pΠab} (fundƛ {A = Πinv1 pΠab} {B = Πinv2 pΠab} d) ρ1≈ρ2
+-- fundƛ' : ∀ {γ a b t s k} {Γ : ⊨ γ ctx} (pΠAB : [ Γ ]⊨ (Π a (ƛ b)) type[ k ])
+--       -> [ Γ , (Πinv1 pΠAB) ]⊨ t ≈ s ∶[ Πinv2 pΠAB ]
+--       -> [ Γ ]⊨ (ƛ t) ≈ (ƛ s) ∶[ pΠAB ]
+-- fundƛ' pΠab d ρ1≈ρ2 = irr {A1 = Πs (Πinv1 pΠab) (Πinv2 pΠab)} {A2 = pΠab} (fundƛ {A = Πinv1 pΠab} {B = Πinv2 pΠab} d) ρ1≈ρ2
 
+_>_•_ : ∀ {γ1 γ2 δ1 δ2 b1 b2 σ1 σ2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (Δ : ⊨ δ1 ≈ δ2 ctx) 
+ -> [ Δ ]⊨ b1 ≈ b2 type[ k ]
+ -> [ Γ ]⊨s σ1 ≈ σ2 ∶[ Δ ]
+ -> [ Γ ]⊨ b1 [ σ1 ] ≈ b2 [ σ2 ] type[ k ]
+(Δ > B • σ) ρ1≈ρ2 =
+ let vσ = σ ρ1≈ρ2 in
+ let vb = B (rel vσ) in
+ inj (, (proj₂ (red1 vb)) [ (proj₂ (red1 vσ)) ])
+     (, (proj₂ (red2 vb)) [ (proj₂ (red2 vσ)) ])
+     (rel vb)
+
+fund-, : ∀ {γ1 γ2 δ1 δ2 σ σ' t t' a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx}
+ -> (A : [ Δ ]⊨ a1 ≈ a2 type[ k ])
+ -> (dσ : [ Γ ]⊨s σ ≈ σ' ∶[ Δ ])
+ -> [ Γ ]⊨ t ≈ t' ∶h[ Δ > A • dσ ]
+ -> [ Γ ]⊨s σ , t ≈ σ' , t' ∶[ Δ , A ]
+fund-, A dσ dt dρ =
+ let vσ = dσ dρ in
+ let vt = dt dρ in
+ inj (, (proj₂ (red1 vσ)) , (proj₂ (red1 vt)))
+     (, (proj₂ (red2 vσ)) , (proj₂ (red2 vt)))
+     ((rel vσ) , (rel vt)) 
+
+fund-id : ∀ {γ1 γ2} {Γ : ⊨ γ1 ≈ γ2 ctx} -> [ Γ ]⊨s T.id ≈ T.id ∶[ Γ ]
+fund-id dρ = inj (, Eval.id) (, Eval.id) dρ
+ 
 _>h_•_ : ∀ {γ1 γ2 a1 a2 b1 b2 t1 t2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : [ Γ ]⊨ a1 ≈ a2 type[ k ]) 
  -> [ Γ , A ]⊨ b1 ≈ b2 type[ k ]
  -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
  -> [ Γ ]⊨ b1 [ T.id , t1 ] ≈ b2 [ T.id , t2 ] type[ k ]
-(A >h B • t) ρ1≈ρ2 =
- let q = B (ρ1≈ρ2 , rel (t ρ1≈ρ2)) in
- inj (, proj₂ (red1 q) [ Eval.id , (proj₂ (red1 (t ρ1≈ρ2))) ])
-     (, proj₂ (red2 q) [ Eval.id , (proj₂ (red2 (t ρ1≈ρ2))) ])
-     (rel q)
+(_>h_•_) {Γ = Γ} A B t = (Γ , A) > B • fund-, A fund-id t
 
 fund-trans : ∀ {γ t1 t2 t3 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
  -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
@@ -169,6 +191,19 @@ fundη dt ρ1≈ρ2 =
            (, ƛ· ((((proj₂ (red2 vt)) [ ↑ ]) · (idx top)) (proj₂ (red2 q))))
            (rel q))
 
+fund-subƛ : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 σ1 σ2 δ1 δ2 k}
+ {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx} {A : [ Δ ]⊨ a1 ≈ a2 type[ k ]} {B : [ Δ , A ]⊨ b1 ≈ b2 type[ k ]}
+ -> (dσ : [ Γ ]⊨s σ1 ≈ σ2 ∶[ Δ ])
+ -> [ Δ , A ]⊨ t1 ≈ t2 ∶h[ B ]
+ -> [ Γ ]⊨ (ƛ t1) [ σ1 ] ≈ ƛ (t2 [ σ2 [ ↑ ] , idx 0 ]) ∶h[ Δ > Πs A B • dσ ]
+fund-subƛ dσ dt dρ = 
+ let vσ = dσ dρ in
+ inj (, ƛ [ proj₂ (red1 vσ) ])
+     (, ƛ)
+     (λ p → let vt = dt (rel vσ , p) in
+        inj (, ƛ· (proj₂ (red1 vt)))
+            (, ƛ· ((proj₂ (red2 vt)) [ ((↑ [ (proj₂ (red2 vσ)) ]) , (idx top)) ]))
+            (rel vt))
 
 Nats : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Nat type[ k ]
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat

@@ -45,7 +45,7 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   where
  K : Acc k
  K = inj akf
-
+ open Clo
  mutual
   transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
   transEl (Neu y _) (inj y') (inj y0) = inj (trans-⊥' y' y0)
@@ -55,8 +55,8 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
    let pp' = transEl pA p p' in
    let q0 = ab pp' in
    let q1 = bc p in
-   let q2 = App→ (irrL _ _ (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
-   App-trans (transEl (App.rel (pF p))) q2 q1
+   let q2 = App→ (irrL _ _ (rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (rel (pF p))) q0 in
+   App-trans (transEl (rel (pF p))) q2 q1
   transEl (Set* y) ab bc = set<trans y ab bc
 
   symEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SYM (ElU' pA)
@@ -65,9 +65,9 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   symEl (Π pA pF) ab = λ p → 
    let p' = symEl pA p in
    let pp' = transEl pA p p' in
-   let q = App-sym (symEl (App.rel (pF p'))) (ab p') in
-   let q0 = App→ (irrR _ _ (App.rel (pF p')) (AppDeter4 (pF p') (pF pp')) (App.rel (pF pp'))) q in
-   let q1 = App→ (irrL _ _ (App.rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (App.rel (pF p))) q0 in
+   let q = App-sym (symEl (rel (pF p'))) (ab p') in
+   let q0 = App→ (irrR _ _ (rel (pF p')) (AppDeter4 (pF p') (pF pp')) (rel (pF pp'))) q in
+   let q1 = App→ (irrL _ _ (rel (pF pp')) (AppDeter3 (pF pp') (pF p)) (rel (pF p))) q0 in
    q1
   symEl (Set* y) ab = symSetω' (akf y) ab
 
@@ -82,8 +82,8 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
     let aaAA'' = selfL (transSet pA pA₁) aa'AA'' in 
     let aaAA' = irrLω' (transSet pA pA₁) pA aaAA'' in
     let aa'A'A'' = irrRω' (transSet pA pA₁) pA₁ aa'AA'' in
-    let q = transSet' (App.rel (pF aaAA')) (AppDeter1 (pF aaAA') (pF₁ aa'A'A'')) (App.rel (pF₁ aa'A'A'')) in
-    inj (App.red1 (pF aaAA')) (App.red2 (pF₁ aa'A'A'')) q
+    let q = transSet' (rel (pF aaAA')) (AppDeter1 (pF aaAA') (pF₁ aa'A'A'')) (rel (pF₁ aa'A'A'')) in
+    inj (red1 (pF aaAA')) (red2 (pF₁ aa'A'A'')) q
    )
   transSet' (Set* x) refl (Set* x₁) = Set* x
 
