@@ -156,22 +156,15 @@ open import Function
 mutual
  data ⊨_≈_ctx : Ctx -> Ctx -> Set where
   tt : ⊨ ⊡ ≈ ⊡ ctx
-  _,_ : ∀ {Γ1 Γ2 T1 T2 k} -> (vΓ : ⊨ Γ1 ≈ Γ2 ctx) -> (∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ vΓ ⟧hctx → ⟦ T1 ⟧ ρ ≈ ⟦ T2 ⟧ ρ' ∈ App (SetU k))
-       -> ⊨ (Γ1 , T1) ≈ (Γ2 , T2) ctx
+  _,_ : ∀ {γ1 γ2 t1 t2 k} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> [ Γ ]⊨ t1 ≈ t2 type[ k ]
+       -> ⊨ (γ1 , t1) ≈ (γ2 , t2) ctx
+  
+ [_]⊨_≈_type[_] : {γ1 γ2 : Ctx} -> ⊨ γ1 ≈ γ2 ctx -> Exp -> Exp -> ℕ -> Set
+ [ Γ ]⊨ T1 ≈ T2 type[ k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧hctx) → ⟦ T1 ⟧ ρ ≈ ⟦ T2 ⟧ ρ' ∈ App (SetU k)
 
  ⟦_⟧hctx : {Γ1 Γ2 : Ctx} -> ⊨ Γ1 ≈ Γ2 ctx -> EnvREL
  ⟦ tt ⟧hctx = EmpRel
- ⟦ Γ , T ⟧hctx = Comb ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
-
--- mutual
---  data ⊨_ctx : Ctx -> Set where
---   tt : ⊨ ⊡ ctx
---   _,_ : ∀ {Γ T k} -> (vΓ : ⊨ Γ ctx) -> (∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k))
---        -> ⊨ (Γ , T) ctx
-
---  ⟦_⟧ctx : {Γ : Ctx} -> ⊨ Γ ctx -> EnvREL
---  ⟦ tt ⟧ctx = EmpRel
---  ⟦ Γ , T ⟧ctx = Comb ⟦ Γ ⟧ctx (⟦_⟧tp' ∘  T)
+ ⟦ Γ , T ⟧hctx = Comb ⟦ Γ ⟧hctx (λ vρ -> ⟦ T vρ ⟧tp')
 
 ⊨_ctx : Ctx -> Set
 ⊨ Γ ctx = ⊨ Γ ≈ Γ ctx
@@ -179,17 +172,8 @@ mutual
 ⟦_⟧ctx : {Γ : Ctx} -> ⊨ Γ ctx -> EnvREL
 ⟦ Γ ⟧ctx = ⟦ Γ ⟧hctx
 
--- _⊨'_type[_,_] : (Γ : Ctx) -> Exp -> ⊨ Γ ctx -> ℕ -> Set
--- Γ ⊨' T type[ vΓ , k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx) → ⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k)
-
-[_]⊨_≈_type[_] : {γ1 γ2 : Ctx} -> ⊨ γ1 ≈ γ2 ctx -> Exp -> Exp -> ℕ -> Set
-[ Γ ]⊨ T1 ≈ T2 type[ k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧hctx) → ⟦ T1 ⟧ ρ ≈ ⟦ T2 ⟧ ρ' ∈ App (SetU k)
-
 [_]⊨_type[_] : {Γ : Ctx} -> ⊨ Γ ctx -> Exp -> ℕ -> Set
 [ Γ ]⊨ T type[ k ] = [ Γ ]⊨ T ≈ T type[ k ]
-
--- _⊨_type : Ctx -> Exp -> Set
--- Γ ⊨ T type = Σ (⊨ Γ ctx) (λ vΓ → ∃ (λ k -> Γ ⊨' T type[ vΓ , k ]))
 
 [_]⊨_≈_∶h[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> Exp -> Exp -> {T1 T2 : Exp} -> [ Γ ]⊨ T1 ≈ T2 type[ k ] -> Set
 [ Γ ]⊨ t ≈ t' ∶h[ T ] =
@@ -198,25 +182,6 @@ mutual
 [_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
 [ Γ ]⊨ t ≈ t' ∶[ T ] = [ Γ ]⊨ t ≈ t' ∶h[ T ]
 
--- _,_⊨''_≈_∶_[_] : ∀ ρ ρ' -> Exp -> Exp -> Exp -> ℕ -> Set
--- ρ , ρ' ⊨'' t ≈ t' ∶ T [ k ] = Σ (⟦ T ⟧ ρ ≈ ⟦ T ⟧ ρ' ∈ App (SetU k)) (λ p -> ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ p ⟧tp')
-
--- _⊨_≈_∶_ : Ctx -> Exp -> Exp -> Exp -> Set
--- Γ ⊨ t ≈ t' ∶ T = Σ (⊨ Γ ctx) (λ vΓ -> ∃ (λ k -> ∀ {ρ ρ'} → ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx → ρ , ρ' ⊨'' t ≈ t' ∶ T [ k ]))
-
--- _⊨_∶_ : Ctx -> Exp -> Exp -> Set
--- Γ ⊨ t ∶ T    =    Γ ⊨ t ≈ t ∶ T
-
-[_]⊨_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
-[ Γ ]⊨ t ∶[ T ] = [ Γ ]⊨ t ≈ t ∶[ T ]
-
 [_]⊨s_≈_∶[_] : ∀ {γ1 γ2 δ1 δ2} (Γ : ⊨ γ1 ≈ γ2 ctx)  -> Subst -> Subst -> (Δ : ⊨ δ1 ≈ δ2 ctx) -> Set
 [ Γ ]⊨s σ1 ≈ σ2 ∶[ Δ ] =
   ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧hctx) → ⟦ σ1 ⟧ ρ ≈ ⟦ σ2 ⟧ ρ' ∈ (Clo _↘s_ ⟦ Δ ⟧hctx)
-
--- _⊨s_≈_∶_ : Ctx -> Subst -> Subst -> Ctx -> Set
--- Γ ⊨s σ ≈ σ' ∶ Δ = Σ (⊨ Γ ctx) (λ vΓ → Σ (⊨ Δ ctx) (λ vΔ →
---   ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ vΓ ⟧ctx) → ⟦ σ ⟧s ρ ≈⟦ σ' ⟧s ρ' ∈ ⟦ vΔ ⟧ctx))
-
--- _⊨s_∶_ : Ctx -> Subst -> Ctx -> Set
--- Γ ⊨s σ ∶ Δ    =    Γ ⊨s σ ≈ σ ∶ Δ

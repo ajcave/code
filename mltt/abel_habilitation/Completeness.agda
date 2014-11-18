@@ -130,16 +130,46 @@ _>h_•_ : ∀ {γ1 γ2 a1 a2 b1 b2 t1 t2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : [ �
  -> [ Γ ]⊨ b1 [ T.id , t1 ] ≈ b2 [ T.id , t2 ] type[ k ]
 A >h B • t = (_ , A) > B • fund-, A fund-id t
 
+mutual
+ ctx-sym : SYM ⊨_≈_ctx
+ ctx-sym tt = tt
+ ctx-sym (dγ , x) = (ctx-sym dγ) , (fund-hsym-tp x)
+
+ fund-hsym-tp : ∀ {γ1 γ2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Γ' : ⊨ γ2 ≈ γ1 ctx}
+  -> [ Γ  ]⊨ a1 ≈ a2 type[ k ]
+  -> [ Γ' ]⊨ a2 ≈ a1 type[ k ]
+ fund-hsym-tp da dρ = App-sym symSetω (da (⟦,⟧ctx-sym _ _ dρ))
+
+fund-hsym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Γ' : ⊨ γ2 ≈ γ1 ctx}
+ {A  : [ Γ ]⊨ a1 ≈ a2 type[ k ]}
+ {A' : [ Γ' ]⊨ a2 ≈ a1 type[ k ]}
+  -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
+  -> [ Γ' ]⊨ t2 ≈ t1 ∶h[ A' ]
+fund-hsym dt dρ = {!!}
+
+mutual
+ ctx-sym2 : ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> SYM ⟦ Γ ⟧hctx
+ ctx-sym2 tt tt = tt
+ ctx-sym2 (Γ , A) (vρ , vv) = (ctx-sym2 Γ vρ) , {!!}
+
+ fund-sym-tp : ∀ {γ1 γ2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
+   -> [ Γ ]⊨ a1 ≈ a2 type[ k ]
+   -> [ Γ ]⊨ a2 ≈ a1 type[ k ]
+ fund-sym-tp da dρ = 
+  let q1 = da dρ in
+  let q2 = da (ctx-sym2 _ dρ) in
+  {!!} --App-sym symSetω (da {!!})
+
+ fund-sym : ∀ {γ t1 t2 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
+  -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
+  -> [ Γ ]⊨ t2 ≈ t1 ∶[ A ]
+ fund-sym A t1≈t2 ρ1≈ρ2 = {!!}
+
 fund-trans : ∀ {γ t1 t2 t3 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
  -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
  -> [ Γ ]⊨ t2 ≈ t3 ∶[ A ]
  -> [ Γ ]⊨ t1 ≈ t3 ∶[ A ]
 fund-trans A t1≈t2 t2≈t3 ρ1≈ρ2 = {!!}
-
-fund-sym : ∀ {γ t1 t2 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
- -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
- -> [ Γ ]⊨ t2 ≈ t1 ∶[ A ]
-fund-sym A t1≈t2 ρ1≈ρ2 = {!!}
 
 self : ∀ {γ a t1 t2 k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
  -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
@@ -162,8 +192,6 @@ fund·h dt ds ρ1≈ρ2 =
  inj' ((rd1 vt · rd1 vs) (rd1 vr))
       ((rd2 vt · rd2 vs) (rd2 vr))
       (rel vr)
--- TODO: Is it better to flatten the "App" structure?
--- What about building some more convenient operators on Red?
 
 fundβ : ∀ {γ1 γ2 t1 t2 s1 s2 a1 a2 b1 b2 k}
  {Γ : ⊨ γ1 ≈ γ2 ctx} {A : [ Γ ]⊨ a1 ≈ a2 type[ k ]} {B : [ Γ , A ]⊨ b1 ≈ b2 type[ k ]}
