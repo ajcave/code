@@ -105,8 +105,8 @@ _>_•_ : ∀ {γ1 γ2 δ1 δ2 b1 b2 σ1 σ2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (Δ :
 (Δ > B • σ) ρ1≈ρ2 =
  let vσ = σ ρ1≈ρ2 in
  let vb = B (rel vσ) in
- inj' ((rd1 vb) [ rd1 vσ ])
-      ((rd2 vb) [ rd2 vσ ])
+ inj' (rd1 vb [ rd1 vσ ])
+      (rd2 vb [ rd2 vσ ])
       (rel vb)
 
 fund-, : ∀ {γ1 γ2 δ1 δ2 σ σ' t t' a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx}
@@ -115,11 +115,11 @@ fund-, : ∀ {γ1 γ2 δ1 δ2 σ σ' t t' a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {�
  -> [ Γ ]⊨ t ≈ t' ∶h[ Δ > A • dσ ]
  -> [ Γ ]⊨s σ , t ≈ σ' , t' ∶[ Δ , A ]
 fund-, A dσ dt dρ =
- let vσ = dσ dρ in
- let vt = dt dρ in
- inj' ((rd1 vσ) , (rd1 vt))
-      ((rd2 vσ) , (rd2 vt))
-      ((rel vσ) , (rel vt)) 
+ let vσ = dσ dρ
+     vt = dt dρ in
+ inj' (rd1 vσ , rd1 vt)
+      (rd2 vσ , rd2 vt)
+      (rel vσ , rel vt) 
 
 fund-id : ∀ {γ1 γ2} {Γ : ⊨ γ1 ≈ γ2 ctx} -> [ Γ ]⊨s T.id ≈ T.id ∶[ Γ ]
 fund-id dρ = inj (, Eval.id) (, Eval.id) dρ
@@ -128,7 +128,7 @@ _>h_•_ : ∀ {γ1 γ2 a1 a2 b1 b2 t1 t2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : [ �
  -> [ Γ , A ]⊨ b1 ≈ b2 type[ k ]
  -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
  -> [ Γ ]⊨ b1 [ T.id , t1 ] ≈ b2 [ T.id , t2 ] type[ k ]
-(_>h_•_) {Γ = Γ} A B t = (Γ , A) > B • fund-, A fund-id t
+A >h B • t = (_ , A) > B • fund-, A fund-id t
 
 fund-trans : ∀ {γ t1 t2 t3 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
  -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
@@ -159,8 +159,8 @@ fund·h dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt ρ1≈ρ2 in
  let vr = rel vt (rel vs) in
- inj' (((rd1 vt) · (rd1 vs)) (rd1 vr))
-      (((rd2 vt) · (rd2 vs)) (rd2 vr))
+ inj' ((rd1 vt · rd1 vs) (rd1 vr))
+      ((rd2 vt · rd2 vs) (rd2 vr))
       (rel vr)
 -- TODO: Is it better to flatten the "App" structure?
 -- What about building some more convenient operators on Red?
