@@ -174,8 +174,8 @@ fundβ dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt (ρ1≈ρ2 , (rel vs)) in
  inj' ((ƛ · rd1 vs) (ƛ· (rd1 vt)))
-     (rd2 vt [ Eval.id , rd2 vs ])
-     (rel vt)
+      (rd2 vt [ Eval.id , rd2 vs ])
+      (rel vt)
 
 fundη : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 k}
  {Γ : ⊨ γ1 ≈ γ2 ctx} {A : [ Γ ]⊨ a1 ≈ a2 type[ k ]} {B : [ Γ , A ]⊨ b1 ≈ b2 type[ k ]}
@@ -200,9 +200,9 @@ fund-subƛ dσ dt dρ =
  inj (, ƛ [ rd1 vσ ])
      (, ƛ)
      (λ p → let vt = dt (rel vσ , p) in
-        inj (, ƛ· (rd1 vt))
-            (, ƛ· (rd2 vt [ ↑ [ rd2 vσ ] , idx top ]))
-            (rel vt))
+        inj' (ƛ· (rd1 vt))
+             (ƛ· (rd2 vt [ ↑ [ rd2 vσ ] , idx top ]))
+             (rel vt))
 
 Nats : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Nat type[ k ]
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat
