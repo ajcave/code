@@ -31,8 +31,8 @@ data NatR : REL where
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
 
-Red : Comp -> Set
-Red c = ∃ (λ b -> c ↘ b)
+-- Red : Comp -> Set
+-- Red c = ∃ (λ b -> c ↘ b)
 
 record Clo {C V : Set} (Red : C -> V -> Set) (B : PREL V) (c1 c2 : C) : Set where
  constructor inj
@@ -52,8 +52,8 @@ rd2 d = proj₂ (red2 d)
 inj' : ∀ {C V B c1 c2 v1 v2} {Red : C -> V -> Set} -> Red c1 v1 -> Red c2 v2 -> B v1 v2 -> Clo Red B c1 c2
 inj' r1 r2 r3 = inj (, r1) (, r2) r3
 
-App : (B : REL) (c1 c2 : Comp) -> Set
-App = Clo _↘_
+App : (B : REL) (c1 c2 : Val × Val) -> Set
+App = Clo _↘a_
 
 App→ : ∀ {B B'} -> B →₂ B' -> App B →₂ App B'
 App→ f (inj red1 red2 rel) = inj red1 red2 (f rel)
@@ -63,7 +63,7 @@ AppDeter1 :  ∀ {c1 c2 c3 B B'}
     (q : c2 ≈ c3 ∈ App B')
    -> proj₁ (red2 p) ≡ proj₁ (red1 q)
 AppDeter1 (inj red1 (_ , red2) rel)
-          (inj (_ , red3) red4 rel') = eval-deter red2 red3
+          (inj (_ , red3) red4 rel') = evala-deter red2 red3
 
 AppDeter2 :  ∀ {c1 c2 c3 B B'} 
     (p : c1 ≈ c2 ∈ App B)
@@ -76,14 +76,14 @@ AppDeter3 :  ∀ {c1 c2 c3 B B'}
     (q : c1 ≈ c3 ∈ App B')
    -> proj₁ (red1 p) ≡ proj₁ (red1 q)
 AppDeter3 (inj (_ , red1) red2 rel)
-          (inj (_ , red3) red4 rel') = eval-deter red1 red3 
+          (inj (_ , red3) red4 rel') = evala-deter red1 red3 
 
 AppDeter4 :  ∀ {c1 c2 c3 B B'} 
     (p : c2 ≈ c1 ∈ App B)
     (q : c3 ≈ c1 ∈ App B')
    -> proj₁ (red2 p) ≡ proj₁ (red2 q)
 AppDeter4 (inj red1 (_ , red2) rel)
-          (inj red3 (_ , red4) rel') = eval-deter red2 red4
+          (inj red3 (_ , red4) rel') = evala-deter red2 red4
 
 -- record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
 --  field
@@ -93,12 +93,12 @@ AppDeter4 (inj red1 (_ , red2) rel)
 --   red2 : ⟦ σ' ⟧s ρ' ↘ ρ2
 --   rel : B ρ1 ρ2
 
-Π* : ∀ {α γ : Set} -> (γ -> α -> Comp)
- -> (A : PREL α) -> (∀ {a a'} -> a ≈ a' ∈ A -> PREL Val) -> PREL γ
-Π* ap A F f1 f2 = ∀ {a1 a2} (pa : a1 ≈ a2 ∈ A) -> (ap f1 a1) ≈ (ap f2 a2) ∈ (App (F pa))
+Π* : ∀ {α β γ : Set} -> (β × α -> γ -> Set)
+ -> (A : PREL α) -> (∀ {a a'} -> a ≈ a' ∈ A -> PREL γ) -> PREL β
+Π* red A F f1 f2 = ∀ {a1 a2} (pa : a1 ≈ a2 ∈ A) -> (f1 , a1) ≈ (f2 , a2) ∈ (Clo red (F pa))
 
 ΠR : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
-ΠR A F = Π* _·_ A F
+ΠR A F = Π* _↘a_ A F
 
 _⇒R_ : (A B : REL) -> REL
 A ⇒R B = ΠR A (λ _ -> B)
@@ -144,7 +144,7 @@ ElU n = ElU' {n} {nat-acc {n}}
 -- [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
 -- [ n , pA ] = ElU n pA
 
-⟦_⟧tp' : ∀ {c1 c2} {k} -> c1 ≈ c2 ∈ App (SetU k) -> REL
+⟦_⟧tp' : ∀ {α : Set} {red : α -> Val -> Set} {c1 c2} {k} -> c1 ≈ c2 ∈ Clo red (SetU k) -> REL
 ⟦ vT ⟧tp' = ElU _ (rel vT)
 
 -- ⟦_⟧tp : ∀ {c1 c2} -> c1 ≈ c2 ∈ App Type -> REL
@@ -165,7 +165,7 @@ mutual
        -> ⊨ (γ1 , t1) ≈ (γ2 , t2) ctx
   
  [_]⊨_≈_type[_] : {γ1 γ2 : Ctx} -> ⊨ γ1 ≈ γ2 ctx -> Exp -> Exp -> ℕ -> Set
- [ Γ ]⊨ T1 ≈ T2 type[ k ] = T1 ≈ T2 ∈ Π* ⟦_⟧_ ⟦ Γ ⟧hctx (λ _ -> SetU k)
+ [ Γ ]⊨ T1 ≈ T2 type[ k ] = T1 ≈ T2 ∈ Π* _↘_ ⟦ Γ ⟧hctx (λ _ -> SetU k)
 
  ⟦_⟧hctx : {Γ1 Γ2 : Ctx} -> ⊨ Γ1 ≈ Γ2 ctx -> EnvREL
  ⟦ tt ⟧hctx = EmpRel
@@ -181,7 +181,7 @@ mutual
 [ Γ ]⊨ T type[ k ] = [ Γ ]⊨ T ≈ T type[ k ]
 
 [_]⊨_≈_∶h[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> Exp -> Exp -> {T1 T2 : Exp} -> [ Γ ]⊨ T1 ≈ T2 type[ k ] -> Set
-[ Γ ]⊨ t ≈ t' ∶h[ T ] = t ≈ t' ∈ Π* ⟦_⟧_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
+[ Γ ]⊨ t ≈ t' ∶h[ T ] = t ≈ t' ∈ Π* _↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
 
 [_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
 [ Γ ]⊨ t ≈ t' ∶[ T ] = [ Γ ]⊨ t ≈ t' ∶h[ T ]

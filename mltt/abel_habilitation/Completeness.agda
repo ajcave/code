@@ -23,21 +23,19 @@ open import Cumulativity
 
 open Clo
 
-_⋆_ : ∀ {c d} -> (∀ {v} -> c ↘ v -> d ↘ v) -> Red c -> Red d
-f ⋆ r = , f (proj₂ r)
+com : ∀ {α β : Set} {B c1 c2 d1 d2} {red1 : α -> Val -> Set} {red2 : β -> Val -> Set}
+ -> (∀ {v} -> red1 c1 v -> red2 d1 v) -- Like the CBPV stack proof...
+ -> (∀ {v} -> red1 c2 v -> red2 d2 v)
+ -> c1 ≈ c2 ∈ Clo red1 B -> d1 ≈ d2 ∈ Clo red2 B
+com F1 F2 x = inj' (F1 (rd1 x)) (F2 (rd2 x)) (rel x)
 
-com : ∀ {B c1 c2 d1 d2}
- -> (∀ {v} -> c1 ↘ v -> d1 ↘ v) -- Like the CBPV stack proof...
- -> (∀ {v} -> c2 ↘ v -> d2 ↘ v)
- -> c1 ≈ c2 ∈ App B -> d1 ≈ d2 ∈ App B
-com F1 F2 x = inj (F1 ⋆ (red1 x)) (F2 ⋆ red2 x) (rel x)
-
-com2 : ∀ {B c1 c2 d1 d2} {f1 f2 : Val -> Val} {C : ∀ {v1 v2} (p : B v1 v2) -> REL}
- -> (∀ {v} -> c1 ↘ v -> d1 ↘ f1 v)
- -> (∀ {v} -> c2 ↘ v -> d2 ↘ f2 v)
- -> (p : c1 ≈ c2 ∈ App B)
+com2 : ∀ {α β : Set} {red1 : α -> Val -> Set} {red2 : β -> Val -> Set} {B c1 c2 d1 d2} {f1 f2 : Val -> Val}
+ {C : ∀ {v1 v2} (p : B v1 v2) -> REL}
+ -> (∀ {v} -> red1 c1 v -> red2 d1 (f1 v))
+ -> (∀ {v} -> red1 c2 v -> red2 d2 (f2 v))
+ -> (p : c1 ≈ c2 ∈ Clo red1 B)
  -> (∀ {v1 v2} -> (p : B v1 v2) -> C p (f1 v1) (f2 v2))
- -> d1 ≈ d2 ∈ App (C (rel p))
+ -> d1 ≈ d2 ∈ Clo red2 (C (rel p))
 com2 F1 F2 x F3 = inj' (F1 (rd1 x)) (F2 (rd2 x)) (F3 (rel x))
 
 
@@ -58,10 +56,10 @@ in-type d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (cumul _ _ ≤refl)
 out-type : ∀ {γ a1 a2 k} {Γ : ⊨ γ ctx} -> [ Γ ]⊨ a1 ≈ a2 type[ k ] -> [ Γ ]⊨ a1 ≈ a2 ∶[ Set' k ]
 out-type d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (cumul _ _ ≤refl)
 
-irr : ∀ {γ t s a k} {Γ : ⊨ γ ctx} {A1 A2 : [ Γ ]⊨ a type[ k ]}
- -> [ Γ ]⊨ t ≈ s ∶[ A1 ] 
- -> [ Γ ]⊨ t ≈ s ∶[ A2 ]
-irr {A1 = A1} {A2 = A2} d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (⟦⟧tp'-irr (A1 ρ1≈ρ2) (A2 ρ1≈ρ2))
+-- irr : ∀ {γ t s a k} {Γ : ⊨ γ ctx} {A1 A2 : [ Γ ]⊨ a type[ k ]}
+--  -> [ Γ ]⊨ t ≈ s ∶[ A1 ] 
+--  -> [ Γ ]⊨ t ≈ s ∶[ A2 ]
+-- irr {A1 = A1} {A2 = A2} d ρ1≈ρ2 = {!!} --com2 F.id F.id (d ρ1≈ρ2) (⟦⟧tp'-irr (A1 ρ1≈ρ2) (A2 ρ1≈ρ2))
 
 Πs : ∀ {γ1 γ2 a1 a2 b1 b2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} ->
      (A : [ Γ ]⊨ a1 ≈ a2 type[ k ]) -> [ Γ , A ]⊨ b1 ≈ b2 type[ k ]
@@ -130,6 +128,11 @@ _>h_•_ : ∀ {γ1 γ2 a1 a2 b1 b2 t1 t2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : [ �
  -> [ Γ ]⊨ b1 [ T.id , t1 ] ≈ b2 [ T.id , t2 ] type[ k ]
 A >h B • t = (_ , A) > B • fund-, A fund-id t
 
+
+⟦,⟧ctx-sym : HSYM ⊨_≈_ctx ⟦_⟧hctx ⊨_≈_ctx ⟦_⟧hctx
+⟦,⟧ctx-sym tt tt tt = tt
+⟦,⟧ctx-sym (dγ1 , x) (dγ2 , x₁) (vρ , x₂) = (⟦,⟧ctx-sym dγ1 dγ2 vρ) , hsym* eval-deter (x vρ) (x₁ (⟦,⟧ctx-sym dγ1 dγ2 vρ)) x₂
+
 mutual
  ctx-sym : SYM ⊨_≈_ctx
  ctx-sym tt = tt
@@ -146,9 +149,9 @@ fund-hsym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Γ' : ⊨ γ
  {A' : [ Γ' ]⊨ a2 ≈ a1 type[ k ]}
   -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
   -> [ Γ' ]⊨ t2 ≈ t1 ∶h[ A' ]
-fund-hsym {A = A} {A' = A'} dt dρ =
+fund-hsym {A = A} {A' = A'} dt dρ = 
  let q = dt (⟦,⟧ctx-sym _ _ dρ) in
- let q1 = hsym* (A (⟦,⟧ctx-sym _ _ dρ)) (A' dρ) (rel q) in
+ let q1 = hsym* eval-deter (A (⟦,⟧ctx-sym _ _ dρ)) (A' dρ) (rel q) in
  inj' (rd2 q) (rd1 q) q1
 -- TODO: Part of the above could be factored out...
 
@@ -197,8 +200,8 @@ fund·h dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt ρ1≈ρ2 in
  let vr = rel vt (rel vs) in
- inj' ((rd1 vt · rd1 vs) (rd1 vr))
-      ((rd2 vt · rd2 vs) (rd2 vr))
+ inj' (ap (rd1 vt) (rd1 vs) (rd1 vr))
+      (ap (rd2 vt) (rd2 vs) (rd2 vr))
       (rel vr)
 
 fundβ : ∀ {γ1 γ2 t1 t2 s1 s2 a1 a2 b1 b2 k}
@@ -209,7 +212,7 @@ fundβ : ∀ {γ1 γ2 t1 t2 s1 s2 a1 a2 b1 b2 k}
 fundβ dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt (ρ1≈ρ2 , (rel vs)) in
- inj' ((ƛ · rd1 vs) (ƛ· (rd1 vt)))
+ inj' (ap ƛ (rd1 vs) (ƛ· (rd1 vt)))
       (rd2 vt [ Eval.id , rd2 vs ])
       (rel vt)
 
@@ -223,7 +226,7 @@ fundη dt ρ1≈ρ2 =
      (, ƛ)
      (λ p → let q = rel vt p in
        inj' (rd1 q)
-            (ƛ· ((((rd2 vt) [ ↑ ]) · (idx top)) (rd2 q)))
+            (ƛ· (ap ((rd2 vt) [ ↑ ]) (idx top) (rd2 q)))
             (rel q))
 
 fund-subƛ : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 σ1 σ2 δ1 δ2 k}

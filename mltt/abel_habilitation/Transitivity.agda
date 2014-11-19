@@ -35,7 +35,7 @@ NatR-trans (suc x) (suc y) = suc (NatR-trans x y)
 NatR-trans (neu x) (neu y) = neu (trans-⊥' x y)
 
 App-trans : ∀ {B : REL} -> TRANS B -> TRANS (App B)
-App-trans f (inj red1 (b2 , red2) rel) (inj (b3 , red3) b4 rel₁) with eval-deter red2 red3
+App-trans f (inj red1 (b2 , red2) rel) (inj (b3 , red3) b4 rel₁) with evala-deter red2 red3
 App-trans f (inj red1 (b2 , red2) rel) (inj (.b2 , red3) red4 rel₁) | refl = inj red1 red4 (f rel rel₁)
 
 open import Sym

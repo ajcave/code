@@ -1,25 +1,31 @@
 module Eval where
-open import Syntax
-open import SyntaxTm
+open import Syntax 
+open import SyntaxTm as T
 open Syn Exp
 open import Data.Nat
 open import Relation.Binary.PropositionalEquality hiding ([_])
+open import Data.Product
 
-data Comp : Set where
- ⟦_⟧_ : (term : Exp) -> (env : Env) -> Comp
- _·_ : (f a : Val) -> Comp
+-- Comp : Set
+-- Comp = 
+-- data Comp : Set where
+--  ⟦_⟧_ : (term : Exp) -> (env : Env) -> Comp
+--  _·_ : (f a : Val) -> Comp
 
-data SComp : Set where
- ⟦_⟧_ : (σ : Subst) -> (ρ : Env) -> SComp
+-- data SComp : Set where
+--  ⟦_⟧_ : (σ : Subst) -> (ρ : Env) -> SComp
+
+⟦_⟧_ : ∀ {A B : Set} -> A -> B -> A × B
+⟦ t ⟧ ρ = t , ρ
 
 mutual
  data lookup_,_↘_ : Env -> ℕ -> Val -> Set where
   top : ∀ {ρ a} -> lookup (ρ , a) , zero ↘ a
   pop : ∀ {ρ a b x} -> lookup ρ , x ↘ b -> lookup (ρ , a) , (suc x) ↘ b
- data _↘_ : Comp -> Val -> Set where
+ data _↘_ : Exp × Env -> Val -> Set where
   idx : ∀ {x ρ v} -> lookup ρ , x ↘ v -> ⟦ idx x ⟧ ρ ↘ v
   ƛ : ∀ {t ρ} -> ⟦ ƛ t ⟧ ρ ↘ ƛ t ρ
-  _·_ : ∀ {r s ρ f a b} -> ⟦ r ⟧ ρ ↘ f -> ⟦ s ⟧ ρ ↘ a -> (f · a) ↘ b -> ⟦ r · s ⟧ ρ ↘ b
+  ap : ∀ {r s ρ f a b} -> ⟦ r ⟧ ρ ↘ f -> ⟦ s ⟧ ρ ↘ a -> (f , a) ↘a b -> ((r · s) , ρ) ↘ b
   zero : ∀ {ρ} -> ⟦ zero ⟧ ρ ↘ zero
   suc : ∀ {ρ t d} -> ⟦ t ⟧ ρ ↘ d -> ⟦ suc t ⟧ ρ ↘ (suc d)
   -- Note that this is rec where ts is of arrow type, not expanded.
@@ -32,12 +38,12 @@ mutual
   Π : ∀ {A A' F F' ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ F ⟧ ρ ↘ F' -> ⟦ Π A F ⟧ ρ ↘ Π A' F'
   Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
   _[_] : ∀ {t σ ρ ρ' d} -> ⟦ t ⟧ ρ' ↘ d -> ⟦ σ ⟧ ρ ↘s ρ' -> ⟦ t [ σ ] ⟧ ρ ↘ d
-   --data _·_↘_ : Val -> Val -> Val -> Set where 
-  ƛ· : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> ((ƛ t ρ) · a) ↘ b
+ data _↘a_ : Val × Val -> Val -> Set where 
+  ƛ· : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> ((ƛ t ρ) , a) ↘a b
   ↑ : ∀ {A F e a F'}
-    -> (F · a) ↘ F'
-    -> (↑[ Π A F ] e · a) ↘ ↑[ F' ] (e · ↓[ A ] a)
- data _↘s_ : SComp -> Env -> Set where
+    -> (F , a) ↘a F'
+    -> (↑[ Π A F ] e , a) ↘a ↑[ F' ] (e · ↓[ A ] a)
+ data _↘s_ : Subst × Env -> Env -> Set where
   _[_] : ∀ {σ1 σ2 ρ ρ' ρ''} -> ⟦ σ2 ⟧ ρ ↘s ρ' -> ⟦ σ1 ⟧ ρ' ↘s ρ'' -> ⟦ σ1 [ σ2 ] ⟧ ρ ↘s ρ''
   id : ∀ {ρ} -> ⟦ id ⟧ ρ ↘s ρ
   ↑ : ∀ {ρ a} -> ⟦ ↑ ⟧ (ρ , a) ↘s ρ
@@ -75,11 +81,11 @@ IsBaseType _ = ⊥
 
 mutual
  data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Nf -> Set where
-  Π : ∀ {n f b A B B' v} -> (f · ↑[ A ] (lvl n)) ↘ b -> (B · ↑[ A ] (lvl n)) ↘ B' -> Rnf (suc n) , b ∶ B' ↘ v
+  Π : ∀ {n f b A B B' v} -> (f , ↑[ A ] (lvl n)) ↘a b -> (B , ↑[ A ] (lvl n)) ↘a B' -> Rnf (suc n) , b ∶ B' ↘ v
      -> Rnf n , f ∶ Π A B ↘ ƛ v
   Nat : ∀ {n i} -> Rnf n , Nat ∶ Set* i ↘ Nat
   SetZ : ∀ {n i j} -> Rnf n , Set* i ∶ Set* j ↘ Set* i
-  Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> (F · ↑[ A ] (lvl n)) ↘ B
+  Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> (F , ↑[ A ] (lvl n)) ↘a B
    -> Rnf (suc n) , B ∶ Set* i ↘ B'
    -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
   Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
@@ -87,22 +93,25 @@ mutual
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
  data Rne_,_↘_ : ℕ -> Dne -> Ne -> Set where
   lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
-  _·_ : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
+  ap : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
   rec : ∀ {n e u T tz ts} -> Rne n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
 
 Singleton : ∀ {A : Set} (P : A -> Set) -> Set
 Singleton P = ∀ {x y} -> P x -> P y -> x ≡ y
+
+Deterministic : ∀ {A B : Set} (R : A -> B -> Set) -> Set
+Deterministic R = ∀ {x} -> Singleton (R x)
 
 lookup-deter : ∀ {ρ i} -> Singleton (lookup_,_↘_ ρ i)
 lookup-deter top top = refl
 lookup-deter (pop p1) (pop p2) = lookup-deter p1 p2
 
 mutual
- eval-deter : ∀ {c} -> Singleton (_↘_ c)
+ eval-deter : Deterministic _↘_
  eval-deter (idx x₂) (idx x₃) = lookup-deter x₂ x₃
  eval-deter ƛ ƛ = refl
- eval-deter (_·_ p1 p2 x₁) (_·_ p3 p4 x₂) with eval-deter p1 p3 | eval-deter p2 p4
- ... | refl | refl = eval-deter x₁ x₂
+ eval-deter (ap p1 p2 x₁) (ap p3 p4 x₂) with eval-deter p1 p3 | eval-deter p2 p4
+ ... | refl | refl = evala-deter x₁ x₂
  eval-deter zero zero = refl
  eval-deter (suc p1) (suc p2) = cong suc (eval-deter p1 p2)
  eval-deter (rec p1 x₁) (rec p2 x₂) with eval-deter p1 p2
@@ -112,11 +121,13 @@ mutual
  eval-deter Nat Nat = refl
  eval-deter (x₁ [ p1 ]) (x₂ [ p2 ]) with evals-deter p1 p2
  ... | refl = eval-deter x₁ x₂
- eval-deter (ƛ· x₁) (ƛ· x₂) = eval-deter x₁ x₂
- eval-deter (↑ p1) (↑ p2) with eval-deter p1 p2
+
+ evala-deter : Deterministic _↘a_
+ evala-deter (ƛ· x₁) (ƛ· x₂) = eval-deter x₁ x₂
+ evala-deter (↑ p1) (↑ p2) with evala-deter p1 p2
  ... | refl = refl
 
- evals-deter : ∀ {σ ρ} -> Singleton (_↘s_ (⟦ σ ⟧ ρ))
+ evals-deter : Deterministic _↘s_
  evals-deter (p2 [ p1 ]) (p3 [ p4 ]) with evals-deter p2 p3
  ... | refl = evals-deter p1 p4
  evals-deter id id = refl
@@ -133,13 +144,13 @@ mutual
 
 mutual
  Rnf-deter : ∀ {n a A} -> Singleton (Rnf_,_∶_↘_ n a A)
- Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) with eval-deter x x₂
- Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) | refl with eval-deter x₁ x₃
+ Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) with evala-deter x x₂
+ Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) | refl with evala-deter x₁ x₃
  ... | refl = cong ƛ (Rnf-deter p1 p2)
  Rnf-deter (Π x₂ x p1) (Neut {._} {()} x₃)
  Rnf-deter Nat Nat = refl
  Rnf-deter SetZ SetZ = refl
- Rnf-deter (Fun p1 x p2) (Fun p3 x₁ p4) with eval-deter x x₁
+ Rnf-deter (Fun p1 x p2) (Fun p3 x₁ p4) with evala-deter x x₁
  ... | refl = cong₂ Π (Rnf-deter p1 p3) (cong ƛ (Rnf-deter p2 p4))
  Rnf-deter (Neut {._} {()} x₁) (Π x₂ x₃ p2)
  Rnf-deter (Neut x) (Neut x₃) = cong ne (Rne-deter x x₃)
@@ -148,5 +159,5 @@ mutual
 
  Rne-deter : ∀ {n a} -> Singleton (Rne_,_↘_ n a)
  Rne-deter (lvl k) (lvl .k) = refl
- Rne-deter (p1 · x) (p2 · x₁) = cong₂ _·_ (Rne-deter p1 p2) (Rnf-deter x x₁)
+ Rne-deter (ap p1 x) (ap p2 x₁) = cong₂ _·_ (Rne-deter p1 p2) (Rnf-deter x x₁)
  Rne-deter (rec p1) (rec p2) = cong (rec _ _ _) (Rne-deter p1 p2)

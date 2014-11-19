@@ -29,7 +29,7 @@ NatR-sym zero = zero
 NatR-sym (suc x) = suc (NatR-sym x)
 NatR-sym (neu x) = neu (sym-⊥' x)
 
-App-sym : ∀ {B : REL} -> SYM B -> SYM (App B)
+App-sym : ∀ {B : REL} {C : Set} {r : C -> Val -> Set}  -> SYM B -> SYM (Clo r B)
 App-sym f (inj red1 red2 rel) = inj red2 red1 (f rel)
 
 open Clo
@@ -42,14 +42,14 @@ mutual
   hsymEl (inj akf) (inj anf) (Π pA y) (Π pA' y') h = λ p →
    let p' = hsymEl (inj anf) (inj akf) pA' pA p in
    let q = h p' in
-   inj (red2 q) (red1 q) (hsym* (y p') (y' p) (rel q))
+   inj (red2 q) (red1 q) (hsym* evala-deter (y p') (y' p) (rel q))
   hsymEl (inj akf) (inj anf) (Set* y) (Set* y') h = symSet _ _ ≤refl h
 
-  hsym* :  ∀ {k n} {K : Acc k} {N : Acc n}
-   -> HSYM (App (SetU' K)) (ElU' ∘ rel) (App (SetU' N)) (ElU' ∘ rel)
-  hsym* (inj (_ , red1) (_ , red2) rel) (inj (_ , red3) (_ , red4) rel₁) x
-     with eval-deter red1 red4 | eval-deter red2 red3
-  hsym* (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl = hsymEl _ _ rel rel₁ x
+  hsym* :  ∀ {k n} {K : Acc k} {N : Acc n} {C} {r : C -> Val -> Set} (d : Deterministic r)
+   -> HSYM (Clo r (SetU' K)) (ElU' ∘ rel) (Clo r (SetU' N)) (ElU' ∘ rel)
+  hsym* d (inj (_ , red1) (_ , red2) rel) (inj (_ , red3) (_ , red4) rel₁) x
+     with d red1 red4 | d red2 red3
+  hsym* d (inj (_ , red1) (_ , red2) rel) (inj (._ , red3) (._ , red4) rel₁) x | refl | refl = hsymEl _ _ rel rel₁ x
 
   symSet : ∀ {k n} (K : Acc k) (N : Acc n) -> k ≤ n -> ∀ {A A'} -> A ≈ A' ∈ SetU' K -> A' ≈ A ∈ SetU' N
   symSet (inj akf) (inj akn) kn (Neu y p) = Neu (sym-⊥' y) (≤trans p kn)
