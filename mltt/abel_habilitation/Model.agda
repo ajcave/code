@@ -139,7 +139,7 @@ Type : REL
 Type A B = ∃ (λ n → SetU n A B)
 
 ElU' : {n : ℕ} {p : Acc n} -> ∀ {A A'} -> A ≈ A' ∈ (SetU' p) -> REL
-ElU' {n} {inj p} = SetF.El n (λ q → SetU' (p q))
+ElU' {n} {inj p} = SetF.El n (SetU' ∘ p)
 
 ElU : (n : ℕ) -> ∀ {A A'} -> A ≈ A' ∈ (SetU n) -> REL
 ElU n = ElU' {n} {nat-acc {n}}
