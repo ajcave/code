@@ -101,6 +101,9 @@ transSetω' (inj x) = TransF.transSet _ _ (λ p → transSetω' (x p))
 symω' : ∀ {k} (acck : Acc k) -> ∀ {A A'} (pA : A ≈ A' ∈ SetU' acck) -> SYM (ElU' pA)
 symω' (inj x) = TransF.symEl _ _ (λ p → transSetω' (x p))
 
+selfL* : ∀ {k} {acck : Acc k} -> ∀ {A A'} (pA : A ≈ A' ∈ SetU' acck) -> SELFL (ElU' pA)
+selfL* {k} {inj x} = TransF.selfL _ _ (λ p → transSetω' (x p))
+
 -- symω : ∀ {A A'} (pA : A ≈ A' ∈ Type) -> SYM ([ pA ])
 -- symω (k , pA) = symω' _ pA
 

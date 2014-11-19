@@ -10,6 +10,7 @@ open import Data.Nat
 open import WfNat
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Util
+open import Function
 
 REL = PREL Val
 
@@ -92,8 +93,12 @@ AppDeter4 (inj red1 (_ , red2) rel)
 --   red2 : ⟦ σ' ⟧s ρ' ↘ ρ2
 --   rel : B ρ1 ρ2
 
+Π* : ∀ {α γ : Set} -> (γ -> α -> Comp)
+ -> (A : PREL α) -> (∀ {a a'} -> a ≈ a' ∈ A -> PREL Val) -> PREL γ
+Π* ap A F f1 f2 = ∀ {a1 a2} (pa : a1 ≈ a2 ∈ A) -> (ap f1 a1) ≈ (ap f2 a2) ∈ (App (F pa))
+
 ΠR : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
-ΠR A F f f' = ∀ {a a'} -> (p : A a a') -> (f · a) ≈ (f' · a') ∈ (App (F p))
+ΠR A F = Π* _·_ A F
 
 _⇒R_ : (A B : REL) -> REL
 A ⇒R B = ΠR A (λ _ -> B)
@@ -160,7 +165,7 @@ mutual
        -> ⊨ (γ1 , t1) ≈ (γ2 , t2) ctx
   
  [_]⊨_≈_type[_] : {γ1 γ2 : Ctx} -> ⊨ γ1 ≈ γ2 ctx -> Exp -> Exp -> ℕ -> Set
- [ Γ ]⊨ T1 ≈ T2 type[ k ] = ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧hctx) → ⟦ T1 ⟧ ρ ≈ ⟦ T2 ⟧ ρ' ∈ App (SetU k)
+ [ Γ ]⊨ T1 ≈ T2 type[ k ] = T1 ≈ T2 ∈ Π* ⟦_⟧_ ⟦ Γ ⟧hctx (λ _ -> SetU k)
 
  ⟦_⟧hctx : {Γ1 Γ2 : Ctx} -> ⊨ Γ1 ≈ Γ2 ctx -> EnvREL
  ⟦ tt ⟧hctx = EmpRel
@@ -176,8 +181,7 @@ mutual
 [ Γ ]⊨ T type[ k ] = [ Γ ]⊨ T ≈ T type[ k ]
 
 [_]⊨_≈_∶h[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> Exp -> Exp -> {T1 T2 : Exp} -> [ Γ ]⊨ T1 ≈ T2 type[ k ] -> Set
-[ Γ ]⊨ t ≈ t' ∶h[ T ] =
-  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧hctx) → ⟦ t ⟧ ρ ≈ ⟦ t' ⟧ ρ' ∈ App ⟦ T vρ ⟧tp'
+[ Γ ]⊨ t ≈ t' ∶h[ T ] = t ≈ t' ∈ Π* ⟦_⟧_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
 
 [_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
 [ Γ ]⊨ t ≈ t' ∶[ T ] = [ Γ ]⊨ t ≈ t' ∶h[ T ]

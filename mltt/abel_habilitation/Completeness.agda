@@ -140,17 +140,25 @@ mutual
   -> [ Γ' ]⊨ a2 ≈ a1 type[ k ]
  fund-hsym-tp da dρ = App-sym symSetω (da (⟦,⟧ctx-sym _ _ dρ))
 
+-- Is this actually necessary?
 fund-hsym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Γ' : ⊨ γ2 ≈ γ1 ctx}
  {A  : [ Γ ]⊨ a1 ≈ a2 type[ k ]}
  {A' : [ Γ' ]⊨ a2 ≈ a1 type[ k ]}
   -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
   -> [ Γ' ]⊨ t2 ≈ t1 ∶h[ A' ]
-fund-hsym dt dρ = {!!}
+fund-hsym {A = A} {A' = A'} dt dρ =
+ let q = dt (⟦,⟧ctx-sym _ _ dρ) in
+ let q1 = hsym* (A (⟦,⟧ctx-sym _ _ dρ)) (A' dρ) (rel q) in
+ inj' (rd2 q) (rd1 q) q1
+-- TODO: Part of the above could be factored out...
 
 mutual
  ctx-sym2 : ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> SYM ⟦ Γ ⟧hctx
  ctx-sym2 tt tt = tt
- ctx-sym2 (Γ , A) (vρ , vv) = (ctx-sym2 Γ vρ) , {!!}
+ ctx-sym2 (Γ , A) (vρ , vv) =
+  let q1 = ctx-sym2 Γ vρ in
+  let q2 = symω' _ (rel (A vρ)) vv in
+  q1 , {!!}
 
  fund-sym-tp : ∀ {γ1 γ2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
    -> [ Γ ]⊨ a1 ≈ a2 type[ k ]
