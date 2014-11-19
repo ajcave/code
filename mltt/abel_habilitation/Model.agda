@@ -55,7 +55,7 @@ inj' r1 r2 r3 = inj (, r1) (, r2) r3
 App : (B : REL) (c1 c2 : Val × Val) -> Set
 App = Clo _↘a_
 
-App→ : ∀ {B B'} -> B →₂ B' -> App B →₂ App B'
+App→ : ∀ {C V : Set} {red : C -> V -> Set} {B B' : PREL V} -> B →₂ B' -> Clo red B →₂ Clo red B'
 App→ f (inj red1 red2 rel) = inj red1 red2 (f rel)
 
 AppDeter1 :  ∀ {c1 c2 c3 B B'} 
