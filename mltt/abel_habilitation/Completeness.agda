@@ -158,23 +158,31 @@ fund-hsym {A = A} {A' = A'} dt dρ =
 mutual
  ctx-sym2 : ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> SYM ⟦ Γ ⟧hctx
  ctx-sym2 tt tt = tt
- ctx-sym2 (Γ , A) (vρ , vv) =
-  let q1 = ctx-sym2 Γ vρ in
-  let q2 = symω' _ (rel (A vρ)) vv in
-  q1 , {!!}
+ ctx-sym2 (Γ , A) (ρ1≈ρ2 , v1≈v2) =
+  let ρ2≈ρ1 = ctx-sym2 Γ ρ1≈ρ2
+      ρ1≈ρ1 = ctx-trans2 Γ ρ1≈ρ2 ρ2≈ρ1 
+      v2≈v1 = symω' _ (rel (A ρ1≈ρ2)) v1≈v2
+      q  = irrLF' eval-deter A ρ1≈ρ2 ρ1≈ρ1 v2≈v1
+      q1 = irrRF' eval-deter A ρ1≈ρ1 (ctx-sym2 _ ρ1≈ρ2) q
+  in ρ2≈ρ1 , q1
+ -- How much of this is in common with the Π case?
+
+ ctx-trans2 : ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> TRANS ⟦ Γ ⟧hctx 
+ ctx-trans2 tt tt tt = tt
+ ctx-trans2 (Γ , x) (vρ , x₁) (vρ₁ , x₂) =
+  let q1 = ctx-trans2 Γ vρ vρ₁
+  in q1 , {!!}
 
  fund-sym-tp : ∀ {γ1 γ2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
    -> [ Γ ]⊨ a1 ≈ a2 type[ k ]
    -> [ Γ ]⊨ a2 ≈ a1 type[ k ]
- fund-sym-tp da dρ = 
-  let q1 = da dρ in
-  let q2 = da (ctx-sym2 _ dρ) in
-  {!!} --App-sym symSetω (da {!!})
+ fund-sym-tp da = ΠSYM.Πsym (ctx-sym2 _) {!!} (λ _ _ x → x) (λ _ _ x → x) (λ _ → symSetω' _) da
+ -- TODO: Is that generality necessary?
 
  fund-sym : ∀ {γ t1 t2 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
   -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
   -> [ Γ ]⊨ t2 ≈ t1 ∶[ A ]
- fund-sym A t1≈t2 ρ1≈ρ2 = {!!}
+ fund-sym A t1≈t2 = ΠSYM.Πsym (ctx-sym2 _) {!!} {!!} {!!} {!!} t1≈t2
 
 fund-trans : ∀ {γ t1 t2 t3 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
  -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]

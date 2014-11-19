@@ -12,7 +12,6 @@ open import Model
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open SetF
 open import Util
-open Syn
 
 open Clo
 mutual
@@ -60,15 +59,25 @@ irrLω' : ∀ {k} {K : Acc k} {A B C}
    -> ElU' pAB →₂ ElU' pAC
 irrLω' {k} {inj ackf} pAB pAC = irrL _ _ pAB refl pAC
 
+irrLF' : ∀ {α β : Set} {k} {K : Acc k} {A F F'} {r : β × α -> Val -> Set} (d : Deterministic r)
+    (pF : F ≈ F' ∈ (A ⇒[ r ] SetU' K))
+ -> ∀ {a a' a''} (p : a ≈ a' ∈ A) (p' : a ≈ a'' ∈ A) -> (ElU' (rel (pF p))) →₂ (ElU' (rel (pF p')))
+irrLF' d pF p p' x = irrL _ _ (rel (pF p)) (d (rd1 (pF p)) (rd1 (pF p'))) (rel (pF p')) x
+
 irrLF : ∀ {k} {K : Acc k} {A F F'}
     (pF : F ≈ F' ∈ (A ⇒R SetU' K))
  -> ∀ {a a' a''} (p : a ≈ a' ∈ A) (p' : a ≈ a'' ∈ A) -> (ElU' (rel (pF p))) →₂ (ElU' (rel (pF p')))
-irrLF pF p p' x = irrL _ _ (rel (pF p)) (evala-deter (rd1 (pF p)) (rd1 (pF p'))) (rel (pF p')) x
+irrLF = irrLF' evala-deter
+
+irrRF' : ∀ {α β : Set} {k} {K : Acc k} {A F F'} {r : β × α -> Val -> Set} (d : Deterministic r)
+    (pF : F ≈ F' ∈ (A ⇒[ r ] SetU' K))
+ -> ∀ {a a' a''} (p : a' ≈ a ∈ A) (p' : a'' ≈ a ∈ A) -> (ElU' (rel (pF p))) →₂ (ElU' (rel (pF p')))
+irrRF' d pF p p' x = irrR _ _ (rel (pF p)) (d (rd2 (pF p)) (rd2 (pF p'))) (rel (pF p')) x
 
 irrRF : ∀ {k} {K : Acc k} {A F F'}
     (pF : F ≈ F' ∈ (A ⇒R SetU' K))
  -> ∀ {a a' a''} (p : a' ≈ a ∈ A) (p' : a'' ≈ a ∈ A) -> (ElU' (rel (pF p))) →₂ (ElU' (rel (pF p')))
-irrRF pF p p' x = irrR _ _ (rel (pF p)) (evala-deter (rd2 (pF p)) (rd2 (pF p'))) (rel (pF p')) x
+irrRF = irrRF' evala-deter
 
 irrRω' : ∀ {k} {K : Acc k} {A B C}
     (pAB : B ≈ A ∈ SetU' K)

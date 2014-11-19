@@ -97,6 +97,9 @@ AppDeter4 (inj red1 (_ , red2) rel)
  -> (A : PREL α) -> (∀ {a a'} -> a ≈ a' ∈ A -> PREL γ) -> PREL β
 Π* red A F f1 f2 = ∀ {a1 a2} (pa : a1 ≈ a2 ∈ A) -> (f1 , a1) ≈ (f2 , a2) ∈ (Clo red (F pa))
 
+_⇒[_]_ : ∀ {α β γ : Set} -> (A : PREL α) (r : β × α -> γ -> Set) (B : PREL γ) -> PREL β
+A ⇒[ r ] B = Π* r A (λ _ -> B)
+
 ΠR : (A : REL) -> (∀ {a a'} -> A a a' -> REL) -> REL
 ΠR A F = Π* _↘a_ A F
 
@@ -165,7 +168,7 @@ mutual
        -> ⊨ (γ1 , t1) ≈ (γ2 , t2) ctx
   
  [_]⊨_≈_type[_] : {γ1 γ2 : Ctx} -> ⊨ γ1 ≈ γ2 ctx -> Exp -> Exp -> ℕ -> Set
- [ Γ ]⊨ T1 ≈ T2 type[ k ] = T1 ≈ T2 ∈ Π* _↘_ ⟦ Γ ⟧hctx (λ _ -> SetU k)
+ [ Γ ]⊨ T1 ≈ T2 type[ k ] = T1 ≈ T2 ∈ (⟦ Γ ⟧hctx ⇒[ _↘_ ] (SetU k))
 
  ⟦_⟧hctx : {Γ1 Γ2 : Ctx} -> ⊨ Γ1 ≈ Γ2 ctx -> EnvREL
  ⟦ tt ⟧hctx = EmpRel

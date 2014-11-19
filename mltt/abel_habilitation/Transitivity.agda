@@ -39,14 +39,12 @@ App-trans : ∀ {C V : Set} {r : C -> V -> Set} {B : PREL V} (d : Deterministic 
 App-trans d f (inj red1 (b2 , red2) rel) (inj (b3 , red3) b4 rel₁) with d red2 red3
 App-trans d f (inj red1 (b2 , red2) rel) (inj (.b2 , red3) red4 rel₁) | refl = inj red1 red4 (f rel rel₁)
 
-module ΠPER {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
+module ΠSYM {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
   {F : ∀ {a a'} -> a ≈ a' ∈ A -> PREL γ}
-  (deter : Deterministic red)
   (Asym : SYM A) (Atrans : TRANS A)
   (FirrL : ∀ {a a' a''} (p : a ≈ a' ∈ A) (p' : a ≈ a'' ∈ A) -> F p →₂ F p')
   (FirrR : ∀ {a a' a''} (p : a' ≈ a ∈ A) (p' : a'' ≈ a ∈ A) -> F p →₂ F p')
-  (Fsym : ∀ {a a'} (p : a ≈ a' ∈ A) -> SYM (F p))
-  (Ftrans : ∀ {a a'} (p : a ≈ a' ∈ A) -> TRANS (F p)) where
+  (Fsym : ∀ {a a'} (p : a ≈ a' ∈ A) -> SYM (F p)) where
  
  Πsym : SYM (Π* red A F)
  Πsym ab a1≈a2 =
@@ -56,10 +54,17 @@ module ΠPER {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
       q0 = App→ (FirrR _ _) q
   in  App→ (FirrL a1≈a1 a1≈a2) q0
 
+module ΠPER {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
+  {F : ∀ {a a'} -> a ≈ a' ∈ A -> PREL γ}
+  (deter : Deterministic red)
+  (Aself : SELFL A)
+  (FirrL : ∀ {a a' a''} (p : a ≈ a' ∈ A) (p' : a ≈ a'' ∈ A) -> F p →₂ F p')
+  (Fsym : ∀ {a a'} (p : a ≈ a' ∈ A) -> SYM (F p))
+  (Ftrans : ∀ {a a'} (p : a ≈ a' ∈ A) -> TRANS (F p)) where
+ 
  Πtrans : TRANS (Π* red A F)
  Πtrans ab bc a1≈a2 =
-  let a2≈a1 = Asym a1≈a2
-      a1≈a1 = Atrans a1≈a2 a2≈a1
+  let a1≈a1 = Aself a1≈a2 
       q0 = ab a1≈a1
       q1 = bc a1≈a2
       q2 = App→ (FirrL a1≈a1 a1≈a2) q0
@@ -75,15 +80,15 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   transEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> TRANS (ElU' pA)
   transEl (Neu y _) (inj y') (inj y0) = inj (trans-⊥' y' y0)
   transEl Nat ab bc = NatR-trans ab bc
-  transEl (Π pA pF) ab bc = ΠPER.Πtrans evala-deter (symEl pA) (transEl pA) (irrLF pF) (irrRF pF)
+  transEl (Π pA pF) ab bc = ΠPER.Πtrans evala-deter (selfL pA) (irrLF pF)
     (λ p → symEl (rel (pF p))) (λ p → transEl (rel (pF p))) ab bc
   transEl (Set* y) ab bc = set<trans y ab bc
 
   symEl : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SYM (ElU' pA)
   symEl (Neu y _) (inj x) = inj (sym-⊥' x)
   symEl Nat ab = NatR-sym ab
-  symEl (Π pA pF) ab = ΠPER.Πsym evala-deter (symEl pA) (transEl pA) (irrLF pF) (irrRF pF)
-     (λ p → symEl (rel (pF p))) (λ p → transEl (rel (pF p))) ab
+  symEl (Π pA pF) ab = ΠSYM.Πsym (symEl pA) (transEl pA) (irrLF pF) (irrRF pF)
+     (λ p → symEl (rel (pF p))) ab
   symEl (Set* y) ab = symSetω' (akf y) ab
 
   selfL : ∀ {A A'} (pA : A ≈ A' ∈ SetU' K) -> SELFL (ElU' pA)
