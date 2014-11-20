@@ -143,10 +143,10 @@ HTRANS' : ∀ {B A}
  (U1 : PREL A) (El1 : INTERP B U1)
  (U2 : PREL A) (El2 : INTERP B U2)
  (U3 : PREL A) (El3 : INTERP B U3) -> Set
-HTRANS' U1 El1 U2 El2 U3 El3 = ∀ {A B C}
-  (pAB : A ≈ B ∈ U1)
-  (pBC : B ≈ C ∈ U2)
-  (pAC : A ≈ C ∈ U3) 
+HTRANS' U1 El1 U2 El2 U3 El3 = ∀ {A1 A2 B1 B2 C1 C2}
+  (pAB : A1 ≈ B1 ∈ U1) (p1 : A1 ≡ A2)
+  (pBC : B2 ≈ C1 ∈ U2) (p2 : B1 ≡ B2)
+  (pAC : A2 ≈ C2 ∈ U3) (p3 : C1 ≡ C2)
  -> ∀ {f g h}
  -> f ≈ g ∈ (El1 pAB)
  -> g ≈ h ∈ (El2 pBC)
@@ -156,7 +156,7 @@ HTRANS : ∀ {B A} (U : PREL A) (El : INTERP B U) -> Set
 HTRANS U El = HTRANS' U El U El U El
 
 htrans* : ∀ {k n m} -> HTRANS' (SetU k) (ElU k) (SetU n) (ElU n) (SetU m) (ElU m)
-htrans* pAB pBC pAC f≈g g≈h =
+htrans* pAB refl pBC refl pAC refl f≈g g≈h =
  transω' _ pAC (irrL _ _ pAB refl pAC f≈g) (irrR _ _ pBC refl pAC g≈h)
 
 -- htransω : HTRANS Type [_]

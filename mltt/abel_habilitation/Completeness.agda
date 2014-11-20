@@ -170,9 +170,17 @@ mutual
 
  ctx-trans2 : ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> TRANS ⟦ Γ ⟧hctx 
  ctx-trans2 tt tt tt = tt
- ctx-trans2 (Γ , x) (vρ , x₁) (vρ₁ , x₂) =
-  let q1 = ctx-trans2 Γ vρ vρ₁
-  in q1 , {!!}
+ ctx-trans2 (Γ , A) (ρ1≈ρ2 , v1≈v2) (ρ2≈ρ3 , v2≈v3) =
+  let ρ1≈ρ3 = ctx-trans2 Γ ρ1≈ρ2 ρ2≈ρ3
+      v1≈v2' = irrLF' eval-deter A ρ1≈ρ2 ρ1≈ρ3 v1≈v2
+      v2≈v3' = irrRF' eval-deter A ρ2≈ρ3 ρ1≈ρ3 v2≈v3
+      v1≈v3 = transω' _ (rel (A ρ1≈ρ3)) v1≈v2' v2≈v3'
+  in ρ1≈ρ3 , v1≈v3
+  -- Notice that this is essentially the definition of htrans*
+  -- but the type isn't right...
+            -- htrans* (rel A1) (eval-deter (rd1 A1) (rd1 A3))
+            --          (rel A2) (eval-deter (rd2 A1) {!!})
+            --          (rel A3) (eval-deter (rd2 A2) (rd2 A3)) v1≈v2 v2≈v3
 
 ctx-selfL :  ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> SELFL ⟦ Γ ⟧hctx
 ctx-selfL Γ p = ctx-trans2 Γ p (ctx-sym2 Γ p)
@@ -265,5 +273,4 @@ fund-suc' : ∀ {γ t s k} {Γ : ⊨ γ ctx}
  -> [ Γ ]⊨ suc t ≈ suc s ∶[ Nats k ] 
 fund-suc' d ρ1≈ρ2 = com2 suc suc (d ρ1≈ρ2) suc
      
-
--- inversion lemma for proofs [ Γ ]⊨ (Π a (ƛ b)) type[ k ] ?
+-- TODO: Variable rules!
