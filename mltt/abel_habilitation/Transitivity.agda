@@ -34,6 +34,15 @@ NatR-trans : TRANS NatR
 NatR-trans zero zero = zero
 NatR-trans (suc x) (suc y) = suc (NatR-trans x y)
 NatR-trans (neu x) (neu y) = neu (trans-⊥' x y)
+NatR-trans (p ⊕ x) (q ⊕ y) = (trans-⊥' p q) ⊕ (NatR-trans x y)
+NatR-trans (x₁ ⊕ zero) (idL x₂) = idL (trans-⊥' x₁ x₂)
+NatR-trans (neu x) (idR x₁) = idR (trans-⊥' x x₁)
+NatR-trans (idR x) (x₁ ⊕ zero) = idR (trans-⊥' x x₁)
+NatR-trans (idR x) (idL x₁) = neu (trans-⊥' x x₁)
+NatR-trans (idL x) (neu x₁) = idL (trans-⊥' x x₁)
+NatR-trans (idL x) (idR x₁) = (trans-⊥' x x₁) ⊕ zero
+-- NatR-trans (idL p)  = ?
+-- NatR-trans (idR p) (idR q) = ?
 
 App-trans : ∀ {C V : Set} {r : C -> V -> Set} {B : PREL V} (d : Deterministic r) -> TRANS B -> TRANS (Clo r B)
 App-trans d f (inj red1 (b2 , red2) rel) (inj (b3 , red3) b4 rel₁) with d red2 red3

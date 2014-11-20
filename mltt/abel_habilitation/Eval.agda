@@ -5,6 +5,8 @@ open Syn Exp
 open import Data.Nat
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Product
+open import Data.Empty
+open import Data.Unit
 
 -- Comp : Set
 -- Comp = 
@@ -38,11 +40,35 @@ mutual
   Π : ∀ {A A' F F' ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ F ⟧ ρ ↘ F' -> ⟦ Π A F ⟧ ρ ↘ Π A' F'
   Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
   _[_] : ∀ {t σ ρ ρ' d} -> ⟦ t ⟧ ρ' ↘ d -> ⟦ σ ⟧ ρ ↘s ρ' -> ⟦ t [ σ ] ⟧ ρ ↘ d
+  plus : ∀ {t1 t2 d1 d2 ρ} -> ⟦ t1 ⟧ ρ ↘ d1 -> ⟦ t2 ⟧ ρ ↘ d2
+        -> ⟦ t1 ⊕ t2 ⟧ ρ ↘ (d1 ⊕̂ d2)
  data _↘a_ : Val × Val -> Val -> Set where 
   ƛ· : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> ((ƛ t ρ) , a) ↘a b
   ↑ : ∀ {A F e a F'}
     -> (F , a) ↘a F'
     -> (↑[ Π A F ] e , a) ↘a ↑[ F' ] (e · ↓[ A ] a)
+ 
+ _⊕̂_ : Val -> Val -> Val
+ zero ⊕̂ v = v
+ suc u ⊕̂ v = suc (u ⊕̂ v)
+ (u ⊕ w) ⊕̂ v = u ⊕̂ (w ⊕̂ v)
+ u ⊕̂ v = u ⊕ v -- Meh
+
+ -- _++_ : Dne -> Val -> Val
+ -- (e ⊕ u) ++ v = e ++ (u ⊕̂ v)
+ -- e ++ v = ↑[ Nat ] (e ⊕ v)
+
+ -- data _⊕_↘p_ : Val -> Val -> Val -> Set where
+ --  zero : ∀ {v} -> zero ⊕ v ↘p v
+ --  suc : ∀ {u v w} -> v ⊕ u ↘p w -> suc v ⊕ u ↘p suc w
+ --  ne : ∀ {e v w} -> e +̂ v ↘p w -> (↑[ Nat ] e) ⊕ v ↘p w
+ -- data _+̂_↘p_ : Dne -> Val -> Val -> Set where
+ --  plus : ∀ {e v u w y} -> v ⊕ u ↘p y -> e +̂ y ↘p w -> (e ⊕ v) +̂ u ↘p w
+ --  notplus : ∀ {e} {_ : NotPlus e} {u} -> e +̂ u ↘p (↑[ Nat ] (e ⊕ u))
+ -- NotPlus : Dne -> Set -- This is a bit ad-hoc...
+ -- NotPlus (e ⊕ x) = ⊥
+ -- NotPlus _ = ⊤
+
  data _↘s_ : Subst × Env -> Env -> Set where
   _[_] : ∀ {σ1 σ2 ρ ρ' ρ''} -> ⟦ σ2 ⟧ ρ ↘s ρ' -> ⟦ σ1 ⟧ ρ' ↘s ρ'' -> ⟦ σ1 [ σ2 ] ⟧ ρ ↘s ρ''
   id : ∀ {ρ} -> ⟦ id ⟧ ρ ↘s ρ
@@ -74,7 +100,7 @@ open import Data.Unit
 open import Data.Empty
 
 IsBaseType : Val -> Set
-IsBaseType Nat = ⊤
+IsBaseType Nat = ⊥
 IsBaseType (Set* _) = ⊤
 IsBaseType (↑[ Set* i ] E) = ⊤
 IsBaseType _ = ⊥
@@ -92,6 +118,8 @@ mutual
   Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ v
   zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
+  _⊕_ : ∀ {n e v t s} -> Rne n , e ↘ t -> Rnf n , v ∶ Nat ↘ s -> Rnf n , (↑[ Nat ] e ⊕ v) ∶ Nat ↘ (t ⊕ s)
+  NeutNat : ∀ {n e v } -> Rne n , e ↘ v -> Rnf n , (↑[ Nat ] e) ∶ Nat ↘ (v ⊕ zero) -- This seems kind of essential, because we won't know if something is actually a Nat and needs a zero appended until "late", i.e. after the type is plugged in: A:Set, x:A |- x : A. When we plug Nat/A, we need to expand this to x ⊕ zero ∶ Nat
  data Rne_,_↘_ : ℕ -> Dne -> Exp -> Set where
   lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
   ap : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
@@ -122,11 +150,25 @@ mutual
  eval-deter Nat Nat = refl
  eval-deter (x₁ [ p1 ]) (x₂ [ p2 ]) with evals-deter p1 p2
  ... | refl = eval-deter x₁ x₂
+ eval-deter (plus d1 d2) (plus d1' d2') with eval-deter d1 d1' | eval-deter d2 d2'
+ ... | refl | refl = refl
 
  evala-deter : Deterministic _↘a_
  evala-deter (ƛ· x₁) (ƛ· x₂) = eval-deter x₁ x₂
  evala-deter (↑ p1) (↑ p2) with evala-deter p1 p2
  ... | refl = refl
+
+ -- evalp-deter : ∀ {u v} -> Singleton (_⊕_↘p_ u v)
+ -- evalp-deter zero zero = refl
+ -- evalp-deter (suc d1) (suc d2) = cong suc (evalp-deter d1 d2)
+ -- evalp-deter (ne x₁) (ne x₂) = evalp'-deter x₁ x₂
+
+ -- evalp'-deter : ∀ {e v} -> Singleton (_+̂_↘p_ e v)
+ -- evalp'-deter (plus x₁ d1) (plus x₂ d2) with evalp-deter x₁ x₂
+ -- ... | refl = evalp'-deter d1 d2
+ -- evalp'-deter (plus x₁ d1) (notplus {._} {()})
+ -- evalp'-deter (notplus {._} {()}) (plus x₁ d2)
+ -- evalp'-deter notplus notplus = refl
 
  evals-deter : Deterministic _↘s_
  evals-deter (p2 [ p1 ]) (p3 [ p4 ]) with evals-deter p2 p3
@@ -157,6 +199,11 @@ mutual
  Rnf-deter (Neut x) (Neut x₃) = Rne-deter x x₃
  Rnf-deter zero zero = refl
  Rnf-deter (suc p1) (suc p2) = cong suc (Rnf-deter p1 p2)
+ Rnf-deter (p1 ⊕ p2) (p3 ⊕ p4) with Rne-deter p1 p3 | Rnf-deter p2 p4
+ ... | refl | refl = refl
+ Rnf-deter (NeutNat x) (NeutNat y) = cong (λ v → v ⊕ zero) (Rne-deter x y)
+ Rnf-deter (Neut {._} {()} _) (NeutNat y)
+ Rnf-deter (NeutNat y) (Neut {._} {()} _)
 
  Rne-deter : ∀ {n a} -> Singleton (Rne_,_↘_ n a)
  Rne-deter (lvl k) (lvl .k) = refl

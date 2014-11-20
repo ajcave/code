@@ -265,13 +265,60 @@ fund-subƛ dσ dt dρ =
              (ƛ· (rd2 vt [ ↑ [ rd2 vσ ] , idx top ]))
              (rel vt))
 
-Nats : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ Nat type[ k ]
+Nats : ∀ {γ1 γ2} k {Γ : ⊨ γ1 ≈ γ2 ctx} -> [ Γ ]⊨ Nat ≈ Nat type[ k ]
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat
 
 fund-suc' : ∀ {γ t s k} {Γ : ⊨ γ ctx} 
  -> [ Γ ]⊨ t ≈ s ∶[ Nats k ]
  -> [ Γ ]⊨ suc t ≈ suc s ∶[ Nats k ] 
 fund-suc' d ρ1≈ρ2 = com2 suc suc (d ρ1≈ρ2) suc
+
+mutual
+ fund-plus' : ∀ {m m' n n'}
+  -> m ≈ m' ∈ NatR
+  -> n ≈ n' ∈ NatR
+  -> (m ⊕̂ n) ≈ (m' ⊕̂ n') ∈ NatR
+ fund-plus' zero n₁ = n₁
+ fund-plus' (suc x) n₁ = suc (fund-plus' x n₁)
+ fund-plus' (p ⊕ m) n₁ = p ⊕ fund-plus' m n₁
+ fund-plus' (neu x) n₁ = x ⊕ n₁
+ fund-plus' (idL x) n = x ⊕ n
+ fund-plus' (idR x) n = x ⊕ n
+
+fund-assoc' : ∀ {m m' n n' p p'}
+ -> m ≈ m' ∈ NatR
+ -> n ≈ n' ∈ NatR
+ -> p ≈ p' ∈ NatR
+ -> ((m ⊕̂ n) ⊕̂ p) ≈ (m' ⊕̂ (n' ⊕̂ p')) ∈ NatR
+fund-assoc' zero n₁ p₁ = fund-plus' n₁ p₁
+fund-assoc' (suc x) n₁ p₁ = suc (fund-assoc' x n₁ p₁)
+fund-assoc' (p ⊕ m) n₁ p₁ = p ⊕ (fund-assoc' m n₁ p₁)
+fund-assoc' (neu x) n₁ p₁ = x ⊕ (fund-plus' n₁ p₁)
+fund-assoc' (idL x) n p = x ⊕ (fund-plus' n p)
+fund-assoc' (idR x) n p = x ⊕ (fund-plus' n p)
+
+fund-idR : ∀ {m m'}
+ -> m ≈ m' ∈ NatR
+ -> (m ⊕̂ zero) ≈ m' ∈ NatR
+fund-idR zero = zero
+fund-idR (suc x) = suc (fund-idR x)
+fund-idR (x ⊕ x₁) = x ⊕ (fund-idR x₁)
+fund-idR (neu x) = idL x
+fund-idR (idL x) = idL x
+fund-idR (idR x) = x ⊕ zero
+
+fund-assoc : ∀ {γ1 γ2 m m' n n' p p' k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
+ -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
+ -> [ Γ ]⊨ n ≈ n' ∶h[ Nats k ]
+ -> [ Γ ]⊨ p ≈ p' ∶h[ Nats k ]
+ -> [ Γ ]⊨ (m ⊕ n) ⊕ p ≈ m' ⊕ (n' ⊕ p') ∶h[ Nats k ]
+fund-assoc dm dn dp ρ1≈ρ2 =
+ let vm = dm ρ1≈ρ2
+     vn = dn ρ1≈ρ2
+     vp = dp ρ1≈ρ2
+ in inj' (plus (plus (rd1 vm) (rd1 vn)) (rd1 vp))
+         (plus (rd2 vm) (plus (rd2 vn) (rd2 vp)))
+    (fund-assoc' (rel vm) (rel vn) (rel vp))
      
 -- TODO: Variable rules!
 
@@ -312,3 +359,4 @@ fund-suc' d ρ1≈ρ2 = com2 suc suc (d ρ1≈ρ2) suc
 -- Extensions with other stuff? As long as your evaluation is deterministic, you're good?!
 
 -- IMPORTANT TODO:  Show the "reify identity substitution" thing
+open import Candidate

@@ -28,6 +28,9 @@ NatR-sym : SYM NatR
 NatR-sym zero = zero
 NatR-sym (suc x) = suc (NatR-sym x)
 NatR-sym (neu x) = neu (sym-⊥' x)
+NatR-sym (p ⊕ x) = (sym-⊥' p) ⊕ (NatR-sym x)
+NatR-sym (idR p) = idL (sym-⊥' p)
+NatR-sym (idL p) = idR (sym-⊥' p)
 
 App-sym : ∀ {C V : Set} {B : PREL V} {r : C -> V -> Set}  -> SYM B -> SYM (Clo r B)
 App-sym f (inj red1 red2 rel) = inj red2 red1 (f rel)

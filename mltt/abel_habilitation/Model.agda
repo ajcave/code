@@ -23,10 +23,16 @@ a ≈ b ∈ A = A a b
 ⊥' : PREL Dne
 ⊥' e e' = ∀ n → ∃ (λ u → Rne n , e ↘ u × Rne n , e' ↘ u)
 
-data NatR : REL where
- zero : zero ≈ zero ∈ NatR
- suc : ∀ {a a'} -> a ≈ a' ∈ NatR -> suc a ≈ suc a' ∈ NatR
- neu : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ↑[ Nat ] e' ∈ NatR
+mutual
+ data NatR : REL where
+  zero : zero ≈ zero ∈ NatR
+  suc : ∀ {a a'} -> a ≈ a' ∈ NatR -> suc a ≈ suc a' ∈ NatR
+  _⊕_ : ∀ {e e' v v'} -> e ≈ e' ∈ ⊥' -> v ≈ v' ∈ NatR -> ((↑[ Nat ] e) ⊕ v) ≈ ((↑[ Nat ] e') ⊕ v') ∈ NatR
+  neu : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ↑[ Nat ] e' ∈ NatR
+  idR : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ((↑[ Nat ] e') ⊕ zero) ∈ NatR
+  idL : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ((↑[ Nat ] e) ⊕ zero) ≈ ↑[ Nat ] e' ∈ NatR
+  --- This seems hairy... Is there a simpler approach?
+  -- Perhaps this should use ⊤ instead of ⊥ to exploit def'n of Rnf?
 
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set

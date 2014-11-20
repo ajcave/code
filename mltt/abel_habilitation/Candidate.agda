@@ -16,7 +16,11 @@ reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈
 reifyNat zero n = , zero , zero
 reifyNat (suc x) n with reifyNat x n
 reifyNat (suc x) n | _ , (q1 , q2) = , suc q1 , suc q2
-reifyNat (neu x) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
+reifyNat (neu x) n = , NeutNat (proj₁ (proj₂ (x n))) , NeutNat (proj₂ (proj₂ (x n)))
+reifyNat (p ⊕ x) n with reifyNat x n
+... | _ , (q1 , q2) = , (((proj₁ (proj₂ (p n)))) ⊕ q1) , (((proj₂ (proj₂ (p n)))) ⊕ q2)
+reifyNat (idL p) n = , (((proj₁ (proj₂ (p n))) ⊕ zero) , NeutNat (proj₂ (proj₂ (p n))))
+reifyNat (idR p) n = , (NeutNat (proj₁ (proj₂ (p n)))) , ((proj₂ (proj₂ (p n))) ⊕ zero)
 
 -- Types of reify and reflect, parameterized for convenience
 -- Really these should just abstract over a universe U and an interpretation function ElU
@@ -67,7 +71,7 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
  reifySet (Π pA pF) n =
    let q0 = pF (reflect pA (λ n₁ -> , lvl n , lvl n))
        qA = reifySet pA
-       q2 =  reifySet (rel q0)
+       q2 = reifySet (rel q0)
    in , Fun (proj₁ (proj₂ (qA n))) (rd1 q0) (proj₁ (proj₂ (q2 (suc n))))
       , Fun (proj₂ (proj₂ (qA n))) (rd2 q0) (proj₂ (proj₂ (q2 (suc n))))
  reifySet (Set* j<k) n = , SetZ , SetZ

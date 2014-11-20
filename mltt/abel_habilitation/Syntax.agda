@@ -16,6 +16,7 @@ module Syn (Tm : Set) where
    Π : (A : Val) -> (B : Val) -> Val
    Nat : Val
    Set* : ℕ -> Val
+   _⊕_ : Val -> Val -> Val
 
   data Env : Set where
    ⊡ : Env
@@ -25,15 +26,11 @@ module Syn (Tm : Set) where
    lvl : (x : ℕ) -> Dne
    _·_ : (e : Dne) -> (d : Dnf) -> Dne
    rec : (T : Tm) -> (tz : Tm) -> (ts : Tm) -> (e : Dne) -> Dne
-   _⊕_ : Dne -> Val -> Dne
 
   data Dnf : Set where
    ↓[_] : (A : Val) -> (a : Val) -> Dnf
 
- 
- record ValApp : Set where
-  constructor _·_
-  field
-   f : Val
-   a : Val
-  
+-- Note that it doesn't really matter that this is inductive.. could be combinators or godel coding,
+-- or even an "open" type, as long as we have what we need?
+-- doesn't really matter. Could conflate representations. Conflating gets eliminated by type-directed
+-- reification?
