@@ -120,6 +120,8 @@ mutual
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
   _⊕_ : ∀ {n e v t s} -> Rne n , e ↘ t -> Rnf n , v ∶ Nat ↘ s -> Rnf n , (↑[ Nat ] e ⊕ v) ∶ Nat ↘ (t ⊕ s)
   NeutNat : ∀ {n e v } -> Rne n , e ↘ v -> Rnf n , (↑[ Nat ] e) ∶ Nat ↘ (v ⊕ zero) -- This seems kind of essential, because we won't know if something is actually a Nat and needs a zero appended until "late", i.e. after the type is plugged in: A:Set, x:A |- x : A. When we plug Nat/A, we need to expand this to x ⊕ zero ∶ Nat
+  -- TODO: Could I even postpone the (re)association and evaluation of ⊕ this far?
+  --   (its evaluation could be delayed until now. Then potentially treated lazily?)
  data Rne_,_↘_ : ℕ -> Dne -> Exp -> Set where
   lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
   ap : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)

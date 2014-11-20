@@ -33,6 +33,7 @@ mutual
   idL : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ((↑[ Nat ] e) ⊕ zero) ≈ ↑[ Nat ] e' ∈ NatR
   --- This seems hairy... Is there a simpler approach?
   -- Perhaps this should use ⊤ instead of ⊥ to exploit def'n of Rnf?
+  -- (or ⊤ specialized to Nat)
 
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
