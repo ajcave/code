@@ -12,7 +12,6 @@ open import WfNat
 open import Model
 open SetF
 open import Util
-open import ElIrrelevance
 open import Typing
 open import Sym
 open import Transitivity

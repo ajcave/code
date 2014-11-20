@@ -12,7 +12,6 @@ open import Model
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open SetF
 open import Util
-open import ElIrrelevance
 open import Cumulativity
 open import Sym
 
