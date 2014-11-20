@@ -12,6 +12,7 @@ mutual
   _[_] : (t : Exp) -> (σ : Subst) -> Exp
   Π : (A F : Exp) -> Exp -- This may as well be a regular Π and not a "Fun"
   Set* : ℕ -> Exp
+  _⊕_ : Exp -> Exp -> Exp
 
  data Subst : Set where
   ⊡ : Subst
@@ -23,15 +24,21 @@ data Ctx : Set where
  ⊡ : Ctx
  _,_ : (Γ : Ctx) -> (S : Exp) -> Ctx
 
-mutual
- data Nf : Set where
-  ƛ : (t : Nf) -> Nf
-  Nat zero : Nf
-  Set* : ℕ -> Nf
-  Π : Nf -> Nf -> Nf
-  suc : (t : Nf) -> Nf
-  ne : (u : Ne) -> Nf
- data Ne : Set where
-  rec : (T tz ts : Exp) (u : Ne) -> Ne
-  idx : (x : ℕ) -> Ne
-  _·_ : (r : Ne) (s : Nf) -> Ne
+-- mutual
+--  data Nf : Set where
+--   ƛ : (t : Nf) -> Nf
+--   Nat : Nf
+--   Set* : ℕ -> Nf
+--   Π : Nf -> Nf -> Nf
+--   suc : (t : Nf) -> Nf
+--   zero : Nf
+--   ne : (u : Ne) -> Nf
+--   natneu : NatNeu -> Nf
+--  data Ne : Set where
+--   rec : (T tz ts : Exp) (u : NatNeu) -> Ne
+--   idx : (x : ℕ) -> Ne
+--   _·_ : (r : Ne) (s : Nf) -> Ne
+--  data NatNeu : Set where
+--   num : Ne -> NatNeu
+--   _⊕_ : NatNeu -> Nf -> NatNeu
+  

@@ -32,6 +32,7 @@ ReifySet k acck = ∀ {a a'} -> a ≈ a' ∈ (SetU' acck) -> ↓[ Set* k ] a ≈
 ReflectSet : (k : ℕ) (acck : Acc k) -> Set
 ReflectSet k acck = ∀ {E E'} -> E ≈ E' ∈ ⊥' -> ↑[ Set* k ] E ≈ ↑[ Set* k ] E' ∈ (SetU' acck)
 
+open Clo
 -- To help the termination checker
 module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
            (reifySet<   : ∀ {j} -> (p : j < k) -> ReifySet   j (akf p))
@@ -42,27 +43,33 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   reflect (Neu x _) d = inj d
   reflect Nat d = neu d
   reflect (Π pA pF) d = λ p ->
-                 let q = reify pA p in
-                 let q1 = reflect (App.rel (pF p))
-                            (λ n → , ((proj₁ (proj₂ (d n))) · (proj₁ (proj₂ (q n))))
-                                    , (proj₂ (proj₂ (d n)) · proj₂ (proj₂ (q n)))) in
-                  inj (, ↑ (proj₂ (App.red1 (pF p)))) (, ↑ (proj₂ (App.red2 (pF p)))) q1
+    let q = reify pA p 
+        q1 = reflect (rel (pF p))
+                     (λ n → , (ap (proj₁ (proj₂ (d n))) (proj₁ (proj₂ (q n))))
+                            , (ap (proj₂ (proj₂ (d n))) (proj₂ (proj₂ (q n)))))
+    in inj (, ↑ (rd1 (pF p))) (, ↑ (rd2 (pF p))) q1
   reflect (Set* j<k) d = reflectSet< j<k d 
 
   reify : Reify k (inj akf)
   reify (Neu x _) (inj d) n = , (Neut (proj₁ (proj₂ (d n))) , Neut (proj₂ (proj₂ (d n))))
   reify Nat p n = reifyNat p n
-  reify (Π pA pF) d n with pF (reflect pA (λ n₁ → , lvl n , lvl n)) | d (reflect pA (λ n₁ → , lvl n , lvl n))
-  reify (Π pA pF) d n | inj (b1 , red1) (b2 , red2) rel | inj (b3 , red3) (b4 , red4) rel₁ with reify rel rel₁
-  ... | q1 = _ , ((Π red3 red1 (proj₁ (proj₂ (q1 _)))) , (Π red4 red2 (proj₂ (proj₂ (q1 _)))))
+  reify (Π pA pF) d n =
+    let qA = reflect pA (λ n₁ → , lvl n , lvl n)
+        qF = pF qA
+        dF = d qA
+        q1 = reify (rel qF) (rel dF)
+    in , ((Π (rd1 dF) (rd1 qF) (proj₁ (proj₂ (q1 _)))) , (Π (rd2 dF) (rd2 qF) (proj₂ (proj₂ (q1 _)))))
   reify (Set* j<k) d n = reifySet< j<k d n 
 
  reifySet : ReifySet k (inj akf)
  reifySet (Neu x _) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
  reifySet Nat n = , Nat , Nat
- reifySet (Π pA pF) n with pF (reflect pA (λ n₁ -> , lvl n , lvl n))
- reifySet (Π pA pF) n | inj (b1 , red1) (b2 , red2) rel with reifySet pA | reifySet rel
- ... | qA | q2 = , Fun (proj₁ (proj₂ (qA n))) red1 (proj₁ (proj₂ (q2 (suc n)))) , Fun (proj₂ (proj₂ (qA n))) red2 (proj₂ (proj₂ (q2 (suc n))))
+ reifySet (Π pA pF) n =
+   let q0 = pF (reflect pA (λ n₁ -> , lvl n , lvl n))
+       qA = reifySet pA
+       q2 =  reifySet (rel q0)
+   in , Fun (proj₁ (proj₂ (qA n))) (rd1 q0) (proj₁ (proj₂ (q2 (suc n))))
+      , Fun (proj₂ (proj₂ (qA n))) (rd2 q0) (proj₂ (proj₂ (q2 (suc n))))
  reifySet (Set* j<k) n = , SetZ , SetZ
 
 -- There's nicer ways to factor this, but I can't be bothered at the moment.

@@ -79,8 +79,9 @@ IsBaseType (Set* _) = ⊤
 IsBaseType (↑[ Set* i ] E) = ⊤
 IsBaseType _ = ⊥
 
+-- These can give back Nf and Ne instead of Exp, but does it matter?
 mutual
- data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Nf -> Set where
+ data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Exp -> Set where
   Π : ∀ {n f b A B B' v} -> (f , ↑[ A ] (lvl n)) ↘a b -> (B , ↑[ A ] (lvl n)) ↘a B' -> Rnf (suc n) , b ∶ B' ↘ v
      -> Rnf n , f ∶ Π A B ↘ ƛ v
   Nat : ∀ {n i} -> Rnf n , Nat ∶ Set* i ↘ Nat
@@ -88,10 +89,10 @@ mutual
   Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> (F , ↑[ A ] (lvl n)) ↘a B
    -> Rnf (suc n) , B ∶ Set* i ↘ B'
    -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
-  Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ (ne v)
+  Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ v
   zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
- data Rne_,_↘_ : ℕ -> Dne -> Ne -> Set where
+ data Rne_,_↘_ : ℕ -> Dne -> Exp -> Set where
   lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
   ap : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
   rec : ∀ {n e u T tz ts} -> Rne n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
@@ -153,7 +154,7 @@ mutual
  Rnf-deter (Fun p1 x p2) (Fun p3 x₁ p4) with evala-deter x x₁
  ... | refl = cong₂ Π (Rnf-deter p1 p3) (cong ƛ (Rnf-deter p2 p4))
  Rnf-deter (Neut {._} {()} x₁) (Π x₂ x₃ p2)
- Rnf-deter (Neut x) (Neut x₃) = cong ne (Rne-deter x x₃)
+ Rnf-deter (Neut x) (Neut x₃) = Rne-deter x x₃
  Rnf-deter zero zero = refl
  Rnf-deter (suc p1) (suc p2) = cong suc (Rnf-deter p1 p2)
 

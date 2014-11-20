@@ -25,6 +25,7 @@ module Syn (Tm : Set) where
    lvl : (x : ℕ) -> Dne
    _·_ : (e : Dne) -> (d : Dnf) -> Dne
    rec : (T : Tm) -> (tz : Tm) -> (ts : Tm) -> (e : Dne) -> Dne
+   _⊕_ : Dne -> Val -> Dne
 
   data Dnf : Set where
    ↓[_] : (A : Val) -> (a : Val) -> Dnf
