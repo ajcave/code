@@ -100,7 +100,6 @@ open import Data.Unit
 open import Data.Empty
 
 IsBaseType : Val -> Set
-IsBaseType Nat = ⊥
 IsBaseType (Set* _) = ⊤
 IsBaseType (↑[ Set* i ] E) = ⊤
 IsBaseType _ = ⊥
