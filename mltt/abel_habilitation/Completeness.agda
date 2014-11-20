@@ -274,3 +274,12 @@ fund-suc' : ∀ {γ t s k} {Γ : ⊨ γ ctx}
 fund-suc' d ρ1≈ρ2 = com2 suc suc (d ρ1≈ρ2) suc
      
 -- TODO: Variable rules!
+
+-- TODO: The best way to mirror this semantic structure in syntax seems to be
+-- to use an inductive-inductive definition of the syntax, indexing typing derivations by
+-- well-formedness derivations. Then have an "irrelevance" rule. (because there isn't just
+-- one derivation that Π A B is well-formed -- it can come from something non-canonical?)
+-- Can I model this some other way, so I don't have to rely on inductive-inductive definitions?
+-- e.g. packaging it up in a sigma, like induction-recursion?
+-- What about a wrapper to explicitly witness well-formedness at every subnode of the typing derivation?
+-- Remember that Γ ⊢ a ∶ A is kind of like Γ ⊢ Σ (A : Set k). A?
