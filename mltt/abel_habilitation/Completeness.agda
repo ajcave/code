@@ -305,7 +305,7 @@ fund-suc' d ρ1≈ρ2 = com2 suc suc (d ρ1≈ρ2) suc
 -- Check determinacy by verifying lack of reduction conflicts/overlapping
 --   (big step, so easier than confluence?)
 -- Giving the "evaluation rules" on stuck terms "reifies" a fancy property of the model --
---  its ability to model variables (via the presheaf/nominal style thing)
+--  its ability to model variables/neutral terms (via the presheaf/nominal style thing)
 --  Is nominal logic a good way to do this? It may be that these "variables" are treated
 --  like names in nominal logic!!!!
 
