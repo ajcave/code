@@ -283,3 +283,32 @@ fund-suc' d ρ1≈ρ2 = com2 suc suc (d ρ1≈ρ2) suc
 -- e.g. packaging it up in a sigma, like induction-recursion?
 -- What about a wrapper to explicitly witness well-formedness at every subnode of the typing derivation?
 -- Remember that Γ ⊢ a ∶ A is kind of like Γ ⊢ Σ (A : Set k). A?
+
+-- ..Can I just directly prove that semantic equivalence is decidable? And use that
+-- in typing normal forms? It seems that if I can prove soundness and completeness,
+-- then it's equivalent, so I should be able to do it directly???
+-- Then I don't need to do an inductive-inductive definition....
+-- I think this works! Normalize in identity context, compare values. If they're equal, done.
+-- if they're not, then they're not semantically equal either, because contradiction.
+-- Now how do we set up the typing rules?
+-- I think I could prove decidability of [ Γ ]⊨ t ≈ s ∶[ T ] right now.
+-- Do we need to prove some kind of soundness result?
+-- Currently it just looks like 'Yeah here's a decidable definition of equivalence which includes
+-- at least the following rules'. Wouldn't we also like to know that it's non-trivial
+-- or somehow not bad..? I guess we could show that ¬ ([ Γ ]⊨ 0 ≈ 1 ∶[ Nat ])
+-- What about type soundness? If [ Γ ]⊨ t ≈ s ∶[ T ] then Γ ⊢ s : T?
+-- That may actually be asking too much? The typing rules may not be "complete" for semantic typing..
+-- What if we start with the precondition that Γ ⊢ t ∶ T?
+
+-- Does this give you a framework for extending your type theory? When you construct a new type,
+-- can you add evaluation rules too? i.e. "strictly quotient" by reduction rules?
+-- Check determinacy by verifying lack of reduction conflicts/overlapping
+--   (big step, so easier than confluence?)
+-- Giving the "evaluation rules" on stuck terms "reifies" a fancy property of the model --
+--  its ability to model variables (via the presheaf/nominal style thing)
+--  Is nominal logic a good way to do this? It may be that these "variables" are treated
+--  like names in nominal logic!!!!
+
+-- Extensions with other stuff? As long as your evaluation is deterministic, you're good?!
+
+-- IMPORTANT TODO:  Show the "reify identity substitution" thing
