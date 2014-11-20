@@ -113,6 +113,7 @@ data NeuRel : REL where
 INTERP : ∀ B {A} -> PREL A -> Set₁
 INTERP B U = ∀ {A A'} -> A ≈ A' ∈ U -> PREL B
 
+-- What if we tried something more "unary" in the Pi case?
 module SetF (k : ℕ) (SetP : ∀ {j} -> j < k -> REL) where
  mutual
   data SetR : Val -> Val -> Set where

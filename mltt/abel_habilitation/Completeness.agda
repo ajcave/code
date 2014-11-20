@@ -174,23 +174,27 @@ mutual
   let q1 = ctx-trans2 Γ vρ vρ₁
   in q1 , {!!}
 
+ctx-selfL :  ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> SELFL ⟦ Γ ⟧hctx
+ctx-selfL Γ p = ctx-trans2 Γ p (ctx-sym2 Γ p)
+
 fund-sym-tp : ∀ {γ1 γ2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
   -> [ Γ ]⊨ a1 ≈ a2 type[ k ]
   -> [ Γ ]⊨ a2 ≈ a1 type[ k ]
 fund-sym-tp da = ΠSYM.Πsym (ctx-sym2 _) (ctx-trans2 _) (λ _ _ x → x) (λ _ _ x → x) (λ _ → symSetω' _) da
 -- TODO: Is that generality necessary?
 
-fund-sym : ∀ {γ t1 t2 a1 a2 k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a1 ≈ a2 type[ k ])
+fund-sym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : [ Γ ]⊨ a1 ≈ a2 type[ k ])
  -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
  -> [ Γ ]⊨ t2 ≈ t1 ∶h[ A ]
-fund-sym {k = k} A t1≈t2 = ΠSYM.Πsym (ctx-sym2 _) (ctx-trans2 _) (irrLF' eval-deter A) (irrRF' eval-deter A)
-       (λ p  → symω' _ (rel (A p))) t1≈t2
+fund-sym {k = k} A = ΠSYM.Πsym (ctx-sym2 _) (ctx-trans2 _) (irrLF' eval-deter A) (irrRF' eval-deter A)
+       (λ p  → symω' _ (rel (A p)))
 
-fund-trans : ∀ {γ t1 t2 t3 a k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
- -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
- -> [ Γ ]⊨ t2 ≈ t3 ∶[ A ]
- -> [ Γ ]⊨ t1 ≈ t3 ∶[ A ]
-fund-trans A t1≈t2 t2≈t3 ρ1≈ρ2 = {!!}
+fund-trans : ∀ {γ1 γ2 t1 t2 t3 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : [ Γ ]⊨ a1 ≈ a2 type[ k ])
+ -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
+ -> [ Γ ]⊨ t2 ≈ t3 ∶h[ A ]
+ -> [ Γ ]⊨ t1 ≈ t3 ∶h[ A ]
+fund-trans A = ΠPER.Πtrans eval-deter (ctx-selfL _) (irrLF' eval-deter A)
+ (λ p → symω' _ (rel (A p))) (λ p → transω' _ (rel (A p)))
 
 self : ∀ {γ a t1 t2 k} {Γ : ⊨ γ ctx} (A : [ Γ ]⊨ a type[ k ])
  -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
