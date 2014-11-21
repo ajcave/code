@@ -31,8 +31,8 @@ trans-⊥' h1 h2 n | proj₁ , (p1 , p2) | .proj₁ , (p3 , p4) | refl = , p1 , 
 
 mutual
  NatR-trans : TRANS NatR
- NatR-trans (natval x) (natval x₁) = natval (NatV-trans x x₁)
- NatR-trans (neu x) (neu x₁) = neu (trans-⊥' x x₁)
+ NatR-trans (inj red1 (_ , r2) rel) (inj (_ , r3) red4 rel₁) with unbox-deter r2 r3
+ NatR-trans (inj red1 (proj₁ , r2) rel) (inj (.proj₁ , r3) red4 rel₁) | refl = inj red1 red4 (NatV-trans rel rel₁)
 
  NatV-trans : TRANS NatV
  NatV-trans zero zero = zero

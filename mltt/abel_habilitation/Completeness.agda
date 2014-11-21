@@ -305,17 +305,19 @@ mutual
  fund-assoc'' (x ⊕ x₁) p₁ n₁ = x ⊕ (fund-assoc' x₁ p₁ n₁)
 
 mutual
- fund-idR : ∀ {m m'}
+ fund-idR' : ∀ {m m'}
   -> m ≈ m' ∈ NatV
   -> (m ⊕̂ zero) ≈ m' ∈ NatV
- fund-idR zero = zero
- fund-idR (suc x) = suc (fund-idR x)
- fund-idR (natneu x) = natneu (fund-idR' x)
+ fund-idR' zero = zero
+ fund-idR' (suc x) = suc (fund-idR' x)
+ fund-idR' (natneu x) = natneu (fund-idR'' x)
 
- fund-idR' : ∀ {m m'}
+ fund-idR'' : ∀ {m m'}
   -> m ≈ m' ∈ NatNe
   -> (m ++ zero) ≈ m' ∈ NatNe
- fund-idR' (x ⊕ x₁) = x ⊕ (fund-idR x₁)
+ fund-idR'' (x ⊕ x₁) = x ⊕ (fund-idR' x₁)
+
+
 
 fund-assoc : ∀ {γ1 γ2 m m' n n' p p' k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
  -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
@@ -326,13 +328,18 @@ fund-assoc dm dn dp ρ1≈ρ2 =
  let vm = dm ρ1≈ρ2
      vn = dn ρ1≈ρ2
      vp = dp ρ1≈ρ2
- in inj' (plus (plus (rd1 vm) (rd1 vn) {!!} {!!}) (rd1 vp) {!!} {!!})
-         (plus (rd2 vm) (plus (rd2 vn) (rd2 vp) {!!} {!!}) {!!} {!!})
-         {!!}
+ in inj' (plus (plus (rd1 vm) (rd1 vn) (proj₂ (NatR.red1 (rel vm))) (proj₂ (NatR.red1 (rel vn)))) (rd1 vp) natval (proj₂ (NatR.red1 (rel vp))))
+         (plus (rd2 vm) (plus (rd2 vn) (rd2 vp) (proj₂ (NatR.red2 (rel vn))) (proj₂ (NatR.red2 (rel vp)))) (proj₂ (NatR.red2 (rel vm))) natval)
+         (inj (, natval) (, natval) (fund-assoc' (NatR.rel (rel vm)) (NatR.rel (rel vn)) (NatR.rel (rel vp))))
 
-    -- (plus (plus (rd1 vm) (rd1 vn)) (rd1 vp))
-    --      (plus (rd2 vm) (plus (rd2 vn) (rd2 vp)))
-    -- (fund-assoc' (rel vm) (rel vn) (rel vp))
+fund-idR : ∀ {γ1 γ2 m m' k} {Γ : ⊨ γ1 ≈ γ2 ctx}
+ -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
+ -> [ Γ ]⊨ (m ⊕ zero) ≈ m' ∶h[ Nats k ]
+fund-idR dm ρ1≈ρ2 =
+ let vm = dm ρ1≈ρ2 in
+ inj' (plus (rd1 vm) zero (proj₂ (NatR.red1 (rel vm))) natval)
+      (rd2 vm)
+      (inj (, natval) (, proj₂ (NatR.red2 (rel vm))) (fund-idR' (NatR.rel (rel vm))))
      
 -- TODO: Variable rules!
 

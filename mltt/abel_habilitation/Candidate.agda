@@ -14,8 +14,7 @@ open SetF
 
 mutual
  reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
- reifyNat (natval x) n = , (nat (proj₁ (proj₂ (reifyNatV x n)))) , (nat (proj₂ (proj₂ (reifyNatV x n))))
- reifyNat (neu x) n = , (NeutNat (proj₁ (proj₂ (x n)))) , (NeutNat (proj₂ (proj₂ (x n))))
+ reifyNat p n = , (unbox (proj₂ (NatR.red1 p)) (proj₁ (proj₂ (reifyNatV (NatR.rel p) n)))) , (unbox (proj₂ (NatR.red2 p)) (proj₂ (proj₂ (reifyNatV (NatR.rel p) n))))
 
  reifyNatV : ∀ {a a'} -> a ≈ a' ∈ NatV -> ∀ n -> ∃ (λ v -> RnfNat n , a ↘ v × RnfNat n , a' ↘ v)
  reifyNatV zero n = , zero , zero
@@ -49,7 +48,7 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
  mutual
   reflect : Reflect k (inj akf)
   reflect (Neu x _) d = inj d
-  reflect Nat d = neu d
+  reflect Nat d = inj (, neu) (, neu) (natneu (d ⊕ zero)) --neu d
   reflect (Π pA pF) d = λ p ->
     let q = reify pA p 
         q1 = reflect (rel (pF p))

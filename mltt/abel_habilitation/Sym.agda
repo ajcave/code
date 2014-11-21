@@ -26,8 +26,7 @@ sym-⊥' h n = , proj₂ (proj₂ (h n)) , proj₁ (proj₂ (h n))
 
 mutual
  NatR-sym : SYM NatR
- NatR-sym (natval x) = natval (NatV-sym x)
- NatR-sym (neu x) = neu (sym-⊥' x)
+ NatR-sym p = inj (NatR.red2 p) (NatR.red1 p) (NatV-sym (NatR.rel p))
 
  NatV-sym : SYM NatV
  NatV-sym zero = zero
