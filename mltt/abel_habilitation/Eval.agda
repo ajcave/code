@@ -28,39 +28,42 @@ mutual
   idx : ∀ {x ρ v} -> lookup ρ , x ↘ v -> ⟦ idx x ⟧ ρ ↘ v
   ƛ : ∀ {t ρ} -> ⟦ ƛ t ⟧ ρ ↘ ƛ t ρ
   ap : ∀ {r s ρ f a b} -> ⟦ r ⟧ ρ ↘ f -> ⟦ s ⟧ ρ ↘ a -> (f , a) ↘a b -> ((r · s) , ρ) ↘ b
-  zero : ∀ {ρ} -> ⟦ zero ⟧ ρ ↘ zero
-  suc : ∀ {ρ t d} -> ⟦ t ⟧ ρ ↘ d -> ⟦ suc t ⟧ ρ ↘ (suc d)
+  zero : ∀ {ρ} -> ⟦ zero ⟧ ρ ↘ natval zero
+  suc : ∀ {ρ t d n} -> ⟦ t ⟧ ρ ↘ d -> UnboxNat d ↘ n -> ⟦ suc t ⟧ ρ ↘ (natval (suc n))
   -- Note that this is rec where ts is of arrow type, not expanded.
   -- I guess we could factor out a type of closures and use that, but meh
-  rec : ∀ {ρ T tz ts tn dn d} -- -> ⟦ tz ⟧ ρ ↘ dz -> ⟦ ts ⟧ ρ ↘ ds
-   -> ⟦ tn ⟧ ρ ↘ dn
+  rec : ∀ {ρ T tz ts tn dn0 dn d} -- -> ⟦ tz ⟧ ρ ↘ dz -> ⟦ ts ⟧ ρ ↘ ds
+   -> ⟦ tn ⟧ ρ ↘ dn0 -> UnboxNat dn0 ↘ dn
    -> rec T , tz , ts , dn ↘ d
    -> ⟦ rec T tz ts tn ⟧ ρ ↘ d
   Set* : ∀ {ρ i} -> ⟦ Set* i ⟧ ρ ↘ Set* i
   Π : ∀ {A A' F F' ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ F ⟧ ρ ↘ F' -> ⟦ Π A F ⟧ ρ ↘ Π A' F'
   Nat : ∀ {ρ} -> ⟦ Nat ⟧ ρ ↘ Nat
   _[_] : ∀ {t σ ρ ρ' d} -> ⟦ t ⟧ ρ' ↘ d -> ⟦ σ ⟧ ρ ↘s ρ' -> ⟦ t [ σ ] ⟧ ρ ↘ d
-  plus : ∀ {t1 t2 d1 d2 ρ} -> ⟦ t1 ⟧ ρ ↘ d1 -> ⟦ t2 ⟧ ρ ↘ d2
-        -> ⟦ t1 ⊕ t2 ⟧ ρ ↘ (d1 ⊕̂ d2)
+  plus : ∀ {t1 t2 d1 d2 m n ρ} -> ⟦ t1 ⟧ ρ ↘ d1 -> ⟦ t2 ⟧ ρ ↘ d2 
+        -> UnboxNat d1 ↘ m -> UnboxNat d2 ↘ n 
+        -> ⟦ t1 ⊕ t2 ⟧ ρ ↘ natval (m ⊕̂ n)
  data _↘a_ : Val × Val -> Val -> Set where 
   ƛ· : ∀ {t ρ a b} -> ⟦ t ⟧ (ρ , a) ↘ b -> ((ƛ t ρ) , a) ↘a b
   ↑ : ∀ {A F e a F'}
     -> (F , a) ↘a F'
     -> (↑[ Π A F ] e , a) ↘a ↑[ F' ] (e · ↓[ A ] a)
- 
- _⊕̂_ : Val -> Val -> Val
- zero ⊕̂ v = v
- suc u ⊕̂ v = suc (u ⊕̂ v)
- (u ⊕ w) ⊕̂ v = u ⊕̂ (w ⊕̂ v)
- u ⊕̂ v = u ⊕ v -- Meh
+ data UnboxNat_↘_ : Val -> NatVal -> Set where
+  natval : ∀ {n} -> UnboxNat (natval n) ↘ n
+  neu : ∀ {e} -> UnboxNat (↑[ Nat ] e) ↘ natneu (neu e)
 
- -- _++_ : Dne -> Val -> Val
- -- (e ⊕ u) ++ v = e ++ (u ⊕̂ v)
- -- e ++ v = ↑[ Nat ] (e ⊕ v)
+ _⊕̂_ : NatVal -> NatVal -> NatVal
+ zero ⊕̂ d2 = d2
+ suc d1 ⊕̂ d2 = suc (d1 ⊕̂ d2)
+ natneu x ⊕̂ d2 = natneu (x ++ d2)
+
+ _++_ : NatNeu -> NatVal -> NatNeu
+ neu x ++ v = x ⊕ v
+ (x ⊕ x₁) ++ v = x ⊕ (x₁ ⊕̂ v)
 
  -- data _⊕_↘p_ : Val -> Val -> Val -> Set where
- --  zero : ∀ {v} -> zero ⊕ v ↘p v
- --  suc : ∀ {u v w} -> v ⊕ u ↘p w -> suc v ⊕ u ↘p suc w
+ --  zero : ∀ {v} -> natval zero ⊕ v ↘p v
+ --  suc : ∀ {u v w} -> v ⊕ u ↘p w -> Suc w ↘p w' -> (natval (suc v)) ⊕ u ↘p w'
  --  ne : ∀ {e v w} -> e +̂ v ↘p w -> (↑[ Nat ] e) ⊕ v ↘p w
  -- data _+̂_↘p_ : Dne -> Val -> Val -> Set where
  --  plus : ∀ {e v u w y} -> v ⊕ u ↘p y -> e +̂ y ↘p w -> (e ⊕ v) +̂ u ↘p w
@@ -75,13 +78,13 @@ mutual
   ↑ : ∀ {ρ a} -> ⟦ ↑ ⟧ (ρ , a) ↘s ρ
   _,_ : ∀ {σ t ρ ρ' a} -> ⟦ σ ⟧ ρ ↘s ρ' -> ⟦ t ⟧ ρ ↘ a -> ⟦ σ , t ⟧ ρ ↘s (ρ' , a)
   ⊡ : ∀ {ρ} -> ⟦ ⊡ ⟧ ρ ↘s ⊡
- data rec_,_,_,_↘_ : Exp -> Exp -> Exp -> Val -> Val -> Set where
+ data rec_,_,_,_↘_ : Exp -> Exp -> Exp -> NatVal -> Val -> Set where
   zero : ∀ {T tz ts dz} -> ⟦ tz ⟧ ⊡ ↘ dz -> rec T , tz , ts , zero ↘ dz
-  suc : ∀ {T tz ts dn a b} -> rec T , tz , ts , dn ↘ a -> ⟦ ts ⟧ ((⊡ , dn) , a) ↘ b
+  suc : ∀ {T tz ts dn a b} -> rec T , tz , ts , dn ↘ a -> ⟦ ts ⟧ ((⊡ , natval dn) , a) ↘ b
     -> rec T , tz , ts , (suc dn) ↘ b
-  ne : ∀ {T T' A tz ts e} 
-   -> ⟦ T ⟧ (⊡ , ↑[ A ] e) ↘ T'
-   -> rec T , tz , ts , (↑[ A ] e) ↘ (↑[ T' ] (rec T tz ts e))
+  ne : ∀ {T T' tz ts e} 
+   -> ⟦ T ⟧ (⊡ , (natval (natneu e))) ↘ T'
+   -> rec T , tz , ts , (natneu e) ↘ (↑[ T' ] (rec T tz ts e))
  -- We diverge from Abel in the treatment of rec.
  -- We treat it "opaquely", like a definition by pattern matching in Agda. No congruence rules, closed body
  -- I think this is like Martin-Lof's "weak" treatment of λ. No congruence rule.
@@ -115,16 +118,27 @@ mutual
    -> Rnf (suc n) , B ∶ Set* i ↘ B'
    -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
   Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ v
-  zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
-  suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
-  _⊕_ : ∀ {n e v t s} -> Rne n , e ↘ t -> Rnf n , v ∶ Nat ↘ s -> Rnf n , (↑[ Nat ] e ⊕ v) ∶ Nat ↘ (t ⊕ s)
-  NeutNat : ∀ {n e v } -> Rne n , e ↘ v -> Rnf n , (↑[ Nat ] e) ∶ Nat ↘ (v ⊕ zero) -- This seems kind of essential, because we won't know if something is actually a Nat and needs a zero appended until "late", i.e. after the type is plugged in: A:Set, x:A |- x : A. When we plug Nat/A, we need to expand this to x ⊕ zero ∶ Nat
+  nat : ∀ {n v u m} -> UnboxNat v ↘ m -> RnfNat n , m ↘ u -> Rnf n , v ∶ Nat ↘ u
+  -- zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
+  -- suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
+  -- _⊕_ : ∀ {n e v t s} -> Rne n , e ↘ t -> Rnf n , v ∶ Nat ↘ s -> Rnf n , (↑[ Nat ] e ⊕ v) ∶ Nat ↘ (t ⊕ s)
+  -- NeutNat : ∀ {n e v } -> Rne n , e ↘ v -> Rnf n , (↑[ Nat ] e) ∶ Nat ↘ (v ⊕ zero)
+  -- This seems kind of essential, because we won't know if something is actually a Nat and needs a zero appended until "late", i.e. after the type is plugged in: A:Set, x:A |- x : A. When we plug Nat/A, we need to expand this to x ⊕ zero ∶ Nat
   -- TODO: Could I even postpone the (re)association and evaluation of ⊕ this far?
   --   (its evaluation could be delayed until now. Then potentially treated lazily?)
  data Rne_,_↘_ : ℕ -> Dne -> Exp -> Set where
   lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
   ap : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
-  rec : ∀ {n e u T tz ts} -> Rne n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
+  rec : ∀ {n e u T tz ts} -> RneNat n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
+
+ data RnfNat_,_↘_ : ℕ -> NatVal -> Exp -> Set where
+  zero : ∀ {n} -> RnfNat n , zero ↘ zero
+  suc : ∀ {n a v} -> RnfNat n , a ↘ v -> RnfNat n , suc a ↘ suc v
+  natneu : ∀ {n x v} -> RneNat n , x ↘ v -> RnfNat n , natneu x ↘ v
+
+ data RneNat_,_↘_ : ℕ -> NatNeu -> Exp -> Set where
+  neu : ∀ {n x v} -> Rne n , x ↘ v -> RneNat n , neu x ↘ v
+  _⊕_ : ∀ {n x v m u} -> Rne n , x ↘ v -> RnfNat n , m ↘ u -> RneNat n , (x ⊕ m) ↘ (v ⊕ u)
 
 Singleton : ∀ {A : Set} (P : A -> Set) -> Set
 Singleton P = ∀ {x y} -> P x -> P y -> x ≡ y
@@ -143,16 +157,23 @@ mutual
  eval-deter (ap p1 p2 x₁) (ap p3 p4 x₂) with eval-deter p1 p3 | eval-deter p2 p4
  ... | refl | refl = evala-deter x₁ x₂
  eval-deter zero zero = refl
- eval-deter (suc p1) (suc p2) = cong suc (eval-deter p1 p2)
- eval-deter (rec p1 x₁) (rec p2 x₂) with eval-deter p1 p2
- ... | refl = rec-deter x₁ x₂
+ eval-deter (suc p1 p1') (suc p2 p2') with eval-deter p1 p2
+ ... | refl = cong natval (cong suc (unbox-deter p1' p2')) --cong suc (eval-deter p1 p2)
+ eval-deter (rec p1 x₁ y1) (rec p2 x₂ y2) with eval-deter p1 p2
+ ... | refl with unbox-deter x₁ x₂
+ ... | refl = rec-deter y1 y2
  eval-deter Set* Set* = refl
  eval-deter (Π p1 p3) (Π p2 p4) = cong₂ Π (eval-deter p1 p2) (eval-deter p3 p4)
  eval-deter Nat Nat = refl
  eval-deter (x₁ [ p1 ]) (x₂ [ p2 ]) with evals-deter p1 p2
  ... | refl = eval-deter x₁ x₂
- eval-deter (plus d1 d2) (plus d1' d2') with eval-deter d1 d1' | eval-deter d2 d2'
+ eval-deter (plus d1 d2 d3 d4) (plus d1' d2' d3' d4') with eval-deter d1 d1' | eval-deter d2 d2'
+ ... | refl | refl with unbox-deter d3 d3' | unbox-deter d4 d4'
  ... | refl | refl = refl
+
+ unbox-deter : Deterministic UnboxNat_↘_
+ unbox-deter natval natval = refl
+ unbox-deter neu neu = refl
 
  evala-deter : Deterministic _↘a_
  evala-deter (ƛ· x₁) (ƛ· x₂) = eval-deter x₁ x₂
@@ -198,15 +219,28 @@ mutual
  ... | refl = cong₂ Π (Rnf-deter p1 p3) (cong ƛ (Rnf-deter p2 p4))
  Rnf-deter (Neut {._} {()} x₁) (Π x₂ x₃ p2)
  Rnf-deter (Neut x) (Neut x₃) = Rne-deter x x₃
- Rnf-deter zero zero = refl
- Rnf-deter (suc p1) (suc p2) = cong suc (Rnf-deter p1 p2)
- Rnf-deter (p1 ⊕ p2) (p3 ⊕ p4) with Rne-deter p1 p3 | Rnf-deter p2 p4
- ... | refl | refl = refl
- Rnf-deter (NeutNat x) (NeutNat y) = cong (λ v → v ⊕ zero) (Rne-deter x y)
- Rnf-deter (Neut {._} {()} _) (NeutNat y)
- Rnf-deter (NeutNat y) (Neut {._} {()} _)
+ Rnf-deter (nat p1 p2) (nat q1 q2) with unbox-deter p1 q1
+ ... | refl = RnfNat-deter p2 q2
+ Rnf-deter (Neut {._} {()} _) (nat _ _)
+ Rnf-deter (nat _ _) (Neut {._} {()} _)
+ -- Rnf-deter zero zero = refl
+ -- Rnf-deter (suc p1) (suc p2) = cong suc (Rnf-deter p1 p2)
+ -- Rnf-deter (p1 ⊕ p2) (p3 ⊕ p4) with Rne-deter p1 p3 | Rnf-deter p2 p4
+ -- ... | refl | refl = refl
+ -- Rnf-deter (NeutNat x) (NeutNat y) = cong (λ v → v ⊕ zero) (Rne-deter x y)
+ -- Rnf-deter (Neut {._} {()} _) (NeutNat y)
+ -- Rnf-deter (NeutNat y) (Neut {._} {()} _)
 
  Rne-deter : ∀ {n a} -> Singleton (Rne_,_↘_ n a)
  Rne-deter (lvl k) (lvl .k) = refl
  Rne-deter (ap p1 x) (ap p2 x₁) = cong₂ _·_ (Rne-deter p1 p2) (Rnf-deter x x₁)
- Rne-deter (rec p1) (rec p2) = cong (rec _ _ _) (Rne-deter p1 p2)
+ Rne-deter (rec p1) (rec p2) = cong (rec _ _ _) (RneNat-deter p1 p2) --(Rne-deter p1 p2)
+
+ RnfNat-deter : ∀ {n a} -> Singleton (RnfNat_,_↘_ n a)
+ RnfNat-deter zero zero = refl
+ RnfNat-deter (suc p1) (suc p2) = cong suc (RnfNat-deter p1 p2)
+ RnfNat-deter (natneu x₂) (natneu x₃) = RneNat-deter x₂ x₃
+
+ RneNat-deter : ∀ {n a} -> Singleton (RneNat_,_↘_ n a)
+ RneNat-deter (neu x₂) (neu x₃) = Rne-deter x₂ x₃
+ RneNat-deter (x₂ ⊕ x) (x₃ ⊕ x₄) = cong₂ _⊕_ (Rne-deter x₂ x₃) (RnfNat-deter x x₄)

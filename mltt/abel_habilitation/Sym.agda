@@ -24,13 +24,27 @@ HSYM U1 El1 U2 El2 = ∀ {A A'} (pA : A ≈ A' ∈ U1) (pA' : A' ≈ A ∈ U2)
 sym-⊥' : SYM ⊥'
 sym-⊥' h n = , proj₂ (proj₂ (h n)) , proj₁ (proj₂ (h n))
 
-NatR-sym : SYM NatR
-NatR-sym zero = zero
-NatR-sym (suc x) = suc (NatR-sym x)
-NatR-sym (neu x) = neu (sym-⊥' x)
-NatR-sym (p ⊕ x) = (sym-⊥' p) ⊕ (NatR-sym x)
-NatR-sym (idR p) = idL (sym-⊥' p)
-NatR-sym (idL p) = idR (sym-⊥' p)
+mutual
+ NatR-sym : SYM NatR
+ NatR-sym (natval x) = natval (NatV-sym x)
+ NatR-sym (neu x) = neu (sym-⊥' x)
+
+ NatV-sym : SYM NatV
+ NatV-sym zero = zero
+ NatV-sym (suc x) = suc (NatV-sym x)
+ NatV-sym (natneu x) = natneu (NatNe-sym x)
+ 
+ NatNe-sym : SYM NatNe
+ NatNe-sym (x ⊕ x₁) = (sym-⊥' x) ⊕ (NatV-sym x₁)
+ NatNe-sym (neu x) = neu (sym-⊥' x)
+
+
+-- NatR-sym zero = zero
+-- NatR-sym (suc x) = suc (NatR-sym x)
+-- NatR-sym (neu x) = neu (sym-⊥' x)
+-- NatR-sym (p ⊕ x) = (sym-⊥' p) ⊕ (NatR-sym x)
+-- NatR-sym (idR p) = idL (sym-⊥' p)
+-- NatR-sym (idL p) = idR (sym-⊥' p)
 
 App-sym : ∀ {C V : Set} {B : PREL V} {r : C -> V -> Set}  -> SYM B -> SYM (Clo r B)
 App-sym f (inj red1 red2 rel) = inj red2 red1 (f rel)

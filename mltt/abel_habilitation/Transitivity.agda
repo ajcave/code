@@ -29,17 +29,20 @@ trans-⊥' h1 h2 n with h1 n | h2 n
 ... | _ , (p1 , p2) | _ , (p3 , p4) with Rne-deter p2 p3
 trans-⊥' h1 h2 n | proj₁ , (p1 , p2) | .proj₁ , (p3 , p4) | refl = , p1 , p4
 
-NatR-trans : TRANS NatR
-NatR-trans zero zero = zero
-NatR-trans (suc x) (suc y) = suc (NatR-trans x y)
-NatR-trans (neu x) (neu y) = neu (trans-⊥' x y)
-NatR-trans (p ⊕ x) (q ⊕ y) = (trans-⊥' p q) ⊕ (NatR-trans x y)
-NatR-trans (x₁ ⊕ zero) (idL x₂) = idL (trans-⊥' x₁ x₂)
-NatR-trans (neu x) (idR x₁) = idR (trans-⊥' x x₁)
-NatR-trans (idR x) (x₁ ⊕ zero) = idR (trans-⊥' x x₁)
-NatR-trans (idR x) (idL x₁) = neu (trans-⊥' x x₁)
-NatR-trans (idL x) (neu x₁) = idL (trans-⊥' x x₁)
-NatR-trans (idL x) (idR x₁) = (trans-⊥' x x₁) ⊕ zero
+mutual
+ NatR-trans : TRANS NatR
+ NatR-trans (natval x) (natval x₁) = natval (NatV-trans x x₁)
+ NatR-trans (neu x) (neu x₁) = neu (trans-⊥' x x₁)
+
+ NatV-trans : TRANS NatV
+ NatV-trans zero zero = zero
+ NatV-trans (suc x) (suc x₁) = suc (NatV-trans x x₁)
+ NatV-trans (natneu x) (natneu x₁) = natneu (NatNe-trans x x₁)
+
+ NatNe-trans : TRANS NatNe
+ NatNe-trans (x₁ ⊕ x) (x₂ ⊕ x₃) = (trans-⊥' x₁ x₂) ⊕ (NatV-trans x x₃)
+ NatNe-trans (neu x) (neu x₁) = neu (trans-⊥' x x₁)
+
 -- NatR-trans (idL p)  = ?
 -- NatR-trans (idR p) (idR q) = ?
 

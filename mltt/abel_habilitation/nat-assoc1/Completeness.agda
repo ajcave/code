@@ -318,6 +318,9 @@ fund-assoc dm dn dp ρ1≈ρ2 =
  in inj' (plus (plus (rd1 vm) (rd1 vn)) (rd1 vp))
          (plus (rd2 vm) (plus (rd2 vn) (rd2 vp)))
     (fund-assoc' (rel vm) (rel vn) (rel vp))
+
+-- TODO: Crap! I can't prove the "rec" case unless I want to distribute it
+-- it across plus, because rec can only take a Dne!
      
 -- TODO: Variable rules!
 

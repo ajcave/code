@@ -12,15 +12,19 @@ open import WfNat
 
 open SetF
 
-reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
-reifyNat zero n = , zero , zero
-reifyNat (suc x) n with reifyNat x n
-reifyNat (suc x) n | _ , (q1 , q2) = , suc q1 , suc q2
-reifyNat (neu x) n = , NeutNat (proj₁ (proj₂ (x n))) , NeutNat (proj₂ (proj₂ (x n)))
-reifyNat (p ⊕ x) n with reifyNat x n
-... | _ , (q1 , q2) = , (((proj₁ (proj₂ (p n)))) ⊕ q1) , (((proj₂ (proj₂ (p n)))) ⊕ q2)
-reifyNat (idL p) n = , (((proj₁ (proj₂ (p n))) ⊕ zero) , NeutNat (proj₂ (proj₂ (p n))))
-reifyNat (idR p) n = , (NeutNat (proj₁ (proj₂ (p n)))) , ((proj₂ (proj₂ (p n))) ⊕ zero)
+mutual
+ reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
+ reifyNat (natval x) n = , (nat natval (proj₁ (proj₂ (reifyNatV x n)))) , (nat natval (proj₂ (proj₂ (reifyNatV x n))))
+ reifyNat (neu x) n = , nat neu (natneu (neu (proj₁ (proj₂ (x n))))) , nat neu (natneu (neu (proj₂ (proj₂ (x n)))))
+
+ reifyNatV : ∀ {a a'} -> a ≈ a' ∈ NatV -> ∀ n -> ∃ (λ v -> RnfNat n , a ↘ v × RnfNat n , a' ↘ v)
+ reifyNatV zero n = , zero , zero
+ reifyNatV (suc x) n = , (suc (proj₁ (proj₂ (reifyNatV x n)))) , (suc (proj₂ (proj₂ (reifyNatV x n))))
+ reifyNatV (natneu x) n = , (natneu (proj₁ (proj₂ (reifyNatNe x n)))) , (natneu (proj₂ (proj₂ (reifyNatNe x n))))
+
+ reifyNatNe : ∀ {a a'} -> a ≈ a' ∈ NatNe -> ∀ n -> ∃ (λ v -> RneNat n , a ↘ v × RneNat n , a' ↘ v)
+ reifyNatNe (x ⊕ x₁) n = _ , (((proj₁ (proj₂ (x n))) ⊕ (proj₁ (proj₂ (reifyNatV x₁ n)))) , ((proj₂ (proj₂ (x n))) ⊕ (proj₂ (proj₂ (reifyNatV x₁ n)))))
+ reifyNatNe (neu x) n = _ , ((neu (proj₁ (proj₂ (x n)))) , (neu (proj₂ (proj₂ (x n)))))
 
 -- Types of reify and reflect, parameterized for convenience
 -- Really these should just abstract over a universe U and an interpretation function ElU

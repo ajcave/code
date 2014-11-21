@@ -25,15 +25,21 @@ a ≈ b ∈ A = A a b
 
 mutual
  data NatR : REL where
-  zero : zero ≈ zero ∈ NatR
-  suc : ∀ {a a'} -> a ≈ a' ∈ NatR -> suc a ≈ suc a' ∈ NatR
-  _⊕_ : ∀ {e e' v v'} -> e ≈ e' ∈ ⊥' -> v ≈ v' ∈ NatR -> ((↑[ Nat ] e) ⊕ v) ≈ ((↑[ Nat ] e') ⊕ v') ∈ NatR
+  natval : ∀ {u v} -> u ≈ v ∈ NatV -> (natval u) ≈ (natval v) ∈ NatR
   neu : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ↑[ Nat ] e' ∈ NatR
-  idR : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ((↑[ Nat ] e') ⊕ zero) ∈ NatR
-  idL : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ((↑[ Nat ] e) ⊕ zero) ≈ ↑[ Nat ] e' ∈ NatR
+  -- idR : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ((↑[ Nat ] e') ⊕ zero) ∈ NatR
+  -- idL : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ((↑[ Nat ] e) ⊕ zero) ≈ ↑[ Nat ] e' ∈ NatR
   --- This seems hairy... Is there a simpler approach?
   -- Perhaps this should use ⊤ instead of ⊥ to exploit def'n of Rnf?
   -- (or ⊤ specialized to Nat)
+ data NatV : PREL NatVal where
+  zero : zero ≈ zero ∈ NatV
+  suc : ∀ {a a'} -> a ≈ a' ∈ NatV -> suc a ≈ suc a' ∈ NatV
+  natneu : ∀ {e1 e2} -> e1 ≈ e2 ∈ NatNe -> natneu e1 ≈ natneu e2 ∈ NatV
+
+ data NatNe : PREL NatNeu where
+  _⊕_ : ∀ {e e' v v'} -> e ≈ e' ∈ ⊥' -> v ≈ v' ∈ NatV -> (e ⊕ v) ≈ (e' ⊕ v') ∈ NatNe
+  neu : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> neu e ≈ neu e' ∈ NatNe
 
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
