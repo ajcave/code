@@ -30,8 +30,6 @@ mutual
    red1 : ∃ (λ n1 -> UnboxNat v1 ↘ n1)
    red2 : ∃ (λ n2 -> UnboxNat v2 ↘ n2)
    rel : (proj₁ red1) ≈ (proj₁ red2) ∈ NatV
-  -- natval : ∀ {u v} -> u ≈ v ∈ NatV -> (natval u) ≈ (natval v) ∈ NatR
-  -- neu : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ↑[ Nat ] e' ∈ NatR
 
  data NatV : PREL NatVal where
   zero : zero ≈ zero ∈ NatV
