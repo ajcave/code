@@ -91,14 +91,6 @@ AppDeter4 :  ∀ {c1 c2 c3 B B'}
 AppDeter4 (inj red1 (_ , red2) rel)
           (inj red3 (_ , red4) rel') = evala-deter red2 red4
 
--- record ⟦_⟧s_≈⟦_⟧s_∈_ σ ρ σ' ρ' (B : EnvREL) : Set where
---  field
---   ρ1 : Env
---   ρ2 : Env
---   red1 : ⟦ σ  ⟧s ρ  ↘ ρ1
---   red2 : ⟦ σ' ⟧s ρ' ↘ ρ2
---   rel : B ρ1 ρ2
-
 Π* : ∀ {α β γ : Set} -> (β × α -> γ -> Set)
  -> (A : PREL α) -> (∀ {a a'} -> a ≈ a' ∈ A -> PREL γ) -> PREL β
 Π* red A F f1 f2 = ∀ {a1 a2} (pa : a1 ≈ a2 ∈ A) -> (f1 , a1) ≈ (f2 , a2) ∈ (Clo red (F pa))
