@@ -14,8 +14,8 @@ open SetF
 
 mutual
  reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
- reifyNat (natval x) n = , (nat natval (proj₁ (proj₂ (reifyNatV x n)))) , (nat natval (proj₂ (proj₂ (reifyNatV x n))))
- reifyNat (neu x) n = , nat neu (natneu (neu (proj₁ (proj₂ (x n))))) , nat neu (natneu (neu (proj₂ (proj₂ (x n)))))
+ reifyNat (natval x) n = , (nat (proj₁ (proj₂ (reifyNatV x n)))) , (nat (proj₂ (proj₂ (reifyNatV x n))))
+ reifyNat (neu x) n = , (NeutNat (proj₁ (proj₂ (x n)))) , (NeutNat (proj₂ (proj₂ (x n))))
 
  reifyNatV : ∀ {a a'} -> a ≈ a' ∈ NatV -> ∀ n -> ∃ (λ v -> RnfNat n , a ↘ v × RnfNat n , a' ↘ v)
  reifyNatV zero n = , zero , zero
@@ -24,7 +24,7 @@ mutual
 
  reifyNatNe : ∀ {a a'} -> a ≈ a' ∈ NatNe -> ∀ n -> ∃ (λ v -> RneNat n , a ↘ v × RneNat n , a' ↘ v)
  reifyNatNe (x ⊕ x₁) n = _ , (((proj₁ (proj₂ (x n))) ⊕ (proj₁ (proj₂ (reifyNatV x₁ n)))) , ((proj₂ (proj₂ (x n))) ⊕ (proj₂ (proj₂ (reifyNatV x₁ n)))))
- reifyNatNe (neu x) n = _ , ((neu (proj₁ (proj₂ (x n)))) , (neu (proj₂ (proj₂ (x n)))))
+ --reifyNatNe (neu x) n = _ , ((neu (proj₁ (proj₂ (x n)))) , (neu (proj₂ (proj₂ (x n)))))
 
 -- Types of reify and reflect, parameterized for convenience
 -- Really these should just abstract over a universe U and an interpretation function ElU

@@ -27,11 +27,7 @@ mutual
  data NatR : REL where
   natval : ∀ {u v} -> u ≈ v ∈ NatV -> (natval u) ≈ (natval v) ∈ NatR
   neu : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ↑[ Nat ] e' ∈ NatR
-  -- idR : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ↑[ Nat ] e ≈ ((↑[ Nat ] e') ⊕ zero) ∈ NatR
-  -- idL : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> ((↑[ Nat ] e) ⊕ zero) ≈ ↑[ Nat ] e' ∈ NatR
-  --- This seems hairy... Is there a simpler approach?
-  -- Perhaps this should use ⊤ instead of ⊥ to exploit def'n of Rnf?
-  -- (or ⊤ specialized to Nat)
+
  data NatV : PREL NatVal where
   zero : zero ≈ zero ∈ NatV
   suc : ∀ {a a'} -> a ≈ a' ∈ NatV -> suc a ≈ suc a' ∈ NatV
@@ -39,7 +35,6 @@ mutual
 
  data NatNe : PREL NatNeu where
   _⊕_ : ∀ {e e' v v'} -> e ≈ e' ∈ ⊥' -> v ≈ v' ∈ NatV -> (e ⊕ v) ≈ (e' ⊕ v') ∈ NatNe
-  neu : ∀ {e e'} -> e ≈ e' ∈ ⊥' -> neu e ≈ neu e' ∈ NatNe
 
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set

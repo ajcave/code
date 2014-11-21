@@ -50,7 +50,7 @@ mutual
     -> (↑[ Π A F ] e , a) ↘a ↑[ F' ] (e · ↓[ A ] a)
  data UnboxNat_↘_ : Val -> NatVal -> Set where
   natval : ∀ {n} -> UnboxNat (natval n) ↘ n
-  neu : ∀ {e} -> UnboxNat (↑[ Nat ] e) ↘ natneu (neu e)
+  neu : ∀ {e} -> UnboxNat (↑[ Nat ] e) ↘ natneu (e ⊕ zero)
 
  _⊕̂_ : NatVal -> NatVal -> NatVal
  zero ⊕̂ d2 = d2
@@ -58,7 +58,7 @@ mutual
  natneu x ⊕̂ d2 = natneu (x ++ d2)
 
  _++_ : NatNeu -> NatVal -> NatNeu
- neu x ++ v = x ⊕ v
+ --neu x ++ v = x ⊕ v
  (x ⊕ x₁) ++ v = x ⊕ (x₁ ⊕̂ v)
 
  -- data _⊕_↘p_ : Val -> Val -> Val -> Set where
@@ -118,11 +118,11 @@ mutual
    -> Rnf (suc n) , B ∶ Set* i ↘ B'
    -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
   Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ v
-  nat : ∀ {n v u m} -> UnboxNat v ↘ m -> RnfNat n , m ↘ u -> Rnf n , v ∶ Nat ↘ u
+  nat : ∀ {n u m} -> RnfNat n , m ↘ u -> Rnf n , natval m ∶ Nat ↘ u
   -- zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   -- suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
   -- _⊕_ : ∀ {n e v t s} -> Rne n , e ↘ t -> Rnf n , v ∶ Nat ↘ s -> Rnf n , (↑[ Nat ] e ⊕ v) ∶ Nat ↘ (t ⊕ s)
-  -- NeutNat : ∀ {n e v } -> Rne n , e ↘ v -> Rnf n , (↑[ Nat ] e) ∶ Nat ↘ (v ⊕ zero)
+  NeutNat : ∀ {n e v } -> Rne n , e ↘ v -> Rnf n , (↑[ Nat ] e) ∶ Nat ↘ (v ⊕ zero)
   -- This seems kind of essential, because we won't know if something is actually a Nat and needs a zero appended until "late", i.e. after the type is plugged in: A:Set, x:A |- x : A. When we plug Nat/A, we need to expand this to x ⊕ zero ∶ Nat
   -- TODO: Could I even postpone the (re)association and evaluation of ⊕ this far?
   --   (its evaluation could be delayed until now. Then potentially treated lazily?)
@@ -137,7 +137,7 @@ mutual
   natneu : ∀ {n x v} -> RneNat n , x ↘ v -> RnfNat n , natneu x ↘ v
 
  data RneNat_,_↘_ : ℕ -> NatNeu -> Exp -> Set where
-  neu : ∀ {n x v} -> Rne n , x ↘ v -> RneNat n , neu x ↘ v
+  --neu : ∀ {n x v} -> Rne n , x ↘ v -> RneNat n , neu x ↘ v
   _⊕_ : ∀ {n x v m u} -> Rne n , x ↘ v -> RnfNat n , m ↘ u -> RneNat n , (x ⊕ m) ↘ (v ⊕ u)
 
 Singleton : ∀ {A : Set} (P : A -> Set) -> Set
@@ -219,17 +219,14 @@ mutual
  ... | refl = cong₂ Π (Rnf-deter p1 p3) (cong ƛ (Rnf-deter p2 p4))
  Rnf-deter (Neut {._} {()} x₁) (Π x₂ x₃ p2)
  Rnf-deter (Neut x) (Neut x₃) = Rne-deter x x₃
- Rnf-deter (nat p1 p2) (nat q1 q2) with unbox-deter p1 q1
- ... | refl = RnfNat-deter p2 q2
- Rnf-deter (Neut {._} {()} _) (nat _ _)
- Rnf-deter (nat _ _) (Neut {._} {()} _)
+ Rnf-deter (nat p2) (nat q2) = RnfNat-deter p2 q2
  -- Rnf-deter zero zero = refl
  -- Rnf-deter (suc p1) (suc p2) = cong suc (Rnf-deter p1 p2)
  -- Rnf-deter (p1 ⊕ p2) (p3 ⊕ p4) with Rne-deter p1 p3 | Rnf-deter p2 p4
  -- ... | refl | refl = refl
- -- Rnf-deter (NeutNat x) (NeutNat y) = cong (λ v → v ⊕ zero) (Rne-deter x y)
- -- Rnf-deter (Neut {._} {()} _) (NeutNat y)
- -- Rnf-deter (NeutNat y) (Neut {._} {()} _)
+ Rnf-deter (NeutNat x) (NeutNat y) = cong (λ v → v ⊕ zero) (Rne-deter x y)
+ Rnf-deter (Neut {._} {()} _) (NeutNat y)
+ Rnf-deter (NeutNat y) (Neut {._} {()} _)
 
  Rne-deter : ∀ {n a} -> Singleton (Rne_,_↘_ n a)
  Rne-deter (lvl k) (lvl .k) = refl
@@ -242,5 +239,5 @@ mutual
  RnfNat-deter (natneu x₂) (natneu x₃) = RneNat-deter x₂ x₃
 
  RneNat-deter : ∀ {n a} -> Singleton (RneNat_,_↘_ n a)
- RneNat-deter (neu x₂) (neu x₃) = Rne-deter x₂ x₃
+ --RneNat-deter (neu x₂) (neu x₃) = Rne-deter x₂ x₃
  RneNat-deter (x₂ ⊕ x) (x₃ ⊕ x₄) = cong₂ _⊕_ (Rne-deter x₂ x₃) (RnfNat-deter x x₄)

@@ -36,7 +36,7 @@ mutual
  
  NatNe-sym : SYM NatNe
  NatNe-sym (x ⊕ x₁) = (sym-⊥' x) ⊕ (NatV-sym x₁)
- NatNe-sym (neu x) = neu (sym-⊥' x)
+ --NatNe-sym (neu x) = neu (sym-⊥' x)
 
 
 -- NatR-sym zero = zero

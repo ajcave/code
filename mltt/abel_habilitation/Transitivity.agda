@@ -41,7 +41,7 @@ mutual
 
  NatNe-trans : TRANS NatNe
  NatNe-trans (x₁ ⊕ x) (x₂ ⊕ x₃) = (trans-⊥' x₁ x₂) ⊕ (NatV-trans x x₃)
- NatNe-trans (neu x) (neu x₁) = neu (trans-⊥' x x₁)
+ --NatNe-trans (neu x) (neu x₁) = neu (trans-⊥' x x₁)
 
 -- NatR-trans (idL p)  = ?
 -- NatR-trans (idR p) (idR q) = ?

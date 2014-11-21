@@ -285,24 +285,37 @@ mutual
   -> e1 ≈ e2 ∈ NatNe
   -> n ≈ n' ∈ NatV
   -> (e1 ++ n) ≈ (e2 ++ n') ∈ NatNe
- fund-plus'' (x ⊕ x₁) n₁ = x ⊕ {!!}
- fund-plus'' (neu x) n₁ = x ⊕ n₁
+ fund-plus'' (x ⊕ x₁) n₁ = x ⊕ fund-plus' x₁ n₁
 
-fund-assoc' : ∀ {m m' n n' p p'}
- -> m ≈ m' ∈ NatV
- -> n ≈ n' ∈ NatV
- -> p ≈ p' ∈ NatV
- -> ((m ⊕̂ n) ⊕̂ p) ≈ (m' ⊕̂ (n' ⊕̂ p')) ∈ NatV
-fund-assoc' zero n₁ p₁ = fund-plus' n₁ p₁
-fund-assoc' (suc x) n₁ p₁ = suc (fund-assoc' x n₁ p₁)
-fund-assoc' (natneu x) n p = {!!}
+mutual
+ fund-assoc' : ∀ {m m' n n' p p'}
+  -> m ≈ m' ∈ NatV
+  -> n ≈ n' ∈ NatV
+  -> p ≈ p' ∈ NatV
+  -> ((m ⊕̂ n) ⊕̂ p) ≈ (m' ⊕̂ (n' ⊕̂ p')) ∈ NatV
+ fund-assoc' zero n₁ p₁ = fund-plus' n₁ p₁
+ fund-assoc' (suc x) n₁ p₁ = suc (fund-assoc' x n₁ p₁)
+ fund-assoc' (natneu x) n p = natneu (fund-assoc'' x n p)
 
-fund-idR : ∀ {m m'}
- -> m ≈ m' ∈ NatV
- -> (m ⊕̂ zero) ≈ m' ∈ NatV
-fund-idR zero = zero
-fund-idR (suc x) = suc (fund-idR x)
-fund-idR (natneu x) = {!!}
+ fund-assoc'' : ∀ {e1 e2 p p' n n'}
+  -> e1 ≈ e2 ∈ NatNe
+  -> n ≈ n' ∈ NatV
+  -> p ≈ p' ∈ NatV
+  -> ((e1 ++ n) ++ p) ≈ e2 ++ (n' ⊕̂ p') ∈ NatNe
+ fund-assoc'' (x ⊕ x₁) p₁ n₁ = x ⊕ (fund-assoc' x₁ p₁ n₁)
+
+mutual
+ fund-idR : ∀ {m m'}
+  -> m ≈ m' ∈ NatV
+  -> (m ⊕̂ zero) ≈ m' ∈ NatV
+ fund-idR zero = zero
+ fund-idR (suc x) = suc (fund-idR x)
+ fund-idR (natneu x) = natneu (fund-idR' x)
+
+ fund-idR' : ∀ {m m'}
+  -> m ≈ m' ∈ NatNe
+  -> (m ++ zero) ≈ m' ∈ NatNe
+ fund-idR' (x ⊕ x₁) = x ⊕ (fund-idR x₁)
 
 fund-assoc : ∀ {γ1 γ2 m m' n n' p p' k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
  -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
@@ -313,8 +326,8 @@ fund-assoc dm dn dp ρ1≈ρ2 =
  let vm = dm ρ1≈ρ2
      vn = dn ρ1≈ρ2
      vp = dp ρ1≈ρ2
- in inj' {!!}
-         {!!}
+ in inj' (plus (plus (rd1 vm) (rd1 vn) {!!} {!!}) (rd1 vp) {!!} {!!})
+         (plus (rd2 vm) (plus (rd2 vn) (rd2 vp) {!!} {!!}) {!!} {!!})
          {!!}
 
     -- (plus (plus (rd1 vm) (rd1 vn)) (rd1 vp))
