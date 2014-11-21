@@ -340,6 +340,9 @@ fund-idR dm ρ1≈ρ2 =
  inj' (plus (rd1 vm) zero (proj₂ (NatR.red1 (rel vm))) natval)
       (rd2 vm)
       (inj (, natval) (, proj₂ (NatR.red2 (rel vm))) (fund-idR' (NatR.rel (rel vm))))
+
+fund-rec : {!!}
+fund-rec = {!!}
      
 -- TODO: Variable rules!
 
