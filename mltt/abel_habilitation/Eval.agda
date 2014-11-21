@@ -51,7 +51,8 @@ mutual
  data UnboxNat_↘_ : Val -> NatVal -> Set where
   natval : ∀ {n} -> UnboxNat (natval n) ↘ n
   neu : ∀ {e} -> UnboxNat (↑[ Nat ] e) ↘ natneu (e ⊕ zero)
- -- Unbox seems more like a lift?
+ -- Unbox seems more like a lift? Or an η-expansion/read back that gets done early?
+ -- Is our choice between doing expansion earlier or doing recursion later?
 
  _⊕̂_ : NatVal -> NatVal -> NatVal
  zero ⊕̂ d2 = d2
