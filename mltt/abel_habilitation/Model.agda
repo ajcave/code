@@ -17,19 +17,24 @@ REL = PREL Val
 _≈_∈_ : ∀ {α} -> α -> α -> PREL α -> Set
 a ≈ b ∈ A = A a b
 
+-- TODO: These can be instances of Clo!!!
 ⊤' : PREL Dnf
 ⊤' (↓[ A ] a) (↓[ A₁ ] a₁) = ∀ n → ∃ (λ v → Rnf n , a ∶ A ↘ v × Rnf n , a₁ ∶ A₁ ↘ v)
 
 ⊥' : PREL Dne
 ⊥' e e' = ∀ n → ∃ (λ u → Rne n , e ↘ u × Rne n , e' ↘ u)
 
+
+record Clo {C V : Set} (Red : C -> V -> Set) (B : PREL V) (c1 c2 : C) : Set where
+ constructor inj
+ field
+  red1 : ∃ (λ v1 -> Red c1 v1)
+  red2 : ∃ (λ v2 -> Red c2 v2)
+  rel : B (proj₁ red1) (proj₁ red2)
+
 mutual
- record NatR (v1 v2 : Val) : Set where
-  constructor inj
-  field
-   red1 : ∃ (λ n1 -> UnboxNat v1 ↘ n1)
-   red2 : ∃ (λ n2 -> UnboxNat v2 ↘ n2)
-   rel : (proj₁ red1) ≈ (proj₁ red2) ∈ NatV
+ NatR : REL
+ NatR = Clo UnboxNat_↘_ NatV
 
  data NatV : PREL NatVal where
   zero : zero ≈ zero ∈ NatV
@@ -41,16 +46,6 @@ mutual
 
 EnvREL : Set₁
 EnvREL = Env -> Env -> Set
-
--- Red : Comp -> Set
--- Red c = ∃ (λ b -> c ↘ b)
-
-record Clo {C V : Set} (Red : C -> V -> Set) (B : PREL V) (c1 c2 : C) : Set where
- constructor inj
- field
-  red1 : ∃ (λ v1 -> Red c1 v1)
-  red2 : ∃ (λ v2 -> Red c2 v2)
-  rel : B (proj₁ red1) (proj₁ red2)
 
 open Clo
 

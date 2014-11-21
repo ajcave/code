@@ -24,9 +24,10 @@ HSYM U1 El1 U2 El2 = ∀ {A A'} (pA : A ≈ A' ∈ U1) (pA' : A' ≈ A ∈ U2)
 sym-⊥' : SYM ⊥'
 sym-⊥' h n = , proj₂ (proj₂ (h n)) , proj₁ (proj₂ (h n))
 
+open Clo
 mutual
  NatR-sym : SYM NatR
- NatR-sym p = inj (NatR.red2 p) (NatR.red1 p) (NatV-sym (NatR.rel p))
+ NatR-sym p = inj (red2 p) (red1 p) (NatV-sym (rel p))
 
  NatV-sym : SYM NatV
  NatV-sym zero = zero
@@ -47,8 +48,6 @@ mutual
 
 App-sym : ∀ {C V : Set} {B : PREL V} {r : C -> V -> Set}  -> SYM B -> SYM (Clo r B)
 App-sym f (inj red1 red2 rel) = inj red2 red1 (f rel)
-
-open Clo
 
 mutual
   -- This seems like a heterogenous version of symmetry? Is this really necessary?

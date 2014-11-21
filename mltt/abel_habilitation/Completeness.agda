@@ -328,18 +328,18 @@ fund-assoc dm dn dp ρ1≈ρ2 =
  let vm = dm ρ1≈ρ2
      vn = dn ρ1≈ρ2
      vp = dp ρ1≈ρ2
- in inj' (plus (plus (rd1 vm) (rd1 vn) (proj₂ (NatR.red1 (rel vm))) (proj₂ (NatR.red1 (rel vn)))) (rd1 vp) natval (proj₂ (NatR.red1 (rel vp))))
-         (plus (rd2 vm) (plus (rd2 vn) (rd2 vp) (proj₂ (NatR.red2 (rel vn))) (proj₂ (NatR.red2 (rel vp)))) (proj₂ (NatR.red2 (rel vm))) natval)
-         (inj (, natval) (, natval) (fund-assoc' (NatR.rel (rel vm)) (NatR.rel (rel vn)) (NatR.rel (rel vp))))
+ in inj' (plus (plus (rd1 vm) (rd1 vn) (rd1 (rel vm)) (rd1 (rel vn))) (rd1 vp) natval (rd1 (rel vp)))
+         (plus (rd2 vm) (plus (rd2 vn) (rd2 vp) (rd2 (rel vn)) (rd2 (rel vp))) (rd2 (rel vm)) natval)
+         (inj' natval natval (fund-assoc' (rel (rel vm)) (rel (rel vn)) (rel (rel vp))))
 
 fund-idR : ∀ {γ1 γ2 m m' k} {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
  -> [ Γ ]⊨ (m ⊕ zero) ≈ m' ∶h[ Nats k ]
 fund-idR dm ρ1≈ρ2 =
  let vm = dm ρ1≈ρ2 in
- inj' (plus (rd1 vm) zero (proj₂ (NatR.red1 (rel vm))) natval)
+ inj' (plus (rd1 vm) zero (rd1 (rel vm)) natval)
       (rd2 vm)
-      (inj (, natval) (, proj₂ (NatR.red2 (rel vm))) (fund-idR' (NatR.rel (rel vm))))
+      (inj' natval (rd2 (rel vm)) (fund-idR' (rel (rel vm))))
 
 fund-rec : {!!}
 fund-rec = {!!}

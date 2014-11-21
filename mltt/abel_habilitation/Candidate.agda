@@ -11,10 +11,11 @@ open import Data.Nat
 open import WfNat
 
 open SetF
+open Clo
 
 mutual
  reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
- reifyNat p n = , (unbox (proj₂ (NatR.red1 p)) (proj₁ (proj₂ (reifyNatV (NatR.rel p) n)))) , (unbox (proj₂ (NatR.red2 p)) (proj₂ (proj₂ (reifyNatV (NatR.rel p) n))))
+ reifyNat p n = , (unbox (rd1 p) (proj₁ (proj₂ (reifyNatV (rel p) n)))) , (unbox (rd2 p) (proj₂ (proj₂ (reifyNatV (rel p) n))))
 
  reifyNatV : ∀ {a a'} -> a ≈ a' ∈ NatV -> ∀ n -> ∃ (λ v -> RnfNat n , a ↘ v × RnfNat n , a' ↘ v)
  reifyNatV zero n = , zero , zero
