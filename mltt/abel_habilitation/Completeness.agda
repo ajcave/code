@@ -170,9 +170,8 @@ mutual
   let ρ2≈ρ1 = ctx-sym2 Γ ρ1≈ρ2
       ρ1≈ρ1 = ctx-trans2 Γ ρ1≈ρ2 ρ2≈ρ1 
       v2≈v1 = symω' _ (rel (A ρ1≈ρ2)) v1≈v2
-      q  = irrLF' eval-deter A ρ1≈ρ2 ρ1≈ρ1 v2≈v1
-      q1 = irrRF' eval-deter A ρ1≈ρ1 (ctx-sym2 _ ρ1≈ρ2) q
-  in ρ2≈ρ1 , q1
+      q  = irrLRF' eval-deter A ρ1≈ρ1 v2≈v1
+  in ρ2≈ρ1 , q
  -- How much of this is in common with the Π case?
 
  ctx-trans2 : ∀ {γ1 γ2} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> TRANS ⟦ Γ ⟧hctx 
@@ -274,6 +273,9 @@ fund-subƛ dσ dt dρ =
 
 Nats : ∀ {γ1 γ2} k {Γ : ⊨ γ1 ≈ γ2 ctx} -> [ Γ ]⊨ Nat ≈ Nat type[ k ]
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat
+
+Nat0 : ∀ {γ1 γ2} {Γ : ⊨ γ1 ≈ γ2 ctx} -> [ Γ ]⊨ Nat ≈ Nat type[ 0 ]
+Nat0 ρ1≈ρ2 = inj (, Nat) (, Nat) Nat
 
 fund-zero : ∀ {γ1 γ2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> [ Γ ]⊨ zero ≈ zero ∶h[ Nats k ]
@@ -411,8 +413,8 @@ open import Candidate
 -- TODO: Refactor this
 fund-rec' : ∀ {t tz ts n1 n2 j k}
  -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
- -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
- -> [ (⊡ , Nats j) , T ]⊨ ts ∶[ _>_•_ {Γ = (⊡ , Nats j) , T} (⊡ , (Nats j)) T (fund-, {Γ = (⊡ , Nats j) , T} {Δ = ⊡} (Nats j) (fund-⊡ {Γ = (⊡ , Nats j) , T}) (fund-suc {k = j} {Γ = (⊡ , Nats j) , T} (fund-idx' {Γ = (⊡ , Nats j) , T} (pop top) (pop top)))) ]
+ -> [ ⊡ ]⊨ tz ∶[ Nats j >h T • (fund-zero {k = j})  ]
+ -> [ (⊡ , Nats j) , T ]⊨ ts ∶[ _>_•_ {Γ = (⊡ , Nats j) , T} (⊡ , (Nats j)) T (fund-, {Γ = (⊡ , Nats j) , T} (Nats j) (fund-⊡ {Γ = (⊡ , Nats j) , T}) (fund-suc {k = j} {Γ = (⊡ , Nats j) , T} (fund-idx' {Γ = (⊡ , Nats j) , T} (pop top) (pop top)))) ]
  -> (vn : n1 ≈ n2 ∈ NatV)
  -> (rec t , tz , ts , n1) ≈ (rec t , tz , ts , n2) ∈ Clo _↘r_ ⟦ T (⊡ , inj' natval natval vn) ⟧tp'
 fund-rec' dT dtz dts zero = inj' (zero (rd1 (dtz ⊡))) (zero (rd2 (dtz ⊡))) (rel (dtz ⊡))
@@ -428,19 +430,20 @@ fund-rec' dT dtz dts (natneu x) =
 
 fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
- -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
+ -> [ ⊡ ]⊨ tz ∶[ Nats j >h T • (fund-zero {k = j})  ]
  -> [ (⊡ , Nats j) , T ]⊨ ts ∶[ _>_•_ {Γ = (⊡ , Nats j) , T} (⊡ , (Nats j)) T (fund-, {Γ = (⊡ , Nats j) , T} {Δ = ⊡} (Nats j) (fund-⊡ {Γ = (⊡ , Nats j) , T}) (fund-suc {k = j} {Γ = (⊡ , Nats j) , T} (fund-idx' {Γ = (⊡ , Nats j) , T} (pop top) (pop top)))) ]
  -> (dn : [ Γ ]⊨ tn ≈ tn' ∶h[ Nats j ])
  -> [ Γ ]⊨ (rec t tz ts tn) ≈ (rec t tz ts tn') ∶h[ (⊡ , (Nats j)) > T • fund-, (Nats j) fund-⊡ dn ]
 fund-rec dT dtz dts dn ρ1≈ρ2 =
  let vn = dn ρ1≈ρ2
      q = fund-rec' dT dtz dts (rel (rel vn))
-     q0 = irrLF' eval-deter dT (⊡ , inj' natval natval (rel (rel vn))) (⊡ , unbox-lem (rel vn)) (rel q)
-     q1 = irrRF' eval-deter dT (⊡ , unbox-lem (rel vn)) (⊡ , (rel vn)) q0
+     q0 = irrLRF' eval-deter dT (⊡ , unbox-lem (rel vn)) (rel q)
       -- Is there a better way to arrange this so that I don't need to use irrLF here?
  in inj' (rec (rd1 vn) (rd1 (rel vn)) (rd1 q))
          (rec (rd2 vn) (rd2 (rel vn)) (rd2 q))
-         q1
+         q0
+
+-- TODO: Still need rec 0 and rec suc rules...
      
 -- TODO: The best way to mirror this semantic structure in syntax seems to be
 -- to use an inductive-inductive definition of the syntax, indexing typing derivations by

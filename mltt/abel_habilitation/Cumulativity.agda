@@ -74,6 +74,16 @@ irrRF' : ∀ {α β : Set} {k} {K : Acc k} {A F F'} {r : β × α -> Val -> Set}
  -> ∀ {a a' a''} (p : a' ≈ a ∈ A) (p' : a'' ≈ a ∈ A) -> (ElU' (rel (pF p))) →₂ (ElU' (rel (pF p')))
 irrRF' d pF p p' x = irrR _ _ (rel (pF p)) (d (rd2 (pF p)) (rd2 (pF p'))) (rel (pF p')) x
 
+irrLRF' :  ∀ {α β : Set} {k} {K : Acc k} {A F F'} {r : β × α -> Val -> Set} (d : Deterministic r)
+    (pF : F ≈ F' ∈ (A ⇒[ r ] SetU' K))
+ -> ∀ {a1 a2 b1 b2} {p : a1 ≈ a2 ∈ A} {p' : b1 ≈ b2 ∈ A}
+ -> a1 ≈ b2 ∈ A
+ -> (ElU' (rel (pF p))) →₂ (ElU' (rel (pF p')))
+irrLRF' d pF q x =
+ let q0 = irrLF' d pF _ q x
+     q1 = irrRF' d pF q _ q0
+ in q1
+
 irrRF : ∀ {k} {K : Acc k} {A F F'}
     (pF : F ≈ F' ∈ (A ⇒R SetU' K))
  -> ∀ {a a' a''} (p : a' ≈ a ∈ A) (p' : a'' ≈ a ∈ A) -> (ElU' (rel (pF p))) →₂ (ElU' (rel (pF p')))
