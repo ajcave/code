@@ -21,18 +21,16 @@ open import Data.Unit
 ⟦ t ⟧ ρ = t , ρ
 
 mutual
- data lookup_,_↘_ : Env -> ℕ -> Val -> Set where
-  top : ∀ {ρ a} -> lookup (ρ , a) , zero ↘ a
-  pop : ∀ {ρ a b x} -> lookup ρ , x ↘ b -> lookup (ρ , a) , (suc x) ↘ b
+ data lookup_↘_ : ℕ × Env -> Val -> Set where
+  top : ∀ {ρ a} -> lookup zero , (ρ , a)  ↘ a
+  pop : ∀ {ρ a b x} -> lookup x , ρ  ↘ b -> lookup (suc x) , (ρ , a) ↘ b
  data _↘_ : Exp × Env -> Val -> Set where
-  idx : ∀ {x ρ v} -> lookup ρ , x ↘ v -> ⟦ idx x ⟧ ρ ↘ v
+  idx : ∀ {x ρ v} -> lookup x , ρ ↘ v -> ⟦ idx x ⟧ ρ ↘ v
   ƛ : ∀ {t ρ} -> ⟦ ƛ t ⟧ ρ ↘ ƛ t ρ
   ap : ∀ {r s ρ f a b} -> ⟦ r ⟧ ρ ↘ f -> ⟦ s ⟧ ρ ↘ a -> (f , a) ↘a b -> ((r · s) , ρ) ↘ b
   zero : ∀ {ρ} -> ⟦ zero ⟧ ρ ↘ natval zero
   suc : ∀ {ρ t d n} -> ⟦ t ⟧ ρ ↘ d -> UnboxNat d ↘ n -> ⟦ suc t ⟧ ρ ↘ (natval (suc n))
-  -- Note that this is rec where ts is of arrow type, not expanded.
-  -- I guess we could factor out a type of closures and use that, but meh
-  rec : ∀ {ρ T tz ts tn dn0 dn d} -- -> ⟦ tz ⟧ ρ ↘ dz -> ⟦ ts ⟧ ρ ↘ ds
+  rec : ∀ {ρ T tz ts tn dn0 dn d} 
    -> ⟦ tn ⟧ ρ ↘ dn0 -> UnboxNat dn0 ↘ dn
    -> rec T , tz , ts , dn ↘ d
    -> ⟦ rec T tz ts tn ⟧ ρ ↘ d
@@ -149,7 +147,7 @@ Singleton P = ∀ {x y} -> P x -> P y -> x ≡ y
 Deterministic : ∀ {A B : Set} (R : A -> B -> Set) -> Set
 Deterministic R = ∀ {x} -> Singleton (R x)
 
-lookup-deter : ∀ {ρ i} -> Singleton (lookup_,_↘_ ρ i)
+lookup-deter : Deterministic lookup_↘_
 lookup-deter top top = refl
 lookup-deter (pop p1) (pop p2) = lookup-deter p1 p2
 

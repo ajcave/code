@@ -11,12 +11,9 @@ module Syn (Tm : Set) where
   data Val : Set where
    ƛ : (t : Tm) -> (ρ : Env) -> Val
    ↑[_] : (A : Val) -> (e : Dne) -> Val
-   -- zero : Val
-   -- suc : (a : Val) -> Val
    Π : (A : Val) -> (B : Val) -> Val
    Nat : Val
    Set* : ℕ -> Val
-   _⊕_ : Val -> Val -> Val
    natval : NatVal -> Val
 
   -- I could just put all of these in the same grammar and just only explain

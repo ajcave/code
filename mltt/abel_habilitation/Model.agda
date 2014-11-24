@@ -156,13 +156,13 @@ data Comb (R : EnvREL) (S : ∀ {ρ1 ρ2} -> ρ1 ≈ ρ2 ∈ R -> REL) : EnvREL 
  _,_ : ∀ {ρ1 ρ2 a1 a2} (vρ : ρ1 ≈ ρ2 ∈ R) -> a1 ≈ a2 ∈ S vρ -> (ρ1 , a1) ≈ (ρ2 , a2) ∈ Comb R S
 
 data EmpRel : EnvREL where
- tt : EmpRel ⊡ ⊡
+ ⊡ : EmpRel ⊡ ⊡
 
 open import Function
 
 mutual
  data ⊨_≈_ctx : Ctx -> Ctx -> Set where
-  tt : ⊨ ⊡ ≈ ⊡ ctx
+  ⊡ : ⊨ ⊡ ≈ ⊡ ctx
   _,_ : ∀ {γ1 γ2 t1 t2 k} -> (Γ : ⊨ γ1 ≈ γ2 ctx) -> [ Γ ]⊨ t1 ≈ t2 type[ k ]
        -> ⊨ (γ1 , t1) ≈ (γ2 , t2) ctx
   
@@ -170,7 +170,7 @@ mutual
  [ Γ ]⊨ T1 ≈ T2 type[ k ] = T1 ≈ T2 ∈ (⟦ Γ ⟧hctx ⇒[ _↘_ ] (SetU k))
 
  ⟦_⟧hctx : {Γ1 Γ2 : Ctx} -> ⊨ Γ1 ≈ Γ2 ctx -> EnvREL
- ⟦ tt ⟧hctx = EmpRel
+ ⟦ ⊡ ⟧hctx = EmpRel
  ⟦ Γ , T ⟧hctx = Comb ⟦ Γ ⟧hctx (λ vρ -> ⟦ T vρ ⟧tp')
 
 ⊨_ctx : Ctx -> Set
@@ -185,8 +185,14 @@ mutual
 [_]⊨_≈_∶h[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> Exp -> Exp -> {T1 T2 : Exp} -> [ Γ ]⊨ T1 ≈ T2 type[ k ] -> Set
 [ Γ ]⊨ t ≈ t' ∶h[ T ] = t ≈ t' ∈ Π* _↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
 
+[_]∋_∶[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> ℕ -> {T1 T2 : Exp} -> [ Γ ]⊨ T1 ≈ T2 type[ k ] -> Set
+[ Γ ]∋ x ∶[ T ] = x ≈ x ∈ Π* lookup_↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
+
 [_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
 [ Γ ]⊨ t ≈ t' ∶[ T ] = [ Γ ]⊨ t ≈ t' ∶h[ T ]
+
+[_]⊨_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> {T : Exp} -> [ Γ ]⊨ T type[ k ] -> Set
+[ Γ ]⊨ t ∶[ T ] = [ Γ ]⊨ t ≈ t ∶h[ T ]
 
 [_]⊨s_≈_∶[_] : ∀ {γ1 γ2 δ1 δ2} (Γ : ⊨ γ1 ≈ γ2 ctx)  -> Subst -> Subst -> (Δ : ⊨ δ1 ≈ δ2 ctx) -> Set
 [ Γ ]⊨s σ1 ≈ σ2 ∶[ Δ ] =
