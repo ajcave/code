@@ -16,20 +16,18 @@ open Clo
 
 mutual
  reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
- reifyNat p n = inj' (unbox (rd1 p) (rd1 (reifyNatV (rel p) n))) (unbox (rd2 p) (rd2 (reifyNatV (rel p) n))) (rel (reifyNatV (rel p) n))
+ reifyNat p n = let q = reifyNatV (rel p) n in
+  inj' (unbox (rd1 p) (rd1 q)) (unbox (rd2 p) (rd2 q)) (rel q)
 
  reifyNatV : ∀ {a a'} -> a ≈ a' ∈ NatV -> ∀ n -> a ≈ a' ∈ Clo (RnfNat_,_↘_ n) _≡_
  reifyNatV zero n = inj' zero zero refl
- reifyNatV (suc x) n =
-   let q = reifyNatV x n in
+ reifyNatV (suc x) n = let q = reifyNatV x n in
    inj' (suc (rd1 q)) (suc (rd2 q)) (cong suc (rel q))
- reifyNatV (natneu x) n =
-   let q = reifyNatNe x n in
+ reifyNatV (natneu x) n = let q = reifyNatNe x n in
    inj' (natneu (rd1 q)) (natneu (rd2 q)) (rel q)
 
  reifyNatNe : ∀ {a a'} -> a ≈ a' ∈ NatNe -> ∀ n -> a ≈ a' ∈ Clo (RneNat_,_↘_ n) _≡_
- reifyNatNe (x ⊕ x₁) n =
-   let q = reifyNatV x₁ n in
+ reifyNatNe (x ⊕ x₁) n = let q = reifyNatV x₁ n in
    inj' ((rd1 (x n)) ⊕ (rd1 q)) ((rd2 (x n)) ⊕ (rd2 q)) (cong₂ _⊕_ (rel (x n)) (rel q))
 
 -- Types of reify and reflect, parameterized for convenience

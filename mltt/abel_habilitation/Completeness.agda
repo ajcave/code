@@ -329,21 +329,6 @@ mutual
   -> ((e1 ++ n) ++ p) ≈ e2 ++ (n' ⊕̂ p') ∈ NatNe
  fund-assoc'' (x ⊕ x₁) p₁ n₁ = x ⊕ (fund-assoc' x₁ p₁ n₁)
 
-mutual
- fund-idR' : ∀ {m m'}
-  -> m ≈ m' ∈ NatV
-  -> (m ⊕̂ zero) ≈ m' ∈ NatV
- fund-idR' zero = zero
- fund-idR' (suc x) = suc (fund-idR' x)
- fund-idR' (natneu x) = natneu (fund-idR'' x)
-
- fund-idR'' : ∀ {m m'}
-  -> m ≈ m' ∈ NatNe
-  -> (m ++ zero) ≈ m' ∈ NatNe
- fund-idR'' (x ⊕ x₁) = x ⊕ (fund-idR' x₁)
-
-
-
 fund-assoc : ∀ {γ1 γ2 m m' n n' p p' k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
  -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
  -> [ Γ ]⊨ n ≈ n' ∶h[ Nats k ]
@@ -357,6 +342,19 @@ fund-assoc dm dn dp ρ1≈ρ2 =
          (plus (rd2 vm) (plus (rd2 vn) (rd2 vp) (rd2 (rel vn)) (rd2 (rel vp))) (rd2 (rel vm)) natval)
          (inj' natval natval (fund-assoc' (rel (rel vm)) (rel (rel vn)) (rel (rel vp))))
 
+mutual
+ fund-idR' : ∀ {m m'}
+  -> m ≈ m' ∈ NatV
+  -> (m ⊕̂ zero) ≈ m' ∈ NatV
+ fund-idR' zero = zero
+ fund-idR' (suc x) = suc (fund-idR' x)
+ fund-idR' (natneu x) = natneu (fund-idR'' x)
+
+ fund-idR'' : ∀ {m m'}
+  -> m ≈ m' ∈ NatNe
+  -> (m ++ zero) ≈ m' ∈ NatNe
+ fund-idR'' (x ⊕ x₁) = x ⊕ (fund-idR' x₁)
+
 fund-idR : ∀ {γ1 γ2 m m' k} {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
  -> [ Γ ]⊨ (m ⊕ zero) ≈ m' ∶h[ Nats k ]
@@ -365,8 +363,6 @@ fund-idR dm ρ1≈ρ2 =
  inj' (plus (rd1 vm) zero (rd1 (rel vm)) natval)
       (rd2 vm)
       (inj' natval (rd2 (rel vm)) (fund-idR' (rel (rel vm))))
-
---fund-idx-lvl : 
 
 fund-lookuptp : ∀ {γ1 γ2 t1 t2 x}
  -> (Γ : ⊨ γ1 ≈ γ2 ctx)
@@ -404,8 +400,15 @@ fund-idx' : ∀ {γ1 γ2 t1 t2 x}
  -> [ Γ ]⊨ idx x ≈ idx x ∶h[ proj₂ (fund-lookuptp Γ x1 x2) ]
 fund-idx' {Γ = Γ} x1 x2 ρ1≈ρ2 = fund-idx  {Γ = Γ} {T = proj₂ (fund-lookuptp Γ x1 x2)} (fund-lookup Γ x1 x2) ρ1≈ρ2
 
+unbox-lem : ∀ {n1 n2}
+ -> (vn : n1 ≈ n2 ∈ NatR)
+ -> natval (proj₁ (red1 vn)) ≈ n2 ∈ NatR
+unbox-lem (inj (_ , natval) (_ , r2) rel) = inj' natval r2 rel
+unbox-lem (inj (._ , neu) (_ , r2) rel) = inj' natval r2 rel
+
 open import Candidate
 
+-- TODO: Refactor this
 fund-rec' : ∀ {t tz ts n1 n2 j k}
  -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
  -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
@@ -423,12 +426,6 @@ fund-rec' dT dtz dts (natneu x) =
    let q = reifyNatNe x n in
    inj' (rec (rd1 q)) (rec (rd2 q)) (cong (rec _ _ _) (rel q))))
 
-unbox-lem : ∀ {n1 n2}
- -> (vn : n1 ≈ n2 ∈ NatR)
- -> natval (proj₁ (red1 vn)) ≈ n2 ∈ NatR
-unbox-lem (inj (_ , natval) (_ , r2) rel) = inj' natval r2 rel
-unbox-lem (inj (._ , neu) (_ , r2) rel) = inj' natval r2 rel
-
 fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
  -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
@@ -440,6 +437,7 @@ fund-rec dT dtz dts dn ρ1≈ρ2 =
      q = fund-rec' dT dtz dts (rel (rel vn))
      q0 = irrLF' eval-deter dT (⊡ , inj' natval natval (rel (rel vn))) (⊡ , unbox-lem (rel vn)) (rel q)
      q1 = irrRF' eval-deter dT (⊡ , unbox-lem (rel vn)) (⊡ , (rel vn)) q0
+      -- Is there a better way to arrange this so that I don't need to use irrLF here?
  in inj' (rec (rd1 vn) (rd1 (rel vn)) (rd1 q))
          (rec (rd2 vn) (rd2 (rel vn)) (rd2 q))
          q1
