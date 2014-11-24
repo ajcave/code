@@ -301,6 +301,17 @@ mutual
   -> (e1 ++ n) ≈ (e2 ++ n') ∈ NatNe
  fund-plus'' (x ⊕ x₁) n₁ = x ⊕ fund-plus' x₁ n₁
 
+fund-plus : ∀ {γ1 γ2 m m' n n' k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
+ -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
+ -> [ Γ ]⊨ n ≈ n' ∶h[ Nats k ]
+ -> [ Γ ]⊨ m ⊕ n ≈ m' ⊕ n' ∶h[ Nats k ]
+fund-plus dm dn ρ1≈ρ2 =
+ let vm = dm ρ1≈ρ2
+     vn = dn ρ1≈ρ2
+ in inj' (plus (rd1 vm) (rd1 vn) (rd1 (rel vm)) (rd1 (rel vn)))
+         (plus (rd2 vm) (rd2 vn) (rd2 (rel vm)) (rd2 (rel vn)))
+         (inj' natval natval (fund-plus' (rel (rel vm)) (rel (rel vn))))
+
 mutual
  fund-assoc' : ∀ {m m' n n' p p'}
   -> m ≈ m' ∈ NatV
@@ -412,6 +423,24 @@ fund-rec' dT dtz dts (natneu x) =
    let q = reifyNatNe x n in
    inj' (rec (rd1 q)) (rec (rd2 q)) (cong (rec _ _ _) (rel q))))
 
+unbox-lem : ∀ {n1 n2}
+ -> (vn : n1 ≈ n2 ∈ NatR)
+ -> natval (proj₁ (red1 vn)) ≈ n2 ∈ NatR
+unbox-lem (inj (_ , natval) (_ , r2) rel) = inj' natval r2 rel
+unbox-lem (inj (._ , neu) (_ , r2) rel) = inj' natval r2 rel
+
+fund-rec'' : ∀ {t tz ts n1 n2 j k}
+ -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
+ -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
+ -> [ (⊡ , Nats j) , T ]⊨ ts ∶[ _>_•_ {Γ = (⊡ , Nats j) , T} (⊡ , (Nats j)) T (fund-, {Γ = (⊡ , Nats j) , T} {Δ = ⊡} (Nats j) (fund-⊡ {Γ = (⊡ , Nats j) , T}) (fund-suc {k = j} {Γ = (⊡ , Nats j) , T} (fund-idx' {Γ = (⊡ , Nats j) , T} (pop top) (pop top)))) ]
+ -> (vn : n1 ≈ n2 ∈ NatR)
+ -> (rec t , tz , ts , (proj₁ (red1 vn))) ≈ (rec t , tz , ts , (proj₁ (red2 vn))) ∈ Clo _↘r_ ⟦ T (⊡ , vn) ⟧tp'
+fund-rec'' dT dtz dts vn =
+ let q = fund-rec' dT dtz dts (rel vn)
+     q0 = irrLF' eval-deter dT (⊡ , inj' natval natval (rel vn)) (⊡ , unbox-lem vn) (rel q)
+     q1 = irrRF' eval-deter dT (⊡ , unbox-lem vn) (⊡ , vn) q0
+ in inj' (rd1 q) (rd2 q) q1
+
 fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
  -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
@@ -420,9 +449,12 @@ fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> [ Γ ]⊨ (rec t tz ts tn) ≈ (rec t tz ts tn') ∶h[ (⊡ , (Nats j)) > T • fund-, (Nats j) fund-⊡ dn ]
 fund-rec dT dtz dts dn ρ1≈ρ2 =
  let vn = dn ρ1≈ρ2
- in inj' (rec (rd1 vn) (rd1 (rel vn)) {!!})
-         (rec (rd2 vn) (rd2 (rel vn)) {!!})
-         {!!}
+     q = fund-rec' dT dtz dts (rel (rel vn))
+     q0 = irrLF' eval-deter dT (⊡ , inj' natval natval (rel (rel vn))) (⊡ , unbox-lem (rel vn)) (rel q)
+     q1 = irrRF' eval-deter dT (⊡ , unbox-lem (rel vn)) (⊡ , (rel vn)) q0
+ in inj' (rec (rd1 vn) (rd1 (rel vn)) (rd1 q))
+         (rec (rd2 vn) (rd2 (rel vn)) (rd2 q))
+         q1
      
 -- TODO: The best way to mirror this semantic structure in syntax seems to be
 -- to use an inductive-inductive definition of the syntax, indexing typing derivations by
