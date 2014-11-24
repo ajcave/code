@@ -429,18 +429,6 @@ unbox-lem : ∀ {n1 n2}
 unbox-lem (inj (_ , natval) (_ , r2) rel) = inj' natval r2 rel
 unbox-lem (inj (._ , neu) (_ , r2) rel) = inj' natval r2 rel
 
-fund-rec'' : ∀ {t tz ts n1 n2 j k}
- -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
- -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
- -> [ (⊡ , Nats j) , T ]⊨ ts ∶[ _>_•_ {Γ = (⊡ , Nats j) , T} (⊡ , (Nats j)) T (fund-, {Γ = (⊡ , Nats j) , T} {Δ = ⊡} (Nats j) (fund-⊡ {Γ = (⊡ , Nats j) , T}) (fund-suc {k = j} {Γ = (⊡ , Nats j) , T} (fund-idx' {Γ = (⊡ , Nats j) , T} (pop top) (pop top)))) ]
- -> (vn : n1 ≈ n2 ∈ NatR)
- -> (rec t , tz , ts , (proj₁ (red1 vn))) ≈ (rec t , tz , ts , (proj₁ (red2 vn))) ∈ Clo _↘r_ ⟦ T (⊡ , vn) ⟧tp'
-fund-rec'' dT dtz dts vn =
- let q = fund-rec' dT dtz dts (rel vn)
-     q0 = irrLF' eval-deter dT (⊡ , inj' natval natval (rel vn)) (⊡ , unbox-lem vn) (rel q)
-     q1 = irrRF' eval-deter dT (⊡ , unbox-lem vn) (⊡ , vn) q0
- in inj' (rd1 q) (rd2 q) q1
-
 fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
  -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
