@@ -24,10 +24,10 @@ TRANS' R = ∀ {a b b' c} -> R a b -> b ≡ b' -> R b' c -> R a c
 SELFL : ∀ {A} -> PREL A -> Set
 SELFL R = ∀ {a a'} -> R a a' -> R a a
 
+open Clo
 trans-⊥' : TRANS ⊥'
-trans-⊥' h1 h2 n with h1 n | h2 n
-... | _ , (p1 , p2) | _ , (p3 , p4) with Rne-deter p2 p3
-trans-⊥' h1 h2 n | proj₁ , (p1 , p2) | .proj₁ , (p3 , p4) | refl = , p1 , p4
+trans-⊥' h1 h2 n = inj' (rd1 (h1 n)) (rd2 (h2 n))
+ (trans (rel (h1 n)) (trans (Rne-deter (rd2 (h1 n)) (rd1 (h2 n))) (rel (h2 n))))
 
 mutual
  NatR-trans : TRANS NatR

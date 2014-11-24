@@ -9,22 +9,28 @@ open import Data.Empty
 open import Model
 open import Data.Nat
 open import WfNat
+open import Relation.Binary.PropositionalEquality hiding ([_])
 
 open SetF
 open Clo
 
 mutual
  reifyNat : ∀ {a a'} -> a ≈ a' ∈ NatR -> ↓[ Nat ] a ≈ ↓[ Nat ] a' ∈ ⊤'
- reifyNat p n = , (unbox (rd1 p) (proj₁ (proj₂ (reifyNatV (rel p) n)))) , (unbox (rd2 p) (proj₂ (proj₂ (reifyNatV (rel p) n))))
+ reifyNat p n = inj' (unbox (rd1 p) (rd1 (reifyNatV (rel p) n))) (unbox (rd2 p) (rd2 (reifyNatV (rel p) n))) (rel (reifyNatV (rel p) n))
 
- reifyNatV : ∀ {a a'} -> a ≈ a' ∈ NatV -> ∀ n -> ∃ (λ v -> RnfNat n , a ↘ v × RnfNat n , a' ↘ v)
- reifyNatV zero n = , zero , zero
- reifyNatV (suc x) n = , (suc (proj₁ (proj₂ (reifyNatV x n)))) , (suc (proj₂ (proj₂ (reifyNatV x n))))
- reifyNatV (natneu x) n = , (natneu (proj₁ (proj₂ (reifyNatNe x n)))) , (natneu (proj₂ (proj₂ (reifyNatNe x n))))
+ reifyNatV : ∀ {a a'} -> a ≈ a' ∈ NatV -> ∀ n -> a ≈ a' ∈ Clo (RnfNat_,_↘_ n) _≡_
+ reifyNatV zero n = inj' zero zero refl
+ reifyNatV (suc x) n =
+   let q = reifyNatV x n in
+   inj' (suc (rd1 q)) (suc (rd2 q)) (cong suc (rel q))
+ reifyNatV (natneu x) n =
+   let q = reifyNatNe x n in
+   inj' (natneu (rd1 q)) (natneu (rd2 q)) (rel q)
 
- reifyNatNe : ∀ {a a'} -> a ≈ a' ∈ NatNe -> ∀ n -> ∃ (λ v -> RneNat n , a ↘ v × RneNat n , a' ↘ v)
- reifyNatNe (x ⊕ x₁) n = _ , (((proj₁ (proj₂ (x n))) ⊕ (proj₁ (proj₂ (reifyNatV x₁ n)))) , ((proj₂ (proj₂ (x n))) ⊕ (proj₂ (proj₂ (reifyNatV x₁ n)))))
- --reifyNatNe (neu x) n = _ , ((neu (proj₁ (proj₂ (x n)))) , (neu (proj₂ (proj₂ (x n)))))
+ reifyNatNe : ∀ {a a'} -> a ≈ a' ∈ NatNe -> ∀ n -> a ≈ a' ∈ Clo (RneNat_,_↘_ n) _≡_
+ reifyNatNe (x ⊕ x₁) n =
+   let q = reifyNatV x₁ n in
+   inj' ((rd1 (x n)) ⊕ (rd1 q)) ((rd2 (x n)) ⊕ (rd2 q)) (cong₂ _⊕_ (rel (x n)) (rel q))
 
 -- Types of reify and reflect, parameterized for convenience
 -- Really these should just abstract over a universe U and an interpretation function ElU
@@ -53,32 +59,34 @@ module RRF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
   reflect (Π pA pF) d = λ p ->
     let q = reify pA p 
         q1 = reflect (rel (pF p))
-                     (λ n → , (ap (proj₁ (proj₂ (d n))) (proj₁ (proj₂ (q n))))
-                            , (ap (proj₂ (proj₂ (d n))) (proj₂ (proj₂ (q n)))))
+                     (λ n → inj' (ap (rd1 (d n)) (rd1 (q n)))
+                                  (ap (rd2 (d n)) (rd2 (q n)))
+                                  (cong₂ _·_ (rel (d n)) (rel (q n))))
     in inj (, ↑ (rd1 (pF p))) (, ↑ (rd2 (pF p))) q1
   reflect (Set* j<k) d = reflectSet< j<k d 
 
   reify : Reify k (inj akf)
-  reify (Neu x _) (inj d) n = , (Neut (proj₁ (proj₂ (d n))) , Neut (proj₂ (proj₂ (d n))))
+  reify (Neu x _) (inj d) n = inj' (Neut (rd1 (d n))) (Neut (rd2 (d n))) (rel (d n))
   reify Nat p n = reifyNat p n
   reify (Π pA pF) d n =
-    let qA = reflect pA (λ n₁ → , lvl n , lvl n)
+    let qA = reflect pA (λ n₁ → inj' (lvl n) (lvl n) refl)
         qF = pF qA
         dF = d qA
         q1 = reify (rel qF) (rel dF)
-    in , ((Π (rd1 dF) (rd1 qF) (proj₁ (proj₂ (q1 _)))) , (Π (rd2 dF) (rd2 qF) (proj₂ (proj₂ (q1 _)))))
+    in inj' (Π (rd1 dF) (rd1 qF) (rd1 (q1 _))) (Π (rd2 dF) (rd2 qF) (rd2 (q1 _))) (cong ƛ (rel (q1 _)))
   reify (Set* j<k) d n = reifySet< j<k d n 
 
  reifySet : ReifySet k (inj akf)
- reifySet (Neu x _) n = , Neut (proj₁ (proj₂ (x n))) , Neut (proj₂ (proj₂ (x n)))
- reifySet Nat n = , Nat , Nat
+ reifySet (Neu x _) n = inj' (Neut (rd1 (x n))) (Neut (rd2 (x n))) (rel (x n))
+ reifySet Nat n = inj' Nat Nat refl
  reifySet (Π pA pF) n =
-   let q0 = pF (reflect pA (λ n₁ -> , lvl n , lvl n))
+   let q0 = pF (reflect pA (λ n₁ -> inj' (lvl n) (lvl n) refl))
        qA = reifySet pA
        q2 = reifySet (rel q0)
-   in , Fun (proj₁ (proj₂ (qA n))) (rd1 q0) (proj₁ (proj₂ (q2 (suc n))))
-      , Fun (proj₂ (proj₂ (qA n))) (rd2 q0) (proj₂ (proj₂ (q2 (suc n))))
- reifySet (Set* j<k) n = , SetZ , SetZ
+   in inj' (Fun (rd1 (qA n)) (rd1 q0) (rd1 (q2 (suc n))))
+           (Fun (rd2 (qA n)) (rd2 q0) (rd2 (q2 (suc n))))
+           (cong₂ Π (rel (qA n)) (cong ƛ (rel (q2 _))))
+ reifySet (Set* j<k) n = inj' SetZ SetZ refl
 
 -- There's nicer ways to factor this, but I can't be bothered at the moment.
 mutual

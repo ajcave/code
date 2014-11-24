@@ -17,6 +17,9 @@ open import Data.Unit
 -- data SComp : Set where
 --  ⟦_⟧_ : (σ : Subst) -> (ρ : Env) -> SComp
 
+data recComp : Set where
+ rec_,_,_,_ : Exp -> Exp -> Exp -> NatVal -> recComp
+
 ⟦_⟧_ : ∀ {A B : Set} -> A -> B -> A × B
 ⟦ t ⟧ ρ = t , ρ
 
@@ -32,7 +35,7 @@ mutual
   suc : ∀ {ρ t d n} -> ⟦ t ⟧ ρ ↘ d -> UnboxNat d ↘ n -> ⟦ suc t ⟧ ρ ↘ (natval (suc n))
   rec : ∀ {ρ T tz ts tn dn0 dn d} 
    -> ⟦ tn ⟧ ρ ↘ dn0 -> UnboxNat dn0 ↘ dn
-   -> rec T , tz , ts , dn ↘ d
+   -> (rec T , tz , ts , dn) ↘r d
    -> ⟦ rec T tz ts tn ⟧ ρ ↘ d
   Set* : ∀ {ρ i} -> ⟦ Set* i ⟧ ρ ↘ Set* i
   Π : ∀ {A A' F F' ρ} -> ⟦ A ⟧ ρ ↘ A' -> ⟦ F ⟧ ρ ↘ F' -> ⟦ Π A F ⟧ ρ ↘ Π A' F'
@@ -71,20 +74,20 @@ mutual
  -- NotPlus : Dne -> Set -- This is a bit ad-hoc...
  -- NotPlus (e ⊕ x) = ⊥
  -- NotPlus _ = ⊤
-
+ 
  data _↘s_ : Subst × Env -> Env -> Set where
   _[_] : ∀ {σ1 σ2 ρ ρ' ρ''} -> ⟦ σ2 ⟧ ρ ↘s ρ' -> ⟦ σ1 ⟧ ρ' ↘s ρ'' -> ⟦ σ1 [ σ2 ] ⟧ ρ ↘s ρ''
   id : ∀ {ρ} -> ⟦ id ⟧ ρ ↘s ρ
   ↑ : ∀ {ρ a} -> ⟦ ↑ ⟧ (ρ , a) ↘s ρ
   _,_ : ∀ {σ t ρ ρ' a} -> ⟦ σ ⟧ ρ ↘s ρ' -> ⟦ t ⟧ ρ ↘ a -> ⟦ σ , t ⟧ ρ ↘s (ρ' , a)
   ⊡ : ∀ {ρ} -> ⟦ ⊡ ⟧ ρ ↘s ⊡
- data rec_,_,_,_↘_ : Exp -> Exp -> Exp -> NatVal -> Val -> Set where
-  zero : ∀ {T tz ts dz} -> ⟦ tz ⟧ ⊡ ↘ dz -> rec T , tz , ts , zero ↘ dz
-  suc : ∀ {T tz ts dn a b} -> rec T , tz , ts , dn ↘ a -> ⟦ ts ⟧ ((⊡ , natval dn) , a) ↘ b
-    -> rec T , tz , ts , (suc dn) ↘ b
+ data _↘r_ : recComp -> Val -> Set where
+  zero : ∀ {T tz ts dz} -> ⟦ tz ⟧ ⊡ ↘ dz -> rec T , tz , ts , zero ↘r dz
+  suc : ∀ {T tz ts dn a b} -> rec T , tz , ts , dn ↘r a -> ⟦ ts ⟧ ((⊡ , natval dn) , a) ↘ b
+    -> rec T , tz , ts , (suc dn) ↘r b
   ne : ∀ {T T' tz ts e} 
    -> ⟦ T ⟧ (⊡ , (natval (natneu e))) ↘ T'
-   -> rec T , tz , ts , (natneu e) ↘ (↑[ T' ] (rec T tz ts e))
+   -> rec T , tz , ts , (natneu e) ↘r (↑[ T' ] (rec T tz ts e))
  -- We diverge from Abel in the treatment of rec.
  -- We treat it "opaquely", like a definition by pattern matching in Agda. No congruence rules, closed body
  -- I think this is like Martin-Lof's "weak" treatment of λ. No congruence rule.
@@ -109,16 +112,16 @@ IsBaseType _ = ⊥
 
 -- These can give back Nf and Ne instead of Exp, but does it matter?
 mutual
- data Rnf_,_∶_↘_ : ℕ -> Val -> Val -> Exp -> Set where
-  Π : ∀ {n f b A B B' v} -> (f , ↑[ A ] (lvl n)) ↘a b -> (B , ↑[ A ] (lvl n)) ↘a B' -> Rnf (suc n) , b ∶ B' ↘ v
-     -> Rnf n , f ∶ Π A B ↘ ƛ v
-  Nat : ∀ {n i} -> Rnf n , Nat ∶ Set* i ↘ Nat
-  SetZ : ∀ {n i j} -> Rnf n , Set* i ∶ Set* j ↘ Set* i
-  Fun : ∀ {n A A' F B B' i} -> Rnf n , A ∶ Set* i ↘ A' -> (F , ↑[ A ] (lvl n)) ↘a B
-   -> Rnf (suc n) , B ∶ Set* i ↘ B'
-   -> Rnf n , (Π A F) ∶ Set* i ↘ (Π A' (ƛ B'))
-  Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , (↑[ B' ] e) ∶ B ↘ v
-  unbox : ∀ {v m n u} -> UnboxNat v ↘ m -> RnfNat n , m ↘ u -> Rnf n , v ∶ Nat ↘ u
+ data Rnf_,_↘_ : ℕ -> (Val × Val) -> Exp -> Set where
+  Π : ∀ {n f b A B B' v} -> (f , ↑[ A ] (lvl n)) ↘a b -> (B , ↑[ A ] (lvl n)) ↘a B' -> Rnf (suc n) , (b , B') ↘ v
+     -> Rnf n , (f , Π A B) ↘ ƛ v
+  Nat : ∀ {n i} -> Rnf n , (Nat , Set* i) ↘ Nat
+  SetZ : ∀ {n i j} -> Rnf n , (Set* i , Set* j) ↘ Set* i
+  Fun : ∀ {n A A' F B B' i} -> Rnf n , (A , Set* i) ↘ A' -> (F , ↑[ A ] (lvl n)) ↘a B
+   -> Rnf (suc n) , (B , Set* i) ↘ B'
+   -> Rnf n , ((Π A F) , Set* i) ↘ (Π A' (ƛ B'))
+  Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , ((↑[ B' ] e) , B) ↘ v
+  unbox : ∀ {v m n u} -> UnboxNat v ↘ m -> RnfNat n , m ↘ u -> Rnf n , (v , Nat) ↘ u
   --nat : ∀ {n u m} -> RnfNat n , m ↘ u -> Rnf n , natval m ∶ Nat ↘ u
   -- zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
   -- suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
@@ -129,7 +132,7 @@ mutual
   --   (its evaluation could be delayed until now. Then potentially treated lazily?)
  data Rne_,_↘_ : ℕ -> Dne -> Exp -> Set where
   lvl : ∀ {n} k -> Rne n , (lvl k) ↘ idx (n ∸ suc k)
-  ap : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , d ∶ A ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
+  ap : ∀ {n e d u v A} -> Rne n , e ↘ u -> Rnf n , (d , A) ↘ v -> Rne n , (e · (↓[ A ] d)) ↘ (u · v)
   rec : ∀ {n e u T tz ts} -> RneNat n , e ↘ u -> Rne n , (rec T tz ts e) ↘ (rec T tz ts u)
 
  data RnfNat_,_↘_ : ℕ -> NatVal -> Exp -> Set where
@@ -201,7 +204,7 @@ mutual
  evals-deter (p1 , x) (p2 , x₁) = cong₂ _,_ (evals-deter p1 p2) (eval-deter x x₁)
  evals-deter ⊡ ⊡ = refl
 
- rec-deter : ∀ {T tz ts dn} -> Singleton (rec_,_,_,_↘_ T tz ts dn)
+ rec-deter : Deterministic _↘r_
  rec-deter (zero x₁) (zero x₂) = eval-deter x₁ x₂
  rec-deter (suc p1 x₁) (suc p2 x₂) with rec-deter p1 p2
  ... | refl = eval-deter x₁ x₂
@@ -209,7 +212,7 @@ mutual
  ... | refl = refl
 
 mutual
- Rnf-deter : ∀ {n a A} -> Singleton (Rnf_,_∶_↘_ n a A)
+ Rnf-deter : ∀ {n} -> Deterministic (Rnf_,_↘_ n)
  Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) with evala-deter x x₂
  Rnf-deter (Π x x₁ p1) (Π x₂ x₃ p2) | refl with evala-deter x₁ x₃
  ... | refl = cong ƛ (Rnf-deter p1 p2)
@@ -235,11 +238,11 @@ mutual
  Rne-deter (ap p1 x) (ap p2 x₁) = cong₂ _·_ (Rne-deter p1 p2) (Rnf-deter x x₁)
  Rne-deter (rec p1) (rec p2) = cong (rec _ _ _) (RneNat-deter p1 p2) --(Rne-deter p1 p2)
 
- RnfNat-deter : ∀ {n a} -> Singleton (RnfNat_,_↘_ n a)
+ RnfNat-deter : ∀ {n} -> Deterministic (RnfNat_,_↘_ n)
  RnfNat-deter zero zero = refl
  RnfNat-deter (suc p1) (suc p2) = cong suc (RnfNat-deter p1 p2)
  RnfNat-deter (natneu x₂) (natneu x₃) = RneNat-deter x₂ x₃
 
- RneNat-deter : ∀ {n a} -> Singleton (RneNat_,_↘_ n a)
+ RneNat-deter : ∀ {n} -> Deterministic (RneNat_,_↘_ n)
  --RneNat-deter (neu x₂) (neu x₃) = Rne-deter x₂ x₃
  RneNat-deter (x₂ ⊕ x) (x₃ ⊕ x₄) = cong₂ _⊕_ (Rne-deter x₂ x₃) (RnfNat-deter x x₄)

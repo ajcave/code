@@ -393,6 +393,25 @@ fund-idx' : ∀ {γ1 γ2 t1 t2 x}
  -> [ Γ ]⊨ idx x ≈ idx x ∶h[ proj₂ (fund-lookuptp Γ x1 x2) ]
 fund-idx' {Γ = Γ} x1 x2 ρ1≈ρ2 = fund-idx  {Γ = Γ} {T = proj₂ (fund-lookuptp Γ x1 x2)} (fund-lookup Γ x1 x2) ρ1≈ρ2
 
+open import Candidate
+
+fund-rec' : ∀ {t tz ts n1 n2 j k}
+ -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
+ -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
+ -> [ (⊡ , Nats j) , T ]⊨ ts ∶[ _>_•_ {Γ = (⊡ , Nats j) , T} (⊡ , (Nats j)) T (fund-, {Γ = (⊡ , Nats j) , T} {Δ = ⊡} (Nats j) (fund-⊡ {Γ = (⊡ , Nats j) , T}) (fund-suc {k = j} {Γ = (⊡ , Nats j) , T} (fund-idx' {Γ = (⊡ , Nats j) , T} (pop top) (pop top)))) ]
+ -> (vn : n1 ≈ n2 ∈ NatV)
+ -> (rec t , tz , ts , n1) ≈ (rec t , tz , ts , n2) ∈ Clo _↘r_ ⟦ T (⊡ , inj' natval natval vn) ⟧tp'
+fund-rec' dT dtz dts zero = inj' (zero (rd1 (dtz ⊡))) (zero (rd2 (dtz ⊡))) (rel (dtz ⊡))
+fund-rec' dT dtz dts (suc x) =
+ let vx = fund-rec' dT dtz dts x
+     vtx = dts ((⊡ , (inj' natval natval x)) , (rel vx))
+ in inj' (suc (rd1 vx) (rd1 vtx)) (suc (rd2 vx) (rd2 vtx)) (rel vtx)
+fund-rec' dT dtz dts (natneu x) =
+ let vT = dT (⊡ , (inj' natval natval (natneu x)))
+ in inj' (ne (rd1 vT)) (ne (rd2 vT)) (reflectω (rel vT) (λ n →
+   let q = reifyNatNe x n in
+   inj' (rec (rd1 q)) (rec (rd2 q)) (cong (rec _ _ _) (rel q))))
+
 fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (T : [ ⊡ , Nats j ]⊨ t type[ k ])
  -> [ ⊡ ]⊨ tz ∶[ (Nats j) >h T • (fund-zero {k = j})  ]
@@ -405,8 +424,6 @@ fund-rec dT dtz dts dn ρ1≈ρ2 =
          (rec (rd2 vn) (rd2 (rel vn)) {!!})
          {!!}
      
--- TODO: Variable rules!
-
 -- TODO: The best way to mirror this semantic structure in syntax seems to be
 -- to use an inductive-inductive definition of the syntax, indexing typing derivations by
 -- well-formedness derivations. Then have an "irrelevance" rule. (because there isn't just
@@ -444,4 +461,3 @@ fund-rec dT dtz dts dn ρ1≈ρ2 =
 -- Extensions with other stuff? As long as your evaluation is deterministic, you're good?!
 
 -- IMPORTANT TODO:  Show the "reify identity substitution" thing
-open import Candidate

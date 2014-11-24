@@ -21,10 +21,10 @@ HSYM : ∀ {B A} (U1 : PREL A) (El1 : INTERP B U1) (U2 : PREL A) (El2 : INTERP B
 HSYM U1 El1 U2 El2 = ∀ {A A'} (pA : A ≈ A' ∈ U1) (pA' : A' ≈ A ∈ U2)
   -> ∀ {a a'} -> a ≈ a' ∈ (El1 pA) -> a' ≈ a ∈ (El2 pA')
 
-sym-⊥' : SYM ⊥'
-sym-⊥' h n = , proj₂ (proj₂ (h n)) , proj₁ (proj₂ (h n))
-
 open Clo
+sym-⊥' : SYM ⊥'
+sym-⊥' h n = inj' (rd2 (h n)) (rd1 (h n)) (sym (rel (h n)))
+
 mutual
  NatR-sym : SYM NatR
  NatR-sym p = inj (red2 p) (red1 p) (NatV-sym (rel p))

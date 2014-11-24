@@ -17,20 +17,18 @@ REL = PREL Val
 _≈_∈_ : ∀ {α} -> α -> α -> PREL α -> Set
 a ≈ b ∈ A = A a b
 
--- TODO: These can be instances of Clo!!!
-⊤' : PREL Dnf
-⊤' (↓[ A ] a) (↓[ A₁ ] a₁) = ∀ n → ∃ (λ v → Rnf n , a ∶ A ↘ v × Rnf n , a₁ ∶ A₁ ↘ v)
-
-⊥' : PREL Dne
-⊥' e e' = ∀ n → ∃ (λ u → Rne n , e ↘ u × Rne n , e' ↘ u)
-
-
 record Clo {C V : Set} (Red : C -> V -> Set) (B : PREL V) (c1 c2 : C) : Set where
  constructor inj
  field
   red1 : ∃ (λ v1 -> Red c1 v1)
   red2 : ∃ (λ v2 -> Red c2 v2)
   rel : B (proj₁ red1) (proj₁ red2)
+
+⊤' : PREL Dnf
+⊤' (↓[ A ] a) (↓[ A₁ ] a₁) = ∀ n → (a , A) ≈ (a₁ , A₁) ∈ Clo (Rnf_,_↘_ n) _≡_
+
+⊥' : PREL Dne
+⊥' e e' = ∀ n → e ≈ e' ∈ Clo (Rne_,_↘_ n) _≡_
 
 mutual
  NatR : REL
