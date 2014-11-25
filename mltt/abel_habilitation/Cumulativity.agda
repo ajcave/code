@@ -39,9 +39,6 @@ mutual
                  (rel (pF₁ p₁))) r
  irrL (inj akf1) (inj akf2) (Set* x) refl  (Set* x₁) p = cumul (akf1 x) (akf2 x₁) ≤refl p
 
--- irrLω : ∀ {A A'} (pA1 pA2 : A ≈ A' ∈ Type) -> [ pA1 ] →₂ [ pA2 ]
--- irrLω (n , pA1) (m , pA2) = irrL _ _ pA1 refl pA2
-
 open import Sym
 irrR : ∀ {k n} (K : Acc k) (N : Acc n) {A A' B C}
     (pAB : B ≈ A ∈ SetU' K)
@@ -95,11 +92,5 @@ irrRω' : ∀ {k} {K : Acc k} {A B C}
    -> ElU' pAB →₂ ElU' pAC
 irrRω' {k} {inj ackf} pAB pAC = irrR _ _ pAB refl pAC
 
--- AppIrr : ∀ {A A'} (p q : A ≈ A' ∈ Type) -> App ([ p ]) →₂ App ([ q ])
--- AppIrr p q (inj red1 red2 rel) = inj red1 red2 (irrLω p q rel)
-
-⟦⟧tp'-irr : ∀ {c1 c2 k} (p q : c1 ≈ c2 ∈ App (SetU k)) -> ⟦ p ⟧tp' →₂ ⟦ q ⟧tp'
+⟦⟧tp'-irr : ∀ {c1 c2 k} (p q : c1 ≈ c2 ∈ App (SetU k)) -> ⟦ p ⟧tp →₂ ⟦ q ⟧tp
 ⟦⟧tp'-irr p q x = irrL _ _ (rel p) (AppDeter3 p q) (rel q) x
-
--- ⟦⟧tp-irr : ∀ {c1 c2} (p q : c1 ≈ c2 ∈ App Type) -> ⟦ p ⟧tp →₂ ⟦ q ⟧tp
--- ⟦⟧tp-irr p q x = irrL _ _ (proj₂ (App.rel p)) (AppDeter3 p q) (proj₂ (App.rel q)) x

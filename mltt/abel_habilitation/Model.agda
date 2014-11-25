@@ -141,14 +141,8 @@ ElU' {n} {inj p} = SetF.El n (SetU' ∘ p)
 ElU : (n : ℕ) -> ∀ {A A'} -> A ≈ A' ∈ (SetU n) -> REL
 ElU n = ElU' {n} {nat-acc {n}}
 
--- [_] : ∀ {A A'} -> A ≈ A' ∈ Type -> REL
--- [ n , pA ] = ElU n pA
-
-⟦_⟧tp' : ∀ {α : Set} {red : α -> Val -> Set} {c1 c2} {k} -> c1 ≈ c2 ∈ Clo red (SetU k) -> REL
-⟦ vT ⟧tp' = ElU _ (rel vT)
-
--- ⟦_⟧tp : ∀ {c1 c2} -> c1 ≈ c2 ∈ App Type -> REL
--- ⟦ vT ⟧tp = [ App.rel vT ]
+⟦_⟧tp : ∀ {α : Set} {red : α -> Val -> Set} {c1 c2} {k} -> c1 ≈ c2 ∈ Clo red (SetU k) -> REL
+⟦ vT ⟧tp = ElU _ (rel vT)
 
 data Comb (R : EnvREL) (S : ∀ {ρ1 ρ2} -> ρ1 ≈ ρ2 ∈ R -> REL) : EnvREL where
  _,_ : ∀ {ρ1 ρ2 a1 a2} (vρ : ρ1 ≈ ρ2 ∈ R) -> a1 ≈ a2 ∈ S vρ -> (ρ1 , a1) ≈ (ρ2 , a2) ∈ Comb R S
@@ -169,7 +163,7 @@ mutual
 
  ⟦_⟧hctx : {Γ1 Γ2 : Ctx} -> ⊨ Γ1 ≈ Γ2 ctx -> EnvREL
  ⟦ ⊡ ⟧hctx = EmpRel
- ⟦ Γ , T ⟧hctx = Comb ⟦ Γ ⟧hctx (λ vρ -> ⟦ T vρ ⟧tp')
+ ⟦ Γ , T ⟧hctx = Comb ⟦ Γ ⟧hctx (λ vρ -> ⟦ T vρ ⟧tp)
 
 ⊨_ctx : Ctx -> Set
 ⊨ Γ ctx = ⊨ Γ ≈ Γ ctx
@@ -181,17 +175,14 @@ _⊨_type_ : {Γ : Ctx} -> ⊨ Γ ctx -> Exp -> ℕ -> Set
 Γ ⊨ T type k  = Γ ⊨ T ≈ T type k 
 
 _⊨_≈_∶_ : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> Exp -> Exp -> {T1 T2 : Exp} -> Γ ⊨ T1 ≈ T2 type k -> Set
-Γ ⊨ t ≈ t' ∶ T = t ≈ t' ∈ Π* _↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
+Γ ⊨ t ≈ t' ∶ T = t ≈ t' ∈ Π* _↘_ ⟦ Γ ⟧hctx (⟦_⟧tp ∘  T)
 
-[_]∋_∶[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> ℕ -> {T1 T2 : Exp} -> Γ ⊨ T1 ≈ T2 type k -> Set
-[ Γ ]∋ x ∶[ T ] = x ≈ x ∈ Π* lookup_↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
+_∋m_∶_ : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> ℕ -> {T1 T2 : Exp} -> Γ ⊨ T1 ≈ T2 type k -> Set
+Γ ∋m x ∶ T  = x ≈ x ∈ Π* lookup_↘_ ⟦ Γ ⟧hctx (⟦_⟧tp ∘  T)
 
--- [_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> Γ ⊨ T type k -> Set
--- [ Γ ]⊨ t ≈ t' ∶[ T ] = [ Γ ]⊨ t ≈ t' ∶h[ T ]
+_⊨_∶_ : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> {T : Exp} -> Γ ⊨ T type k -> Set
+Γ ⊨ t ∶ T = Γ ⊨ t ≈ t ∶ T
 
-[_]⊨_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> {T : Exp} -> Γ ⊨ T type k -> Set
-[ Γ ]⊨ t ∶[ T ] = Γ ⊨ t ≈ t ∶ T
-
-[_]⊨s_≈_∶[_] : ∀ {γ1 γ2 δ1 δ2} (Γ : ⊨ γ1 ≈ γ2 ctx)  -> Subst -> Subst -> (Δ : ⊨ δ1 ≈ δ2 ctx) -> Set
-[ Γ ]⊨s σ1 ≈ σ2 ∶[ Δ ] =
+_⊨s_≈_∶_ : ∀ {γ1 γ2 δ1 δ2} (Γ : ⊨ γ1 ≈ γ2 ctx)  -> Subst -> Subst -> (Δ : ⊨ δ1 ≈ δ2 ctx) -> Set
+Γ ⊨s σ1 ≈ σ2 ∶ Δ  =
   ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧hctx) → ⟦ σ1 ⟧ ρ ≈ ⟦ σ2 ⟧ ρ' ∈ (Clo _↘s_ ⟦ Δ ⟧hctx)
