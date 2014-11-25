@@ -180,17 +180,17 @@ mutual
 _⊨_type_ : {Γ : Ctx} -> ⊨ Γ ctx -> Exp -> ℕ -> Set
 Γ ⊨ T type k  = Γ ⊨ T ≈ T type k 
 
-[_]⊨_≈_∶h[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> Exp -> Exp -> {T1 T2 : Exp} -> Γ ⊨ T1 ≈ T2 type k -> Set
-[ Γ ]⊨ t ≈ t' ∶h[ T ] = t ≈ t' ∈ Π* _↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
+_⊨_≈_∶_ : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> Exp -> Exp -> {T1 T2 : Exp} -> Γ ⊨ T1 ≈ T2 type k -> Set
+Γ ⊨ t ≈ t' ∶ T = t ≈ t' ∈ Π* _↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
 
 [_]∋_∶[_] : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) {k} -> ℕ -> {T1 T2 : Exp} -> Γ ⊨ T1 ≈ T2 type k -> Set
 [ Γ ]∋ x ∶[ T ] = x ≈ x ∈ Π* lookup_↘_ ⟦ Γ ⟧hctx (⟦_⟧tp' ∘  T)
 
-[_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> Γ ⊨ T type k -> Set
-[ Γ ]⊨ t ≈ t' ∶[ T ] = [ Γ ]⊨ t ≈ t' ∶h[ T ]
+-- [_]⊨_≈_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> Exp -> {T : Exp} -> Γ ⊨ T type k -> Set
+-- [ Γ ]⊨ t ≈ t' ∶[ T ] = [ Γ ]⊨ t ≈ t' ∶h[ T ]
 
 [_]⊨_∶[_] : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> {T : Exp} -> Γ ⊨ T type k -> Set
-[ Γ ]⊨ t ∶[ T ] = [ Γ ]⊨ t ≈ t ∶h[ T ]
+[ Γ ]⊨ t ∶[ T ] = Γ ⊨ t ≈ t ∶ T
 
 [_]⊨s_≈_∶[_] : ∀ {γ1 γ2 δ1 δ2} (Γ : ⊨ γ1 ≈ γ2 ctx)  -> Subst -> Subst -> (Δ : ⊨ δ1 ≈ δ2 ctx) -> Set
 [ Γ ]⊨s σ1 ≈ σ2 ∶[ Δ ] =

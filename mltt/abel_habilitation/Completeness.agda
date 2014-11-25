@@ -45,14 +45,14 @@ com2 F1 F2 x F3 = inj' (F1 (rd1 x)) (F2 (rd2 x)) (F3 (rel x))
 Set' : ∀ {γ} k {Γ : ⊨ γ ctx} -> Γ ⊨ Set* k type (suc k)
 Set' k ρ1≈ρ2 = inj' Set* Set* (Set* (s≤s ≤refl))
 
-Set'' : ∀ {γ} k {Γ : ⊨ γ ctx} -> [ Γ ]⊨ (Set* k) ≈ (Set* k) ∶[ Set' (suc k) ]
+Set'' : ∀ {γ} k {Γ : ⊨ γ ctx} -> Γ ⊨ (Set* k) ≈ (Set* k) ∶ (Set' (suc k))
 Set'' k ρ1≈ρ2 = inj' Set* Set* (Set* (s≤s ≤refl))
 
 -- Alternatively, I could index [ Γ ]⊨ a type[ _ ] by the proof of accessibility...?
-in-type : ∀ {γ a1 a2 k} {Γ : ⊨ γ ctx} -> [ Γ ]⊨ a1 ≈ a2 ∶[ Set' k ] -> Γ ⊨ a1 ≈ a2 type k
+in-type : ∀ {γ a1 a2 k} {Γ : ⊨ γ ctx} -> Γ ⊨ a1 ≈ a2 ∶ Set' k -> Γ ⊨ a1 ≈ a2 type k
 in-type d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (cumul _ _ ≤refl)
 
-out-type : ∀ {γ a1 a2 k} {Γ : ⊨ γ ctx} -> Γ ⊨ a1 ≈ a2 type k -> [ Γ ]⊨ a1 ≈ a2 ∶[ Set' k ]
+out-type : ∀ {γ a1 a2 k} {Γ : ⊨ γ ctx} -> Γ ⊨ a1 ≈ a2 type k -> Γ ⊨ a1 ≈ a2 ∶ Set' k
 out-type d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (cumul _ _ ≤refl)
 
 -- irr : ∀ {γ t s a k} {Γ : ⊨ γ ctx} {A1 A2 : [ Γ ]⊨ a type[ k ]}
@@ -86,8 +86,8 @@ out-type d ρ1≈ρ2 = com2 F.id F.id (d ρ1≈ρ2) (cumul _ _ ≤refl)
 
 fundƛ : ∀ {γ1 γ2 a1 a2 b1 b2 t s k}
   {Γ : ⊨ γ1 ≈ γ2 ctx} {A : Γ ⊨ a1 ≈ a2 type k } {B : (Γ , A) ⊨ b1 ≈ b2 type k}
-      -> [ Γ , A ]⊨ t ≈ s ∶h[ B ]
-      -> [ Γ ]⊨ (ƛ t) ≈ (ƛ s) ∶h[ Πs A B ]
+      -> (Γ , A) ⊨ t ≈ s ∶ B
+      -> Γ ⊨ (ƛ t) ≈ (ƛ s) ∶ Πs A B
 fundƛ d ρ₁≈ρ₂ = inj (, ƛ) (, ƛ) (λ p → com ƛ· ƛ· (d (ρ₁≈ρ₂ , p)))
 
 -- fundƛ' : ∀ {γ a b t s k} {Γ : ⊨ γ ctx} (pΠAB : [ Γ ]⊨ (Π a (ƛ b)) type[ k ])
@@ -113,7 +113,7 @@ fund-⊡ ρ1≈ρ2 = inj' ⊡ ⊡ ⊡
 fund-, : ∀ {γ1 γ2 δ1 δ2 σ σ' t t' a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx}
  -> (A : Δ ⊨ a1 ≈ a2 type k)
  -> (dσ : [ Γ ]⊨s σ ≈ σ' ∶[ Δ ])
- -> [ Γ ]⊨ t ≈ t' ∶h[ Δ > A • dσ ]
+ -> Γ ⊨ t ≈ t' ∶ (Δ > A • dσ)
  -> [ Γ ]⊨s σ , t ≈ σ' , t' ∶[ Δ , A ]
 fund-, A dσ dt dρ =
  let vσ = dσ dρ
@@ -127,7 +127,7 @@ fund-id dρ = inj (, Eval.id) (, Eval.id) dρ
  
 _>h_•_ : ∀ {γ1 γ2 a1 a2 b1 b2 t1 t2 j k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : Γ ⊨ a1 ≈ a2 type k) 
  -> (Γ , A) ⊨ b1 ≈ b2 type j
- -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
+ -> Γ ⊨ t1 ≈ t2 ∶ A
  -> Γ ⊨ b1 [ T.id , t1 ] ≈ b2 [ T.id , t2 ] type j
 A >h B • t = (_ , A) > B • fund-, A fund-id t
 
@@ -155,8 +155,8 @@ mutual
 fund-hsym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} {Γ' : ⊨ γ2 ≈ γ1 ctx}
  {A  : Γ ⊨ a1 ≈ a2 type k}
  {A' : Γ' ⊨ a2 ≈ a1 type k}
-  -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
-  -> [ Γ' ]⊨ t2 ≈ t1 ∶h[ A' ]
+  -> Γ ⊨ t1 ≈ t2 ∶ A
+  -> Γ' ⊨ t2 ≈ t1 ∶ A'
 fund-hsym {A = A} {A' = A'} dt dρ = 
  let q = dt (⟦,⟧ctx-sym _ _ dρ) in
  let q1 = hsym* eval-deter (A (⟦,⟧ctx-sym _ _ dρ)) (A' dρ) (rel q) in
@@ -198,21 +198,21 @@ fund-sym-tp da = ΠSYM.Πsym (ctx-sym2 _) (ctx-trans2 _) (λ _ _ x → x) (λ _ 
 -- TODO: Is that generality necessary?
 
 fund-sym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : Γ ⊨ a1 ≈ a2 type k)
- -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
- -> [ Γ ]⊨ t2 ≈ t1 ∶h[ A ]
+ -> Γ ⊨ t1 ≈ t2 ∶ A
+ -> Γ ⊨ t2 ≈ t1 ∶ A
 fund-sym {k = k} A = ΠSYM.Πsym (ctx-sym2 _) (ctx-trans2 _) (irrLF' eval-deter A) (irrRF' eval-deter A)
        (λ p  → symω' _ (rel (A p)))
 
 fund-trans : ∀ {γ1 γ2 t1 t2 t3 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : Γ ⊨ a1 ≈ a2 type k)
- -> [ Γ ]⊨ t1 ≈ t2 ∶h[ A ]
- -> [ Γ ]⊨ t2 ≈ t3 ∶h[ A ]
- -> [ Γ ]⊨ t1 ≈ t3 ∶h[ A ]
+ -> Γ ⊨ t1 ≈ t2 ∶ A
+ -> Γ ⊨ t2 ≈ t3 ∶ A
+ -> Γ ⊨ t1 ≈ t3 ∶ A
 fund-trans A = ΠPER.Πtrans eval-deter (ctx-selfL _) (irrLF' eval-deter A)
  (λ p → symω' _ (rel (A p))) (λ p → transω' _ (rel (A p)))
 
 self : ∀ {γ a t1 t2 k} {Γ : ⊨ γ ctx} (A : Γ ⊨ a type k)
- -> [ Γ ]⊨ t1 ≈ t2 ∶[ A ]
- -> [ Γ ]⊨ t1 ≈ t1 ∶[ A ]
+ -> Γ ⊨ t1 ≈ t2 ∶ A
+ -> Γ ⊨ t1 ≈ t1 ∶ A
 self A t1≈t2 = fund-trans A t1≈t2 (fund-sym A t1≈t2)
 
 
@@ -221,9 +221,9 @@ self A t1≈t2 = fund-trans A t1≈t2 (fund-sym A t1≈t2)
 -- Heterogeneous formulation makes this statement and proof simpler
 fund·h : ∀ {γ1 γ2 t1 t2 s1 s2 a1 a2 b1 b2 k}
  {Γ : ⊨ γ1 ≈ γ2 ctx} {A : Γ ⊨ a1 ≈ a2 type k} {B : (Γ , A) ⊨ b1 ≈ b2 type k}
-     ->       [ Γ ]⊨ t1 ≈ t2 ∶h[ Πs A B ]
-     -> (ds : [ Γ ]⊨ s1 ≈ s2 ∶h[ A ])
-     ->       [ Γ ]⊨ t1 · s1 ≈ t2 · s2 ∶h[ A >h B • ds ]
+     ->       Γ ⊨ t1 ≈ t2 ∶ Πs A B
+     -> (ds : Γ ⊨ s1 ≈ s2 ∶ A)
+     ->       Γ ⊨ t1 · s1 ≈ t2 · s2 ∶ (A >h B • ds)
 fund·h dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt ρ1≈ρ2 in
@@ -234,9 +234,9 @@ fund·h dt ds ρ1≈ρ2 =
 
 fundβ : ∀ {γ1 γ2 t1 t2 s1 s2 a1 a2 b1 b2 k}
  {Γ : ⊨ γ1 ≈ γ2 ctx} {A : Γ ⊨ a1 ≈ a2 type k} {B : (Γ , A) ⊨ b1 ≈ b2 type k}
- -> [ Γ , A ]⊨ t1 ≈ t2 ∶h[ B ]
- -> (ds : [ Γ ]⊨ s1 ≈ s2 ∶h[ A ])
- -> [ Γ ]⊨ (ƛ t1) · s1 ≈ (t2 [ T.id , s2 ]) ∶h[ A >h B • ds ]
+ -> (Γ , A) ⊨ t1 ≈ t2 ∶ B
+ -> (ds : Γ ⊨ s1 ≈ s2 ∶ A)
+ -> Γ ⊨ (ƛ t1) · s1 ≈ (t2 [ T.id , s2 ]) ∶ (A >h B • ds)
 fundβ dt ds ρ1≈ρ2 =
  let vs = ds ρ1≈ρ2 in
  let vt = dt (ρ1≈ρ2 , (rel vs)) in
@@ -246,8 +246,8 @@ fundβ dt ds ρ1≈ρ2 =
 
 fundη : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 k}
  {Γ : ⊨ γ1 ≈ γ2 ctx} {A : Γ ⊨ a1 ≈ a2 type k} {B : (Γ , A) ⊨ b1 ≈ b2 type k}
- -> [ Γ ]⊨ t1 ≈ t2 ∶h[ Πs A B ]
- -> [ Γ ]⊨ t1 ≈ (ƛ (t2 [ ↑ ] · idx 0)) ∶h[ Πs A B ]
+ -> Γ ⊨ t1 ≈ t2 ∶ Πs A B
+ -> Γ ⊨ t1 ≈ (ƛ (t2 [ ↑ ] · idx 0)) ∶ Πs A B
 fundη dt ρ1≈ρ2 =
  let vt = dt ρ1≈ρ2 in
  inj (red1 vt)
@@ -260,8 +260,8 @@ fundη dt ρ1≈ρ2 =
 fund-subƛ : ∀ {γ1 γ2 t1 t2 a1 a2 b1 b2 σ1 σ2 δ1 δ2 k}
  {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx} {A : Δ ⊨ a1 ≈ a2 type k} {B : (Δ , A) ⊨ b1 ≈ b2 type k}
  -> (dσ : [ Γ ]⊨s σ1 ≈ σ2 ∶[ Δ ])
- -> [ Δ , A ]⊨ t1 ≈ t2 ∶h[ B ]
- -> [ Γ ]⊨ (ƛ t1) [ σ1 ] ≈ ƛ (t2 [ σ2 [ ↑ ] , idx 0 ]) ∶h[ Δ > Πs A B • dσ ]
+ -> (Δ , A) ⊨ t1 ≈ t2 ∶ B
+ -> Γ ⊨ (ƛ t1) [ σ1 ] ≈ ƛ (t2 [ σ2 [ ↑ ] , idx 0 ]) ∶ (Δ > Πs A B • dσ)
 fund-subƛ dσ dt dρ = 
  let vσ = dσ dρ in
  inj (, ƛ [ rd1 vσ ])
@@ -275,12 +275,12 @@ Nats : ∀ {γ1 γ2} k {Γ : ⊨ γ1 ≈ γ2 ctx} -> Γ ⊨ Nat ≈ Nat type k
 Nats k ρ1≈ρ2 = inj (, Nat) (, Nat) Nat
 
 fund-zero : ∀ {γ1 γ2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
- -> [ Γ ]⊨ zero ≈ zero ∶h[ Nats k ]
+ -> Γ ⊨ zero ≈ zero ∶ Nats k
 fund-zero ρ1≈ρ2 = inj' zero zero (inj' natval natval zero)
 
 fund-suc : ∀ {γ1 γ2 t s k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
- -> [ Γ ]⊨ t ≈ s ∶h[ Nats k ]
- -> [ Γ ]⊨ suc t ≈ suc s ∶h[ Nats k ] 
+ -> Γ ⊨ t ≈ s ∶ Nats k
+ -> Γ ⊨ suc t ≈ suc s ∶ Nats k
 fund-suc d ρ1≈ρ2 =
  let vt = d ρ1≈ρ2 in
  inj' (suc (rd1 vt) (rd1 (rel vt))) (suc (rd2 vt) (rd2 (rel vt))) (inj' natval natval (suc (rel (rel vt))))
@@ -301,9 +301,9 @@ mutual
  fund-plus'' (x ⊕ x₁) n₁ = x ⊕ fund-plus' x₁ n₁
 
 fund-plus : ∀ {γ1 γ2 m m' n n' k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
- -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
- -> [ Γ ]⊨ n ≈ n' ∶h[ Nats k ]
- -> [ Γ ]⊨ m ⊕ n ≈ m' ⊕ n' ∶h[ Nats k ]
+ -> Γ ⊨ m ≈ m' ∶ Nats k
+ -> Γ ⊨ n ≈ n' ∶ Nats k
+ -> Γ ⊨ m ⊕ n ≈ m' ⊕ n' ∶ Nats k
 fund-plus dm dn ρ1≈ρ2 =
  let vm = dm ρ1≈ρ2
      vn = dn ρ1≈ρ2
@@ -329,10 +329,10 @@ mutual
  fund-assoc'' (x ⊕ x₁) p₁ n₁ = x ⊕ (fund-assoc' x₁ p₁ n₁)
 
 fund-assoc : ∀ {γ1 γ2 m m' n n' p p' k} {Γ : ⊨ γ1 ≈ γ2 ctx} 
- -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
- -> [ Γ ]⊨ n ≈ n' ∶h[ Nats k ]
- -> [ Γ ]⊨ p ≈ p' ∶h[ Nats k ]
- -> [ Γ ]⊨ (m ⊕ n) ⊕ p ≈ m' ⊕ (n' ⊕ p') ∶h[ Nats k ]
+ -> Γ ⊨ m ≈ m' ∶ Nats k
+ -> Γ ⊨ n ≈ n' ∶ Nats k
+ -> Γ ⊨ p ≈ p' ∶ Nats k
+ -> Γ ⊨ (m ⊕ n) ⊕ p ≈ m' ⊕ (n' ⊕ p') ∶ Nats k
 fund-assoc dm dn dp ρ1≈ρ2 =
  let vm = dm ρ1≈ρ2
      vn = dn ρ1≈ρ2
@@ -355,8 +355,8 @@ mutual
  fund-idR'' (x ⊕ x₁) = x ⊕ (fund-idR' x₁)
 
 fund-idR : ∀ {γ1 γ2 m m' k} {Γ : ⊨ γ1 ≈ γ2 ctx}
- -> [ Γ ]⊨ m ≈ m' ∶h[ Nats k ]
- -> [ Γ ]⊨ (m ⊕ zero) ≈ m' ∶h[ Nats k ]
+ -> Γ ⊨ m ≈ m' ∶ Nats k
+ -> Γ ⊨ (m ⊕ zero) ≈ m' ∶ Nats k
 fund-idR dm ρ1≈ρ2 =
  let vm = dm ρ1≈ρ2 in
  inj' (plus (rd1 vm) zero (rd1 (rel vm)) natval)
@@ -389,14 +389,14 @@ fund-idx : ∀ {γ1 γ2 t1 t2 k x}
  -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> {T : Γ ⊨ t1 ≈ t2 type k}
  -> [ Γ ]∋ x ∶[ T ]
- -> [ Γ ]⊨ idx x ≈ idx x ∶h[ T ]
+ -> Γ ⊨ idx x ≈ idx x ∶ T
 fund-idx dx ρ1≈ρ2 = inj' (idx (rd1 (dx ρ1≈ρ2))) (idx (rd2 (dx ρ1≈ρ2))) (rel (dx ρ1≈ρ2))
 
 fund-idx' : ∀ {γ1 γ2 t1 t2 x}
  -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (x1 : γ1 ∋ x ∶ t1)
  -> (x2 : γ2 ∋ x ∶ t2)
- -> [ Γ ]⊨ idx x ≈ idx x ∶h[ proj₂ (fund-lookuptp Γ x1 x2) ]
+ -> Γ ⊨ idx x ≈ idx x ∶ (proj₂ (fund-lookuptp Γ x1 x2))
 fund-idx' {Γ = Γ} x1 x2 ρ1≈ρ2 = fund-idx  {Γ = Γ} {T = proj₂ (fund-lookuptp Γ x1 x2)} (fund-lookup Γ x1 x2) ρ1≈ρ2
 
 unbox-lem : ∀ {n1 n2}
@@ -429,8 +429,8 @@ fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (T : (⊡ , Nats j) ⊨ t type k)
  -> [ ⊡ ]⊨ tz ∶[ Nats j >h T • (fund-zero {k = j})  ]
  -> [ (⊡ , Nats j) , T ]⊨ ts ∶[ _>_•_ {Γ = (⊡ , Nats j) , T} (⊡ , (Nats j)) T (fund-, {Γ = (⊡ , Nats j) , T} {Δ = ⊡} (Nats j) (fund-⊡ {Γ = (⊡ , Nats j) , T}) (fund-suc {k = j} {Γ = (⊡ , Nats j) , T} (fund-idx' {Γ = (⊡ , Nats j) , T} (pop top) (pop top)))) ]
- -> (dn : [ Γ ]⊨ tn ≈ tn' ∶h[ Nats j ])
- -> [ Γ ]⊨ (rec t tz ts tn) ≈ (rec t tz ts tn') ∶h[ (⊡ , (Nats j)) > T • fund-, (Nats j) fund-⊡ dn ]
+ -> (dn : Γ ⊨ tn ≈ tn' ∶ Nats j)
+ -> Γ ⊨ (rec t tz ts tn) ≈ (rec t tz ts tn') ∶ ((⊡ , (Nats j)) > T • fund-, (Nats j) fund-⊡ dn)
 fund-rec dT dtz dts dn ρ1≈ρ2 =
  let vn = dn ρ1≈ρ2
      q = fund-rec' dT dtz dts (rel (rel vn))
