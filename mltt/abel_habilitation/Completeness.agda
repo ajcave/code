@@ -1,4 +1,3 @@
-{-# OPTIONS --copatterns #-}
 module Completeness where
 open import Syntax
 open import SyntaxTm as T
@@ -426,6 +425,31 @@ fund-rec dT dtz dts dn ρ1≈ρ2 =
  in inj' (rec (rd1 vn) (rd1 (rel vn)) (rd1 q))
          (rec (rd2 vn) (rd2 (rel vn)) (rd2 q))
          q0
+
+fund-rec'' : ∀ {t tz ts n1 n2 j k}
+ -> (T : (⊡ , Nats j) ⊨ t type k)
+ -> ⊡ ⊨ tz ∶ (Nats j >h T • (fund-zero {k = j}))
+ -> let Δ = (⊡ , Nats j) , T
+        --u1 : (⊡ , Nats j) ⊨s ↑ ≈ ↑ ∶ ⊡
+        u1 = fund-↑ ⊡ (Nats j)
+        --N0 : ⊡ ⊨ Nat type j
+        N0 = Nats j
+        --N1 : (⊡ , Nats j) ⊨ Nat [ ↑ ] type j
+        N1 = _>_•_ {Γ = ⊡ , Nats j} ⊡ N0 u1
+        --u2 : Δ ⊨s ↑ ≈ ↑ ∶ (⊡ , Nats j)
+        u2 = fund-↑ (⊡ , Nats j) T
+        --N2 : Δ ⊨ (Nat [ ↑ ]) [ ↑ ] type j
+        N2 = _>_•_ {Γ = Δ} (⊡ , Nats j) N1 u2
+        z' : Δ ⊨ idx 1 ≈ idx 1 ∶ N2
+        z' = fund-idx' (pop top) (pop top)
+        σ' : Δ ⊨s (⊡ , idx 1) ≈ (⊡ , idx 1) ∶ (⊡ , Nats j)
+        σ' = fund-, _ fund-⊡ z'
+        T' : Δ ⊨ t [ ⊡ , idx 1 ] type k
+        T' = _ > T • σ' in
+    Δ ⊨ ts ≈ ts ∶ T'
+ -> (vn : n1 ≈ n2 ∈ NatV)
+ -> (rec t , tz , ts , n1) ≈ (rec t , tz , ts , n2) ∈ Clo _↘r_ ⟦ T (⊡ , inj' natval natval vn) ⟧tp
+fund-rec'' dT dtz dts = {!!}
 
 -- TODO: Still need rec 0 and rec suc rules...
 
