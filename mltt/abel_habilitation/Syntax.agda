@@ -25,7 +25,6 @@ module Syn (Tm : Set) where
    natneu : NatNeu -> NatVal
 
   data NatNeu : Set where
-   --neu : Dne -> NatNeu
    _⊕_ : Dne -> NatVal -> NatNeu
 
   data Env : Set where

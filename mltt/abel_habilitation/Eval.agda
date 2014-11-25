@@ -63,17 +63,6 @@ mutual
  _++_ : NatNeu -> NatVal -> NatNeu
  --neu x ++ v = x ⊕ v
  (x ⊕ x₁) ++ v = x ⊕ (x₁ ⊕̂ v)
-
- -- data _⊕_↘p_ : Val -> Val -> Val -> Set where
- --  zero : ∀ {v} -> natval zero ⊕ v ↘p v
- --  suc : ∀ {u v w} -> v ⊕ u ↘p w -> Suc w ↘p w' -> (natval (suc v)) ⊕ u ↘p w'
- --  ne : ∀ {e v w} -> e +̂ v ↘p w -> (↑[ Nat ] e) ⊕ v ↘p w
- -- data _+̂_↘p_ : Dne -> Val -> Val -> Set where
- --  plus : ∀ {e v u w y} -> v ⊕ u ↘p y -> e +̂ y ↘p w -> (e ⊕ v) +̂ u ↘p w
- --  notplus : ∀ {e} {_ : NotPlus e} {u} -> e +̂ u ↘p (↑[ Nat ] (e ⊕ u))
- -- NotPlus : Dne -> Set -- This is a bit ad-hoc...
- -- NotPlus (e ⊕ x) = ⊥
- -- NotPlus _ = ⊤
  
  data _↘s_ : Subst × Env -> Env -> Set where
   _[_] : ∀ {σ1 σ2 ρ ρ' ρ''} -> ⟦ σ2 ⟧ ρ ↘s ρ' -> ⟦ σ1 ⟧ ρ' ↘s ρ'' -> ⟦ σ1 [ σ2 ] ⟧ ρ ↘s ρ''
@@ -122,11 +111,6 @@ mutual
    -> Rnf n , ((Π A F) , Set* i) ↘ (Π A' (ƛ B'))
   Neut : ∀ {B} {_ : IsBaseType B} {n e v B'} -> Rne n , e ↘ v -> Rnf n , ((↑[ B' ] e) , B) ↘ v
   unbox : ∀ {v m n u} -> UnboxNat v ↘ m -> RnfNat n , m ↘ u -> Rnf n , (v , Nat) ↘ u
-  --nat : ∀ {n u m} -> RnfNat n , m ↘ u -> Rnf n , natval m ∶ Nat ↘ u
-  -- zero : ∀ {n} -> Rnf n , zero ∶ Nat ↘ zero
-  -- suc : ∀ {n a v} -> Rnf n , a ∶ Nat ↘ v -> Rnf n , suc a ∶ Nat ↘ suc v
-  -- _⊕_ : ∀ {n e v t s} -> Rne n , e ↘ t -> Rnf n , v ∶ Nat ↘ s -> Rnf n , (↑[ Nat ] e ⊕ v) ∶ Nat ↘ (t ⊕ s)
-  --NeutNat : ∀ {n e v } -> Rne n , e ↘ v -> Rnf n , (↑[ Nat ] e) ∶ Nat ↘ (v ⊕ zero)
   -- This seems kind of essential, because we won't know if something is actually a Nat and needs a zero appended until "late", i.e. after the type is plugged in: A:Set, x:A |- x : A. When we plug Nat/A, we need to expand this to x ⊕ zero ∶ Nat
   -- TODO: Could I even postpone the (re)association and evaluation of ⊕ this far?
   --   (its evaluation could be delayed until now. Then potentially treated lazily?)
@@ -141,7 +125,6 @@ mutual
   natneu : ∀ {n x v} -> RneNat n , x ↘ v -> RnfNat n , natneu x ↘ v
 
  data RneNat_,_↘_ : ℕ -> NatNeu -> Exp -> Set where
-  --neu : ∀ {n x v} -> Rne n , x ↘ v -> RneNat n , neu x ↘ v
   _⊕_ : ∀ {n x v m u} -> Rne n , x ↘ v -> RnfNat n , m ↘ u -> RneNat n , (x ⊕ m) ↘ (v ⊕ u)
 
 Singleton : ∀ {A : Set} (P : A -> Set) -> Set
