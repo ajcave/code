@@ -410,6 +410,8 @@ fund-rec' dT dtz dts (natneu x) =
    let q = reifyNatNe x n in
    inj' (rec (rd1 q)) (rec (rd2 q)) (cong (rec _ _ _) (rel q))))
 
+-- TODO: If I make _⊨_∶_ a record, will elaboration assume its injective enough to make this work without
+-- having to specify implicits?
 fund-rec : ∀ {γ1 γ2 t tz ts tn tn' j k} -> {Γ : ⊨ γ1 ≈ γ2 ctx}
  -> (T : (⊡ , Nats j) ⊨ t type k)
  -> ⊡ ⊨ tz ∶ (Nats j >h T • (fund-zero {k = j}))
