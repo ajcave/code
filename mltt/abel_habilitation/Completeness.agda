@@ -181,6 +181,12 @@ fund-sym-tp : ∀ {γ1 γ2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
   -> Γ ⊨ a2 ≈ a1 type k
 fund-sym-tp = ⇒Sym.⇒sym (ctx-sym2 _) (ctx-trans2 _) (symSetω' _)
 
+fund-trans-tp : ∀ {γ1 γ2 a1 a2 a3 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
+ -> Γ ⊨ a1 ≈ a2 type k
+ -> Γ ⊨ a2 ≈ a3 type k
+ -> Γ ⊨ a1 ≈ a3 type k
+fund-trans-tp = ⇒Trans.⇒trans eval-deter (ctx-selfL _) (symSetω' _) (transSetω' _)
+
 fund-sym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : Γ ⊨ a1 ≈ a2 type k)
  -> Γ ⊨ t1 ≈ t2 ∶ A
  -> Γ ⊨ t2 ≈ t1 ∶ A
@@ -403,6 +409,50 @@ fund-⊡η σ1 σ2 ρ with σ1 ρ | σ2 ρ
  -> Γ ⊨s σ2 ≈ σ3 ∶ Δ
  -> Γ ⊨s σ1 ≈ σ3 ∶ Δ
 ⊨s-trans = ⇒Trans.⇒trans evals-deter (ctx-selfL _) (ctx-sym2 _) (ctx-trans2 _)
+
+fund-cumul : ∀ {γ1 γ2 a1 a2 j k} {Γ : ⊨ γ1 ≈ γ2 ctx}
+ -> j ≤ k
+ -> Γ ⊨ a1 ≈ a2 type j
+ -> Γ ⊨ a1 ≈ a2 type k
+fund-cumul j≤k a ρ =
+ let va = a ρ
+ in inj' (rd1 va) (rd2 va) (cumul _ _ j≤k (rel va))
+
+fund-conversion' : ∀ {γ a1 a2 a3 a4 i j k t1 t2} {Γ : ⊨ γ ctx}
+ -> {A1 : Γ ⊨ a1 ≈ a2 type i}
+ -> (A2 : Γ ⊨ a4 ≈ a3 type j)
+ -> (A : Γ ⊨ a1 ≈ a3 type k)
+ -> Γ ⊨ t1 ≈ t2 ∶ A1
+ -> Γ ⊨ t1 ≈ t2 ∶ A2
+fund-conversion' {A1 = A1} A2 A t ρ =
+ let q0 = irrL _ _ (rel (A1 ρ)) (eval-deter (rd1 (A1 ρ)) (rd1 (A ρ))) (rel (A ρ)) (rel (t ρ))
+     q1 = irrR _ _ (rel (A ρ)) (eval-deter (rd2 (A ρ)) (rd2 (A2 ρ))) (rel (A2 ρ)) q0
+ in inj' (rd1 (t ρ)) (rd2 (t ρ)) q1
+
+fund-conversion'' : ∀ {γ a1 a2 a3 a4 i j k t1 t2} {Γ : ⊨ γ ctx}
+ -> {A1 : Γ ⊨ a2 ≈ a1 type i}
+ -> (A2 : Γ ⊨ a3 ≈ a4 type j)
+ -> (A : Γ ⊨ a3 ≈ a1 type k)
+ -> Γ ⊨ t1 ≈ t2 ∶ A1
+ -> Γ ⊨ t1 ≈ t2 ∶ A2
+fund-conversion'' {A1 = A1} A2 A t ρ =
+ let q0 = irrR _ _ (rel (A1 ρ)) (eval-deter (rd2 (A1 ρ)) (rd2 (A ρ))) (rel (A ρ)) (rel (t ρ))
+     q1 = irrL _ _ (rel (A ρ)) (eval-deter (rd1 (A ρ)) (rd1 (A2 ρ))) (rel (A2 ρ)) q0
+ in inj' (rd1 (t ρ)) (rd2 (t ρ)) q1
+
+fund-conversion : ∀ {γ a1 a2 a3 a4 i j k t1 t2} {Γ : ⊨ γ ctx}
+ -> {A1 : Γ ⊨ a1 ≈ a2 type i}
+ -> {A2 : Γ ⊨ a3 ≈ a4 type j}
+ -> (A : Γ ⊨ a1 ≈ a3 type k)
+ -> Γ ⊨ t1 ≈ t2 ∶ A1
+ -> Γ ⊨ t1 ≈ t2 ∶ A2
+fund-conversion {A1 = A1} {A2 = A2} A t ρ =
+ let a3a4 = fund-sym-tp A2
+     a3a3 = fund-trans-tp A2 a3a4
+     q0 = fund-conversion' {A1 = A1} a3a4 A t
+     q1 = fund-conversion'' {A1 = a3a4} A2 a3a3 q0 ρ
+ in q1
+-- Hmm there are too many combinations of this and it seems somewhat arbitrary which one we use?
 
 unbox-lem : ∀ {n1 n2}
  -> (vn : n1 ≈ n2 ∈ NatR)

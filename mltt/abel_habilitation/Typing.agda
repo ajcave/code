@@ -17,11 +17,15 @@ mutual
  data _⊢_≈_∶_ (Γ : Ctx) : Exp -> Exp -> Exp -> Set where
   sym : ∀ {t t' A} -> Γ ⊢ t ≈ t' ∶ A -> Γ ⊢ t' ≈ t ∶ A
   trans : ∀ {t t' t'' A} -> Γ ⊢ t ≈ t' ∶ A -> Γ ⊢ t' ≈ t'' ∶ A -> Γ ⊢ t ≈ t'' ∶ A
+  _[_] : ∀ {Δ t t' σ σ' A} -> Δ ⊢ t ≈ t' ∶ A -> Γ ⊢s σ ≈ σ' ∶ Δ
+      -> Γ ⊢ t [ σ ] ≈ t' [ σ' ] ∶ A [ σ ]
+  conv : ∀ {t t' A A' i} -> Γ ⊢ t ≈ t' ∶ A -> Γ ⊢ A ≈ A' ∶ Set* i -> Γ ⊢ t ≈ t' ∶ A'
+  sub : ∀ {A A' i j} -> Γ ⊢ A ≈ A' ∶ Set* i -> i ≤ j -> Γ ⊢ A ≈ A' ∶ Set* j
+  idx : ∀ {x A} -> Γ ⊢ctx -> Γ ∋ x ∶ A -> Γ ⊢ (idx x) ≈ (idx x) ∶ A
   Nat : ∀ {i} -> Γ ⊢ctx -> Γ ⊢ Nat ≈ Nat ∶ Set* i
   zero : Γ ⊢ctx -> Γ ⊢ zero ≈ zero ∶ Nat
   suc : ∀ {t t'} -> Γ ⊢ t ≈ t' ∶ Nat -> Γ ⊢ suc t ≈ suc t' ∶ Nat
   Set* : ∀ {i} -> Γ ⊢ctx -> Γ ⊢ Set* i ≈ Set* i ∶ Set* (suc i)
-  idx : ∀ {x A} -> Γ ⊢ctx -> Γ ∋ x ∶ A -> Γ ⊢ (idx x) ≈ (idx x) ∶ A
   rec :  ∀ {T ts tz tn tn' i}
        -> (⊡ , Nat) ⊢ T ≈ T ∶ Set* i
        -> ⊡ ⊢ tz ≈ tz ∶ T [ ⊡ , zero ]
@@ -35,10 +39,6 @@ mutual
   ƛ : ∀ {t t' A B} -> (Γ , A) ⊢ t ≈ t' ∶ B -> Γ ⊢ (ƛ t) ≈ (ƛ t') ∶ Π A (ƛ B)
   Π : ∀ {A A' B B' i} -> Γ ⊢ A ≈ A' ∶ Set* i -> (Γ , A) ⊢ B ≈ B' ∶ Set* i
       -> Γ ⊢ Π A (ƛ B) ≈ Π A' (ƛ B') ∶ Set* i
-  _[_] : ∀ {Δ t t' σ σ' A} -> Δ ⊢ t ≈ t' ∶ A -> Γ ⊢s σ ≈ σ' ∶ Δ
-      -> Γ ⊢ t [ σ ] ≈ t' [ σ' ] ∶ A [ σ ]
-  conv : ∀ {t t' A A' i} -> Γ ⊢ t ≈ t' ∶ A -> Γ ⊢ A ≈ A' ∶ Set* i -> Γ ⊢ t ≈ t' ∶ A'
-  sub : ∀ {A A' i j} -> Γ ⊢ A ≈ A' ∶ Set* i -> i ≤ j -> Γ ⊢ A ≈ A' ∶ Set* j
   funβ : ∀ {A B t t' s s'} ->  (Γ , A) ⊢ t ≈ t' ∶ B -> Γ ⊢ s ≈ s' ∶ A
          -> Γ ⊢ (ƛ t) · s ≈ t' [ id , s' ] ∶ B [ id , s ]
   funη : ∀ {A B t t'} -> Γ ⊢ t ≈ t' ∶ Π A (ƛ B)

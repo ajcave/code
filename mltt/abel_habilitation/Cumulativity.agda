@@ -94,3 +94,4 @@ irrRω' {k} {inj ackf} pAB pAC = irrR _ _ pAB refl pAC
 
 ⟦⟧tp'-irr : ∀ {c1 c2 k} (p q : c1 ≈ c2 ∈ App (SetU k)) -> ⟦ p ⟧tp →₂ ⟦ q ⟧tp
 ⟦⟧tp'-irr p q x = irrL _ _ (rel p) (evala-deter (rd1 p) (rd1 q)) (rel q) x
+
