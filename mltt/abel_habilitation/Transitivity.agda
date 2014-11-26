@@ -113,7 +113,8 @@ module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
     let aaAA'' = selfL (transSet pA pA₁) aa'AA'' in 
     let aaAA' = irrLω' (transSet pA pA₁) pA aaAA'' in
     let aa'A'A'' = irrRω' (transSet pA pA₁) pA₁ aa'AA'' in
-    let q = transSet' (rel (pF aaAA')) (AppDeter1 (pF aaAA') (pF₁ aa'A'A'')) (rel (pF₁ aa'A'A'')) in
+    let q = transSet' (rel (pF aaAA')) (evala-deter (rd2 (pF aaAA')) (rd1 (pF₁ aa'A'A'')))
+                      (rel (pF₁ aa'A'A'')) in
     inj (red1 (pF aaAA')) (red2 (pF₁ aa'A'A'')) q
    )
   transSet' (Set* x) refl (Set* x₁) = Set* x

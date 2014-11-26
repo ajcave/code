@@ -62,33 +62,6 @@ App = Clo _↘a_
 App→ : ∀ {C V : Set} {red : C -> V -> Set} {B B' : PREL V} -> B →₂ B' -> Clo red B →₂ Clo red B'
 App→ f (inj red1 red2 rel) = inj red1 red2 (f rel)
 
-AppDeter1 :  ∀ {c1 c2 c3 B B'} 
-    (p : c1 ≈ c2 ∈ App B)
-    (q : c2 ≈ c3 ∈ App B')
-   -> proj₁ (red2 p) ≡ proj₁ (red1 q)
-AppDeter1 (inj red1 (_ , red2) rel)
-          (inj (_ , red3) red4 rel') = evala-deter red2 red3
-
-AppDeter2 :  ∀ {c1 c2 c3 B B'} 
-    (p : c1 ≈ c2 ∈ App B)
-    (q : c2 ≈ c3 ∈ App B')
-   -> proj₁ (red1 q) ≡ proj₁ (red2 p) 
-AppDeter2 p q = sym (AppDeter1 p q)
-
-AppDeter3 :  ∀ {c1 c2 c3 B B'} 
-    (p : c1 ≈ c2 ∈ App B)
-    (q : c1 ≈ c3 ∈ App B')
-   -> proj₁ (red1 p) ≡ proj₁ (red1 q)
-AppDeter3 (inj (_ , red1) red2 rel)
-          (inj (_ , red3) red4 rel') = evala-deter red1 red3 
-
-AppDeter4 :  ∀ {c1 c2 c3 B B'} 
-    (p : c2 ≈ c1 ∈ App B)
-    (q : c3 ≈ c1 ∈ App B')
-   -> proj₁ (red2 p) ≡ proj₁ (red2 q)
-AppDeter4 (inj red1 (_ , red2) rel)
-          (inj red3 (_ , red4) rel') = evala-deter red2 red4
-
 Π* : ∀ {α β γ : Set} -> (β × α -> γ -> Set)
  -> (A : PREL α) -> (∀ {a a'} -> a ≈ a' ∈ A -> PREL γ) -> PREL β
 Π* red A F f1 f2 = ∀ {a1 a2} (pa : a1 ≈ a2 ∈ A) -> (f1 , a1) ≈ (f2 , a2) ∈ (Clo red (F pa))
@@ -184,5 +157,4 @@ _⊨_∶_ : ∀ {γ} (Γ : ⊨ γ ctx) {k} -> Exp -> {T : Exp} -> Γ ⊨ T type 
 Γ ⊨ t ∶ T = Γ ⊨ t ≈ t ∶ T
 
 _⊨s_≈_∶_ : ∀ {γ1 γ2 δ1 δ2} (Γ : ⊨ γ1 ≈ γ2 ctx)  -> Subst -> Subst -> (Δ : ⊨ δ1 ≈ δ2 ctx) -> Set
-Γ ⊨s σ1 ≈ σ2 ∶ Δ  =
-  ∀ {ρ ρ'} → (vρ : ρ ≈ ρ' ∈ ⟦ Γ ⟧hctx) → ⟦ σ1 ⟧ ρ ≈ ⟦ σ2 ⟧ ρ' ∈ (Clo _↘s_ ⟦ Δ ⟧hctx)
+Γ ⊨s σ1 ≈ σ2 ∶ Δ  = σ1 ≈ σ2 ∈ (⟦ Γ ⟧hctx ⇒[ _↘s_ ] ⟦ Δ ⟧hctx)

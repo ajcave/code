@@ -440,7 +440,7 @@ fund-rec'' : ∀ {t tz ts n1 n2 j k}
         u2 = fund-↑ (⊡ , Nats j) T
         --N2 : Δ ⊨ (Nat [ ↑ ]) [ ↑ ] type j
         N2 = _>_•_ {Γ = Δ} (⊡ , Nats j) N1 u2
-        z' : Δ ⊨ idx 1 ≈ idx 1 ∶ N2
+        --z' : Δ ⊨ idx 1 ≈ idx 1 ∶ N2
         z' = fund-idx' (pop top) (pop top)
         σ' : Δ ⊨s (⊡ , idx 1) ≈ (⊡ , idx 1) ∶ (⊡ , Nats j)
         σ' = fund-, _ fund-⊡ z'

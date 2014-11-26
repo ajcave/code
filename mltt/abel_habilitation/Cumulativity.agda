@@ -35,7 +35,7 @@ mutual
   let p₁' = irrL (inj akf2) (inj akf1) pA₁ refl pA p₁ in
   let r = p p₁' in
   App→ (irrL (inj akf1) (inj akf2) (rel (pF p₁'))
-                  (AppDeter3 (pF p₁') (pF₁ p₁))
+                  (evala-deter (rd1 (pF p₁')) (rd1 (pF₁ p₁)))
                  (rel (pF₁ p₁))) r
  irrL (inj akf1) (inj akf2) (Set* x) refl  (Set* x₁) p = cumul (akf1 x) (akf2 x₁) ≤refl p
 
@@ -93,4 +93,4 @@ irrRω' : ∀ {k} {K : Acc k} {A B C}
 irrRω' {k} {inj ackf} pAB pAC = irrR _ _ pAB refl pAC
 
 ⟦⟧tp'-irr : ∀ {c1 c2 k} (p q : c1 ≈ c2 ∈ App (SetU k)) -> ⟦ p ⟧tp →₂ ⟦ q ⟧tp
-⟦⟧tp'-irr p q x = irrL _ _ (rel p) (AppDeter3 p q) (rel q) x
+⟦⟧tp'-irr p q x = irrL _ _ (rel p) (evala-deter (rd1 p) (rd1 q)) (rel q) x
