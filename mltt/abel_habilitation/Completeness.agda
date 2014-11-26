@@ -179,7 +179,7 @@ ctx-selfL Γ p = ctx-trans2 Γ p (ctx-sym2 Γ p)
 fund-sym-tp : ∀ {γ1 γ2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx}
   -> Γ ⊨ a1 ≈ a2 type k
   -> Γ ⊨ a2 ≈ a1 type k
-fund-sym-tp da = ΠSYM.Πsym (ctx-sym2 _) (ctx-trans2 _) (λ _ _ x → x) (λ _ _ x → x) (λ _ → symSetω' _) da
+fund-sym-tp = ⇒Sym.⇒sym (ctx-sym2 _) (ctx-trans2 _) (symSetω' _)
 
 fund-sym : ∀ {γ1 γ2 t1 t2 a1 a2 k} {Γ : ⊨ γ1 ≈ γ2 ctx} (A : Γ ⊨ a1 ≈ a2 type k)
  -> Γ ⊨ t1 ≈ t2 ∶ A
@@ -383,6 +383,27 @@ fund-idx' : ∀ {γ1 γ2 t1 t2 x}
  -> Γ ⊨ idx x ≈ idx x ∶ (proj₂ (fund-lookuptp Γ x1 x2))
 fund-idx' {Γ = Γ} x1 x2 ρ1≈ρ2 = fund-idx  {Γ = Γ} {T = proj₂ (fund-lookuptp Γ x1 x2)} (fund-lookup Γ x1 x2) ρ1≈ρ2
 
+
+fund-⊡η : ∀ {γ1 γ2 σ1 σ2} {Γ : ⊨ γ1 ≈ γ2 ctx}
+ -> Γ ⊨s σ1 ≈ σ1 ∶ ⊡
+ -> Γ ⊨s σ2 ≈ σ2 ∶ ⊡
+ -> Γ ⊨s σ1 ≈ σ2 ∶ ⊡
+fund-⊡η σ1 σ2 ρ with σ1 ρ | σ2 ρ
+... | inj (._ , r1) (._ , r2) ⊡ | inj (._ , r3) (._ , r4) ⊡ = inj' r1 r4 ⊡
+-- This is not exactly the form it takes in the syntax right now, but that can be recovered
+-- with transitivity and symmetry
+
+⊨s-sym : ∀ {γ1 γ2 σ1 σ2 δ1 δ2} {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx}
+ -> Γ ⊨s σ1 ≈ σ2 ∶ Δ
+ -> Γ ⊨s σ2 ≈ σ1 ∶ Δ
+⊨s-sym = ⇒Sym.⇒sym (ctx-sym2 _) (ctx-trans2 _) (ctx-sym2 _)
+
+⊨s-trans : ∀ {γ1 γ2 σ1 σ2 σ3 δ1 δ2} {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx}
+ -> Γ ⊨s σ1 ≈ σ2 ∶ Δ
+ -> Γ ⊨s σ2 ≈ σ3 ∶ Δ
+ -> Γ ⊨s σ1 ≈ σ3 ∶ Δ
+⊨s-trans = ⇒Trans.⇒trans evals-deter (ctx-selfL _) (ctx-sym2 _) (ctx-trans2 _)
+
 unbox-lem : ∀ {n1 n2}
  -> (vn : n1 ≈ n2 ∈ NatR)
  -> natval (proj₁ (red1 vn)) ≈ n2 ∈ NatR
@@ -430,22 +451,17 @@ fund-rec'' : ∀ {t tz ts n1 n2 j k}
  -> (T : (⊡ , Nats j) ⊨ t type k)
  -> ⊡ ⊨ tz ∶ (Nats j >h T • (fund-zero {k = j}))
  -> let Δ = (⊡ , Nats j) , T
-        --u1 : (⊡ , Nats j) ⊨s ↑ ≈ ↑ ∶ ⊡
         u1 = fund-↑ ⊡ (Nats j)
-        --N0 : ⊡ ⊨ Nat type j
         N0 = Nats j
-        --N1 : (⊡ , Nats j) ⊨ Nat [ ↑ ] type j
         N1 = _>_•_ {Γ = ⊡ , Nats j} ⊡ N0 u1
-        --u2 : Δ ⊨s ↑ ≈ ↑ ∶ (⊡ , Nats j)
         u2 = fund-↑ (⊡ , Nats j) T
-        --N2 : Δ ⊨ (Nat [ ↑ ]) [ ↑ ] type j
         N2 = _>_•_ {Γ = Δ} (⊡ , Nats j) N1 u2
-        --z' : Δ ⊨ idx 1 ≈ idx 1 ∶ N2
-        z' = fund-idx' (pop top) (pop top)
+        z' : Δ ⊨ idx 1 ≈ idx 1 ∶ N2
+        z' = fund-idx' {Γ = Δ} (pop top) (pop top)
         σ' : Δ ⊨s (⊡ , idx 1) ≈ (⊡ , idx 1) ∶ (⊡ , Nats j)
-        σ' = fund-, _ fund-⊡ z'
+        σ' = fund-, {Γ = Δ} (Nats j) (fund-⊡ {Γ = Δ}) z'
         T' : Δ ⊨ t [ ⊡ , idx 1 ] type k
-        T' = _ > T • σ' in
+        T' = _>_•_ {Γ = Δ} (⊡ , Nats j) T σ' in
     Δ ⊨ ts ≈ ts ∶ T'
  -> (vn : n1 ≈ n2 ∈ NatV)
  -> (rec t , tz , ts , n1) ≈ (rec t , tz , ts , n2) ∈ Clo _↘r_ ⟦ T (⊡ , inj' natval natval vn) ⟧tp

@@ -65,6 +65,14 @@ module ΠSYM {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
       q0 = App→ (FirrR _ _) q
   in  App→ (FirrL a1≈a1 a1≈a2) q0
 
+module ⇒Sym {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
+  {B : PREL γ}
+  (Asym : SYM A) (Atrans : TRANS A)
+  (Fsym : SYM B) where
+ 
+ ⇒sym : SYM (A ⇒[ red ] B)
+ ⇒sym = ΠSYM.Πsym Asym Atrans (λ _ _ x -> x) (λ _ _ x -> x) (λ _ → Fsym)
+
 module ΠPER {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
   {F : ∀ {a a'} -> a ≈ a' ∈ A -> PREL γ}
   (deter : Deterministic red)
@@ -80,6 +88,16 @@ module ΠPER {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
       q1 = bc a1≈a2
       q2 = App→ (FirrL a1≈a1 a1≈a2) q0
   in App-trans deter (Ftrans a1≈a2) q2 q1
+
+module ⇒Trans {α β γ : Set} {red : β × α -> γ -> Set} {A : PREL α}
+  {B : PREL γ}
+  (deter : Deterministic red)
+  (Aself : SELFL A)
+  (Fsym : SYM B)
+  (Ftrans : TRANS B) where
+ 
+ ⇒trans : TRANS (A ⇒[ red ] B)
+ ⇒trans = ΠPER.Πtrans deter Aself (λ _ _ x → x) (λ _ -> Fsym) (λ _ -> Ftrans)
 
 module TransF (k : ℕ) (akf : ∀ {j} -> j < k -> Acc j)
       (set<trans : ∀ {j} (p : j < k) -> TRANS (SetU' (akf p)))

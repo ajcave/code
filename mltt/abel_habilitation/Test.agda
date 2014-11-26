@@ -155,15 +155,13 @@ fund-idx' {Γ = Γ} x1 x2 = fund-idx  {Γ = Γ} {T = proj₂ (fund-lookuptp Γ x
 
 fund-rec' : ∀ {t tz ts n1 n2 j k}
  -> (T : (⊡ , Nats j) ⊨₂ t type k)
- -> ⊡ ⊨₂ tz ≈ tz ∶ (Nats j >h T • (fund-zero {k = j}))
+ -> ⊡ ⊨₂ tz ≈ tz ∶ (_ >h T • (fund-zero {k = j}))
  -> let Δ = (⊡ , Nats j) , T
         z' : Δ ⊨₂ idx 1 ≈ idx 1 ∶ _
         z' = fund-idx' (pop top) (pop top)
         σ' : Δ ⊨s₂ (⊡ , idx 1) ≈ (⊡ , idx 1) ∶ (⊡ , Nats j)
         σ' = fund-, _ fund-⊡ (inj (out₂ z'))
-        T' : Δ ⊨₂ t [ ⊡ , idx 1 ] type k
-        T' = _ > T • σ' in
-    Δ ⊨₂ ts ≈ ts ∶ T'
+    in Δ ⊨₂ ts ≈ ts ∶ (_ > T • σ')
  -> (vn : n1 ≈ n2 ∈ NatV)
  -> (rec t , tz , ts , n1) ≈ (rec t , tz , ts , n2) ∈ Clo _↘r_ ⟦ out T (⊡ , inj' natval natval vn) ⟧tp
 fund-rec' dT dtz dts = {!!}
