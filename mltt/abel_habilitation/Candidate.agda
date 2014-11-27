@@ -106,3 +106,22 @@ reflectω = reflectω' nat-acc
 reifyω : ∀ {k} {a a' A A'} (pA : A ≈ A' ∈ (SetU k)) -> a ≈ a' ∈ (ElU k pA) -> ↓[ A ] a ≈ ↓[ A' ] a' ∈ ⊤'
 reifyω = reifyω' nat-acc
 
+len : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) -> ℕ
+len ⊡ = 0
+len (Γ , x) = suc (len Γ)
+
+mutual
+ idv1 : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) -> Env
+ idv1 ⊡ = ⊡
+ idv1 (Γ , x) = (idv1 Γ) , ↑[ proj₁ (red1 (x (id-wf Γ))) ] (lvl (len Γ))
+
+ idv2 : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) -> Env
+ idv2 ⊡ = ⊡
+ idv2 (Γ , x) = (idv2 Γ) , ↑[ proj₁ (red2 (x (id-wf Γ))) ] (lvl (len Γ))
+
+ id-wf : ∀ {γ1 γ2} (Γ : ⊨ γ1 ≈ γ2 ctx) -> (idv1 Γ) ≈ (idv2 Γ) ∈ ⟦ Γ ⟧hctx
+ id-wf ⊡ = ⊡
+ id-wf (Γ , x) =
+  let q = reflectω (rel (x (id-wf Γ))) (λ n → inj' (lvl (len Γ)) (lvl (len Γ)) refl)
+  in (id-wf Γ) , q
+
