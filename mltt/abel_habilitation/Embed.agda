@@ -35,6 +35,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 
 
 mutual
+ -- TODO: There's also a converse of this to prove:
  vas : ∀ {t ρ v τ ρ' u} -> ⟦ t ⟧ ρ ↘ v -> ⟦ ⌈ ρ ⌉e ⟧ τ ↘s ρ' -> ⟦ t ⟧ ρ' ↘ u -> ⟦ ⌈ v ⌉v ⟧ τ ↘ u
  vas (idx x₁) p2 (idx x₂) = {!!}
  vas ƛ p2 ƛ = ƛ [ p2 ]
@@ -71,6 +72,10 @@ mutual
  vas' ↑ (p2 , x) ↑ = p2
  vas' (p1 , x) p2 (p3 , x₁) = (vas' p1 p2 p3) , (vas x p2 x₁)
  vas' ⊡ p2 ⊡ = ⊡
+
+mutual
+ vas2 : ∀ {t ρ v τ ρ' u} -> ⟦ t ⟧ ρ ↘ v -> ⟦ ⌈ ρ ⌉e ⟧ τ ↘s ρ' -> ⟦ ⌈ v ⌉v ⟧ τ ↘ u  -> ⟦ t ⟧ ρ' ↘ u 
+ vas2 d1 d2 d3 = {!!}
 
 
  

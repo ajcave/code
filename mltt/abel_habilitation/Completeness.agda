@@ -460,6 +460,19 @@ unbox-lem : ∀ {n1 n2}
 unbox-lem (inj (_ , natval) (_ , r2) rel) = inj' natval r2 rel
 unbox-lem (inj (._ , neu) (_ , r2) rel) = inj' natval r2 rel
 
+fund-plus-sub : ∀ {γ1 γ2 δ1 δ2 t1 t1' t2 t2' σ σ' j} {Γ : ⊨ γ1 ≈ γ2 ctx} {Δ : ⊨ δ1 ≈ δ2 ctx}
+ -> Γ ⊨ t1 ≈ t1' ∶ (Nats j)
+ -> Γ ⊨ t2 ≈ t2' ∶ (Nats j)
+ -> Δ ⊨s σ ≈ σ' ∶ Γ
+ -> Δ ⊨ (t1 ⊕ t2) [ σ ] ≈ (t1' [ σ' ] ⊕ t2' [ σ' ]) ∶ (Nats j)
+fund-plus-sub t1 t2 σ ρ =
+ let vσ = σ ρ
+     v1 = t1 (rel vσ)
+     v2 = t2 (rel vσ)
+ in inj' (plus (rd1 v1) (rd1 v2) (rd1 (rel v1)) (rd1 (rel v2)) [ rd1 vσ ])
+         (plus ((rd2 v1) [ (rd2 vσ) ]) ((rd2 v2) [ (rd2 vσ) ]) (rd2 (rel v1)) (rd2 (rel v2)))
+         (inj' natval natval (fund-plus' (rel (rel v1)) (rel (rel v2))))
+
 open import Candidate
 
 -- TODO: Refactor this mess
