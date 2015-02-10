@@ -75,7 +75,7 @@ mutual
 
 mutual
  vas2 : ∀ {t ρ v τ ρ' u} -> ⟦ t ⟧ ρ ↘ v -> ⟦ ⌈ ρ ⌉e ⟧ τ ↘s ρ' -> ⟦ ⌈ v ⌉v ⟧ τ ↘ u  -> ⟦ t ⟧ ρ' ↘ u 
- vas2 d1 d2 d3 = {!!}
+ vas2 d1 d2 d3 = {!d1!}
 
 
  
