@@ -1,5 +1,4 @@
-{-# OPTIONS --type-in-type #-}
-module nbe-sums-pnf-alt where
+module nbe-sums8 where
 
 record _*_ (A B : Set) : Set where
  constructor _,_
@@ -51,17 +50,19 @@ mutual
   ƛ : ∀ {T S} -> pntm (Γ , T) S -> pntm Γ (T ⇝ S)
   <_,_> : ∀ {T S} -> (M : pntm Γ T) -> (N : pntm Γ S) -> pntm Γ (T × S)
   tt : pntm Γ unit
-  embed : ∀ {T S} -> sum Γ (λ Γ' -> pntm Γ' T) (λ Γ' -> pntm Γ' S) -> pntm Γ (T + S)
+  embed : ∀ {T S} -> sum Γ (λ Γ' -> rtm Γ' (T + S)) (λ Γ' -> pntm Γ' T) (λ Γ' -> pntm Γ' S) -> pntm Γ (T + S)
 
- data sum Γ (F G : ctx -> Set) : Set where
-  inl : F Γ -> sum Γ F G
-  inr : G Γ -> sum Γ F G
-  case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) F G -> sum (Γ , B) F G -> sum Γ F G
+ data sum Γ (R F G : ctx -> Set) : Set where
+  inl : F Γ -> sum Γ R F G
+  inr : G Γ -> sum Γ R F G
+  case : ∀ {A B} (s' : rtm Γ (A + B)) -> sum (Γ , A) R F G -> sum (Γ , B) R F G -> sum Γ R F G
+  neut : R Γ -> sum Γ R F G
 
-sum-map : ∀ {Γ} {F G} {F' G'} -> (∀ {Δ} -> F Δ -> F' Δ) -> (∀ {Δ} -> G Δ -> G' Δ) -> sum Γ F G -> sum Γ F' G'
-sum-map f g (inl x) = inl (f x)
-sum-map f g (inr x) = inr (g x)
-sum-map f g (case s' x x₁) = case s' (sum-map f g x) (sum-map f g x₁)
+sum-map : ∀ {Γ} {R F G} {R' F' G'} -> (∀ {Δ} -> R Δ -> R' Δ) -> (∀ {Δ} -> F Δ -> F' Δ) -> (∀ {Δ} -> G Δ -> G' Δ) -> sum Γ R F G -> sum Γ R' F' G'
+sum-map r f g (inl x) = inl (f x)
+sum-map r f g (inr x) = inr (g x)
+sum-map r f g (case s' x x₁) = case s' (sum-map r f g x) (sum-map r f g x₁)
+sum-map r f g (neut n) = neut (r n)
 
 wkn : ∀ {Γ T} -> vsubst Γ (Γ , T)
 wkn x = s x
@@ -85,10 +86,12 @@ mutual
  pnappSubst σ tt = tt
  pnappSubst σ (embed M) = embed (sumSubst σ M)
 
- sumSubst : ∀ {Γ Δ T S} -> vsubst Δ Γ -> sum Δ (λ Γ' → pntm Γ' T) (λ Γ' → pntm Γ' S) -> sum Γ (λ Γ' → pntm Γ' T) (λ Γ' → pntm Γ' S)
+ -- This could juse use map
+ sumSubst : ∀ {Γ Δ T S} -> vsubst Δ Γ -> sum Δ (λ Γ' -> rtm Γ' (T + S)) (λ Γ' → pntm Γ' T) (λ Γ' → pntm Γ' S) -> sum Γ (λ Γ' -> rtm Γ' (T + S)) (λ Γ' → pntm Γ' T) (λ Γ' → pntm Γ' S)
  sumSubst σ (inl x) = inl (pnappSubst σ x)
  sumSubst σ (inr x) = inr (pnappSubst σ x)
  sumSubst σ (case s' x x₁) = case (rappSubst σ s') (sumSubst (ext σ) x) (sumSubst (ext σ) x₁)
+ sumSubst σ (neut r) = neut (rappSubst σ r)
 
 {-
  pnappSubst σ (inl M) = inl (pnappSubst σ M)
@@ -102,7 +105,7 @@ sem : (T : tp) -> (Γ : ctx) -> Set
 sem (T ⇝ S) Γ = ∀ Δ -> vsubst Γ Δ -> sem T Δ → sem S Δ 
 sem (T × S) Γ = sem T Γ * sem S Γ
 sem unit Γ = Unit
-sem (T + S) Γ = sum Γ (sem T) (sem S)
+sem (T + S) Γ = sum Γ (λ Γ' -> rtm Γ' (T + S)) (sem T) (sem S)
 
 
 appSubst : ∀ {Γ Δ} S -> vsubst Δ Γ -> sem S Δ -> sem S Γ
@@ -112,6 +115,7 @@ appSubst unit σ M = tt
 appSubst (T + S) σ (inl x) = inl (appSubst T σ x)
 appSubst (T + S) σ (inr x) = inr (appSubst S σ x)
 appSubst (T + S) σ (case s' M M₁) = case (rappSubst σ s') (appSubst (T + S) (ext σ) M) (appSubst (T + S) (ext σ) M₁)
+appSubst (T + S) σ (neut r) = {!!}
 
 -- Case analysis is pasting
 isSheaf : ∀ {Γ} T {A B} (s : rtm Γ (A + B)) (f0 : sem T (Γ , A)) (f1 : sem T (Γ , B)) -> sem T Γ
@@ -137,7 +141,7 @@ mutual
  reify {T ⇝ S} M = ƛ (reify (M _ wkn (reflect (v z))))
  reify {T × S} M = < (reify (_*_.fst M)) , (reify (_*_.snd M)) >
  reify {unit} _ = tt
- reify {T + S} M = embed (sum-map reify reify M)
+ reify {T + S} M = embed (sum-map (λ x → x) reify reify M)
 
 subst : ctx -> ctx -> Set
 subst Γ Δ = ∀ {T} -> var Γ T -> sem T Δ
@@ -165,6 +169,7 @@ case' : ∀ {Γ} {T} {A B} (f0 : arr (Γ , A) T) (f1 : arr (Γ , B) T) -> ∀ {�
 case' f0 f1 θ (inl x) = f0 (extend θ x)
 case' f0 f1 θ (inr x) = f1 (extend θ x)
 case' f0 f1 θ (case s' r r₁) = isSheaf _ s' (case' f0 f1 (λ x → appSubst _ wkn (θ x)) r) (case' f0 f1 (λ x → appSubst _ wkn (θ x)) r₁)
+case' f0 f1 θ (neut r) = {!case!} -- We get a variable and have to η-expand it in the body...
 
 -- Traditional nbe
 eval : ∀ {Γ T} -> tm Γ T -> arr Γ T
