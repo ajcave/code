@@ -3,7 +3,7 @@ type ident = AbsSyntax.ident
 type idx = Top | Pop of idx
 
 and moduleT =
-   Mod of ident * decl list
+   Prog of decl list
 
 and decl =
    Def of ident * exp * exp
@@ -11,19 +11,12 @@ and decl =
 and exp =
    Pi of exp * abstr
  | Sigma of exp * abstr
- | Nat
- | Set
- | Unit
- | Tt
+ | Type
  | Lam of abstr
  | App of exp * exp
  | Var of idx
- | Const of ident
- | Zero
- | Suc of exp
- | Plus of exp * exp
- | NatRec of exp * abstr * exp * (ident * ident * exp)
  | Subst of subst * exp
+ | Const of ident
 and abstr = ident * exp
 
 and nat = NZero | NSuc of nat
@@ -44,7 +37,7 @@ let rec substvar s i = match (s,i) with
   | Dot (s,e), Pop i -> substvar s i
 let rec nplus k n = match k with
   | NZero -> n
-  | NSuc k -> nplus k n
+  | NSuc k -> NSuc (nplus k n)
 let rec shiftComp s1 n = match (s1,n) with
   | s1, NZero -> s1
   | Shift k, n -> Shift (nplus k n)
@@ -66,18 +59,9 @@ let abstr_subst1 e1 (x,e) = (x, subst1 e1 e)
 let rec whsubst s = function
   | Pi (t, a) -> Pi (subst s t, abstr_subst s a)
   | Sigma (t, a) -> Sigma (subst s t, abstr_subst s a)
-  | Nat -> Nat
-  | Unit -> Unit
-  | Set -> Set
-  | Zero -> Zero
-  | Tt -> Tt
-  | Suc e -> Suc (subst s e)
+  | Type -> Type
   | Lam a -> Lam (abstr_subst s a)
   | App (e1,e2) -> App (subst s e1, subst s e2)
   | Var x -> substvar s x
-  | Const c -> Const c
-  | Plus (e1,e2) -> Plus (subst s e1, subst s e2)
   | Subst (s1, e) -> whsubst (comp s s1) e
-  | NatRec (en,aC,ez,(x,ih,eS)) ->
-    NatRec (subst s en, abstr_subst s aC, subst s ez, (x,ih, subst (ext1 (ext1 s)) eS))
-
+  | Const c -> Const c

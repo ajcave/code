@@ -1,12 +1,12 @@
 open Lexing
 
-let parse (c : in_channel) : AbsSyntax.moduleT = 
-    ParSyntax.pModuleT LexSyntax.token (Lexing.from_channel c)
+let parse (c : in_channel) : AbsSyntax.program = 
+    ParSyntax.pProgram LexSyntax.token (Lexing.from_channel c)
 ;;
 
-let showTree (t : AbsSyntax.moduleT) : string = 
-    "[Abstract syntax]\n\n" ^ (fun x -> ShowSyntax.show (ShowSyntax.showModuleT x)) t ^ "\n\n" ^
-    "[Linearized tree]\n\n" ^ PrintSyntax.printTree PrintSyntax.prtModuleT t ^ "\n"
+let showTree (t : AbsSyntax.program) : string = 
+    "[Abstract syntax]\n\n" ^ (fun x -> ShowSyntax.show (ShowSyntax.showProgram x)) t ^ "\n\n" ^
+    "[Linearized tree]\n\n" ^ PrintSyntax.printTree PrintSyntax.prtProgram t ^ "\n"
 ;;
 
 let main () =
@@ -20,8 +20,7 @@ let main () =
       let tree = parse channel in
         print_string (showTree tree);
         flush stdout;
-	let itree = Desugar.index tree in
-	if (Typecheck.chkMod itree)
+	if (Typecheck.chkMod tree)
 	then Printf.printf "Yep\n"
 	else Printf.printf "Nope\n"
     with BNFC_Util.Parse_error (start_pos, end_pos) ->
