@@ -13,8 +13,7 @@ Sigma. Exp ::= "(" Ident ":" Exp ")" "*" Exp ;
 Type. Exp2 ::= "Type";
 
 Lam. Exp ::= "\\" Abstr;
-App. Exp1 ::= Exp1 Exp2;
-Id.  Exp2 ::= Ident;
+App. Exp1 ::= Ident [ Exp ];
 
 Abstr. Abstr ::= Ident "." Exp;
 

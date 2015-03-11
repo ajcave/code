@@ -4,7 +4,7 @@ all:
 	ocamllex LexSyntax.mll
 	latex DocSyntax.tex; dvips DocSyntax.dvi -o DocSyntax.ps
 	ocamlc -o TestSyntax BNFC_Util.ml AbsSyntax.ml SkelSyntax.ml ShowSyntax.ml PrintSyntax.ml ParSyntax.mli ParSyntax.ml LexSyntax.ml IntSyntax.ml Desugar.ml Error.ml Whnf.ml TestSyntax.ml
-	ocamlc -o Main BNFC_Util.ml AbsSyntax.ml SkelSyntax.ml ShowSyntax.ml PrintSyntax.ml ParSyntax.mli ParSyntax.ml LexSyntax.ml IntSyntax.ml Desugar.ml Error.ml Whnf.ml Typecheck.ml Main.ml
+	ocamlc -o Main BNFC_Util.ml AbsSyntax.ml SkelSyntax.ml ShowSyntax.ml PrintSyntax.ml ParSyntax.mli ParSyntax.ml LexSyntax.ml IntSyntax.ml Desugar.ml Error.ml Whnf.ml Value.ml Typecheck.ml Main.ml
 
 clean:
 	-rm -f *.log *.aux *.cmi *.cmo *.o *.dvi

@@ -63,12 +63,28 @@ exception IllTyped of type_error
 (*   | Subst (s, e) -> infer ctxs (whsubst s e) (\* This case is slightly weird *\) *)
 (*   | Lam _ -> raise (IllTyped NotInferrable) *)
 
-let chkPats sigma = function
-  | ([],vtp) -> vtp
+let equal vtp vtp' = [] (* TODO *)
+
+let chk (sigma,gamma) e vtp = () (* TODO *)
+
+let rec chkPat sigma = function
+  | (App (ident,ps), tp) ->
+    try
+	let vtp = lookuptp sigma ident in 
+	let (gamma1, vtp') = checkPats sigma (ps, vtp) in
+	let eqns = equal vtp vtp' in
+	  (gamma1@eqns)
+    with LookupFailure ->
+      let [] = ps in
+      [(ident,tp)]
+
+and chkPats sigma = function
+  | ([],vtp) -> ([],vtp)
   | (p::ps, V.Fun (a,f)) ->
-    chkPat sigma (p,a);
+    let gamma1 = chkPat sigma (p,a) in
     let p' = V.eval sigma p in
-    chkPats ps (V.vapp (f, p'))
+    let (gamma2,vtp') = chkPats ps (V.vapp (f, p')) in
+    (gamma1@gamma2, vtp')
   | (p::ps, _) -> raise CheckPi
 
 let chkBranch sigma (Br (ps,e)) vtp =
@@ -78,11 +94,14 @@ let chkBranch sigma (Br (ps,e)) vtp =
 let rec chkDecl sigma (Def (name,tp,body)) =
   chk (sigma,[]) tp Type;
   let vtp = V.eval sigma tp in
-  List.iter (fun br -> chkBranch sigma br vtp) body
+  List.iter (fun br -> chkBranch sigma br vtp) body;
+  (name,(V.Def (vtp,body)))
 
 let rec chkDeclList sigma defs = match defs with
   | [] -> ()
-  | (d::ds) -> chkDecl sigma d; chkDeclList (d::sigma) ds
+  | (d::ds) ->
+    let vd = chkDecl sigma d in
+    chkDeclList (vd::sigma) ds
 
 let chkMod (Prog defs) = chkDeclList [] defs
 
