@@ -18,18 +18,20 @@ and spine =
 
 and tpvalue = value
 
+type idsort = DefI | ConI | VarI
+
 type decl =
     Def of tpvalue * E.branch list
   | Constr of tpvalue
 
-exception LookupFailure
+exception Free
 let rec lookuptp sigma c = match sigma with
-  | [] -> raise LookupFailure
+  | [] -> raise Free
   | (y,d)::sigma' when c = y -> d
   | (_,_)::sigma' -> lookuptp sigma' c
 
 let rec lookupenv (rho, x) = match rho with
-  | Empty -> raise LookupFailure
+  | Empty -> raise Free
   | Dot (rho, (v,y)) when x = y -> v
   | Dot (rho,   _  ) -> lookupenv (rho, x)
   | Id -> Neu (x, Emp)
@@ -40,7 +42,7 @@ let disambiguate sigma x rho =
     | Def (_,_) -> DefApp (x,Emp)
     | Constr _  -> ConApp (x,Emp)
     end
-  with LookupFailure -> lookupenv (rho,x)
+  with Free -> lookupenv (rho, x)
 
 let rec append sp = function
   | [] -> sp
@@ -54,7 +56,6 @@ let rec reduce sigma = function
   | (Neu (x,sp), vs) -> Neu (x, append sp vs)
   | (DefApp (f,s), v) -> raise NotImplemented (* defapp sigma f (Snoc (s,v)) *)
   | (ConApp (c,sp), vs) -> ConApp (c, append sp vs)
-  | (Fun (a,f), vs) -> raise Violation
 (* and defapp sigma (_name, Def (_tp,body)) sp = raise NotImplemented *)
 and eval' sigma t rho = match t with
   | E.Pi (x,a,b) -> Fun (eval' sigma a rho, Clo ((x,b), rho))
@@ -65,8 +66,8 @@ and eval' sigma t rho = match t with
   | E.App (ident,spine) -> reduce sigma (disambiguate sigma ident rho, evalspine sigma spine rho)
   | E.Id ident -> disambiguate sigma ident rho
 and evalspine sigma s rho = match s with
-  | E.Sing t -> [eval' sigma t rho]
-  | E.Cons (t,ts) -> (eval' sigma t rho)::(evalspine sigma ts rho)
+  | [] -> []
+  | t::ts -> (eval' sigma t rho)::(evalspine sigma ts rho)
 
 let vapp sigma (f,v) = reduce sigma (f, v::[])
 
