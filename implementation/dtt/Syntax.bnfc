@@ -18,7 +18,4 @@ Id.  Exp3 ::= Ident;
 (:[]). [Exp] ::= Exp3;
 (:). [Exp] ::= Exp3 [Exp];
 
-_. Exp ::= Exp1;
-_. Exp1 ::= Exp2;
-_. Exp2 ::= Exp3;
-_. Exp3 ::= "(" Exp ")";
+coercions Exp 3;
