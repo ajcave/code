@@ -60,7 +60,6 @@ let rec reduce sigma = function
 and eval' sigma t rho = match t with
   | E.Pi (x,a,b) -> Fun (eval' sigma a rho, Clo ((x,b), rho))
   | E.Arr (a,b) -> Fun (eval' sigma a rho, Clo ((E.Ident "_",b),rho))
-  | E.Sigma (x,a,b) -> Sigma (eval' sigma a rho, Clo ((x,b), rho))
   | E.Type -> Type
   | E.Lam (ident,t) -> Clo ((ident,t), rho)
   | E.App (ident,spine) -> reduce sigma (disambiguate sigma ident rho, evalspine sigma spine rho)

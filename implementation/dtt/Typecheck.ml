@@ -8,6 +8,8 @@ let equal vtp vtp' = [] (* TODO *)
 let solvable gamma eqns = () (* TODO *)
 
 let rec chk sigma gamma =
+  (* TODO: Bug: matching directly on the type here isn't good enough if we intend to do
+     eta expansion for singleton types *)
   let rec chk' = function
   | (Lam (x, e), V.Fun (a, f)) -> chk sigma ((x, a)::gamma) (e, V.vapp sigma (f, V.Neu (x,V.Emp)))
   | (App (id, sp), a) ->
@@ -17,9 +19,8 @@ let rec chk sigma gamma =
     solvable gamma eqns
   | (Id id, a) -> chk' (App (id, []), a)
   | (Type, V.Type) -> ()
-  | (Pi (x,a,b), V.Type) | (Sigma (x,a,b), V.Type) ->
-    chk' (a,V.Type); chk sigma ((x,V.eval sigma a)::gamma) (b, V.Type)
-  | (Arr (a,b), V.Type) -> chk' (a,V.Type); chk' (b,V.Type)
+  | (Pi (x,a,b), V.Type) -> chk' (a,V.Type); chk sigma ((x,V.eval sigma a)::gamma) (b, V.Type)
+  | (Arr (a,b), V.Type) ->  chk' (a,V.Type); chk' (b,V.Type)
   and chkSp = function
     | []    , a            -> a
     | t::ts , V.Fun (a, f) -> chk' (t,a); chkSp (ts, V.vapp sigma (f, V.eval sigma t))
@@ -35,7 +36,7 @@ let rec chkPat sigma (p,tp) = match p with
     let V.Constr vtp = V.lookuptp sigma ident in 
     let (gamma1, vtp') = chkPats sigma (ps, vtp) in
     let eqns = equal vtp' tp in
-    (gamma1@eqns)
+    (eqns@gamma1)
   | Id ident ->
     try let V.Constr vtp = V.lookuptp sigma ident in equal vtp tp
     with V.Free -> [(ident,tp)] (* It's a variable *)
@@ -51,18 +52,18 @@ and chkPats sigma = function
   | (p::ps, V.Fun (a,f)) ->
     let (gamma1,vtp0) = chkPat1 sigma p a f in
     let (gamma2,vtp') = chkPats sigma (ps, vtp0) in
-    (gamma1@gamma2, vtp')
+    (gamma2@gamma1, vtp')
   | (p::ps, _) -> raise IllTyped
 
-let chkBranch sigma (Br (ps,e)) vtp =
+let chkBranch sigma gamma0 (Br (ps,e)) vtp =
   let (gamma,vtp') = chkPats sigma (ps,vtp) in
-  chk sigma gamma (e, vtp')
+  chk sigma (gamma@gamma0) (e, vtp')
 
 let rec chkDecl sigma = function
   | (Def (name,tp,body)) ->
      chk sigma [] (tp, V.Type);
      let vtp = V.eval sigma tp in
-     List.iter (fun br -> chkBranch sigma br vtp) body;
+     List.iter (fun br -> chkBranch sigma [name,vtp] br vtp) body;
      [(name,(V.Def (vtp,body)))]
   | (Data (name, constructors)) ->
     let d = (name,V.Constr V.Type) in

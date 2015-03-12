@@ -10,7 +10,6 @@ Con. ConstrDef ::= Ident ":" Exp ;
 
 Pi.  Exp ::= "(" Ident ":" Exp ")" "->" Exp ;
 Arr. Exp ::= Exp1 "->" Exp;
-Sigma. Exp ::= "(" Ident ":" Exp ")" "*" Exp ;
 Type. Exp2 ::= "Type";
 
 Lam. Exp ::= "\\" Ident "." Exp;
