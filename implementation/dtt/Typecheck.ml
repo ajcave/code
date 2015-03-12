@@ -1,7 +1,7 @@
 open AbsSyntax
 module V = Value
 
-type ctx = Emp | Comma of ctx * exp
+(* type ctx = Emp | Comma of ctx * exp *)
 
 type type_error = CheckSet | CheckPi | InferMismatch of exp * exp
 		  | NotInferrable
@@ -67,25 +67,29 @@ let equal vtp vtp' = [] (* TODO *)
 
 let chk (sigma,gamma) e vtp = () (* TODO *)
 
-let rec chkPat sigma = function
-  | (App (ident,ps), tp) ->
-    try
-	let V.Constr vtp = V.lookuptp sigma ident in 
-	let (gamma1, vtp') = chkPats sigma (ps, vtp) in
-	let eqns = equal vtp vtp' in
-	  (gamma1@eqns)
-    with V.LookupFailure -> (* Interpret it as a variable binding *)
-      let [] = ps in
-      [(ident,tp)]
+let rec chkPat sigma (p,tp) = match p with
+  | App (ident,ps) ->
+    let V.Constr vtp = V.lookuptp sigma ident in 
+    let (gamma1, vtp') = chkPats sigma (ps, vtp) in
+    let eqns = equal vtp' tp in
+    (gamma1@eqns)
+  | Id ident ->
+    try let V.Constr vtp = V.lookuptp sigma ident in equal vtp tp
+    with V.LookupFailure -> [(ident,tp)] (* It's a variable *)
+
+and chkPat1 sigma p a f =
+  let gamma1 = chkPat sigma (p,a) in
+  let p' = V.eval sigma p in
+  let vtp0 = V.vapp sigma (f, p') in
+  (gamma1,vtp0)
 
 and chkPats sigma = function
-  | ([],vtp) -> ([],vtp)
-  | (p::ps, V.Fun (a,f)) ->
-    let gamma1 = chkPat sigma (p,a) in
-    let p' = V.eval sigma p in
-    let (gamma2,vtp') = chkPats sigma (ps, V.vapp sigma (f, p')) in
+  | (Sing p, V.Fun (a,f)) -> chkPat1 sigma p a f
+  | (Cons (p,ps), V.Fun (a,f)) ->
+    let (gamma1,vtp0) = chkPat1 sigma p a f in
+    let (gamma2,vtp') = chkPats sigma (ps, vtp0) in
     (gamma1@gamma2, vtp')
-  | (p::ps, _) -> raise (IllTyped CheckPi)
+  | (Cons (p,ps), _) -> raise (IllTyped CheckPi)
 
 let chkBranch sigma (Br (ps,e)) vtp =
   let (gamma,vtp') = chkPats sigma (ps,vtp) in

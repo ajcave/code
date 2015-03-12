@@ -4,8 +4,7 @@ separator Decl ";" ;
 Def. Decl ::= Ident ":" Exp "=" [ Branch ]; separator Branch "|";
 Data. Decl ::= "data" Ident ":" "Type" "=" [ ConstrDef ]; separator ConstrDef "|";
 
-Br. Branch ::= [ Exp ] "->" Exp ;
-separator Exp " " ;
+Br. Branch ::= Spine "->" Exp ;
 
 Con. ConstrDef ::= Ident ":" Exp ;
 
@@ -15,6 +14,12 @@ Sigma. Exp ::= "(" Ident ":" Exp ")" "*" Exp ;
 Type. Exp2 ::= "Type";
 
 Lam. Exp ::= "\\" Ident "." Exp;
-App. Exp1 ::= Ident [ Exp ];
+App. Exp2 ::= Ident Spine;
+Id.  Exp3 ::= Ident;
+Sing. Spine ::= Exp3;
+Cons. Spine ::= Exp3 Spine;
 
-coercions Exp 3;
+_. Exp ::= Exp1;
+_. Exp1 ::= Exp2;
+_. Exp2 ::= Exp3;
+_. Exp3 ::= "(" Exp ")";
