@@ -1,0 +1,11 @@
+data Nat : Type =
+  zero : Nat
+| suc : Nat -> Nat;
+
+data Vec : Nat -> Type = 
+  nil : Vec zero
+| cons : (n : Nat) -> Nat -> Vec n -> Vec (suc n);
+
+append : (n : Nat) -> Vec n -> Vec n =
+> zero nil -> nil
+> (suc n) (cons m x xs) -> cons m x xs

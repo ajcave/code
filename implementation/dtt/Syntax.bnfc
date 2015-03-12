@@ -2,7 +2,7 @@ Prog. Program ::= [ Decl ] ;
 separator Decl ";" ;
 
 Def. Decl ::= Ident ":" Exp "=" [ Branch ]; separator Branch "";
-Data. Decl ::= "data" Ident ":" "Type" "=" [ ConstrDef ]; separator ConstrDef "|";
+Data. Decl ::= "data" Ident ":" Exp "=" [ ConstrDef ]; separator ConstrDef "|";
 
 Br. Branch ::= ">" [Exp] "->" Exp ;
 

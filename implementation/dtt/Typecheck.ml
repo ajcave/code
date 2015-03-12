@@ -6,12 +6,19 @@ exception IllTyped
 let rec equal = function
   | V.ConApp (id1,sp1), V.ConApp (id2,sp2) when id1 = id2 -> equalSp (sp1,sp2)
   | V.Type , V.Type -> []
-  | v1 , v2 -> raise V.NotImplemented
+  | V.Neu (x1, sp1), V.Neu (x2, sp2) when x1 = x2 -> equalSp (sp1, sp2)
+  | V.Neu (x, V.Emp) , v | v , V.Neu (x, V.Emp) -> [x,v]
+  | v1 , v2 ->
+    (if v1 = v2 then
+      []
+    else
+      []);
+    raise V.NotImplemented
 and equalSp = function
   | V.Emp, V.Emp -> []
   | V.Snoc (sp1, v1), V.Snoc (sp2, v2) -> (equalSp (sp1,sp2)) @ (equal (v1,v2))
 
-let solvable gamma eqns = () (* TODO *)
+let solvable gamma [] = () (* TODO *)
 
 let rec chk sigma gamma =
   (* TODO: Bug: matching directly on the type here isn't good enough if we intend to do
@@ -37,12 +44,22 @@ let rec chk sigma gamma =
     with V.Free -> try V.lookuptp gamma id with V.Free -> raise V.Violation
   in chk'
 
+let rec applyEqn ((y,v) as eq) = function
+  | [] -> []
+  | (x,tp)::gamma when x = y -> (x, V.Singleton (v,tp))::gamma
+  | b::gamma -> b::(applyEqn eq gamma)
+
+let rec applyEqns gamma = function
+  | [] -> gamma
+  | eq::eqns -> applyEqn eq (applyEqns gamma eqns)
+
 let rec chkPat sigma (p,tp) = match p with
   | App (ident,ps) ->
     let V.Constr vtp = V.lookuptp sigma ident in 
     let (gamma1, vtp') = chkPats sigma (ps, vtp) in
     let eqns = equal (vtp', tp) in
-    (eqns@gamma1)
+    (applyEqns gamma1 eqns) (* TODO: BUG: Aren't we applying these too eagerly?
+			       We might need to apply them to bindings we don't have yet?*)
   | Id ident ->
     try let V.Constr vtp = V.lookuptp sigma ident in equal (vtp, tp)
     with V.Free -> [(ident,tp)] (* It's a variable *)
@@ -57,8 +74,9 @@ and chkPats sigma = function
   | ([], a) -> ([], a)
   | (p::ps, V.Fun (a,f)) ->
     let (gamma1,vtp0) = chkPat1 sigma p a f in
-    let (gamma2,vtp') = chkPats sigma (ps, vtp0) in
-    (gamma2@gamma1, vtp')
+    let (gamma2,vtp') = chkPats sigma (ps, vtp0) in (* Might need to use the equations gathered from p here?
+		       Yes: if the next type is by large elim on a previous thing *)
+    (gamma2@gamma1, vtp') (* We should check disjointness here *)
   | (p::ps, _) -> raise IllTyped
 
 let chkBranch sigma gamma0 (Br (ps,e)) vtp =
@@ -71,8 +89,9 @@ let rec chkDecl sigma = function
      let vtp = V.eval sigma tp in
      List.iter (fun br -> chkBranch sigma [name,vtp] br vtp) body;
      [(name,(V.Def (vtp,body)))]
-  | (Data (name, constructors)) ->
-    let d = (name,V.Constr V.Type) in
+  | (Data (name, tp, constructors)) ->
+    chk sigma [] (tp, V.Type);
+    let d = (name,V.Constr (V.eval sigma tp)) in
      d::(List.map (fun (Con (cname, ctp)) ->
        chk (d::sigma) [] (ctp, V.Type);
        (cname,(V.Constr (V.eval (d::sigma) ctp)))) constructors)

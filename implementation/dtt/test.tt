@@ -1,0 +1,11 @@
+data Nat : Type =
+  zero : Nat
+| suc : Nat -> Nat;
+
+data List : Type =
+  nil : List
+| cons : Nat -> List -> List;
+
+append : List -> List -> List =
+> nil ys -> ys
+> (cons x xs) ys -> cons x (append xs ys)

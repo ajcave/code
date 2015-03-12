@@ -4,6 +4,7 @@ type value =
   | Fun of tpvalue * value
   | Clo of ((E.ident * E.exp) * env)
   | Sigma of tpvalue * value
+  | Singleton of value * tpvalue
   | Type
   | ConApp of E.ident * spine
   | DefApp of E.ident * spine
