@@ -1,1 +1,0 @@
-exception Violation of string
