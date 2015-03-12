@@ -70,11 +70,11 @@ let chk (sigma,gamma) e vtp = () (* TODO *)
 let rec chkPat sigma = function
   | (App (ident,ps), tp) ->
     try
-	let vtp = lookuptp sigma ident in 
-	let (gamma1, vtp') = checkPats sigma (ps, vtp) in
+	let V.Constr vtp = V.lookuptp sigma ident in 
+	let (gamma1, vtp') = chkPats sigma (ps, vtp) in
 	let eqns = equal vtp vtp' in
 	  (gamma1@eqns)
-    with LookupFailure ->
+    with V.LookupFailure -> (* Interpret it as a variable binding *)
       let [] = ps in
       [(ident,tp)]
 
@@ -83,25 +83,30 @@ and chkPats sigma = function
   | (p::ps, V.Fun (a,f)) ->
     let gamma1 = chkPat sigma (p,a) in
     let p' = V.eval sigma p in
-    let (gamma2,vtp') = chkPats ps (V.vapp (f, p')) in
+    let (gamma2,vtp') = chkPats sigma (ps, V.vapp sigma (f, p')) in
     (gamma1@gamma2, vtp')
-  | (p::ps, _) -> raise CheckPi
+  | (p::ps, _) -> raise (IllTyped CheckPi)
 
 let chkBranch sigma (Br (ps,e)) vtp =
   let (gamma,vtp') = chkPats sigma (ps,vtp) in
   chk (sigma,gamma) e vtp'  
 
-let rec chkDecl sigma (Def (name,tp,body)) =
-  chk (sigma,[]) tp Type;
-  let vtp = V.eval sigma tp in
-  List.iter (fun br -> chkBranch sigma br vtp) body;
-  (name,(V.Def (vtp,body)))
+let rec chkDecl sigma = function
+  | (Def (name,tp,body)) ->
+     chk (sigma,[]) tp Type;
+     let vtp = V.eval sigma tp in
+     List.iter (fun br -> chkBranch sigma br vtp) body;
+     [(name,(V.Def (vtp,body)))]
+  | (Data (name, constructors)) ->
+     (name,V.Constr V.Type)::(List.map (fun (Con (cname, ctp)) ->
+       chk (sigma,[]) ctp Type;
+       (cname,(V.Constr (V.eval sigma ctp)))) constructors)
 
 let rec chkDeclList sigma defs = match defs with
   | [] -> ()
   | (d::ds) ->
     let vd = chkDecl sigma d in
-    chkDeclList (vd::sigma) ds
+    chkDeclList (vd@sigma) ds
 
 let chkMod (Prog defs) = chkDeclList [] defs
 

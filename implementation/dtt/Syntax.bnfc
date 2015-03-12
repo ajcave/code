@@ -1,20 +1,20 @@
 Prog. Program ::= [ Decl ] ;
 separator Decl ";" ;
 
-Def. Decl ::= Ident ":" Exp "=" [ Branch ]  ;
-separator Branch "|" ;
+Def. Decl ::= Ident ":" Exp "=" [ Branch ]; separator Branch "|";
+Data. Decl ::= "data" Ident ":" "Type" "=" [ ConstrDef ]; separator ConstrDef "|";
 
 Br. Branch ::= [ Exp ] "->" Exp ;
 separator Exp " " ;
+
+Con. ConstrDef ::= Ident ":" Exp ;
 
 Pi.  Exp ::= "(" Ident ":" Exp ")" "->" Exp ;
 Arr. Exp ::= Exp1 "->" Exp;
 Sigma. Exp ::= "(" Ident ":" Exp ")" "*" Exp ;
 Type. Exp2 ::= "Type";
 
-Lam. Exp ::= "\\" Abstr;
+Lam. Exp ::= "\\" Ident "." Exp;
 App. Exp1 ::= Ident [ Exp ];
-
-Abstr. Abstr ::= Ident "." Exp;
 
 coercions Exp 3;

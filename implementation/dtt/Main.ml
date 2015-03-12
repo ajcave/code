@@ -20,9 +20,7 @@ let main () =
       let tree = parse channel in
         print_string (showTree tree);
         flush stdout;
-	if (Typecheck.chkMod tree)
-	then Printf.printf "Yep\n"
-	else Printf.printf "Nope\n"
+	Typecheck.chkMod tree
     with BNFC_Util.Parse_error (start_pos, end_pos) ->
         Printf.printf "Parse error at %d.%d-%d.%d\n"
             start_pos.pos_lnum (start_pos.pos_cnum - start_pos.pos_bol)
