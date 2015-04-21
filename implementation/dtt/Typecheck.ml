@@ -3,6 +3,14 @@ module V = Value
 
 exception IllTyped
 
+type 'a slist = Nil | Snoc of 'a slist * 'a
+type judgment = Oft of ident * V.tpvalue | ChkPat of exp * ident * V.tpvalue
+
+let rec lookuptp' gamma x = match gamma with
+  | Nil -> raise V.Free
+  | Snoc (gamma', Oft (y, vtp)) when x = y -> vtp
+  | Snoc (gamma', _) -> lookuptp' gamma' x
+
 let rec equal = function
   | V.ConApp (id1,sp1), V.ConApp (id2,sp2) when id1 = id2 -> equalSp (sp1,sp2)
   | V.Type , V.Type -> []
@@ -20,7 +28,7 @@ let rec chk sigma gamma =
   (* TODO: Bug: matching directly on the type here isn't good enough if we intend to do
      eta expansion for singleton types *)
   let rec chk' = function
-  | (Lam (x, e), V.Fun (a, f)) -> chk sigma ((x, a)::gamma) (e, V.vapp sigma (f, V.Neu (x,V.Emp)))
+  | (Lam (x, e), V.Fun (a, f)) -> chk sigma (Snoc (gamma, Oft (x, a))) (e, V.vapp sigma (f, V.Neu (x,V.Emp)))
   | (App (id, sp), a) ->
     let vtp = synthIdType id in
     let vtpr = chkSp (sp, vtp) in
@@ -28,7 +36,7 @@ let rec chk sigma gamma =
     solvable gamma eqns
   | (Id id, a) -> chk' (App (id, []), a)
   | (Type, V.Type) -> ()
-  | (Pi (x,a,b), V.Type) -> chk' (a,V.Type); chk sigma ((x,V.eval sigma a)::gamma) (b, V.Type)
+  | (Pi (x,a,b), V.Type) -> chk' (a,V.Type); chk sigma (Snoc (gamma, Oft (x,V.eval sigma a))) (b, V.Type)
   | (Arr (a,b), V.Type) ->  chk' (a,V.Type); chk' (b,V.Type)
   and chkSp = function
     | []    , a            -> a
@@ -37,11 +45,9 @@ let rec chk sigma gamma =
     try match V.lookuptp sigma id with
       | V.Constr vtp -> vtp
       | V.Def (vtp, _) -> vtp
-    with V.Free -> try V.lookuptp gamma id with V.Free -> raise V.Violation
+    with V.Free -> try lookuptp' gamma id with V.Free -> raise V.Violation
   in chk'
 
-type 'a slist = Nil | Snoc of 'a slist * 'a
-type judgment = Oft of ident * V.tpvalue | ChkPat of exp * ident * V.tpvalue
 exception IllTypedPattern
 
 let applyEqn g (u,v) = g , [] (* TODO! (First-order) unification (see "equal" above) *)
@@ -66,52 +72,63 @@ and chkPat' sigma (g0, p, x, a) = match p with
     let g0' , xs , V.ConApp (d, sp) = addPats sigma g0 V.Emp (ps, vtp) in 
     let V.ConApp (d',vs) = a in
     if d <> d' then raise IllTypedPattern;
-    applyEqns g0' (sp,vs) , [(x, V.ConApp (c, xs))]
+    let g0'', bindings = applyEqns g0' (sp,vs) in
+    g0'', (x, V.ConApp (c, xs))::bindings
       (* This also needs to be able to raise "stuck" which will just keep the original problem *)
   | Id z ->
-    try let V.Constr vtp = V.lookuptp sigma z in equal (vtp, a) (* It's a constructor with no args *)
+    try
+      let V.Constr vtp = V.lookuptp sigma z in
+      let g0' , xs , V.ConApp (d, sp) = addPats sigma g0 V.Emp ([], vtp) in
+      let V.ConApp (d',vs) = a in
+      if d <> d' then raise IllTypedPattern;
+      let g0'' , bindings = applyEqns g0 (sp, vs) in
+      g0'', (x, V.ConApp (z, xs))::bindings
     with V.Free -> Snoc (g0, Oft (z,a)) , [(x,V.Neu (z, V.Emp))] (* It's a variable *)
 
 and processJudgment sigma (g0,j) = match j with
   | ChkPat (p,x,a) -> chkPat' sigma (g0, p, x, a)
   | Oft (x,a) -> Snoc (g0, Oft (x,a)), []
 
+and applyInstJ inst j = j (* TODO *)
+and applyInstT inst tp = tp (* TODO *)
+
 and traverseChkPats sigma = function
   | (g0,[]), p::ps, V.Fun (a,f) ->
-    traverseChkPats sigma ((g0,[ChkPat (p,x,a)]), ps, V.vapp sigma (f, V.Neu (V.gensym (), V.Emp)))
+    let x = V.gensym () in
+    traverseChkPats sigma ((g0,[ChkPat (p,x,a)]), ps, V.vapp sigma (f, V.Neu (x, V.Emp)))
     (* TODO: V.app will need g0 also, which might supply bindings for some variables*)
   | (g0,[]), ps, a -> (g0,[]), ps, a (* Stuck until we learn about 'a', or ps is done *)
   | (g0,j::js), ps, vtp -> 
     let (g0', inst) = processJudgment sigma (g0,j) in
-    traverseChkPats sigma ((g0',map (applyInstJ inst js)), ps, applyInstT inst vtp)
+    traverseChkPats sigma ((g0',List.map (applyInstJ inst) js), ps, applyInstT inst vtp)
 
 and complete = function
   | Nil -> true
   | Snoc (g, Oft (_x, _a)) -> complete g
   | Snoc (g, _) -> false
 
-and checkPats sigma state =
+and chkPats sigma state =
  let state' = traverseChkPats sigma state in
  match state' with
    | (g',[]), [] , a when complete g' -> g', a
-   | _ -> checkPats sigma state'
+   | _ -> chkPats sigma state'
    (* TODO: Need to detect stuck states and raise an error *)
 
 let chkBranch sigma (recname,rectyp) (Br (ps,e)) vtp =
-  let (gamma,vtp') = chkPats sigma (([],[]), ps, vtp) in
-  chk sigma (Snoc (gamma, Oft (recname ,rectype))) (e, vtp')
+  let (gamma,vtp') = chkPats sigma ((Nil,[]), ps, vtp) in
+  chk sigma (Snoc (gamma, Oft (recname ,rectyp))) (e, vtp')
 
 let rec chkDecl sigma = function
   | (Def (name,tp,body)) ->
-     chk sigma [] (tp, V.Type);
+     chk sigma Nil (tp, V.Type);
      let vtp = V.eval sigma tp in
      List.iter (fun br -> chkBranch sigma (name,vtp) br vtp) body;
      [(name,(V.Def (vtp,body)))]
   | (Data (name, tp, constructors)) ->
-    chk sigma [] (tp, V.Type);
+    chk sigma Nil (tp, V.Type);
     let d = (name,V.Constr (V.eval sigma tp)) in
      d::(List.map (fun (Con (cname, ctp)) ->
-       chk (d::sigma) [] (ctp, V.Type);
+       chk (d::sigma) Nil (ctp, V.Type);
        (cname,(V.Constr (V.eval (d::sigma) ctp)))) constructors)
 
 let rec chkDeclList sigma defs = match defs with
