@@ -22,7 +22,7 @@ and equalSp = function
   | V.Emp, V.Emp -> []
   | V.Snoc (sp1, v1), V.Snoc (sp2, v2) -> (equalSp (sp1,sp2)) @ (equal (v1,v2))
 
-let solvable gamma [] = () (* TODO *)
+let solvable gamma xs = () (* TODO *)
 
 let rec chk sigma gamma =
   (* TODO: Bug: matching directly on the type here isn't good enough if we intend to do
@@ -66,23 +66,19 @@ and addPats sigma g0 xs = function
     let xv = V.Neu (x, V.Emp) in
     addPats sigma (Snoc (g0, ChkPat (p, x, a))) (V.Snoc (xs, xv)) (ps, V.vapp sigma (f, xv))
 
+and chkConstrPat sigma (g0, (c, ps), x, a) =
+  let V.Constr vtp = V.lookuptp sigma c in 
+  let g0' , xs , V.ConApp (d, sp) = addPats sigma g0 V.Emp (ps, vtp) in 
+  let V.ConApp (d',vs) = a in
+  if d <> d' then raise IllTypedPattern;
+  let g0'', bindings = applyEqns g0' (sp,vs) in
+  g0'', (x, V.ConApp (c, xs))::bindings
+
 and chkPat' sigma (g0, p, x, a) = match p with
-  | App (c,ps) ->
-    let V.Constr vtp = V.lookuptp sigma c in 
-    let g0' , xs , V.ConApp (d, sp) = addPats sigma g0 V.Emp (ps, vtp) in 
-    let V.ConApp (d',vs) = a in
-    if d <> d' then raise IllTypedPattern;
-    let g0'', bindings = applyEqns g0' (sp,vs) in
-    g0'', (x, V.ConApp (c, xs))::bindings
-      (* This also needs to be able to raise "stuck" which will just keep the original problem *)
+  | App (c,ps) -> chkConstrPat sigma (g0, (c, ps), x, a)
+    (* This also needs to be able to raise "stuck" which will just keep the original problem *)
   | Id z ->
-    try
-      let V.Constr vtp = V.lookuptp sigma z in
-      let g0' , xs , V.ConApp (d, sp) = addPats sigma g0 V.Emp ([], vtp) in
-      let V.ConApp (d',vs) = a in
-      if d <> d' then raise IllTypedPattern;
-      let g0'' , bindings = applyEqns g0 (sp, vs) in
-      g0'', (x, V.ConApp (z, xs))::bindings
+    try chkConstrPat sigma (g0, (z, []), x, a) (* If it's a constructor.. *)
     with V.Free -> Snoc (g0, Oft (z,a)) , [(x,V.Neu (z, V.Emp))] (* It's a variable *)
 
 and processJudgment sigma (g0,j) = match j with
@@ -107,11 +103,15 @@ and complete = function
   | Snoc (g, Oft (_x, _a)) -> complete g
   | Snoc (g, _) -> false
 
+and rev g acc = match g with
+  | Nil -> acc
+  | Snoc (g, j) -> rev g (j::acc)
+
 and chkPats sigma state =
  let state' = traverseChkPats sigma state in
  match state' with
    | (g',[]), [] , a when complete g' -> g', a
-   | _ -> chkPats sigma state'
+   | (g',js), ps , a -> chkPats sigma ((Nil, rev g' js), ps , a)
    (* TODO: Need to detect stuck states and raise an error *)
 
 let chkBranch sigma (recname,rectyp) (Br (ps,e)) vtp =
