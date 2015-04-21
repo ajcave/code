@@ -25,6 +25,10 @@ type decl =
     Def of tpvalue * E.branch list
   | Constr of tpvalue
 
+let gensym =
+  let i = ref 0 in
+  fun () -> i := !i + 1; E.Ident ("_x" ^ string_of_int !i)
+
 exception Free
 let rec lookuptp sigma c = match sigma with
   | [] -> raise Free

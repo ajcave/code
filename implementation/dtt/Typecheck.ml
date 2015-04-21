@@ -9,10 +9,6 @@ let rec equal = function
   | V.Neu (x1, sp1), V.Neu (x2, sp2) when x1 = x2 -> equalSp (sp1, sp2)
   | V.Neu (x, V.Emp) , v | v , V.Neu (x, V.Emp) -> [x,v]
   | v1 , v2 ->
-    (if v1 = v2 then
-      []
-    else
-      []);
     raise V.NotImplemented
 and equalSp = function
   | V.Emp, V.Emp -> []
@@ -44,83 +40,72 @@ let rec chk sigma gamma =
     with V.Free -> try V.lookuptp gamma id with V.Free -> raise V.Violation
   in chk'
 
-(* let rec applyEqn ((y,v) as eq) = function *)
-(*   | [] -> [] *)
-(*   | (x,tp)::gamma when x = y -> (x, V.Singleton (v,tp))::gamma *)
-(*   | b::gamma -> b::(applyEqn eq gamma) *)
+type 'a slist = Nil | Snoc of 'a slist * 'a
+type judgment = Oft of ident * V.tpvalue | ChkPat of exp * ident * V.tpvalue
+exception IllTypedPattern
 
-(* let rec applyEqns gamma = function *)
-(*   | [] -> gamma *)
-(*   | eq::eqns -> applyEqn eq (applyEqns gamma eqns) *)
+let applyEqn g (u,v) = g , [] (* TODO! (First-order) unification (see "equal" above) *)
 
-type 'a slist = Nil | Snoc of 'a * 'a slist
-type judgment = Oft of E.Ident * V.tpvalue | ChkPat of E.exp * E.Ident * V.tpvalue
+let rec applyEqns g = function
+  | (V.Emp,V.Emp) -> g , []
+  | (V.Snoc (us, u), V.Snoc (vs, v)) ->
+    let g' , bindings = applyEqns g (us,vs) in (* The bindings should have already been applied to g'.. *)
+    let g'' , bindings' = applyEqn g' (u,v) in
+    g'' , (bindings@bindings')
 
-(* let rec chkPat sigma (p,tp) = match p with *)
-(*   | App (ident,ps) -> *)
-(*     let V.Constr vtp = V.lookuptp sigma ident in  *)
-(*     let (gamma1, vtp') = chkPats sigma (ps, vtp) in *)
-(*     let eqns = equal (vtp', tp) in *)
-(*     (applyEqns gamma1 eqns) (\* TODO: BUG: Aren't we applying these too eagerly? *)
-(* 			       We might need to apply them to bindings we don't have yet?*\) *)
-(*   | Id ident -> *)
-(*     try let V.Constr vtp = V.lookuptp sigma ident in equal (vtp, tp) *)
-(*     with V.Free -> [(ident,tp)] (\* It's a variable *\) *)
-
-(* and chkPat1 sigma p a f = *)
-(*   let gamma1 = chkPat sigma (p,a) in *)
-(*   let p' = V.eval sigma p in *)
-(*   let vtp0 = V.vapp sigma (f, p') in *)
-(*   (gamma1,vtp0) *)
+and addPats sigma g0 xs = function
+  | [] , a -> g0 , xs , a
+  | p::ps , V.Fun (a, f) ->
+    let x = V.gensym () in
+    let xv = V.Neu (x, V.Emp) in
+    addPats sigma (Snoc (g0, ChkPat (p, x, a))) (V.Snoc (xs, xv)) (ps, V.vapp sigma (f, xv))
 
 and chkPat' sigma (g0, p, x, a) = match p with
   | App (c,ps) ->
     let V.Constr vtp = V.lookuptp sigma c in 
-    let (g0',[]), [], V.ConApp (d,sp) = traverseChkPats sigma ((g0,[]), ps, vtp) in
-     (* Crap, in general this is going to learn some instantiations which we are going to need
-        to propagate out. So we shouldn't reuse traverseChkPats? 
-        Or we should generalize it... *)
+    let g0' , xs , V.ConApp (d, sp) = addPats sigma g0 V.Emp (ps, vtp) in 
     let V.ConApp (d',vs) = a in
-    applyEqns g0' (sp,vs) , Bind (x, V.ConApp (c, ???)) (* Should be the list of variables we bound. Actually, compose it with the equations we learned from the body? *)
-      (* Maybe we shouldn't actually go deeper into the body eagerly? Just add the postponed things*)
-      (* This also needs to be able to say "stuck" by just returning the original problem *)
+    if d <> d' then raise IllTypedPattern;
+    applyEqns g0' (sp,vs) , [(x, V.ConApp (c, xs))]
+      (* This also needs to be able to raise "stuck" which will just keep the original problem *)
   | Id z ->
-    try let V.Constr vtp = V.lookuptp sigma z in equal (vtp, a)
-    with V.Free -> Snoc (g0, Oft (z,a)) , Bind (x,z) (* It's a variable *)
+    try let V.Constr vtp = V.lookuptp sigma z in equal (vtp, a) (* It's a constructor with no args *)
+    with V.Free -> Snoc (g0, Oft (z,a)) , [(x,V.Neu (z, V.Emp))] (* It's a variable *)
 
 and processJudgment sigma (g0,j) = match j with
   | ChkPat (p,x,a) -> chkPat' sigma (g0, p, x, a)
-  | Oft (x,a) -> Snoc (g0, Oft (x,a)), Id
+  | Oft (x,a) -> Snoc (g0, Oft (x,a)), []
 
 and traverseChkPats sigma = function
-  | (g0,[]), p::ps, V.Fun (a,V.Clo (x,b,rho) as f) ->
-    traverseChkPats sigma ((g0,[ChkPat (p,x,a)]), ps, V.vapp sigma (f, V.Neu (x, V.Emp))) (* TODO: This will need g0 also, which might supply bindings for some variables*)
-  | (g0,[]), ps, a) -> (g0,[]), ps, a (* Stuck until we learn about 'a', or ps is done *)
+  | (g0,[]), p::ps, V.Fun (a,f) ->
+    traverseChkPats sigma ((g0,[ChkPat (p,x,a)]), ps, V.vapp sigma (f, V.Neu (V.gensym (), V.Emp)))
+    (* TODO: V.app will need g0 also, which might supply bindings for some variables*)
+  | (g0,[]), ps, a -> (g0,[]), ps, a (* Stuck until we learn about 'a', or ps is done *)
   | (g0,j::js), ps, vtp -> 
     let (g0', inst) = processJudgment sigma (g0,j) in
     traverseChkPats sigma ((g0',map (applyInstJ inst js)), ps, applyInstT inst vtp)
-(* Idea is to repeat traverseChkPats until we no longer make any progress.
-   If it's done, then check body
-   If it's stuck, fail. *)
 
-(* and chkPats sigma = function *)
-(*   | ([], a) -> ([], a) *)
-(*   | (p::ps, V.Fun (a,f)) -> *)
-(*     let (gamma1,vtp0) = chkPat1 sigma p a f in *)
-(*     let (gamma2,vtp') = chkPats sigma (ps, vtp0) in (\* Might need to use the equations gathered from p here? *)
-(* 		       Yes: if the next type is by large elim on a previous thing *\) *)
-(*     (gamma2@gamma1, vtp') (\* We should check disjointness here *\) *)
-(*   | (p::ps, _) -> raise IllTyped *)
+and complete = function
+  | Nil -> true
+  | Snoc (g, Oft (_x, _a)) -> complete g
+  | Snoc (g, _) -> false
 
-let chkBranch sigma gamma0 (Br (ps,e)) vtp =
-  let (gamma,vtp') = chkPats sigma [] (ps,vtp) in
-  chk sigma (gamma@gamma0) (e, vtp')
+and checkPats sigma state =
+ let state' = traverseChkPats sigma state in
+ match state' with
+   | (g',[]), [] , a when complete g' -> g', a
+   | _ -> checkPats sigma state'
+   (* TODO: Need to detect stuck states and raise an error *)
+
+let chkBranch sigma (recname,rectyp) (Br (ps,e)) vtp =
+  let (gamma,vtp') = chkPats sigma (([],[]), ps, vtp) in
+  chk sigma (Snoc (gamma, Oft (recname ,rectype))) (e, vtp')
 
 let rec chkDecl sigma = function
   | (Def (name,tp,body)) ->
      chk sigma [] (tp, V.Type);
      let vtp = V.eval sigma tp in
-     List.iter (fun br -> chkBranch sigma [Oft (name,vtp)] br vtp) body;
+     List.iter (fun br -> chkBranch sigma (name,vtp) br vtp) body;
      [(name,(V.Def (vtp,body)))]
   | (Data (name, tp, constructors)) ->
     chk sigma [] (tp, V.Type);
