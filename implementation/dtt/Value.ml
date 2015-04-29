@@ -45,19 +45,52 @@ let disambiguate sigma x rho =
     end
   with Free -> lookupenv (rho, x)
 
+let isConstr sigma x = try lookuptp sigma x; true with Free -> false
+let isVar sigma x = not (isConstr sigma x)
+
 let rec append sp = function
   | [] -> sp
   | (v::vs) -> append (Snoc (sp, v)) vs
 
 exception NotImplemented
 exception Violation
+exception MatchFailed
+
+type 'a option = None | Some of 'a
+
+let rec appendEnv rho1 = function
+  | Empty -> rho1
+  | Dot (rho2, vx) -> Dot (appendEnv rho1 rho2, vx)
+
+let rec rev acc = function
+  | Emp -> acc
+  | Snoc (sp, v) -> rev (v::acc) sp
+
+let rec computeMatch sigma = function
+  | E.App (c1, ps) , ConApp (c2 , vs) when c1 = c2 -> computeMatches sigma (ps, (rev [] vs))
+  | E.Id c1 , ConApp (c2, Emp) when isConstr sigma c1 && c1 = c2 -> Empty
+  | E.Id x , v when isVar sigma x -> Dot (Empty, (v, x))
+  | _ , _ -> raise MatchFailed
+
+and computeMatches sigma = function
+  | [] , [] -> Empty
+  | p::ps , v::vs -> appendEnv (computeMatch sigma (p, v)) (computeMatches sigma (ps, vs))
+
 let rec reduce sigma = function
   | (v, []) -> v
   | (Clo ((x,t),rho), v::vs) -> reduce sigma (eval' sigma t (Dot (rho, (v,x))), vs)
   | (Neu (x,sp), vs) -> Neu (x, append sp vs)
-  | (DefApp (f,s), v) -> raise NotImplemented (* defapp sigma f (Snoc (s,v)) *)
+  | (DefApp (f,sp), vs) -> defapp sigma f (append sp vs)
   | (ConApp (c,sp), vs) -> ConApp (c, append sp vs)
-(* and defapp sigma (_name, Def (_tp,body)) sp = raise NotImplemented *)
+and defapp sigma f sp =
+  let Def (_,body) = lookuptp sigma f in
+  let args = rev [] sp in
+  let rec applyBranch = function
+    | [] -> DefApp (f, sp) (* Still stuck *)
+    | (E.Br (pats, body))::brs ->
+      try eval' sigma body (computeMatches sigma (pats, args))
+      with MatchFailed -> applyBranch brs
+  in applyBranch body
 and eval' sigma t rho = match t with
   | E.Pi (x,a,b) -> Fun (eval' sigma a rho, Clo ((x,b), rho))
   | E.Arr (a,b) -> Fun (eval' sigma a rho, Clo ((gensym (),b),rho))

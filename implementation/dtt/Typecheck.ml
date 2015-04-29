@@ -34,6 +34,7 @@ let rec equal = function
   | V.Neu (x1, sp1), V.Neu (x2, sp2) when x1 = x2 -> equalSp (sp1, sp2)
   | V.Neu (x, V.Emp) , v | v , V.Neu (x, V.Emp) -> [x,v]
   | v1 , v2 ->
+    let x = (v1 == v2) in
     raise V.NotImplemented
 and equalSp = function
   | V.Emp, V.Emp -> []
@@ -158,7 +159,7 @@ and normalize sigma g = function
   | V.Clo (t, rho) -> V.Clo (t, normalizeEnv sigma g rho)
   | V.Type -> V.Type
   | V.ConApp (c, sp) -> V.ConApp (c, normalizeSp sigma g sp)
-  | V.DefApp (f, sp) -> V.DefApp (f, normalizeSp sigma g sp)
+  | V.DefApp (f, sp) -> V.defapp sigma f (normalizeSp sigma g sp)
   | V.Neu (x, sp) -> V.vappSp sigma (lookupVal x g) (normalizeSp sigma g sp)
 
 (* Bug: If we pull a definition out/through the context past another variable which shadows
