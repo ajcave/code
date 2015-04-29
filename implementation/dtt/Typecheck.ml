@@ -33,6 +33,7 @@ let rec equal = function
   | V.Type , V.Type -> []
   | V.Neu (x1, sp1), V.Neu (x2, sp2) when x1 = x2 -> equalSp (sp1, sp2)
   | V.Neu (x, V.Emp) , v | v , V.Neu (x, V.Emp) -> [x,v]
+  | V.DefApp (f1, sp1) , V.DefApp (f2, sp2) when f1 = f2 -> equalSp (sp1, sp2)
   | v1 , v2 ->
     let x = (v1 == v2) in
     raise V.NotImplemented
