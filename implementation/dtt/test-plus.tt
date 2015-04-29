@@ -10,7 +10,7 @@ data Eq : Nat -> Nat -> Type =
  refl : (n : Nat) -> Eq n n;
 
 congs : (n : Nat) -> (m : Nat) -> Eq n m -> Eq (suc n) (suc m) =
-> n m (refl k) -> refl (suc k)
+> n m (refl k) -> refl (suc m)
 ;
 
 pf : (n : Nat) -> Eq (plus n zero) n =
