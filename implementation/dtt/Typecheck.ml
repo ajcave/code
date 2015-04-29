@@ -191,17 +191,17 @@ and normalizeCtx sigma = function
     let j' = normalizeJ sigma g' j in
     Snoc (g', j')
 
+and normalizeState sigma ((g,[]), ps, a) =
+  let g = normalizeCtx sigma g in
+  let a = normalize sigma g a in
+  ((g,[]), ps, a)
+
 and chkPats sigma state =
- let state' = traverseChkPats sigma state in
- match state' with
-   | (g,[]), [] , a when complete g -> (* TODO: This is repetative *)
-     let g = normalizeCtx sigma g in
-     let a = normalize sigma g a in
-     g, a
-   | (g,[]), ps , a ->
-     let g = normalizeCtx sigma g in
-     let a = normalize sigma g a in
-     chkPats sigma ((Nil, rev g []), ps , a)
+ let state = traverseChkPats sigma state in
+ let state = normalizeState sigma state in
+ match state with
+   | (g,[]), [] , a when complete g -> g, a
+   | (g,[]), ps , a -> chkPats sigma ((Nil, rev g []), ps , a)
    (* TODO: Need to detect stuck states and raise an error *)
 
 let chkBranch sigma (recname,rectyp) (Br (ps,e)) vtp =
