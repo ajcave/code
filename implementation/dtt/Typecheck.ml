@@ -28,18 +28,22 @@ let rec idenv = function
 
 let eval sigma g t = V.eval' sigma t (idenv g)
 
-let rec equal = function
-  | V.ConApp (id1,sp1), V.ConApp (id2,sp2) when id1 = id2 -> equalSp (sp1,sp2)
+let rec equal sigma = function
+  | V.ConApp (id1,sp1), V.ConApp (id2,sp2) when id1 = id2 -> equalSp sigma (sp1,sp2)
   | V.Type , V.Type -> []
-  | V.Neu (x1, sp1), V.Neu (x2, sp2) when x1 = x2 -> equalSp (sp1, sp2)
-  | V.Neu (x, V.Emp) , v | v , V.Neu (x, V.Emp) -> [x,v]
-  | V.DefApp (f1, sp1) , V.DefApp (f2, sp2) when f1 = f2 -> equalSp (sp1, sp2)
+  | V.Neu (x1, sp1), V.Neu (x2, sp2) when x1 = x2 -> equalSp sigma (sp1, sp2)
+  | V.DefApp (f1, sp1) , V.DefApp (f2, sp2) when f1 = f2 -> equalSp sigma (sp1, sp2)
+  | V.Fun (a1, f1) , V.Fun (a2, f2) -> (equal sigma (a1, a2)) @ (equal sigma (f1, f2))
+  | (V.Clo c1 as f1), (V.Clo c2 as f2) -> 
+    let x = V.gensym () in
+    let xv = V.Neu (x, V.Emp) in
+    equal sigma (V.vapp sigma (f1, xv), V.vapp sigma (f2, xv)) 
   | v1 , v2 ->
     let x = (v1 == v2) in
     raise V.NotImplemented
-and equalSp = function
+and equalSp sigma = function
   | V.Emp, V.Emp -> []
-  | V.Snoc (sp1, v1), V.Snoc (sp2, v2) -> (equalSp (sp1,sp2)) @ (equal (v1,v2))
+  | V.Snoc (sp1, v1), V.Snoc (sp2, v2) -> (equalSp sigma (sp1,sp2)) @ (equal sigma (v1,v2))
 
 let solvable gamma [] = () (* TODO *)
 
@@ -49,7 +53,7 @@ let rec chk sigma gamma =
   | (App (id, sp), a) ->
     let vtp = synthIdType id in
     let vtpr = chkSp (sp, vtp) in
-    let eqns = equal (vtpr, a) in
+    let eqns = equal sigma (vtpr, a) in
     solvable gamma eqns
   | (Id id, a) -> chk' (App (id, []), a)
   | (Type, V.Type) -> ()

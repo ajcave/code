@@ -1,0 +1,55 @@
+data nat : Type =
+  zero : nat
+| suc : nat -> nat;
+
+data tm : Type =
+  var : nat -> tm
+| lam : tm -> tm
+| app : tm -> tm -> tm
+| true : tm
+| false : tm;
+
+data slist : Type -> Type =
+  nil : (A : Type) -> slist A
+| snoc : (A : Type) -> slist A -> A -> slist A;
+
+data val : Type =
+  vlam : tm -> slist val -> val
+| vtrue : val
+| vfalse : val;
+
+data tp : Type =
+  bool : tp
+| arr : tp -> tp -> tp;
+
+data lookup : (A : Type) -> slist A -> nat -> A -> Type =
+  top : (A : Type) -> (G : slist A) -> (T : A) -> lookup A (snoc A G T) zero T
+| pop : (A : Type) -> (G : slist A) -> (T : A) -> (S : A) -> (n : nat) -> lookup A G n T
+        -> lookup A (snoc A G S) (suc n) T
+;
+
+data eval : tm -> slist val -> val -> Type =
+  evalTrue  : (rho : slist val) -> eval true rho vtrue
+| evalFalse : (rho : slist val) -> eval false rho vfalse
+| evalApp : (t : tm) -> (t1 : tm) -> (s : tm) -> (u : val) -> (v : val) 
+  -> (rho : slist val) -> (rho1 : slist val)
+  -> eval t rho (vlam t1 rho1) -> eval s rho v -> eval t1 (snoc val rho1 v) u
+  -> eval (app t s) rho u
+| evalLam : (t : tm) -> (rho : slist val) -> eval (lam t) rho (vlam t rho)
+| evalVar : (x : nat) -> (rho : slist val) -> (v : val) -> lookup val rho x v -> eval (var x) rho v
+;
+
+data isBool : val -> Type =
+  trueIsBool : isBool vtrue
+| falseIsBool : isBool vfalse;
+
+data appP : (P : val -> Type) -> val -> val -> Type =
+ exAp : (P : val -> Type) -> (t : tm) -> (rho : slist val) -> (u : val) -> (w : val) ->
+        eval t (snoc val rho u) w -> P w -> appP P (vlam t rho) u;
+
+interp : tp -> val -> Type =
+> bool v      -> isBool v
+> (arr T S) v -> (u : val) -> interp T u -> appP (interp S) v u
+;
+
+
