@@ -71,19 +71,50 @@ let rec chk sigma gamma =
 
 exception IllTypedPattern
 
+let rec appendCtx g = function
+  | [] -> g
+  | j::js -> appendCtx (Snoc (g, j)) js
 
-let rec assignEqn g (x,v) = match g with
-  | Snoc (g', Oft (y, a)) when x = y -> Snoc (g', OftBind (x, v, a))
-  | Snoc (g', ChkPat (p, y, a)) when x = y -> Snoc (g', ChkPatBind (p, y, v, a))
-  | Snoc (g', (OftBind (y, u, a) as j)) when x = y -> Snoc (applyEqn g' (u,v), j)
-  | Snoc (g', (ChkPatBind (p, y, u, a) as j)) when x = y -> Snoc (applyEqn g' (u,v), j)
-  | Snoc (g', j) -> Snoc (assignEqn g' (x,v), j)
-(* TODO: This can form cycles; we need to check occurrences, and also move some things backward *)
+let rec occurs x = function
+  | V.Type -> false
+  | V.Fun (a,f) -> occurs x a || occurs x f
+  | V.Clo ((x,t), rho) -> occursEnv x rho (* TODO: This is overly conservative. Need to normalize *)
+  | V.ConApp (c, sp) | V.DefApp (c, sp) -> occursSp x sp
+  | V.Neu (y, sp) -> x = y || occursSp x sp
+and occursSp x = function
+  | V.Emp -> false
+  | V.Snoc (sp, v) -> occursSp x sp || occurs x v
+and occursEnv x = function
+  | V.Empty -> false
+  | V.Dot (rho, (v, y)) -> occursEnv x rho || occurs x v
+
+let rec occursJ x = function
+  | Oft (_,a) | ChkPat (_, _, a) -> occurs x a
+  | OftBind (_,v,a) | ChkPatBind (_,_,v,a) -> occurs x v || occurs x a
+
+let rec occursC x = function
+  | [] -> false
+  | j::g -> occursJ x j || occursC x g
+
+let occurs' j (g, v) =
+  let x = match j with | Oft (y, _) | ChkPat (_, y, _) | OftBind (y, _, _) | ChkPatBind (_,y,_,_) -> y
+  in occursC x g || occurs x v
+
+let rec assignEqn g g0 (x,v) = match g with
+    (* TODO: These cases should check for cycles before succeeding *)
+  | Snoc (g', Oft (y, a)) when x = y -> Snoc (appendCtx g' g0, OftBind (x, v, a))
+  | Snoc (g', ChkPat (p, y, a)) when x = y -> Snoc (appendCtx g' g0, ChkPatBind (p, y, v, a))
+  | Snoc (g', (OftBind (y, u, a) as j)) when x = y -> Snoc (applyEqn (appendCtx g' g0) (u,v), j)
+  | Snoc (g', (ChkPatBind (p, y, u, a) as j)) when x = y -> Snoc (applyEqn (appendCtx g' g0) (u,v), j)
+  | Snoc (g', j) ->
+    if occurs' j (g0, v) 
+    then assignEqn g' (j::g0) (x,v) 
+    else Snoc (assignEqn g' g0 (x,v), j)
 
 and applyEqn g = function
   | V.ConApp (id1, sp1), V.ConApp (id2, sp2) when id1 = id2 -> applyEqns g (sp1, sp2)
   | V.Neu (x1, V.Emp) , V.Neu (x2, V.Emp) when x1 = x2 -> g
-  | (V.Neu (x, V.Emp) , v) | (v , V.Neu (x, V.Emp)) -> assignEqn g (x,v)
+  | (V.Neu (x, V.Emp) , v) | (v , V.Neu (x, V.Emp)) -> assignEqn g [] (x,v)
 
 and applyEqns g = function
   | (V.Emp,V.Emp) -> g
@@ -101,8 +132,8 @@ and addPats sigma g0 xs = function
     addPats sigma (Snoc (g0, ChkPat (p, x, a))) (V.Snoc (xs, xv)) (ps, V.vapp sigma (f, xv))
 
 and chkConstrPat sigma (g0, (c, ps), x, a) =
-  let V.ConApp (d',vs) = a in (* Raise Stuck if not *)
   let V.Constr vtp = V.lookuptp sigma c in 
+  let V.ConApp (d',vs) = a in (* Raise Stuck if not *)
   let g0' , xs , V.ConApp (d, sp) = addPats sigma g0 V.Emp (ps, vtp) in 
   if d <> d' then raise IllTypedPattern;
   let g0'' = applyEqns g0' (sp,vs) in
@@ -132,6 +163,9 @@ and applyInstJ sigma inst = function
 and applyInstT sigma inst a = match inst with
   | None -> a
   | Some (x,v,b) -> normalize sigma (Snoc (Nil, OftBind (x,v,b))) a (* Hmm *)
+(* and applyInstC sigma inst = function *)
+(*   | Nil -> Nil *)
+(*   | Snoc (g, j) -> Snoc (applyInstC sigma inst g, applyInstJ sigma inst j) *)
 
 and traverseChkPats sigma = function
   | (g0,[]), p::ps, V.Fun (a,f) ->

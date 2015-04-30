@@ -22,11 +22,27 @@ data tp : Type =
   bool : tp
 | arr : tp -> tp -> tp;
 
-data lookup : (A : Type) -> slist A -> nat -> A -> Type =
-  top : (A : Type) -> (G : slist A) -> (T : A) -> lookup A (snoc A G T) zero T
-| pop : (A : Type) -> (G : slist A) -> (T : A) -> (S : A) -> (n : nat) -> lookup A G n T
-        -> lookup A (snoc A G S) (suc n) T
+data False : Type = ;
+
+data Unit : Type =
+ unit : Unit;
+
+data EqTp : tp -> tp -> Type =
+ refl : (T : tp) -> EqTp T T;
+
+lookupT : slist tp -> nat -> tp -> Type =
+> (nil A) zero T         -> False
+> (snoc A G S) zero T    -> EqTp S T
+> (snoc A G S) (suc n) T -> lookupT G n T
 ;
+
+data EqVal : val -> val -> Type =
+ vrefl : (v : val) -> EqVal v v;
+
+lookupV : slist val -> nat -> val -> Type =
+> (nil A) zero v           -> False
+> (snoc A rho v) zero u    -> EqVal u v
+> (snoc A rho v) (suc n) u -> lookupV rho n u;
 
 data eval : tm -> slist val -> val -> Type =
   evalTrue  : (rho : slist val) -> eval true rho vtrue
@@ -36,7 +52,7 @@ data eval : tm -> slist val -> val -> Type =
   -> eval t rho (vlam t1 rho1) -> eval s rho v -> eval t1 (snoc val rho1 v) u
   -> eval (app t s) rho u
 | evalLam : (t : tm) -> (rho : slist val) -> eval (lam t) rho (vlam t rho)
-| evalVar : (x : nat) -> (rho : slist val) -> (v : val) -> lookup val rho x v -> eval (var x) rho v
+| evalVar : (x : nat) -> (rho : slist val) -> (v : val) -> lookupV rho x v -> eval (var x) rho v
 ;
 
 data isBool : val -> Type =
@@ -57,13 +73,13 @@ data good : tm -> slist val -> tp -> Type =
           -> eval t rho v -> interp T v -> good t rho T;
 
 
-data interps : slist tp -> slist val -> Type =
-  inil : interps (nil tp) (nil val)
-| isnoc : (G : slist tp) -> (rho : slist val) -> (T : tp) -> (v : val)
-         -> interps G rho -> interp T v -> interps (snoc tp G T) (snoc val rho v);
+interps : slist tp -> slist val -> Type =
+> (nil A) (nil B)             -> Unit
+> (snoc A G T) (snoc B rho v) -> interp T v
+> G            rho            -> False;
 
 data oft : slist tp -> tm -> tp -> Type =
-  ovar : (G : slist tp) -> (x : nat) -> (T : tp) -> lookup tp G x T -> oft G (var x) T
+  ovar : (G : slist tp) -> (x : nat) -> (T : tp) -> lookupT G x T -> oft G (var x) T
 | olam : (G : slist tp) -> (T : tp) -> (S : tp) -> (t : tm) -> oft (snoc tp G T) t S -> oft G (lam t) (arr T S)
 | oapp : (G : slist tp) -> (T : tp) -> (S : tp) -> (t : tm) -> (s : tm)
           -> oft G t (arr T S) -> oft G s T -> oft G (app t s) S
@@ -71,9 +87,8 @@ data oft : slist tp -> tm -> tp -> Type =
 | ofalse : (G : slist tp) -> oft G false bool
 ;
 
-ilookup : (G : slist tp) -> (T : tp) -> (x : nat) -> (rho : slist val) -> lookup tp G x T -> interps G rho -> good (var x) rho T =
-> G T x rho (top A G' T') (isnoc G' rho' T' v Rho' ev)
- -> isGood (var zero) (snoc val rho' v) v T (evalVar zero (snoc val rho' v) v (top val rho' v)) ev
+ilookup : (G : slist tp) -> (T : tp) -> (x : nat) -> (rho : slist val) -> lookupT G x T -> interps G rho -> good (var x) rho T =
+> (snoc A G T) S zero (snoc A' rho v) (refl T') ev -> isGood (var zero) (snoc val rho v) v T (evalVar zero (snoc val rho v) v (vrefl v)) ev
 ;
 
 thm : (G : slist tp) -> (T : tp) -> (t : tm) -> (rho : slist val) -> oft G t T -> interps G rho -> good t rho T =
