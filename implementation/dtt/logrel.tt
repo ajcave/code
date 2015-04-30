@@ -52,4 +52,8 @@ interp : tp -> val -> Type =
 > (arr T S) v -> (u : val) -> interp T u -> appP (interp S) v u
 ;
 
+data good : tm -> slist val -> tp -> Type =
+ isGood : (t : tm) -> (rho : slist val) -> (v : val) -> (T : tp)
+          -> eval t rho v -> interp T v -> good t rho T;
+
 
