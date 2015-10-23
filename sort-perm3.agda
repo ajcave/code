@@ -114,19 +114,39 @@ perm-front : ∀ l1 {x l2} -> Perm (l1 ++ x ∷ l2) (x ∷ (l1 ++ l2))
 perm-front [] = _ ∷ perm-refl _
 perm-front (y ∷ l1) = ptrans (_ ∷ (perm-front l1)) (swap _ _ (l1 ++ _))
 
--- data Splits x l1 : List ℕ -> Set where
---  yep : ∀ {l0 l0'} -> Perm l1 (l0 ++ l0') -> Splits x l1 (l0 ++ x ∷ l0')
+data Splits x l1 : List ℕ -> Set where
+ yep : ∀ {l0 l0'} -> Perm l1 (l0 ++ l0') -> Splits x l1 (l0 ++ x ∷ l0')
 
--- perm-front'' : ∀ {x l1 l2} -> Perm (x ∷ l1) l2 -> Splits x l1 l2
--- perm-front'' (x ∷ p) = yep {l0 = []} p
--- perm-front'' (swap x y l) = yep {l0 = y ∷ []} (perm-refl _)
--- perm-front'' (ptrans p p₁) with perm-front'' p
--- perm-front'' (ptrans p p₁) | yep x₁ = {!!}
+perm-front'' : ∀ {x l1 l2} -> Perm (x ∷ l1) l2 -> Splits x l1 l2
+perm-front'' (x ∷ p) = yep {l0 = []} p
+perm-front'' (swap x y l) = yep {l0 = y ∷ []} (perm-refl _)
+perm-front'' (ptrans p p₁) with perm-front'' p
+perm-front'' (ptrans p p₁) | yep x₁ = {!!}
+
+-- perm-front1 : ∀ {x l1 l2 ys0 ys1} -> Perm (x ∷ l1) ys0 -> Perm ys0 ys1 -> Perm ys1 (x ∷ l2) -> Perm l1 l2
+-- perm-front1 p1 q p2 = {!!}
+
+-- perm-front0 : ∀ {x l1 l2 ys} -> Perm (x ∷ l1) ys -> Perm ys (x ∷ l2) -> Perm l1 l2
+-- perm-front0 (x ∷ p1) (.x ∷ p2) = ptrans p1 p2
+-- perm-front0 (x ∷ p1) (swap .x .x l) = p1
+-- perm-front0 (x ∷ p1) (ptrans p2 p3) = ptrans p1 (perm-front0 p2 p3)
+-- perm-front0 (swap x .x l) (.x ∷ p2) = p2
+-- perm-front0 (swap x y l) (swap .y .x .l) = perm-refl (y ∷ l)
+-- perm-front0 (swap x y l) (ptrans p2 p3) = {!!} --perm-front0 (ptrans (swap x y l) p2) p3
+-- perm-front0 (ptrans p1 p2) (x ∷ p3) = ptrans (perm-front0 p1 p2) p3
+-- perm-front0 (ptrans p1 p2) (swap x₁ x l) = {!!}
+-- perm-front0 (ptrans p1 p2) (ptrans p3 p4) = {!!}
 
 -- perm-front' : ∀ {l1 l2 x} -> Perm (x ∷ l1) (x ∷ l2) -> Perm l1 l2
 -- perm-front' (x ∷ p) = p
 -- perm-front' (swap x .x l) = perm-refl _
 -- perm-front' (ptrans p p₁) = {!!}
+
+-- perm-lem7 : ∀ l1 l3 {l2 l4 x} -> Perm (l1 ++ x ∷ l2) (l3 ++ x ∷ l4) -> Perm (l1 ++ l2) (l3 ++ l4)
+-- perm-lem7 [] [] p = {!!}
+-- perm-lem7 [] (x ∷ l3) p = {!!}
+-- perm-lem7 (x ∷ l1) [] p = {!!}
+-- perm-lem7 (x ∷ l1) (x₁ ∷ l3) p = {!!}
 
 perm-lem : ∀ {l1 l3 l2 l4 x} -> Perm (l1 ++ x ∷ l2) (l3 ++ x ∷ l4) -> Perm (l1 ++ l2) (l3 ++ l4)
 perm-lem {l1} {l3} p with ptrans (perm-sym (perm-front l3)) (ptrans (perm-sym p) (perm-front l1))
