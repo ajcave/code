@@ -142,11 +142,18 @@ perm-front'' (ptrans p p₁) | yep x₁ = {!!}
 -- perm-front' (swap x .x l) = perm-refl _
 -- perm-front' (ptrans p p₁) = {!!}
 
--- perm-lem7 : ∀ l1 l3 {l2 l4 x} -> Perm (l1 ++ x ∷ l2) (l3 ++ x ∷ l4) -> Perm (l1 ++ l2) (l3 ++ l4)
--- perm-lem7 [] [] p = {!!}
--- perm-lem7 [] (x ∷ l3) p = {!!}
--- perm-lem7 (x ∷ l1) [] p = {!!}
--- perm-lem7 (x ∷ l1) (x₁ ∷ l3) p = {!!}
+perm-lem7 : ∀ {l1 l3 r1 r2 l2 l4 x} -> r1 ≡ l1 ++ x ∷ l2 -> r2 ≡ l3 ++ x ∷ l4 -> Perm r1 r2 -> Perm (l1 ++ l2) (l3 ++ l4)
+perm-lem7 p1 p2 [] = {!!}
+perm-lem7 {[]} {[]} refl refl (x ∷ q) = q
+perm-lem7 {[]} {.x ∷ l3} refl refl (x ∷ q) = {!!}
+perm-lem7 {.x ∷ l1} {[]} refl refl (x ∷ q) = {!!}
+perm-lem7 {.x₁ ∷ l1} {.x₁ ∷ l3} refl refl (x₁ ∷ q) = _ ∷ (perm-lem7 {l1} {l3} refl refl q)
+perm-lem7 {[]} {[]} refl refl (swap x .x l) = {!!}
+perm-lem7 {[]} {.x ∷ []} refl refl (swap x₁ x l4) = {!!}
+perm-lem7 {[]} {.x ∷ .x₁ ∷ l3} refl refl (swap x₁ x ._) = _ ∷ {!!}
+perm-lem7 {x ∷ l1} {[]} p1 p2 (swap x₂ y l) = {!!}
+perm-lem7 {x ∷ l1} {x₁ ∷ l3} p1 p2 (swap x₃ y l) = {!!}
+perm-lem7 p1 p2 (ptrans q q₁) = {!!}
 
 perm-lem : ∀ {l1 l3 l2 l4 x} -> Perm (l1 ++ x ∷ l2) (l3 ++ x ∷ l4) -> Perm (l1 ++ l2) (l3 ++ l4)
 perm-lem {l1} {l3} p with ptrans (perm-sym (perm-front l3)) (ptrans (perm-sym p) (perm-front l1))
