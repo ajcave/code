@@ -114,50 +114,56 @@ perm-front : ∀ l1 {x l2} -> Perm (l1 ++ x ∷ l2) (x ∷ (l1 ++ l2))
 perm-front [] = _ ∷ perm-refl _
 perm-front (y ∷ l1) = ptrans (_ ∷ (perm-front l1)) (swap _ _ (l1 ++ _))
 
-data Splits x l1 : List ℕ -> Set where
- yep : ∀ {l0 l0'} -> Perm l1 (l0 ++ l0') -> Splits x l1 (l0 ++ x ∷ l0')
+data Contains x : List ℕ -> Set where
+ yep : ∀ l0 {l0'} -> Contains x (l0 ++ x ∷ l0')
 
-perm-front'' : ∀ {x l1 l2} -> Perm (x ∷ l1) l2 -> Splits x l1 l2
-perm-front'' (x ∷ p) = yep {l0 = []} p
-perm-front'' (swap x y l) = yep {l0 = y ∷ []} (perm-refl _)
-perm-front'' (ptrans p p₁) with perm-front'' p
-perm-front'' (ptrans p p₁) | yep x₁ = {!!}
+∷inv1 : ∀ {x y : ℕ} {xs ys : List ℕ} -> _≡_ {_} {List ℕ} (x ∷ xs) (y ∷ ys) -> x ≡ y
+∷inv1 refl = refl
 
--- perm-front1 : ∀ {x l1 l2 ys0 ys1} -> Perm (x ∷ l1) ys0 -> Perm ys0 ys1 -> Perm ys1 (x ∷ l2) -> Perm l1 l2
--- perm-front1 p1 q p2 = {!!}
+∷inv2 : ∀ {x y xs ys} -> _≡_ {_} {List ℕ} (x ∷ xs) (y ∷ ys) -> xs ≡ ys
+∷inv2 refl = refl
 
--- perm-front0 : ∀ {x l1 l2 ys} -> Perm (x ∷ l1) ys -> Perm ys (x ∷ l2) -> Perm l1 l2
--- perm-front0 (x ∷ p1) (.x ∷ p2) = ptrans p1 p2
--- perm-front0 (x ∷ p1) (swap .x .x l) = p1
--- perm-front0 (x ∷ p1) (ptrans p2 p3) = ptrans p1 (perm-front0 p2 p3)
--- perm-front0 (swap x .x l) (.x ∷ p2) = p2
--- perm-front0 (swap x y l) (swap .y .x .l) = perm-refl (y ∷ l)
--- perm-front0 (swap x y l) (ptrans p2 p3) = {!!} --perm-front0 (ptrans (swap x y l) p2) p3
--- perm-front0 (ptrans p1 p2) (x ∷ p3) = ptrans (perm-front0 p1 p2) p3
--- perm-front0 (ptrans p1 p2) (swap x₁ x l) = {!!}
--- perm-front0 (ptrans p1 p2) (ptrans p3 p4) = {!!}
+perm-lem6 : ∀ {l1 x l2 r ys} -> r ≡ l1 ++ x ∷ l2 -> Perm r ys -> Contains x ys
+perm-lem6 {[]} () []
+perm-lem6 {x ∷ l1} () []
+perm-lem6 {[]} refl (x ∷ q) = yep []
+perm-lem6 {.x₂ ∷ l1} refl (x₂ ∷ q) with perm-lem6 {l1} refl q
+perm-lem6 {.x₂ ∷ l1} refl (x₂ ∷ q) | yep l0 = yep (x₂ ∷ l0)
+perm-lem6 {[]} refl (swap x y l) = yep (y ∷ [])
+perm-lem6 {.x ∷ []} refl (swap x x₁ l2) = yep []
+perm-lem6 {.x ∷ .x₁ ∷ l1} refl (swap x x₁ ._) = yep (x₁ ∷ x ∷ l1)
+perm-lem6 {l1} p (ptrans q q₁) with perm-lem6 {l1} p q
+perm-lem6 p (ptrans q q₁) | yep l0 = perm-lem6 {l0} refl q₁
 
--- perm-front' : ∀ {l1 l2 x} -> Perm (x ∷ l1) (x ∷ l2) -> Perm l1 l2
--- perm-front' (x ∷ p) = p
--- perm-front' (swap x .x l) = perm-refl _
--- perm-front' (ptrans p p₁) = {!!}
+concat-lem : ∀ (l1 l3 : List ℕ) {x l2 l4} -> l1 ++ x ∷ l2 ≡ l3 ++ x ∷ l4 -> Perm (l1 ++ l2) (l3 ++ l4)
+concat-lem [] [] refl = perm-refl _
+concat-lem [] (x ∷ l3) refl = perm-front l3
+concat-lem (x ∷ l1) [] refl = perm-sym (perm-front l1)
+concat-lem (x ∷ l1) (x₁ ∷ l3) p with ∷inv1 p | ∷inv2 p
+concat-lem (x ∷ l1) (.x ∷ l3) p | refl | q1 = _ ∷ concat-lem l1 l3 q1
 
 perm-lem7 : ∀ {l1 l3 r1 r2 l2 l4 x} -> r1 ≡ l1 ++ x ∷ l2 -> r2 ≡ l3 ++ x ∷ l4 -> Perm r1 r2 -> Perm (l1 ++ l2) (l3 ++ l4)
-perm-lem7 p1 p2 [] = {!!}
+perm-lem7 {[]} () p2 []
+perm-lem7 {x ∷ l1} () p2 []
 perm-lem7 {[]} {[]} refl refl (x ∷ q) = q
-perm-lem7 {[]} {.x ∷ l3} refl refl (x ∷ q) = {!!}
-perm-lem7 {.x ∷ l1} {[]} refl refl (x ∷ q) = {!!}
+perm-lem7 {[]} {.x ∷ l3} refl refl (x ∷ q) = ptrans q (perm-front l3)
+perm-lem7 {.x ∷ l1} {[]} refl refl (x ∷ q) = ptrans (perm-sym (perm-front l1)) q
 perm-lem7 {.x₁ ∷ l1} {.x₁ ∷ l3} refl refl (x₁ ∷ q) = _ ∷ (perm-lem7 {l1} {l3} refl refl q)
-perm-lem7 {[]} {[]} refl refl (swap x .x l) = {!!}
-perm-lem7 {[]} {.x ∷ []} refl refl (swap x₁ x l4) = {!!}
-perm-lem7 {[]} {.x ∷ .x₁ ∷ l3} refl refl (swap x₁ x ._) = _ ∷ {!!}
-perm-lem7 {x ∷ l1} {[]} p1 p2 (swap x₂ y l) = {!!}
-perm-lem7 {x ∷ l1} {x₁ ∷ l3} p1 p2 (swap x₃ y l) = {!!}
-perm-lem7 p1 p2 (ptrans q q₁) = {!!}
+perm-lem7 {[]} {[]} refl refl (swap x .x l) = perm-refl _
+perm-lem7 {[]} {.x ∷ []} refl refl (swap x₁ x l4) = perm-refl _
+perm-lem7 {[]} {.x ∷ .x₁ ∷ l3} refl refl (swap x₁ x ._) = _ ∷ perm-front l3
+perm-lem7 {.x ∷ []} {[]} refl refl (swap x x₁ l2) = perm-refl _
+perm-lem7 {.x ∷ .x₁ ∷ l1} {[]} refl refl (swap x x₁ ._) = _ ∷ perm-sym (perm-front l1)
+perm-lem7 {.x ∷ []} {.x ∷ []} refl refl (swap x .x l4) = perm-refl _
+perm-lem7 {.x ∷ []} {.x₁ ∷ .x ∷ l3} refl refl (swap x x₁ ._) = ptrans (_ ∷ perm-front l3) (swap _ _ _)
+perm-lem7 {.x ∷ .x₂ ∷ l1} {.x₂ ∷ []} refl refl (swap x x₂ ._) = ptrans (swap _ _ _) (_ ∷ perm-sym (perm-front l1))
+perm-lem7 {.x ∷ .x₁ ∷ l1} {x₂ ∷ x₃ ∷ l3} refl p2 (swap x x₁ ._) with ∷inv1 p2 | ∷inv1 (∷inv2 p2) | ∷inv2 (∷inv2 p2)
+perm-lem7 {.x₃ ∷ .x₂ ∷ l1} {.x₂ ∷ .x₃ ∷ l3} refl p2 (swap x₃ x₂ ._) | refl | refl | q2 = ptrans (swap _ _ _) (_ ∷ (_ ∷ concat-lem l1 l3 q2))
+perm-lem7 {l1} p1 p2 (ptrans q q₁) with perm-lem6 {l1} p1 q
+perm-lem7 {l1} {l3} p1 p2 (ptrans q q₁) | yep l0 = ptrans (perm-lem7 {l1} {l0} p1 refl q) (perm-lem7 {l0} {l3} refl p2 q₁) 
 
 perm-lem : ∀ {l1 l3 l2 l4 x} -> Perm (l1 ++ x ∷ l2) (l3 ++ x ∷ l4) -> Perm (l1 ++ l2) (l3 ++ l4)
-perm-lem {l1} {l3} p with ptrans (perm-sym (perm-front l3)) (ptrans (perm-sym p) (perm-front l1))
-... | q0 = {!!}
+perm-lem {l1} {l3} p = perm-lem7 {l1} {l3} refl refl p
 
 perm-emp : ∀ {l} -> Perm [] l -> l ≡ []
 perm-emp [] = refl
@@ -175,4 +181,7 @@ singleton0 p (cons {l1} x x₁ x₂ xs) [] = concat-blah l1 (sym (perm-emp (perm
 singleton0 p (cons x lb1 lb2 xs) (cons y lb3 lb4 ys) with glb-uniq (lemm1 lb1 lb2) (glb-perm (perm-sym p) (lemm1 lb3 lb4))
 singleton0 p (cons {l1} x lb1 lb2 xs) (cons {l3} .x lb3 lb4 ys) | refl with singleton0 (perm-lem {l1} {l3} p) xs ys
 ... | q  = cong₂ _∷_ refl q
+
+singleton : ∀ {l} (xs : slist l) -> ⌊ xs ⌋ ≡ ⌊ insertionSort l ⌋
+singleton {l} xs = singleton0 (perm-refl _) xs (insertionSort l)
  
